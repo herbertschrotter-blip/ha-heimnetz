@@ -1,0 +1,128 @@
+# Vertrag und Eigentumsregister (HA-Grundsatz G-19, Schema v1). Lesbare Fassung: docs/steckbrief.md.
+# Stand 0.6.0: Integration mit Datenbank, WebSocket, eigener Seite und Messplan (löst Ookla-Messungen aus).
+schema: 1
+
+module:
+  id: heimnetz
+  level: 4
+  type: integration
+
+components:
+  - integration
+  - panel
+
+depends_on:
+  integrations:
+    - fritz
+
+sources:
+  # Zugang zur Box aus dem Eintrag von FRITZ!Box Tools; abgefragt wird die Box selbst (TR-064, nur lesend).
+  # interface config_entry ist eine Abweichung vom Schema (dort nur entities/entity), Begründung im Steckbrief.
+  - key: fritzbox
+    owner: fritz
+    interface: config_entry
+    outage:
+      critical_for:
+        - entities:geraete_online
+        - entities:mobil_technik
+        - entities:rsrp_anker
+        - entities:rsrq_anker
+        - entities:rsrp_5g
+        - entities:rsrq_5g
+      on_unavailable: block
+      recovery: re_evaluate
+
+  # Messungen der Ookla-Integration: Sensoren lesen, Messung über deren Aktion run_speedtest starten.
+  # Ohne sie gibt es kein Speedtest-Protokoll und der Messplan kann nicht messen.
+  - key: speedtest
+    owner: ookla_speedtest
+    interface: entities
+    outage:
+      critical_for: []
+      on_unavailable: ignore
+      recovery: re_evaluate
+
+owns:
+  data:
+    - key: journal
+      storage: sqlite
+    - key: protokoll
+      storage: sqlite
+    - key: messungen
+      storage: sqlite
+    - key: gedaechtnis
+      storage: sqlite
+    - key: tickets
+      storage: store
+  settings:
+    - key: fritz_eintrag
+      storage: config_entry
+    - key: tarif_und_auswertung
+      storage: store
+      exposure: websocket
+    - key: messplan
+      storage: store
+      exposure: websocket
+    - key: wlan_schwach
+      storage: store
+      exposure: websocket
+    - key: geraete_arten
+      storage: store
+      exposure: websocket
+    - key: opencellid_schluessel
+      storage: config_entry_options
+  entities:
+    - key: gesamtstand
+      domain: sensor
+    - key: befunde
+      domain: sensor
+    - key: geraete_online
+      domain: sensor
+    - key: mobil_technik
+      domain: sensor
+    - key: rsrp_anker
+      domain: sensor
+    - key: rsrq_anker
+      domain: sensor
+    - key: rsrp_5g
+      domain: sensor
+    - key: rsrq_5g
+      domain: sensor
+    - key: pi_fritzbox
+      domain: binary_sensor
+    - key: pi_internet
+      domain: binary_sensor
+    - key: pi_dns
+      domain: binary_sensor
+  actions:
+    - ticket
+
+interfaces:
+  websocket:
+    - uebersicht
+    - speedtest
+    - geraete
+    - geraet
+    - mobilfunk
+    - wlan
+    - verbrauch
+    - protokoll
+    - einstellungen
+    - messplan
+    - messen
+    - serie
+    - meldungen
+    - meldung
+
+database:
+  schema_versioned: true
+  backup_hooks: true
+
+quality:
+  unload_reload: true
+  diagnostics: true
+  repairs: true
+
+ui:
+  types:
+    - custom_panel

@@ -1,0 +1,27 @@
+{
+  "domain": "heimnetz",
+  "name": "Heimnetz",
+  "after_dependencies": [
+    "fritz",
+    "recorder"
+  ],
+  "codeowners": [
+    "@herbertschrotter-blip"
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "frontend",
+    "http",
+    "panel_custom",
+    "websocket_api"
+  ],
+  "documentation": "https://github.com/herbertschrotter-blip/ha-heimnetz",
+  "integration_type": "service",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/herbertschrotter-blip/ha-heimnetz/issues",
+  "requirements": [
+    "fritzconnection==1.15.1"
+  ],
+  "single_config_entry": true,
+  "version": "0.23.0"
+}

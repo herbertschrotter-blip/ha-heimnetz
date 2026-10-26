@@ -1,0 +1,303 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Choose FRITZ!Box",
+        "description": "Access comes from the FRITZ!Box Tools integration and is not stored again. The integration only reads.",
+        "data": {
+          "fritz_eintrag": "FRITZ!Box"
+        },
+        "data_description": {
+          "fritz_eintrag": "FRITZ!Box Tools entry whose access Heimnetz shares."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "The FRITZ!Box does not respond.",
+      "invalid_auth": "The FRITZ!Box rejects the login – re-authenticate FRITZ!Box Tools."
+    },
+    "abort": {
+      "already_configured": "This FRITZ!Box is already configured.",
+      "keine_fritzbox": "Set up the FRITZ!Box Tools integration first.",
+      "single_instance_allowed": "Heimnetz is already set up – one entry per household.",
+      "alt_aktiv": "The old integration “Netzwerk” is still active. First disable its entry under Settings → Devices & services → Netzwerk (do not delete it, or its settings and test schedule are lost), then set up Heimnetz. Heimnetz then takes over its data."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "gesamtstand": {
+        "name": "Overall state",
+        "state": {
+          "ok": "OK",
+          "warnung": "Warnings",
+          "kritisch": "Problem",
+          "box_fehlt": "FRITZ!Box unreachable"
+        }
+      },
+      "befunde": {
+        "name": "Open findings"
+      },
+      "geraete_online": {
+        "name": "Devices online"
+      },
+      "mobil_technik": {
+        "name": "Mobile technology"
+      },
+      "rsrp_anker": {
+        "name": "Signal strength 4G anchor"
+      },
+      "rsrq_anker": {
+        "name": "Signal quality 4G anchor"
+      },
+      "rsrp_5g": {
+        "name": "Signal strength 5G"
+      },
+      "rsrq_5g": {
+        "name": "Signal quality 5G"
+      },
+      "letzte_messung": {
+        "name": "Last measurement",
+        "state_attributes": {
+          "quelle": {
+            "name": "Snapshot source",
+            "state": {
+              "messung": "at measurement",
+              "nachgetragen": "added later"
+            }
+          },
+          "ausloeser": {
+            "name": "Triggered by",
+            "state": {
+              "messplan": "Test schedule",
+              "jetzt": "Measure now",
+              "serie": "Series",
+              "ookla": "Ookla"
+            }
+          },
+          "serie_lauf": {
+            "name": "Series run"
+          },
+          "serie_n": {
+            "name": "Series runs"
+          },
+          "jitter": {
+            "name": "Jitter"
+          },
+          "jitter_down": {
+            "name": "Jitter during download"
+          },
+          "jitter_up": {
+            "name": "Jitter during upload"
+          },
+          "bufferbloat": {
+            "name": "Bufferbloat"
+          },
+          "anbieter": {
+            "name": "Provider"
+          },
+          "ergebnis_url": {
+            "name": "Ookla result"
+          },
+          "netz": {
+            "name": "Mobile technology"
+          },
+          "zelle": {
+            "name": "Anchor cell"
+          },
+          "anlage": {
+            "name": "Base station (eNodeB)"
+          },
+          "pci": {
+            "name": "Anchor cell PCI"
+          },
+          "rsrp": {
+            "name": "Signal strength 4G anchor"
+          },
+          "rsrq": {
+            "name": "Signal quality 4G anchor"
+          },
+          "nr_aktiv": {
+            "name": "5G active"
+          },
+          "nr_pci": {
+            "name": "5G cell (PCI)"
+          },
+          "nr_rsrp": {
+            "name": "Signal strength 5G"
+          },
+          "nr_rsrq": {
+            "name": "Signal quality 5G"
+          },
+          "entfernung_m": {
+            "name": "Distance to base station"
+          },
+          "nachbarzellen": {
+            "name": "Neighbour cells"
+          },
+          "plmn": {
+            "name": "Network code (PLMN)"
+          },
+          "tac": {
+            "name": "Tracking area code"
+          },
+          "verbunden_s": {
+            "name": "Mobile connected for (s)"
+          },
+          "box_modell": {
+            "name": "FRITZ!Box model"
+          },
+          "box_firmware": {
+            "name": "FRITZ!OS"
+          },
+          "box_laufzeit_s": {
+            "name": "FRITZ!Box uptime (s)"
+          },
+          "baender": {
+            "name": "Mobile bands"
+          },
+          "online": {
+            "name": "Devices online"
+          },
+          "online_wlan": {
+            "name": "Devices on Wi-Fi"
+          },
+          "wetter": {
+            "name": "Weather"
+          },
+          "temperatur": {
+            "name": "Temperature"
+          },
+          "feuchte": {
+            "name": "Humidity"
+          },
+          "wolken": {
+            "name": "Cloud coverage"
+          },
+          "tagesart": {
+            "name": "Type of day",
+            "state": {
+              "werktag": "Workday",
+              "wochenende": "Weekend",
+              "feiertag": "Holiday"
+            }
+          },
+          "download": {
+            "name": "Download"
+          },
+          "upload": {
+            "name": "Upload"
+          },
+          "ping": {
+            "name": "Ping"
+          },
+          "server": {
+            "name": "Server"
+          },
+          "grundlast_down": {
+            "name": "Background download before the test"
+          },
+          "grundlast_up": {
+            "name": "Background upload before the test"
+          }
+        }
+      },
+      "mobil_zelle": {
+        "name": "Cell"
+      },
+      "mobil_entfernung": {
+        "name": "Distance to base station"
+      },
+      "mobil_nachbarzellen": {
+        "name": "Neighbour cells"
+      },
+      "pci_5g": {
+        "name": "5G cell (PCI)"
+      }
+    },
+    "binary_sensor": {
+      "pi_fritzbox": {
+        "name": "FRITZ!Box from the Pi"
+      },
+      "pi_internet": {
+        "name": "Internet from the Pi"
+      },
+      "pi_dns": {
+        "name": "Name resolution"
+      }
+    }
+  },
+  "exceptions": {
+    "fritz_fehlt": {
+      "message": "The FRITZ!Box Tools entry is missing."
+    },
+    "ticket_fehlt": {
+      "message": "Ticket {ticket} does not exist."
+    },
+    "ticket_ungueltig": {
+      "message": "Ticket not changed: {grund}"
+    },
+    "alt_aktiv": {
+      "message": "The old integration “Netzwerk” is still active – Heimnetz does not start, so the FRITZ!Box is never polled twice."
+    }
+  },
+  "issues": {
+    "fritz_fehlt": {
+      "title": "Heimnetz: FRITZ!Box Tools missing",
+      "description": "The Heimnetz integration takes its access from FRITZ!Box Tools, whose entry was removed. Set up FRITZ!Box Tools again and re-add Heimnetz."
+    },
+    "anmeldung": {
+      "title": "Heimnetz: FRITZ!Box login rejected",
+      "description": "The FRITZ!Box rejects the credentials from FRITZ!Box Tools. Re-authenticate FRITZ!Box Tools; this notice then clears itself."
+    },
+    "alt_aktiv": {
+      "title": "Heimnetz: old integration “Netzwerk” still active",
+      "description": "Heimnetz replaces the integration “Netzwerk” and only starts once its entry is disabled (Settings → Devices & services → Netzwerk → ⋮ → Disable). Then reload Heimnetz; measurements, journal, settings and tickets are taken over."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Cell tower map",
+        "description": "Optional: API key from opencellid.org. In addition to BeaconDB the integration then also asks OpenCellID for the location of the cells (only the cell identity is sent, never your location). Leave empty to use BeaconDB only.",
+        "data": {
+          "opencellid_schluessel": "OpenCellID API key"
+        },
+        "data_description": {
+          "opencellid_schluessel": "API key from your account at opencellid.org (free)."
+        }
+      }
+    }
+  },
+  "services": {
+    "ticket": {
+      "name": "Change ticket",
+      "description": "Change status, note, version and commit of a ticket from the report button (used by tools/ticket.py).",
+      "fields": {
+        "ticket": {
+          "name": "Ticket",
+          "description": "Number, e.g. FE-0001"
+        },
+        "status": {
+          "name": "Status",
+          "description": "neu, angenommen, in_arbeit, geloest, geschlossen, verworfen"
+        },
+        "notiz": {
+          "name": "Note",
+          "description": "What was done or why"
+        },
+        "version": {
+          "name": "Version",
+          "description": "Version with the fix"
+        },
+        "commit": {
+          "name": "Commit",
+          "description": "Commit with the fix"
+        },
+        "von": {
+          "name": "By",
+          "description": "Who changes it (default: Claude)"
+        }
+      }
+    }
+  }
+}

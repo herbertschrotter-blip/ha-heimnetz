@@ -1,0 +1,38 @@
+# Tag vX.Y.Z → GitHub-Release mit dem Abschnitt „## [X.Y.Z]“ aus CHANGELOG.md als Text.
+# Der Tag muss zur Version in manifest.json passen, sonst bricht der Lauf ab.
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Version und Text aus CHANGELOG.md
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          manifest=$(python3 -c 'import json; print(json.load(open("custom_components/heimnetz/manifest.json"))["version"])')
+          if [ "$version" != "$manifest" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME passt nicht zu manifest.json ($manifest)"
+            exit 1
+          fi
+          awk -v kopf="## [$version]" '
+            index($0, kopf) == 1 { drin = 1; next }
+            drin && /^## \[/ { exit }
+            drin { print }
+          ' CHANGELOG.md > release.md
+          if ! grep -q '[^[:space:]]' release.md; then
+            echo "::error::Kein Abschnitt ## [$version] in CHANGELOG.md"
+            exit 1
+          fi
+      - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+        with:
+          name: Heimnetz ${{ github.ref_name }}
+          body_path: release.md

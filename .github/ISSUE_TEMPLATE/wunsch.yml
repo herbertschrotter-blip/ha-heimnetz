@@ -1,0 +1,27 @@
+name: "Wunsch · Wish"
+description: "Neue Funktion oder Änderung · New feature or change"
+title: "[Wunsch] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Datenschutz:** Issues sind öffentlich – bitte keine Gerätenamen, Adressen, Kennwörter, Zellkennungen oder den
+        Standort eintragen. · **Privacy:** issues are public – please do not include device names, addresses,
+        passwords, cell IDs or your location.
+  - type: textarea
+    id: wunsch
+    attributes:
+      label: "Was wünschst du dir? · What would you like?"
+    validations:
+      required: true
+  - type: textarea
+    id: wozu
+    attributes:
+      label: "Wozu? · What for?"
+      description: "Welches Problem löst es, wie nutzt du es? · Which problem does it solve, how would you use it?"
+  - type: input
+    id: geraet
+    attributes:
+      label: "Router und Anschluss · Router and connection"
+      description: "Z. B. FRITZ!Box mit Mobilfunk, DSL, Glasfaser, anderer Hersteller · e.g. FRITZ!Box with mobile, DSL, fibre, other brand"

@@ -1,0 +1,2688 @@
+{
+ "uebersicht": {
+  "stand": 1791989456.8715518,
+  "gesamt": "kritisch",
+  "box_erreichbar": true,
+  "fehler": [],
+  "befunde": [
+   {
+    "key": "doppelt",
+    "stufe": "kritisch",
+    "titel": "IP-Adresse 192.168.170.60 doppelt in Benutzung",
+    "text": "Zwei Geräte sind gleichzeitig mit derselben Adresse online: Pi – online, fernseher – online. Beide verlieren abwechselnd die Verbindung."
+   },
+   {
+    "key": "fremdnetz",
+    "stufe": "kritisch",
+    "titel": "Tab hat eine Adresse außerhalb des Heimnetzes",
+    "text": "Tab hat 192.168.1.23, das Heimnetz ist 192.168.170.0/24. Das Gerät hat seine Adresse nicht von der FRITZ!Box bekommen – entweder fest falsch eingestellt oder ein zweiter DHCP-Server (anderer Router, Repeater im Router-Modus) verteilt Adressen."
+   },
+   {
+    "key": "gesperrt",
+    "stufe": "warnung",
+    "titel": "kind: Internet durch die FRITZ!Box gesperrt",
+    "text": "kind ist online, aber ein Zugangsprofil (Kindersicherung/Zeitbudget/Sperre) lässt es nicht ins Internet."
+   },
+   {
+    "key": "dhcp_stumm",
+    "stufe": "warnung",
+    "titel": "Kein DHCP-Server hat geantwortet",
+    "text": "Auf die Test-Anfrage kam keine Antwort. Geräte, die sich neu verbinden, bekommen dann keine Adresse."
+   }
+  ],
+  "pruefungen": [
+   {
+    "name": "Pi → FRITZ!Box",
+    "ok": true,
+    "wert": ""
+   },
+   {
+    "name": "Pi → Internet",
+    "ok": true,
+    "wert": ""
+   },
+   {
+    "name": "Namensauflösung (DNS)",
+    "ok": true,
+    "wert": ""
+   },
+   {
+    "name": "Heimnetz",
+    "ok": true,
+    "wert": "Box 192.168.170.1 · 255.255.255.0"
+   },
+   {
+    "name": "DHCP verteilt",
+    "ok": true,
+    "wert": "192.168.170.20 – 192.168.170.200"
+   },
+   {
+    "name": "DHCP-Test",
+    "ok": false,
+    "wert": "kein Server antwortet"
+   }
+  ],
+  "internet": {
+   "ok": true,
+   "technik": "5G-NSA"
+  },
+  "geraete": {
+   "online": 5,
+   "bekannt": 5,
+   "neu": 0,
+   "wackelt": 0
+  },
+  "empfang": {
+   "rsrp_anker": -100,
+   "rsrp_5g": -94,
+   "lage": 0.5,
+   "wort": "mittel"
+  },
+  "speedtest": {
+   "t": 1791989456.913667,
+   "down": 120.0,
+   "up": 30.0,
+   "ping": 21.0,
+   "server": "Wien – A1",
+   "last": 2.0,
+   "quelle": "p",
+   "kontext": {}
+  },
+  "verbrauch_heute": {
+   "down": 0.0,
+   "up": 0.0,
+   "speedtest": 0.67
+  },
+  "wichtig": [
+   {
+    "t": 1791989456.8715518,
+    "stufe": "warnung",
+    "text": "Befund: Kein DHCP-Server hat geantwortet – Auf die Test-Anfrage kam keine Antwort. Geräte, die sich neu verbinden, bekommen dann keine Adresse."
+   },
+   {
+    "t": 1791989456.8715518,
+    "stufe": "warnung",
+    "text": "Befund: kind: Internet durch die FRITZ!Box gesperrt – kind ist online, aber ein Zugangsprofil (Kindersicherung/Zeitbudget/Sperre) lässt es nicht ins Internet."
+   },
+   {
+    "t": 1791989456.8715518,
+    "stufe": "kritisch",
+    "text": "Befund: Tab hat eine Adresse außerhalb des Heimnetzes – Tab hat 192.168.1.23, das Heimnetz ist 192.168.170.0/24. Das Gerät hat seine Adresse nicht von der FRITZ!Box bekommen – entweder fest falsch eingestellt oder ein zweiter DHCP-Server (anderer Router, Repeater im Router-Modus) verteilt Adressen."
+   },
+   {
+    "t": 1791989456.8715518,
+    "stufe": "kritisch",
+    "text": "Befund: IP-Adresse 192.168.170.60 doppelt in Benutzung – Zwei Geräte sind gleichzeitig mit derselben Adresse online: Pi – online, fernseher – online. Beide verlieren abwechselnd die Verbindung."
+   }
+  ]
+ },
+ "speedtest": {
+  "groesse": "down",
+  "tage": 84,
+  "ab": 1784731856.947297,
+  "tarif": 150.0,
+  "anzahl": 12,
+  "fehl": 0,
+  "gesamt": 12,
+  "belastet": 0,
+  "ungeprueft": 0,
+  "median": 114.5,
+  "schnitt": 114.5,
+  "anteil": 0.7633333333333333,
+  "auffaellig": null,
+  "volumen_mb": 2601.0,
+  "hinweise": [],
+  "einheit": "Mbit/s",
+  "raster": [
+   [
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": 109.0,
+     "anzahl": 1,
+     "lage": 0.7266666666666667
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    }
+   ],
+   [
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": 110.0,
+     "anzahl": 1,
+     "lage": 0.7333333333333333
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": 111.0,
+     "anzahl": 1,
+     "lage": 0.74
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": 112.0,
+     "anzahl": 1,
+     "lage": 0.7466666666666667
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": 113.0,
+     "anzahl": 1,
+     "lage": 0.7533333333333333
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": 114.0,
+     "anzahl": 1,
+     "lage": 0.76
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": 115.0,
+     "anzahl": 1,
+     "lage": 0.7666666666666667
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": 116.0,
+     "anzahl": 1,
+     "lage": 0.7733333333333333
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": 117.0,
+     "anzahl": 1,
+     "lage": 0.78
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    }
+   ],
+   [
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": 118.0,
+     "anzahl": 1,
+     "lage": 0.7866666666666666
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": 119.0,
+     "anzahl": 1,
+     "lage": 0.7933333333333333
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": 120.0,
+     "anzahl": 1,
+     "lage": 0.8
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    }
+   ],
+   [
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    }
+   ],
+   [
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    }
+   ],
+   [
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    }
+   ],
+   [
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    },
+    {
+     "median": null,
+     "anzahl": 0,
+     "lage": null
+    }
+   ]
+  ],
+  "server": [
+   {
+    "name": "Wien – A1",
+    "anzahl": 12
+   }
+  ],
+  "letzte": {
+   "t": 1791989456.913667,
+   "down": 120.0,
+   "up": 30.0,
+   "ping": 21.0,
+   "server": "Wien – A1",
+   "last": 2.0,
+   "quelle": "p",
+   "kontext": {}
+  },
+  "letzte_anteil": {
+   "down": 0.8,
+   "up": 1.0
+  },
+  "schwelle": 15.0,
+  "volumen_monat_mb": 2601.0,
+  "messungen": [
+   {
+    "t": 1791989456.913667,
+    "down": 120.0,
+    "up": 30.0,
+    "ping": 21.0,
+    "server": "Wien – A1",
+    "last": 2.0,
+    "quelle": "p",
+    "belastet": false,
+    "gewicht": 1.0,
+    "serie": false,
+    "kontext": {}
+   },
+   {
+    "t": 1791978656.913667,
+    "down": 119.0,
+    "up": 30.0,
+    "ping": 21.0,
+    "server": "Wien – A1",
+    "last": 3.0,
+    "quelle": "p",
+    "belastet": false,
+    "gewicht": 1.0,
+    "serie": false,
+    "kontext": {
+     "quelle": "messung",
+     "ausloeser": "messplan",
+     "jitter": 3.1,
+     "jitter_down": 4.8,
+     "jitter_up": 2.2,
+     "bufferbloat": "B",
+     "anbieter": "Drei",
+     "ergebnis_url": "https://www.speedtest.net/result/c/beispiel",
+     "netz": "5G-NSA",
+     "zelle": "aaaaa-64",
+     "anlage": "aaaaa",
+     "pci": 316,
+     "rsrp": -93,
+     "rsrq": -11,
+     "nr_aktiv": true,
+     "nr_pci": 982,
+     "nr_rsrp": -101,
+     "nr_rsrq": -13,
+     "entfernung_m": 1200,
+     "nachbarzellen": 4,
+     "plmn": "23205",
+     "tac": "1A2B",
+     "verbunden_s": 33120,
+     "mast_m": 2100,
+     "mast_richtung": "Nordost",
+     "box_modell": "FRITZ!Box 6860 5G",
+     "box_firmware": "268.08.03",
+     "box_laufzeit_s": 532800,
+     "baender": "LTE B1 B3 B7 B20 · 5G n78",
+     "online": 31,
+     "online_wlan": 22,
+     "wetter": "partlycloudy",
+     "temperatur": 12.0,
+     "feuchte": 78.0,
+     "wolken": 60.0,
+     "tagesart": "werktag"
+    }
+   },
+   {
+    "t": 1791967856.913667,
+    "down": 118.0,
+    "up": 30.0,
+    "ping": 21.0,
+    "server": "Wien – A1",
+    "last": 4.0,
+    "quelle": "p",
+    "belastet": false,
+    "gewicht": 1.0,
+    "serie": false,
+    "kontext": {}
+   },
+   {
+    "t": 1791957056.913667,
+    "down": 117.0,
+    "up": 30.0,
+    "ping": 21.0,
+    "server": "Wien – A1",
+    "last": 5.0,
+    "quelle": "p",
+    "belastet": false,
+    "gewicht": 1.0,
+    "serie": false,
+    "kontext": {}
+   },
+   {
+    "t": 1791946256.913667,
+    "down": 116.0,
+    "up": 30.0,
+    "ping": 21.0,
+    "server": "Wien – A1",
+    "last": 6.0,
+    "quelle": "p",
+    "belastet": false,
+    "gewicht": 1.0,
+    "serie": false,
+    "kontext": {}
+   },
+   {
+    "t": 1791935456.913667,
+    "down": 115.0,
+    "up": 30.0,
+    "ping": 21.0,
+    "server": "Wien – A1",
+    "last": 7.0,
+    "quelle": "p",
+    "belastet": false,
+    "gewicht": 1.0,
+    "serie": false,
+    "kontext": {}
+   },
+   {
+    "t": 1791924656.913667,
+    "down": 114.0,
+    "up": 30.0,
+    "ping": 21.0,
+    "server": "Wien – A1",
+    "last": 8.0,
+    "quelle": "p",
+    "belastet": false,
+    "gewicht": 1.0,
+    "serie": false,
+    "kontext": {}
+   },
+   {
+    "t": 1791913856.913667,
+    "down": 113.0,
+    "up": 30.0,
+    "ping": 21.0,
+    "server": "Wien – A1",
+    "last": 9.0,
+    "quelle": "p",
+    "belastet": false,
+    "gewicht": 1.0,
+    "serie": false,
+    "kontext": {}
+   },
+   {
+    "t": 1791903056.913667,
+    "down": 112.0,
+    "up": 30.0,
+    "ping": 21.0,
+    "server": "Wien – A1",
+    "last": 10.0,
+    "quelle": "p",
+    "belastet": false,
+    "gewicht": 1.0,
+    "serie": false,
+    "kontext": {}
+   },
+   {
+    "t": 1791892256.913667,
+    "down": 111.0,
+    "up": 30.0,
+    "ping": 21.0,
+    "server": "Wien – A1",
+    "last": 11.0,
+    "quelle": "p",
+    "belastet": false,
+    "gewicht": 1.0,
+    "serie": false,
+    "kontext": {}
+   },
+   {
+    "t": 1791881456.913667,
+    "down": 110.0,
+    "up": 30.0,
+    "ping": 21.0,
+    "server": "Wien – A1",
+    "last": 12.0,
+    "quelle": "p",
+    "belastet": false,
+    "gewicht": 1.0,
+    "serie": false,
+    "kontext": {}
+   },
+   {
+    "t": 1791870656.913667,
+    "down": 109.0,
+    "up": 30.0,
+    "ping": 21.0,
+    "server": "Wien – A1",
+    "last": 13.0,
+    "quelle": "p",
+    "belastet": false,
+    "gewicht": 1.0,
+    "serie": false,
+    "kontext": {
+     "quelle": "nachgetragen",
+     "netz": "LTE",
+     "rsrp": -99,
+     "tagesart": "werktag"
+    }
+   }
+  ],
+  "tarif_down": 150.0,
+  "tarif_up": 30.0,
+  "tage_liste": [
+   {
+    "datum": "2026-10-23",
+    "anzahl": 5,
+    "vor_tagen": 0
+   },
+   {
+    "datum": "2026-10-22",
+    "anzahl": 7,
+    "vor_tagen": 1
+   }
+  ],
+  "verlauf": {
+   "tag": 0,
+   "datum": null,
+   "stunden": [
+    {
+     "median": null,
+     "min": null,
+     "max": null,
+     "anzahl": 0,
+     "glatt": 133.0
+    },
+    {
+     "median": null,
+     "min": null,
+     "max": null,
+     "anzahl": 0,
+     "glatt": 112.0
+    },
+    {
+     "median": 112.0,
+     "min": 98.0,
+     "max": 123.0,
+     "anzahl": 2,
+     "glatt": 112.0
+    },
+    {
+     "median": null,
+     "min": null,
+     "max": null,
+     "anzahl": 0,
+     "glatt": 112.0
+    },
+    {
+     "median": null,
+     "min": null,
+     "max": null,
+     "anzahl": 0,
+     "glatt": 115.0
+    },
+    {
+     "median": 115.0,
+     "min": 101.0,
+     "max": 126.0,
+     "anzahl": 2,
+     "glatt": 115.0
+    },
+    {
+     "median": null,
+     "min": null,
+     "max": null,
+     "anzahl": 0,
+     "glatt": 115.0
+    },
+    {
+     "median": null,
+     "min": null,
+     "max": null,
+     "anzahl": 0,
+     "glatt": 118.0
+    },
+    {
+     "median": 118.0,
+     "min": 104.0,
+     "max": 129.0,
+     "anzahl": 2,
+     "glatt": 118.0
+    },
+    {
+     "median": null,
+     "min": null,
+     "max": null,
+     "anzahl": 0,
+     "glatt": 118.0
+    },
+    {
+     "median": null,
+     "min": null,
+     "max": null,
+     "anzahl": 0,
+     "glatt": 121.0
+    },
+    {
+     "median": 121.0,
+     "min": 107.0,
+     "max": 132.0,
+     "anzahl": 2,
+     "glatt": 121.0
+    },
+    {
+     "median": null,
+     "min": null,
+     "max": null,
+     "anzahl": 0,
+     "glatt": 121.0
+    },
+    {
+     "median": null,
+     "min": null,
+     "max": null,
+     "anzahl": 0,
+     "glatt": 124.0
+    },
+    {
+     "median": 124.0,
+     "min": 110.0,
+     "max": 135.0,
+     "anzahl": 2,
+     "glatt": 124.0
+    },
+    {
+     "median": null,
+     "min": null,
+     "max": null,
+     "anzahl": 0,
+     "glatt": 124.0
+    },
+    {
+     "median": null,
+     "min": null,
+     "max": null,
+     "anzahl": 0,
+     "glatt": 127.0
+    },
+    {
+     "median": 127.0,
+     "min": 113.0,
+     "max": 138.0,
+     "anzahl": 2,
+     "glatt": 127.0
+    },
+    {
+     "median": null,
+     "min": null,
+     "max": null,
+     "anzahl": 0,
+     "glatt": 127.0
+    },
+    {
+     "median": null,
+     "min": null,
+     "max": null,
+     "anzahl": 0,
+     "glatt": 118.0
+    },
+    {
+     "median": 118.0,
+     "min": 118.0,
+     "max": 118.0,
+     "anzahl": 1,
+     "glatt": 118.0
+    },
+    {
+     "median": null,
+     "min": null,
+     "max": null,
+     "anzahl": 0,
+     "glatt": 118.0
+    },
+    {
+     "median": null,
+     "min": null,
+     "max": null,
+     "anzahl": 0,
+     "glatt": 133.0
+    },
+    {
+     "median": 133.0,
+     "min": 119.0,
+     "max": 144.0,
+     "anzahl": 2,
+     "glatt": 133.0
+    }
+   ],
+   "beste": 23,
+   "schwaechste": 2
+  }
+ },
+ "geraete": {
+  "ab": 1791903056.952158,
+  "jetzt": 1791989456.952158,
+  "online": 5,
+  "bekannt": 5,
+  "box_erreichbar": true,
+  "geraete": [
+   {
+    "id": "b6db6011a51c4f82",
+    "name": "fernseher",
+    "ip": "192.168.170.60",
+    "art": "WLAN",
+    "aktiv": true,
+    "einstufung": "an",
+    "abbrueche": 0,
+    "streifen": [
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an"
+    ],
+    "verbindung": "WLAN 5 GHz",
+    "band": "5 GHz",
+    "kat": "medien",
+    "art_quelle": "Name"
+   },
+   {
+    "id": "db9488047558e3d8",
+    "name": "kind",
+    "ip": "192.168.170.40",
+    "art": "WLAN",
+    "aktiv": true,
+    "einstufung": "an",
+    "abbrueche": 0,
+    "streifen": [
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an"
+    ],
+    "verbindung": "WLAN 2,4 GHz",
+    "band": "2,4 GHz",
+    "kat": "unbekannt",
+    "art_quelle": "nicht erkannt"
+   },
+   {
+    "id": "31e31c7f6daaf847",
+    "name": "Pi",
+    "ip": "192.168.170.60",
+    "art": "LAN",
+    "aktiv": true,
+    "einstufung": "an",
+    "abbrueche": 0,
+    "streifen": [
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an"
+    ],
+    "verbindung": "LAN",
+    "band": "",
+    "kat": "unbekannt",
+    "art_quelle": "nicht erkannt"
+   },
+   {
+    "id": "772cb60af96f1ed2",
+    "name": "Switch",
+    "ip": "",
+    "art": "–",
+    "aktiv": true,
+    "einstufung": "an",
+    "abbrueche": 0,
+    "streifen": [
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an"
+    ],
+    "verbindung": "Sonstige",
+    "band": "",
+    "kat": "netz",
+    "art_quelle": "Name"
+   },
+   {
+    "id": "bad47ca27a468d57",
+    "name": "Tab",
+    "ip": "192.168.1.23",
+    "art": "WLAN",
+    "aktiv": true,
+    "einstufung": "an",
+    "abbrueche": 0,
+    "streifen": [
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an"
+    ],
+    "verbindung": "WLAN 2,4 GHz",
+    "band": "2,4 GHz",
+    "kat": "mobil",
+    "art_quelle": "Name"
+   }
+  ],
+  "gruppen": [
+   {
+    "name": "LAN",
+    "text": "LAN",
+    "online": 1,
+    "gesamt": 1
+   },
+   {
+    "name": "WLAN 5 GHz",
+    "text": "WLAN 5 GHz",
+    "online": 1,
+    "gesamt": 1
+   },
+   {
+    "name": "WLAN 2,4 GHz",
+    "text": "WLAN 2,4 GHz",
+    "online": 2,
+    "gesamt": 2
+   },
+   {
+    "name": "Sonstige",
+    "text": "Sonstige",
+    "online": 1,
+    "gesamt": 1
+   }
+  ],
+  "gruppen_art": [
+   {
+    "name": "netz",
+    "text": "🛜 Netzwerk",
+    "online": 1,
+    "gesamt": 1
+   },
+   {
+    "name": "mobil",
+    "text": "📱 Handy & Tablet",
+    "online": 1,
+    "gesamt": 1
+   },
+   {
+    "name": "medien",
+    "text": "📺 Fernseher & Musik",
+    "online": 1,
+    "gesamt": 1
+   },
+   {
+    "name": "unbekannt",
+    "text": "❓ Unbekannt",
+    "online": 2,
+    "gesamt": 2
+   }
+  ]
+ },
+ "mobilfunk": {
+  "verfuegbar": true,
+  "technik": "5G-NSA",
+  "befund": {
+   "lage": 0.5,
+   "titel": "Empfang mittelmäßig – Standort der Box lohnt einen Versuch",
+   "text": "Signalstärke -100 dBm (4G-Anker) und -94 dBm (5G). Der Download der letzten 7 Tage liegt typisch bei 114,5 Mbit/s = 76 % vom Tarif. Bei mittlerem Empfang kann beides bremsen: die Funkstrecke und eine volle Zelle. Test: die Box an ein anderes Fenster oder höher stellen – steigt die Signalstärke um etwa 10 dBm und der Download nicht, liegt es an der Zelle (Anbieter)."
+  },
+  "verlauf": {
+   "anker": [],
+   "nr": []
+  },
+  "schwach_unter": -105,
+  "laufzeit_s": 3720,
+  "laufzeit": "1 h 2 min",
+  "abbrueche_7": 0,
+  "letzter_abbruch": null,
+  "baender": "LTE 1, 3 · 5G n78",
+  "strecke": {
+   "rsrp": -100,
+   "lage": 0.5,
+   "wort": "mittel",
+   "entfernung": "1,4 km",
+   "anbieter": "3 AT",
+   "masten": [
+    "5G",
+    "4G"
+   ]
+  },
+  "zellen": [
+   {
+    "art": "5G",
+    "rolle": "bündelt dazu",
+    "rolle_art": "dazu",
+    "anker": false,
+    "kennung": "PCI 121",
+    "rsrp": -94,
+    "rsrq": -10,
+    "stufen": 3,
+    "lage": 0.65,
+    "tac": null,
+    "plmn": null,
+    "fund": null,
+    "such": "nur PCI – nicht nachschlagbar"
+   },
+   {
+    "art": "LTE",
+    "rolle": "Anker",
+    "rolle_art": "anker",
+    "anker": true,
+    "kennung": "abcde-0b",
+    "rsrp": -100,
+    "rsrq": -11,
+    "stufen": 2,
+    "lage": 0.5,
+    "tac": "c0fc",
+    "plmn": "232 05",
+    "fund": null,
+    "such": "nicht gefunden"
+   }
+  ],
+  "karte": {
+   "stand": "ohne_schluessel",
+   "gefunden": 0,
+   "zellen": 2,
+   "rahmen": [
+    32.85939803206811,
+    -117.24405391711507,
+    32.88732196793189,
+    -117.21080608288493
+   ],
+   "wohnung": [
+    32.87336,
+    -117.22743
+   ],
+   "ring_m": 1350,
+   "ring": "1,4 km",
+   "masten": [],
+   "punkte": [],
+   "osm": []
+  }
+ },
+ "wlan": {
+  "verfuegbar": true,
+  "befunde": [
+   {
+    "stufe": "warnung",
+    "titel": "1 Gerät mit schwachem Empfang",
+    "text": "Tab – unter 40 %. Näher an die Box oder einen Repeater stellen; bei schwachem Empfang bricht die Verbindung leichter ab."
+   }
+  ],
+  "baender": [
+   {
+    "band": "2,4",
+    "an": true,
+    "kanal": 6,
+    "auto": true,
+    "standard": "ax",
+    "geraete": 2
+   },
+   {
+    "band": "5",
+    "an": true,
+    "kanal": 44,
+    "auto": true,
+    "standard": "ax",
+    "geraete": 1
+   }
+  ],
+  "gast_an": false,
+  "geraete": [
+   {
+    "id": "bad47ca27a468d57",
+    "name": "Tab",
+    "band": "2,4",
+    "signal": 18,
+    "lage": 0.0,
+    "mbit": 6,
+    "gast": false,
+    "schwach": true
+   },
+   {
+    "id": "db9488047558e3d8",
+    "name": "kind",
+    "band": "2,4",
+    "signal": 55,
+    "lage": 0.7,
+    "mbit": 144,
+    "gast": false,
+    "schwach": false
+   },
+   {
+    "id": "b6db6011a51c4f82",
+    "name": "fernseher",
+    "band": "5",
+    "signal": 92,
+    "lage": 1.0,
+    "mbit": 866,
+    "gast": false,
+    "schwach": false
+   }
+  ],
+  "kanalwechsel": [],
+  "schwach_unter": 40
+ },
+ "verbrauch": {
+  "verfuegbar": true,
+  "tage": [
+   {
+    "tag": "2026-09-15",
+    "down": 0.0,
+    "up": 0.0,
+    "speedtest": 0.0
+   },
+   {
+    "tag": "2026-09-16",
+    "down": 0.0,
+    "up": 0.0,
+    "speedtest": 0.0
+   },
+   {
+    "tag": "2026-09-17",
+    "down": 0.0,
+    "up": 0.0,
+    "speedtest": 0.0
+   },
+   {
+    "tag": "2026-09-18",
+    "down": 0.0,
+    "up": 0.0,
+    "speedtest": 0.0
+   },
+   {
+    "tag": "2026-09-19",
+    "down": 0.0,
+    "up": 0.0,
+    "speedtest": 0.0
+   },
+   {
+    "tag": "2026-09-20",
+    "down": 0.0,
+    "up": 0.0,
+    "speedtest": 0.0
+   },
+   {
+    "tag": "2026-09-21",
+    "down": 0.0,
+    "up": 0.0,
+    "speedtest": 0.0
+   },
+   {
+    "tag": "2026-09-22",
+    "down": 0.0,
+    "up": 0.0,
+    "speedtest": 0.0
+   },
+   {
+    "tag": "2026-09-23",
+    "down": 0.0,
+    "up": 0.0,
+    "speedtest": 0.0
+   },
+   {
+    "tag": "2026-09-24",
+    "down": 0.0,
+    "up": 0.0,
+    "speedtest": 0.0
+   },
+   {
+    "tag": "2026-09-25",
+    "down": 0.0,
+    "up": 0.0,
+    "speedtest": 0.0
+   },
+   {
+    "tag": "2026-09-26",
+    "down": 0.0,
+    "up": 0.0,
+    "speedtest": 0.0
+   },
+   {
+    "tag": "2026-09-27",
+    "down": 0.0,
+    "up": 0.0,
+    "speedtest": 0.0
+   },
+   {
+    "tag": "2026-09-28",
+    "down": 0.0,
+    "up": 0.0,
+    "speedtest": 0.0
+   },
+   {
+    "tag": "2026-09-29",
+    "down": 0.0,
+    "up": 0.0,
+    "speedtest": 0.0
+   },
+   {
+    "tag": "2026-09-30",
+    "down": 0.0,
+    "up": 0.0,
+    "speedtest": 0.0
+   },
+   {
+    "tag": "2026-10-01",
+    "down": 0.0,
+    "up": 0.0,
+    "speedtest": 0.0
+   },
+   {
+    "tag": "2026-10-02",
+    "down": 0.0,
+    "up": 0.0,
+    "speedtest": 0.0
+   },
+   {
+    "tag": "2026-10-03",
+    "down": 0.0,
+    "up": 0.0,
+    "speedtest": 0.0
+   },
+   {
+    "tag": "2026-10-04",
+    "down": 0.0,
+    "up": 0.0,
+    "speedtest": 0.0
+   },
+   {
+    "tag": "2026-10-05",
+    "down": 0.0,
+    "up": 0.0,
+    "speedtest": 0.0
+   },
+   {
+    "tag": "2026-10-06",
+    "down": 0.0,
+    "up": 0.0,
+    "speedtest": 0.0
+   },
+   {
+    "tag": "2026-10-07",
+    "down": 0.0,
+    "up": 0.0,
+    "speedtest": 0.0
+   },
+   {
+    "tag": "2026-10-08",
+    "down": 0.0,
+    "up": 0.0,
+    "speedtest": 0.0
+   },
+   {
+    "tag": "2026-10-09",
+    "down": 0.0,
+    "up": 0.0,
+    "speedtest": 0.0
+   },
+   {
+    "tag": "2026-10-10",
+    "down": 0.0,
+    "up": 0.0,
+    "speedtest": 0.0
+   },
+   {
+    "tag": "2026-10-11",
+    "down": 0.0,
+    "up": 0.0,
+    "speedtest": 0.0
+   },
+   {
+    "tag": "2026-10-12",
+    "down": 0.0,
+    "up": 0.0,
+    "speedtest": 0.208
+   },
+   {
+    "tag": "2026-10-13",
+    "down": 0.0,
+    "up": 0.0,
+    "speedtest": 1.722
+   },
+   {
+    "tag": "2026-10-14",
+    "down": 0.0,
+    "up": 0.0,
+    "speedtest": 0.67
+   }
+  ],
+  "kacheln": {
+   "heute": {
+    "down": 0.0,
+    "up": 0.0,
+    "speedtest": 0.67
+   },
+   "woche": 0.0,
+   "monat": 0.0,
+   "schnitt": 0.0,
+   "speedtest": 2.6
+  }
+ },
+ "protokoll": {
+  "art": "journal",
+  "eintraege": [
+   {
+    "t": 1791989456.8715518,
+    "stufe": "warnung",
+    "art": "befund",
+    "text": "Befund: Kein DHCP-Server hat geantwortet – Auf die Test-Anfrage kam keine Antwort. Geräte, die sich neu verbinden, bekommen dann keine Adresse."
+   },
+   {
+    "t": 1791989456.8715518,
+    "stufe": "warnung",
+    "art": "befund",
+    "text": "Befund: kind: Internet durch die FRITZ!Box gesperrt – kind ist online, aber ein Zugangsprofil (Kindersicherung/Zeitbudget/Sperre) lässt es nicht ins Internet."
+   },
+   {
+    "t": 1791989456.8715518,
+    "stufe": "kritisch",
+    "art": "befund",
+    "text": "Befund: Tab hat eine Adresse außerhalb des Heimnetzes – Tab hat 192.168.1.23, das Heimnetz ist 192.168.170.0/24. Das Gerät hat seine Adresse nicht von der FRITZ!Box bekommen – entweder fest falsch eingestellt oder ein zweiter DHCP-Server (anderer Router, Repeater im Router-Modus) verteilt Adressen."
+   },
+   {
+    "t": 1791989456.8715518,
+    "stufe": "kritisch",
+    "art": "befund",
+    "text": "Befund: IP-Adresse 192.168.170.60 doppelt in Benutzung – Zwei Geräte sind gleichzeitig mit derselben Adresse online: Pi – online, fernseher – online. Beide verlieren abwechselnd die Verbindung."
+   },
+   {
+    "t": 1791989456.8715518,
+    "stufe": "info",
+    "art": "start",
+    "text": "Erfassung gestartet: 5 Geräte bekannt, 5 online"
+   }
+  ]
+ },
+ "einstellungen": {
+  "tarif_down": 150.0,
+  "tarif_up": 30.0,
+  "ab": null,
+  "wlan_schwach": 40,
+  "messplan": {
+   "an": true,
+   "takt_h": 4,
+   "von": "00:00",
+   "bis": "24:00",
+   "verkehr": "warten",
+   "serie": 3
+  },
+  "plan": {
+   "naechste": 1791989456.984239,
+   "wartet": false,
+   "grund": null,
+   "neuer_versuch": null,
+   "ausgeloest": null,
+   "misst": false
+  },
+  "serie": null,
+  "letzte_serie": null,
+  "verkehr_mbit": null,
+  "schwelle": 15.0,
+  "volumen": {
+   "tests_tag": 6,
+   "je_test_mb": 270,
+   "tag_mb": 1620,
+   "monat_gb": 48.6
+  },
+  "ookla": {
+   "vorhanden": true,
+   "sensoren": false,
+   "misst_selbst": false,
+   "startzeit": null,
+   "takt_min": 240.0,
+   "server": null,
+   "eintrag": "01M4XEA7V0RTT4X1ZWNM811GNW",
+   "tests": 0
+  }
+ },
+ "geraet": {
+  "id": "31e31c7f6daaf847",
+  "name": "Pi",
+  "ip": "192.168.170.60",
+  "art": "LAN",
+  "aktiv": true,
+  "quelle": "unbekannt",
+  "zufallsadresse": false,
+  "zuerst": null,
+  "tage": [
+   {
+    "tag": 1791961200.0,
+    "streifen": [
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "luecke",
+     "luecke",
+     "luecke",
+     "luecke",
+     "luecke",
+     "luecke",
+     "luecke",
+     "luecke",
+     "luecke",
+     "luecke",
+     "luecke",
+     "luecke",
+     "luecke",
+     "luecke",
+     "luecke",
+     "luecke",
+     "luecke",
+     "luecke",
+     "luecke",
+     "luecke",
+     "luecke",
+     "luecke",
+     "luecke",
+     "luecke",
+     "luecke",
+     "luecke",
+     "luecke",
+     "luecke",
+     "luecke",
+     "luecke",
+     "luecke",
+     "luecke"
+    ],
+    "online_s": 28256.98695588112
+   },
+   {
+    "tag": 1791874800.0,
+    "streifen": [
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an"
+    ],
+    "online_s": 86400.0
+   },
+   {
+    "tag": 1791788400.0,
+    "streifen": [
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an"
+    ],
+    "online_s": 86400.0
+   },
+   {
+    "tag": 1791702000.0,
+    "streifen": [
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an"
+    ],
+    "online_s": 86400.0
+   },
+   {
+    "tag": 1791615600.0,
+    "streifen": [
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an"
+    ],
+    "online_s": 86400.0
+   },
+   {
+    "tag": 1791529200.0,
+    "streifen": [
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an"
+    ],
+    "online_s": 86400.0
+   },
+   {
+    "tag": 1791442800.0,
+    "streifen": [
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an",
+     "an"
+    ],
+    "online_s": 86400.0
+   }
+  ],
+  "abbrueche": 0,
+  "online_anteil": 1.0,
+  "ereignisse": [],
+  "kat": "unbekannt",
+  "art_quelle": "nicht erkannt",
+  "art_selbst": false,
+  "kategorien": [
+   {
+    "name": "netz",
+    "text": "🛜 Netzwerk"
+   },
+   {
+    "name": "smart",
+    "text": "🔌 Smart Home"
+   },
+   {
+    "name": "haushalt",
+    "text": "🤖 Haushalt & Roboter"
+   },
+   {
+    "name": "computer",
+    "text": "💻 Computer"
+   },
+   {
+    "name": "drucker",
+    "text": "🖨️ Drucker"
+   },
+   {
+    "name": "mobil",
+    "text": "📱 Handy & Tablet"
+   },
+   {
+    "name": "medien",
+    "text": "📺 Fernseher & Musik"
+   },
+   {
+    "name": "kamera",
+    "text": "📷 Kameras"
+   },
+   {
+    "name": "unbekannt",
+    "text": "❓ Unbekannt"
+   }
+  ]
+ },
+ "speedtest/kachel": {
+  "tag": 3,
+  "stunde": 20,
+  "median": 118.0,
+  "min": 104.0,
+  "max": 120.0,
+  "anzahl": 3,
+  "belastet": 1,
+  "messungen": [
+   {
+    "t": 1792000000.0,
+    "server": "Wien – A1",
+    "wert": 120.0,
+    "last": 2.0,
+    "belastet": false,
+    "gewicht": 1.0,
+    "netz": "5G-NSA",
+    "rsrp": -93
+   },
+   {
+    "t": 1791395200.0,
+    "server": "Wien – A1",
+    "wert": 96.0,
+    "last": 40.0,
+    "belastet": true,
+    "gewicht": 0.0,
+    "netz": "5G-NSA",
+    "rsrp": -93
+   },
+   {
+    "t": 1790790400.0,
+    "server": "Wien – A1",
+    "wert": 118.0,
+    "last": 3.0,
+    "belastet": false,
+    "gewicht": 1.0,
+    "netz": "5G-NSA",
+    "rsrp": -93
+   },
+   {
+    "t": 1790185600.0,
+    "server": null,
+    "wert": 104.0,
+    "last": null,
+    "belastet": false,
+    "gewicht": 1.0,
+    "netz": null,
+    "rsrp": null
+   }
+  ],
+  "weitere": 0,
+  "einheit": "Mbit/s",
+  "groesse": "down",
+  "tage": 84
+ }
+}

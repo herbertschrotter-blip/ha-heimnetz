@@ -1,0 +1,3 @@
+# Leere Issues bleiben erlaubt: der Melden-Knopf der Seite öffnet ein vorausgefülltes Issue ohne Vorlage
+# (…/issues/new?title=…&body=…). Blank issues stay enabled – the page's report button opens a prefilled issue.
+blank_issues_enabled: true

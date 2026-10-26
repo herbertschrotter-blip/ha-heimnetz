@@ -1,0 +1,17 @@
+name: "Anregung · Suggestion"
+description: "Idee, Frage oder Hinweis · Idea, question or remark"
+title: "[Anregung] "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Datenschutz:** Issues sind öffentlich – bitte keine Gerätenamen, Adressen, Kennwörter, Zellkennungen oder den
+        Standort eintragen. · **Privacy:** issues are public – please do not include device names, addresses,
+        passwords, cell IDs or your location.
+  - type: textarea
+    id: anregung
+    attributes:
+      label: "Deine Anregung · Your suggestion"
+    validations:
+      required: true

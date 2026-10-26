@@ -1,0 +1,38 @@
+# Tests bei jedem Push und Pull Request: dieselben Checks wie vor dem Commit (Skill-Profil in CLAUDE.md).
+name: Tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      # Python wie Home Assistant und pyproject.toml (target-version py314)
+      - run: uv venv --python 3.14 .venv
+      - run: uv pip install --python .venv/bin/python -r requirements-logik.txt
+      - run: uv pip install --python .venv/bin/python -r requirements-ha.txt
+      - name: format
+        run: .venv/bin/python -m ruff format --check .
+      - name: lint
+        run: .venv/bin/python -m ruff check .
+      - name: typen
+        run: .venv/bin/python -m mypy
+      - name: logik
+        run: .venv/bin/python -m pytest -q -rA -p no:cacheprovider tests/logik
+      - name: integration
+        run: .venv/bin/python -m pytest -q -rA -p no:cacheprovider -n auto tests/integration
+      - run: npm ci --prefix custom_components/heimnetz/frontend
+      # prüft auch, dass die gebaute heimnetz-panel.js zu den Quellen passt
+      - name: seite
+        run: npm test --prefix custom_components/heimnetz/frontend

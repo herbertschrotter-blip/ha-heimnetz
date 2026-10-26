@@ -1,0 +1,4 @@
+pytest-homeassistant-custom-component==0.13.372
+pytest-xdist==3.8.0
+fritzconnection==1.15.1
+home-assistant-frontend==20260930.3

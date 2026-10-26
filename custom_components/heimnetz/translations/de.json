@@ -1,0 +1,303 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "FRITZ!Box wählen",
+        "description": "Der Zugang kommt aus der Integration FRITZ!Box Tools und wird hier nicht noch einmal gespeichert. Die Integration liest nur.",
+        "data": {
+          "fritz_eintrag": "FRITZ!Box"
+        },
+        "data_description": {
+          "fritz_eintrag": "Einrichtung von FRITZ!Box Tools, deren Zugang Heimnetz mitbenutzt."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Die FRITZ!Box antwortet nicht.",
+      "invalid_auth": "Die FRITZ!Box lehnt die Anmeldung ab – in FRITZ!Box Tools neu anmelden."
+    },
+    "abort": {
+      "already_configured": "Diese FRITZ!Box ist schon eingerichtet.",
+      "keine_fritzbox": "Zuerst die Integration FRITZ!Box Tools einrichten.",
+      "single_instance_allowed": "Heimnetz ist schon eingerichtet – eine Einrichtung je Haushalt.",
+      "alt_aktiv": "Die alte Integration „Netzwerk“ ist noch aktiv. Zuerst unter Einstellungen → Geräte & Dienste → Netzwerk die Einrichtung deaktivieren (nicht löschen, sonst gehen Einstellungen und Messplan verloren), dann Heimnetz einrichten. Heimnetz übernimmt danach ihre Daten."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "gesamtstand": {
+        "name": "Gesamtstand",
+        "state": {
+          "ok": "In Ordnung",
+          "warnung": "Hinweise",
+          "kritisch": "Störung",
+          "box_fehlt": "FRITZ!Box nicht erreichbar"
+        }
+      },
+      "befunde": {
+        "name": "Offene Befunde"
+      },
+      "geraete_online": {
+        "name": "Geräte online"
+      },
+      "mobil_technik": {
+        "name": "Mobilfunk Technik"
+      },
+      "rsrp_anker": {
+        "name": "Signalstärke 4G-Anker"
+      },
+      "rsrq_anker": {
+        "name": "Signalqualität 4G-Anker"
+      },
+      "rsrp_5g": {
+        "name": "Signalstärke 5G"
+      },
+      "rsrq_5g": {
+        "name": "Signalqualität 5G"
+      },
+      "letzte_messung": {
+        "name": "Letzte Messung",
+        "state_attributes": {
+          "quelle": {
+            "name": "Quelle der Momentaufnahme",
+            "state": {
+              "messung": "bei der Messung",
+              "nachgetragen": "nachgetragen"
+            }
+          },
+          "ausloeser": {
+            "name": "Ausgelöst von",
+            "state": {
+              "messplan": "Messplan",
+              "jetzt": "Jetzt messen",
+              "serie": "Serie",
+              "ookla": "Ookla"
+            }
+          },
+          "serie_lauf": {
+            "name": "Durchlauf der Serie"
+          },
+          "serie_n": {
+            "name": "Durchläufe der Serie"
+          },
+          "jitter": {
+            "name": "Jitter"
+          },
+          "jitter_down": {
+            "name": "Jitter beim Download"
+          },
+          "jitter_up": {
+            "name": "Jitter beim Upload"
+          },
+          "bufferbloat": {
+            "name": "Bufferbloat"
+          },
+          "anbieter": {
+            "name": "Anbieter"
+          },
+          "ergebnis_url": {
+            "name": "Ergebnis bei Ookla"
+          },
+          "netz": {
+            "name": "Mobilfunk-Technik"
+          },
+          "zelle": {
+            "name": "Ankerzelle"
+          },
+          "anlage": {
+            "name": "Sendeanlage (eNodeB)"
+          },
+          "pci": {
+            "name": "PCI der Ankerzelle"
+          },
+          "rsrp": {
+            "name": "Signalstärke 4G-Anker"
+          },
+          "rsrq": {
+            "name": "Signalqualität 4G-Anker"
+          },
+          "nr_aktiv": {
+            "name": "5G aktiv"
+          },
+          "nr_pci": {
+            "name": "5G-Zelle (PCI)"
+          },
+          "nr_rsrp": {
+            "name": "Signalstärke 5G"
+          },
+          "nr_rsrq": {
+            "name": "Signalqualität 5G"
+          },
+          "entfernung_m": {
+            "name": "Entfernung zur Basisstation"
+          },
+          "nachbarzellen": {
+            "name": "Nachbarzellen"
+          },
+          "plmn": {
+            "name": "Netzkennung (PLMN)"
+          },
+          "tac": {
+            "name": "Tracking Area Code"
+          },
+          "verbunden_s": {
+            "name": "Mobilfunk verbunden seit (s)"
+          },
+          "box_modell": {
+            "name": "Modell der FRITZ!Box"
+          },
+          "box_firmware": {
+            "name": "FRITZ!OS"
+          },
+          "box_laufzeit_s": {
+            "name": "Laufzeit der FRITZ!Box (s)"
+          },
+          "baender": {
+            "name": "Mobilfunk-Bänder"
+          },
+          "online": {
+            "name": "Geräte online"
+          },
+          "online_wlan": {
+            "name": "Geräte im WLAN"
+          },
+          "wetter": {
+            "name": "Wetter"
+          },
+          "temperatur": {
+            "name": "Temperatur"
+          },
+          "feuchte": {
+            "name": "Luftfeuchte"
+          },
+          "wolken": {
+            "name": "Bewölkung"
+          },
+          "tagesart": {
+            "name": "Art des Tages",
+            "state": {
+              "werktag": "Werktag",
+              "wochenende": "Wochenende",
+              "feiertag": "Feiertag"
+            }
+          },
+          "download": {
+            "name": "Download"
+          },
+          "upload": {
+            "name": "Upload"
+          },
+          "ping": {
+            "name": "Ping"
+          },
+          "server": {
+            "name": "Server"
+          },
+          "grundlast_down": {
+            "name": "Grundlast Download vor der Messung"
+          },
+          "grundlast_up": {
+            "name": "Grundlast Upload vor der Messung"
+          }
+        }
+      },
+      "mobil_zelle": {
+        "name": "Mobilfunkzelle"
+      },
+      "mobil_entfernung": {
+        "name": "Entfernung zur Basisstation"
+      },
+      "mobil_nachbarzellen": {
+        "name": "Nachbarzellen"
+      },
+      "pci_5g": {
+        "name": "5G-Zelle (PCI)"
+      }
+    },
+    "binary_sensor": {
+      "pi_fritzbox": {
+        "name": "FRITZ!Box vom Pi aus"
+      },
+      "pi_internet": {
+        "name": "Internet vom Pi aus"
+      },
+      "pi_dns": {
+        "name": "Namensauflösung"
+      }
+    }
+  },
+  "exceptions": {
+    "fritz_fehlt": {
+      "message": "Der Eintrag von FRITZ!Box Tools fehlt."
+    },
+    "ticket_fehlt": {
+      "message": "Ticket {ticket} gibt es nicht."
+    },
+    "ticket_ungueltig": {
+      "message": "Ticket nicht geändert: {grund}"
+    },
+    "alt_aktiv": {
+      "message": "Die alte Integration „Netzwerk“ ist noch aktiv – Heimnetz startet nicht, damit nie beide die FRITZ!Box abfragen."
+    }
+  },
+  "issues": {
+    "fritz_fehlt": {
+      "title": "Heimnetz: FRITZ!Box Tools fehlt",
+      "description": "Die Integration Heimnetz holt den Zugang zur Box aus FRITZ!Box Tools. Dieser Eintrag wurde entfernt. FRITZ!Box Tools wieder einrichten und Heimnetz neu einrichten."
+    },
+    "anmeldung": {
+      "title": "Heimnetz: Anmeldung an der FRITZ!Box abgelehnt",
+      "description": "Die FRITZ!Box lehnt Benutzer oder Kennwort aus FRITZ!Box Tools ab. In FRITZ!Box Tools neu anmelden; danach verschwindet dieser Hinweis von selbst."
+    },
+    "alt_aktiv": {
+      "title": "Heimnetz: alte Integration „Netzwerk“ noch aktiv",
+      "description": "Heimnetz löst die Integration „Netzwerk“ ab und startet erst, wenn deren Einrichtung deaktiviert ist (Einstellungen → Geräte & Dienste → Netzwerk → ⋮ → Deaktivieren). Danach Heimnetz neu laden; Messungen, Journal, Einstellungen und Tickets werden übernommen."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Karte zum Mast",
+        "description": "Optional: Schlüssel von opencellid.org. Damit fragt die Integration zusätzlich zu BeaconDB auch OpenCellID nach dem Standort der Mobilfunkzellen (nur die Kennung der Zelle geht hinaus, nie dein Standort). Leer lassen = nur BeaconDB.",
+        "data": {
+          "opencellid_schluessel": "OpenCellID-Schlüssel"
+        },
+        "data_description": {
+          "opencellid_schluessel": "API-Schlüssel aus deinem Konto bei opencellid.org (kostenlos)."
+        }
+      }
+    }
+  },
+  "services": {
+    "ticket": {
+      "name": "Ticket ändern",
+      "description": "Status, Notiz, Version und Commit eines Tickets aus dem Melden-Knopf ändern (für tools/ticket.py).",
+      "fields": {
+        "ticket": {
+          "name": "Ticket",
+          "description": "Nummer, z. B. FE-0001"
+        },
+        "status": {
+          "name": "Status",
+          "description": "neu, angenommen, in_arbeit, geloest, geschlossen, verworfen"
+        },
+        "notiz": {
+          "name": "Notiz",
+          "description": "Was gemacht wurde oder warum"
+        },
+        "version": {
+          "name": "Version",
+          "description": "Version mit der Lösung"
+        },
+        "commit": {
+          "name": "Commit",
+          "description": "Commit mit der Lösung"
+        },
+        "von": {
+          "name": "Von",
+          "description": "Wer ändert (Standard: Claude)"
+        }
+      }
+    }
+  }
+}

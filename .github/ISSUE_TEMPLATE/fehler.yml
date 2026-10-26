@@ -1,0 +1,55 @@
+name: "Fehler · Bug"
+description: "Etwas funktioniert nicht wie erwartet · Something does not work as expected"
+title: "[Fehler] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Datenschutz:** Issues sind öffentlich. Bitte keine Gerätenamen, MAC- oder IP-Adressen, Kennwörter, Zellkennungen
+        oder den Standort eintragen. Am einfachsten meldest du über den Knopf **Melden** auf der Seite *Heimnetz* – er
+        schwärzt solche Angaben und füllt die Umgebung aus.
+
+        **Privacy:** issues are public. Please do not include device names, MAC or IP addresses, passwords, cell IDs or
+        your location. The easiest way is the **Report** button on the *Heimnetz* page – it removes such details and
+        fills in the environment.
+  - type: textarea
+    id: beschreibung
+    attributes:
+      label: "Was ist passiert? · What happened?"
+      description: "Was hast du erwartet, was kam stattdessen? · What did you expect, what happened instead?"
+    validations:
+      required: true
+  - type: textarea
+    id: schritte
+    attributes:
+      label: "Schritte zum Nachstellen · Steps to reproduce"
+      placeholder: "1. Reiter Mobilfunk öffnen · open the Mobile tab\n2. …"
+  - type: input
+    id: version
+    attributes:
+      label: "Version Heimnetz / Home Assistant"
+      placeholder: "0.23.0 / 2026.10.1"
+    validations:
+      required: true
+  - type: input
+    id: box
+    attributes:
+      label: "FRITZ!Box-Modell und FRITZ!OS · FRITZ!Box model and FRITZ!OS"
+      placeholder: "FRITZ!Box 6850 LTE · 8.03"
+  - type: dropdown
+    id: ookla
+    attributes:
+      label: "Ookla Speedtest eingerichtet? · Ookla Speedtest set up?"
+      options:
+        - "ja · yes"
+        - "nein · no"
+  - type: textarea
+    id: protokoll
+    attributes:
+      label: "Protokoll oder Diagnose · Log or diagnostics"
+      description: >-
+        Auszug aus dem Protokoll von Home Assistant oder die Diagnose der Integration (Einstellungen → Geräte & Dienste →
+        Heimnetz → ⋮ → Diagnose herunterladen); die Diagnose ist bereits geschwärzt. Bitte vor dem Einfügen durchsehen.
+        · Excerpt from the Home Assistant log or the integration's diagnostics (already redacted). Please review first.
+      render: text
