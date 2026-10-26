@@ -2,6 +2,8 @@
 grober Stand aus der Einrichtung, Zelldaten nur mit Schalter, nie Gerätenamen oder Adressen. Geht auch ohne geladene
 Einrichtung."""
 
+import json
+from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
 from homeassistant.const import __version__ as HA_VERSION
@@ -13,12 +15,16 @@ from custom_components.heimnetz.const import GITHUB_ISSUE_NEU
 
 from .conftest import box_daten
 
+VERSION = json.loads(
+    (Path(__file__).parents[2] / "custom_components/heimnetz/manifest.json").read_text()
+)["version"]
+
 ENTWURF = {
     "art": "fehler",
     "text": "fernseher (00:11:22:33:44:02) verliert das WLAN",
     "kontext": "Funk · Mobilfunk",
     "geraet": "Desktop",
-    "version": "0.23.0",
+    "version": VERSION,
 }
 
 
@@ -47,7 +53,7 @@ async def test_vorschau_mit_stand_der_einrichtung(hass, eintrag, box, pi, hass_w
     assert r["titel"] == "[Fehler] [entfernt] ([entfernt]) verliert das WLAN"
     assert r["url"].startswith(GITHUB_ISSUE_NEU + "?title=")
     assert _body(r["url"]) == r["text"]
-    assert f"- Heimnetz 0.23.0 · Home Assistant {HA_VERSION}" in r["text"]
+    assert f"- Heimnetz {VERSION} · Home Assistant {HA_VERSION}" in r["text"]
     assert "- Reiter: Funk · Mobilfunk · Desktop" in r["text"]
     assert "- FRITZ!Box 6860 5G · FRITZ!OS 8.03" in r["text"]
     assert "- Netz: 5G-NSA · Ookla Speedtest: nein" in r["text"]

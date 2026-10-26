@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## [0.23.1]
+
+- Fix (WU-0006): `fritzconnection` steht in `manifest.json` als Mindestversion (`>=1.15.1`) statt fest gepinnt –
+  Home Assistant bringt das Paket über die FRITZ!-Integration selbst mit; hassfest lehnt den festen Pin ab.
+
 ## [0.23.0]
 
 - WU-0006 (Veröffentlichung): Die Integration heißt jetzt **Heimnetz** (Domain `heimnetz`, vorher `netzwerk`).
