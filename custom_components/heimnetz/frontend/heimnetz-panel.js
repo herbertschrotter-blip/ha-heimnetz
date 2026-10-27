@@ -6032,7 +6032,7 @@ function diagnose(p4) {
   const d3 = p4._diag;
   const kopf = b2`
     <p class="hinweis" style="margin:4px 0 6px">${t3("Kommt das Internet über ein eigenes 5G/LTE-Modem vor der FRITZ!Box (z. B. ZTE), kennt die Box das Funknetz nicht – Funk › Mobilfunk bleibt leer. Hier liest Heimnetz die Rohdaten des Modems aus, damit der Entwickler es unterstützen kann.")} <span class="neu">BETA</span></p>
-    <label class="dg-feld">${t3("Adresse des Modems")}<input name="adresse" inputmode="decimal" .value=${l3(d3.adresse)} ?disabled=${d3.laeuft} @change=${(ev) => {
+    <label class="dg-feld">${t3("Adresse des Modems")}<input name="adresse" inputmode="decimal" .value=${l3(d3.adresse)} ?disabled=${d3.laeuft} @input=${(ev) => {
     p4._diag = { ...p4._diag, adresse: ev.target.value };
   }}></label>
     <label class="dg-feld">${t3("Kennwort der Weboberfläche (optional)")}<input name="kennwort" type="password" autocomplete="off" placeholder=${t3("wie beim Anmelden im Browser")} ?disabled=${d3.laeuft}><small>${t3("wird nur für diese Abfrage verwendet und nicht gespeichert")}</small></label>
@@ -6131,7 +6131,7 @@ function protokoll(p4, d3) {
 }
 
 // src/heimnetz-panel.js
-var VERSION = true ? "0.25.0" : "entwicklung";
+var VERSION = true ? "0.25.1" : "entwicklung";
 var REITER = [
   ["uebersicht", merke("Übersicht")],
   ["speedtest", merke("Speedtest")],

@@ -1084,6 +1084,24 @@ test('WU-0008: Adresse außerhalb des Heimnetzes → Befund „Adresse nicht erl
   assert.match(text(el), /Adresse nicht erlaubt/);
 });
 
+test('WU-0008: eingetippte Adresse bleibt, auch wenn Home Assistant neu zeichnet', async () => {
+  const hass = machHass();
+  const el = await seite(hass);
+  await einstellungen(el);
+  await einTab(el, 'Diagnose');
+  await el.updateComplete;
+  const feld = blatt(el).querySelector('input[name=adresse]');
+  feld.value = '192.168.8.1';
+  feld.dispatchEvent(new Event('input', { bubbles: true }));
+  el.hass = { ...el.hass }; // neue Zustände von Home Assistant → neu zeichnen, noch ohne Verlassen des Felds
+  el.requestUpdate();
+  await el.updateComplete;
+  assert.equal(blatt(el).querySelector('input[name=adresse]').value, '192.168.8.1');
+  knoepfe(blatt(el)).find((x) => x.textContent.includes('Abfragen')).click();
+  await warten(10);
+  assert.equal(hass.aufrufe.find((a) => a.type === 'heimnetz/modem').adresse, '192.168.8.1');
+});
+
 test('WU-0008: ohne Admin kein Diagnose-Formular', async () => {
   const hass = machHass({ admin: false });
   const el = await seite(hass);

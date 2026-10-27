@@ -151,7 +151,7 @@ function diagnose(p) {
   const d = p._diag;
   const kopf = html`
     <p class="hinweis" style="margin:4px 0 6px">${t('Kommt das Internet über ein eigenes 5G/LTE-Modem vor der FRITZ!Box (z. B. ZTE), kennt die Box das Funknetz nicht – Funk › Mobilfunk bleibt leer. Hier liest Heimnetz die Rohdaten des Modems aus, damit der Entwickler es unterstützen kann.')} <span class="neu">BETA</span></p>
-    <label class="dg-feld">${t('Adresse des Modems')}<input name="adresse" inputmode="decimal" .value=${live(d.adresse)} ?disabled=${d.laeuft} @change=${(ev) => { p._diag = { ...p._diag, adresse: ev.target.value }; }}></label>
+    <label class="dg-feld">${t('Adresse des Modems')}<input name="adresse" inputmode="decimal" .value=${live(d.adresse)} ?disabled=${d.laeuft} @input=${(ev) => { p._diag = { ...p._diag, adresse: ev.target.value }; }}></label>
     <label class="dg-feld">${t('Kennwort der Weboberfläche (optional)')}<input name="kennwort" type="password" autocomplete="off" placeholder=${t('wie beim Anmelden im Browser')} ?disabled=${d.laeuft}><small>${t('wird nur für diese Abfrage verwendet und nicht gespeichert')}</small></label>
     <div class="dg-knoepfe"><button class="amber" ?disabled=${d.laeuft} @click=${() => p.modemAbfragen()}>${d.laeuft ? t('⏳ fragt ab …') : t('▶ Abfragen')}</button></div>
     ${d.fehler ? html`<p class="fein">${d.fehler}</p>` : nothing}`;

@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## [0.25.1]
+
+- Fix (WU-0008): Im Reiter **🔬 Diagnose** sprang eine eingetippte Adresse auf 192.168.0.1 zurück, sobald Home Assistant
+  die Seite neu zeichnete, bevor man das Feld verlassen hatte. Die Adresse wird jetzt bei jeder Eingabe übernommen.
+
 ## [0.25.0]
 
 - WU-0008 (Mockup abgenommen 27.10.2026): In den Einstellungen (⚙) fragt der neue Reiter **🔬 Diagnose** (Beta) auf
