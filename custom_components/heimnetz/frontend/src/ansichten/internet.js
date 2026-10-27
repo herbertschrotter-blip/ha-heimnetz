@@ -45,7 +45,7 @@ export function internet(p, d) {
     : z.art === 'dsl' ? dsl(d.dsl)
       : z.art === 'glasfaser' ? glasfaser(d.glasfaser)
         : z.art === 'kabel' ? kabel(d.kabel)
-          : z.art === 'extern' ? extern(p)
+          : z.art === 'extern' ? extern(p, d)
             : z.art === 'mobilfunk' && d.mobilfunk ? mobilfunk(p, d.mobilfunk)
               : html`<div class="glas-panel block"><div class="leer">${t('Die Box meldet noch nicht, woher das Internet kommt – sie wird alle 10 Minuten gefragt.')}</div></div>`;
   return html`${zugangZeile(p, z)}
@@ -110,7 +110,7 @@ function glasfaser(g) {
       ${iz(t('Anschluss-Kennung'), html`<span class="amber-t">${t('⟨nur in der Box⟩')}</span>`, t('Seriennummer und Kennung zeigt die Seite nicht'))}
     </div>
     ${verlauf(t('Verlauf 7 Tage'), t('Lichtleistung'), [{ punkte: g.verlauf.rx, farbe: 'var(--s1)', name: t('empfangene Lichtleistung (dBm)') }], [], g.rx_bereich)}
-    <p class="hinweis">${t('Mit einem eigenen Glasfaser-Modem (ONT) vor der FRITZ!Box kommen diese Werte vom ONT – das folgt in einer späteren Fassung.')}</p>`;
+    <p class="hinweis">${t('Mit einem eigenen Glasfaser-Modem (ONT) vor der FRITZ!Box: unter ⚙ › 🌐 Zugang „Glasfaser über eigenes Modem“ wählen. Heimnetz erkennt das ONT; seine Werte liest es noch nicht.')}</p>`;
 }
 
 function kabel(k) {
@@ -131,10 +131,24 @@ function kabel(k) {
     </div>`;
 }
 
-function extern(p) {
-  return html`<div class="glas-panel block"><div class="befund"><span class="punkt grau"></span><div><b>${t('Werte vom vorgeschalteten Gerät folgen')}</b>
-    <p>${t('Die FRITZ!Box hängt hinter einem eigenen Modem oder Router und kennt dessen Leitung nicht. Heimnetz liest die Werte dieses Geräts in einer späteren Fassung; die Rohdaten gibt es schon über 🔬 Diagnose.')}</p></div></div>
-    ${p.istAdmin ? html`<div class="dg-knoepfe"><button @click=${() => p.einstellungenOeffnen('diag')}>${t('🔬 Rohdaten abfragen ›')}</button></div>` : nothing}</div>`;
+/** WU-0009 Stufe 2 (Mockup netzwerk.html · Internet, „Werte vom vorgeschalteten Modem (Beta)“): erkanntes Gerät und
+ *  Befund kommen fertig von der Integration (heimnetz/internet → vorgeschaltet); liefert es Funkwerte, folgt die
+ *  Mobilfunk-Ansicht wie bei der Box, mit Herkunft „vom vorgeschalteten Modem“. */
+const PUNKT = { grau: 'grau', amber: 'amber', rot: 'rot' };
+function extern(p, d) {
+  const v = d.vorgeschaltet || {};
+  const b = v.befund;
+  const kopf = b
+    ? html`<div class="befund"><span class="punkt ${PUNKT[b.lage] ?? 'grau'}"></span><div><b>${b.titel}</b><p>${b.text}</p></div></div>`
+    : html`<div class="befund"><span class="punkt grau"></span><div><b>${t('Werte vom vorgeschalteten Modem (Beta)')}</b>
+      <p>${v.quelle === 'integration'
+        ? t('Die FRITZ!Box hängt hinter dem {geraet} und kennt das Funknetz nicht. Die Werte kommen aus dessen Integration in Home Assistant. Was sie nicht liefert, steht als „–“.', { geraet: v.geraet ?? t('Modem') })
+        : t('Die FRITZ!Box hängt hinter dem {geraet} und kennt das Funknetz nicht. Heimnetz liest Zelle und Signal direkt am Gerät (Anmeldung mit dem in ⚙ › 🌐 Zugang hinterlegten Kennwort). Was es nicht liefert, steht als „–“.', { geraet: v.geraet ?? t('Modem') })}${v.gelesen ? ` ${t('Zuletzt gelesen {zeit}.', { zeit: zeit(v.gelesen) })}` : ''}</p></div></div>`;
+  const knoepfe = p.istAdmin && b
+    ? html`<div class="dg-knoepfe"><button @click=${() => p.einstellungenOeffnen('zugang')}>${t('🌐 Zugang ›')}</button><button @click=${() => p.einstellungenOeffnen('diag')}>${t('🔬 Rohdaten abfragen ›')}</button></div>`
+    : nothing;
+  return html`<div class="glas-panel block">${kopf}${knoepfe}</div>
+    ${d.mobilfunk ? mobilfunk(p, d.mobilfunk) : nothing}`;
 }
 
 function ersatz(e) {

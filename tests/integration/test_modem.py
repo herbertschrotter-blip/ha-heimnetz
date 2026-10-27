@@ -13,7 +13,6 @@ import pytest
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
 
-from custom_components.heimnetz import modem
 from custom_components.heimnetz.const import DOMAIN
 
 ADRESSE = "192.168.0.1"
@@ -33,11 +32,9 @@ WERTE = {
 
 
 @pytest.fixture
-def modem_session(hass, aioclient_mock, monkeypatch):
-    """Die eigene Session von `modem.py` durch die Mock-Session ersetzen."""
-    session = aioclient_mock.create_session(hass.loop)
-    monkeypatch.setattr(modem, "_neue_session", lambda _zeit: session)
-    return aioclient_mock
+def modem_session(modem_netz):
+    """Die eigenen Sessions der Diagnose sind Mock-Sessions (conftest.modem_netz)."""
+    return modem_netz
 
 
 def _modem_mocks(aioclient_mock: AiohttpClientMocker, *, login_result: str = "0") -> None:
@@ -45,7 +42,7 @@ def _modem_mocks(aioclient_mock: AiohttpClientMocker, *, login_result: str = "0"
     aioclient_mock.get(re.compile(r"cmd=LD(&|$)"), json={"LD": "ABCDEF0123456789"})
     aioclient_mock.get(re.compile(r"goform_get_cmd_process"), json=WERTE)
     aioclient_mock.post(re.compile(r"goform_set_cmd_process"), json={"result": login_result})
-    aioclient_mock.get(re.compile(r"/ubus"), status=404, text="")
+    aioclient_mock.post(re.compile(r"/ubus"), status=404, text="")
 
 
 async def _frage(hass, hass_ws_client, token=None, **msg):

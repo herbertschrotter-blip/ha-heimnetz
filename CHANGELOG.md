@@ -1,5 +1,51 @@
 # CHANGELOG
 
+## [0.27.0]
+
+- WU-0009 Stufe 2 (Mockup netzwerk.html · Internet und Zugang, abgenommen 27.10.2026): Ein **vorgeschaltetes Gerät**
+  vor der FRITZ!Box wird automatisch erkannt und liefert laufend Werte in den Reiter **Internet** – wie die Box selbst.
+  Oben „Werte vom vorgeschalteten Modem (Beta)“, darunter die Mobilfunk-Ansicht mit Herkunft „vom vorgeschalteten
+  Modem“ (Technik, Bänder, Zellen mit Kennung/PCI/TAC/Netz, RSRP/RSRQ und neu **SINR** und **Band** je Zelle, 5G,
+  Betreiber, verbunden seit; die Karte zum Mast nutzt die Zellen wie bisher). Was ein Gerät nicht liefert, steht als
+  „–“. Der Hinweis „Werte folgen“ aus 0.26.0 ist ersetzt.
+- WU-0009: **Bausteine je Hersteller/Schnittstelle** mit demselben Muster (erkennen aus Startseite/Antwortkopf, nur
+  lesende Abfragen, höchstens eine Anmeldung mit dem Kennwort des Besitzers, Umrechnen in das gemeinsame Format;
+  Fachlogik mit Tests in `logik/vorgeschaltet/`, Netz in `vorgeschaltet/`): **ZTE goform** (aus 0.25 umgebaut), **ZTE
+  ubus** (G5TS/G5TC; Protokoll nach dem öffentlichen Projekt chennest/zte-cpe-go nachgebaut, GPL-3.0, kein Code
+  übernommen; nur `web_login_info`, `web_login`, `web_logout`, `nwinfo_get_netinfo`, `get_wwaniface`), **Huawei
+  HiLink** über `huawei-lte-api` (ist die Integration Huawei LTE eingerichtet, gelten deren Entitäten und Heimnetz fragt
+  das Gerät nicht selbst), **TP-Link** LTE/5G über `tplinkrouterc6u` (GPL-3.0, AlexandrErohin/TP-Link-Archer-C6U;
+  Gerätefamilie nur über Schlüssel-Abfragen ohne Anmeldung, dann genau ein `authorize`, `get_lte_status`, `logout` –
+  nicht `supports()` und nicht der Provider, die sich mehrfach anmelden), **NETGEAR LTE** und **Teltonika** über deren
+  HA-Integration; MikroTik, Sagemcom, Nokia FastMile, Zyxel 5G und **Glasfaser-Modems (ONT)** von Nokia, Huawei, Zyxel
+  nur erkennen (Hinweis „Rohdaten über 🔬 Diagnose schicken“). Alle Geräte: ungetestet am Gerät.
+- WU-0009: **Automatisch erkennen** beim Einrichten des Zugangs und bei „↻ Erneut suchen“: nacheinander an der
+  gespeicherten Adresse, dem Vorschlag der FRITZ!Box und 192.168.0.1, 192.168.1.1, 192.168.8.1, 192.168.18.1,
+  192.168.100.1 (nie die Box selbst, kein Absuchen weiterer Adressen), bis ein Gerät erkannt ist. Beleg in ⚙ → 🌐 Zugang
+  („✓ 192.168.0.1 antwortet: ZTE G5TC (ubus)“), Zeile „Erkannt“ mit Zeitpunkt und Befund. Das erkannte Gerät bleibt
+  über einen Neustart gemerkt.
+- WU-0009: **Laufender Abruf** im eigenen langsamen Takt (10 Minuten, getrennt von der Sperre der Box, im
+  Hintergrund); Werte gehen in den Reiter Internet, in die Mobilfunk-Entitäten und in die **Momentaufnahme** jeder
+  Speedtest-Messung (neu `mobil_quelle`, `modem_modell`, `sinr`, `band`, `nr_sinr`, `nr_band`). Neue Entitäten
+  **Signal-Rausch-Abstand 4G-Anker / 5G** und **Mobilfunk-Band** (nur, wenn ein Modem davor Werte geliefert hat).
+- WU-0009: **Befunde statt Stille**: nicht gefunden, nicht erreichbar, Kennwort fehlt, Anmeldung abgelehnt, gesperrt,
+  keine Funkwerte, nicht unterstützt, Glasfaser-Modem (mit Hinweis, dass ein ONT am Internet-Anschluss der Box oft nicht
+  erreichbar ist). Lehnt das Gerät das Kennwort ab, versucht Heimnetz es nicht wieder, bis ein anderes Kennwort
+  hinterlegt ist; Reparatur-Hinweise „Vorgeschaltetes Modem lehnt das Kennwort ab“ (sofort) und „… antwortet nicht“
+  (nach zwei Takten).
+- WU-0009: Neue Zugangsart **„Glasfaser über ein eigenes Modem“** (ONT) in ⚙ → 🌐 Zugang.
+- WU-0009: **🔬 Diagnose** nutzt dieselben Bausteine: erkannter Hersteller und Schnittstelle, Rohdaten aller passenden
+  Schnittstellen (geschwärzt wie bisher), dazu die umgerechneten Werte; Befunde mit Text von der Integration. Sie läuft
+  nie gleichzeitig mit dem Abruf am Gerät.
+- Sicherheit: nur private Adressen, keine Weiterleitung auf einen anderen Host (die Bibliotheken bekommen eine eigene
+  requests-Session, die jede andere Adresse ablehnt), Zeit- und Größengrenzen; das Kennwort steht in keiner Antwort und
+  in keinem Protokoll – auch die Debug-Zeilen von huawei-lte-api mit Anmeldedaten werden verworfen.
+- Anmeldung: angenommen, abgelehnt oder Fehler werden unterschieden – nur eine echte Ablehnung sperrt bis zum neuen
+  Kennwort. Die Diagnose meldet sich nicht an, wenn die HA-Integration des Geräts eingerichtet ist, und verwendet ein
+  schon abgelehntes hinterlegtes Kennwort nicht wieder.
+- Neue Pflicht-Abhängigkeiten: `huawei-lte-api>=1.11.0` (wie Home Assistant für Huawei LTE), `tplinkrouterc6u>=5.37.0`
+  (GPL-3.0).
+
 ## [0.26.0]
 
 - WU-0009 Stufe 1 (Mockup abgenommen 27.10.2026): Der Reiter **Funk** heißt **Internet**. Oben steht, woher das

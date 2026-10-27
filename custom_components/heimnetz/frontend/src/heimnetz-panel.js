@@ -353,7 +353,7 @@ export class HeimnetzPanel extends LitElement {
       const { gesucht, ...zugang } = await this.ws('zugang/suchen');
       this._daten = { ...this._daten, zugang };
       this._hinweisZugang = '';
-      this.toast(gesucht ? t('Gesucht: FRITZ!Box neu gefragt') : t('Eben erst gesucht – in einer halben Minute wieder'));
+      this.toast(!gesucht ? t('Eben erst gesucht – in einer halben Minute wieder') : zugang.vorgeschaltet ? t('Gesucht: FRITZ!Box und vorgeschaltetes Gerät neu gefragt') : t('Gesucht: FRITZ!Box neu gefragt'));
       this.laden();
     } catch (err) {
       this._hinweisZugang = (err && err.message) || String(err);

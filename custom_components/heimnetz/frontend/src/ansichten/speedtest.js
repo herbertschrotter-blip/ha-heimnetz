@@ -157,10 +157,12 @@ export function messungBlatt(p) {
     ${z(t('Auslöser'), k.ausloeser ? `${AUSLOESER[k.ausloeser] ? t(AUSLOESER[k.ausloeser]) : k.ausloeser}${k.serie_n ? `, ${t('Durchlauf {lauf} von {n}', { lauf: k.serie_lauf, n: k.serie_n })}` : ''}` : null)}
     ${z(t('Grundlast'), m.last != null ? `${zahl(m.last, 1)} Mbit/s${m.belastet ? ` · ${t('belastet')}` : ''}` : null)}
     <div class="gruppe">${t('Mobilfunk')}</div>
+    ${k.mobil_quelle === 'modem' ? z(t('Werte von'), k.modem_modell || t('vorgeschaltetes Modem')) : nothing}
     ${z(t('Netz'), k.netz ? html`<span class="badge ${k.netz.startsWith('5G') ? 'blau-b' : ''}">${k.netz}</span>` : null)}
     ${z(t('Ankerzelle · Sendeanlage'), k.zelle ? [k.zelle, k.anlage && t('Anlage {anlage}', { anlage: k.anlage })].filter(Boolean).join(' · ') : null)}
     ${z(t('RSRP · RSRQ Anker'), k.rsrp != null ? [dbm(k.rsrp), dbm(k.rsrq, 'dB')].filter(Boolean).join(' · ') : null)}
     ${z('5G', k.nr_aktiv === false ? t('aus') : k.nr_aktiv ? [t('aktiv'), k.nr_pci != null && `PCI ${k.nr_pci}`, dbm(k.nr_rsrp), dbm(k.nr_rsrq, 'dB')].filter(Boolean).join(' · ') : null)}
+    ${k.band || k.sinr != null || k.nr_band || k.nr_sinr != null ? z(t('Band · SINR'), [k.band, k.sinr != null && `${zahl(k.sinr, 1)} dB`, k.nr_band, k.nr_sinr != null && `5G ${zahl(k.nr_sinr, 1)} dB`].filter(Boolean).join(' · ')) : nothing}
     ${z(t('Entfernung laut Box'), k.entfernung_m ? `${zahl(k.entfernung_m / 1000, 1)} km` : null)}
     ${z(t('Nachbarzellen'), k.nachbarzellen)}
     ${z(t('Netz · Gebiet'), mit(k.plmn, k.tac && `TAC ${k.tac}`))}
@@ -175,7 +177,7 @@ export function messungBlatt(p) {
     <div class="gruppe">${t('Umgebung')}</div>
     ${z(t('Wetter'), k.wetter ? [WETTER[k.wetter] ? t(WETTER[k.wetter]) : k.wetter, k.temperatur != null && `${zahl(k.temperatur, 1)} °C`, k.feuchte != null && t('{n} % Feuchte', { n: zahl(k.feuchte) }), k.wolken != null && t('{n} % Wolken', { n: zahl(k.wolken) })].filter(Boolean).join(' · ') : null)}
     ${z(t('Tag'), TAGESART[k.tagesart] && t(TAGESART[k.tagesart]))}
-    <p class="hinweis" style="margin-top:10px">${t('Nicht verfügbar über die Schnittstelle der Box: genutztes Band, SINR, Bandbreite, MIMO, Carrier Aggregation.')}</p>`;
+    <p class="hinweis" style="margin-top:10px">${k.mobil_quelle === 'modem' ? t('Funkwerte vom vorgeschalteten Modem – was es nicht liefert, fehlt.') : t('Nicht verfügbar über die Schnittstelle der Box: genutztes Band, SINR, Bandbreite, MIMO, Carrier Aggregation.')}</p>`;
 }
 
 const BELASTET_KURZ = { aus: merke('zählt nicht'), halb: merke('zählt ¼'), mit: merke('belastet') };

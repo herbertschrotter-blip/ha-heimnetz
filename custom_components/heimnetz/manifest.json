@@ -19,9 +19,15 @@
   "integration_type": "service",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/herbertschrotter-blip/ha-heimnetz/issues",
+  "loggers": [
+    "huawei_lte_api",
+    "tplinkrouterc6u"
+  ],
   "requirements": [
-    "fritzconnection>=1.15.1"
+    "fritzconnection>=1.15.1",
+    "huawei-lte-api>=1.11.0",
+    "tplinkrouterc6u>=5.37.0"
   ],
   "single_config_entry": true,
-  "version": "0.26.0"
+  "version": "0.27.0"
 }

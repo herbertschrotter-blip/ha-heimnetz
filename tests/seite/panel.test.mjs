@@ -1196,16 +1196,63 @@ test('WU-0009: Glasfaser und Kabel – was TR-064 nicht liefert, steht als „�
   });
 });
 
-test('WU-0009: vorgeschaltetes Gerät – Hinweis und Sprung zur Diagnose mit der Adresse', async () => {
-  const z = { ...DATEN.internet.zugang, art: 'extern', weg: 'vorgeschaltet', titel: 'Internet über Mobilfunk', geraet: 'vorgeschaltetes Modem', weg_text: 'vorgeschaltet über 192.168.8.1 · Beta', quelle: 'festgelegt' };
-  await mitInternet({ ...DATEN.internet, zugang: z, mobilfunk: null }, async () => {
+test('WU-0009: vorgeschaltetes Gerät – Werte vom Modem mit Herkunft, Zellen mit Band und SINR', async () => {
+  const d = DATEN.internet_vorgeschaltet;
+  await mitInternet(d, async () => {
     const hass = machHass();
     const el = await seite(hass);
     await reiter(el, 'Internet');
-    assert.match(text(el), /Werte vom vorgeschalteten Gerät folgen/);
-    assert.match(text(el), /festgelegt/);
-    assert.ok(!el.shadowRoot.querySelector('heimnetz-karte'), 'keine Mobilfunk-Werte der Box');
+    const t = text(el);
+    assert.match(t, /Werte vom vorgeschalteten Modem \(Beta\)/);
+    assert.match(t, /hängt hinter dem ZTE G5TC \(ubus\)/);
+    assert.match(t, /vom vorgeschalteten Modem/, 'Herkunft der Werte');
+    assert.match(t, /Band B3 · SINR 8,0 dB/);
+    assert.match(t, /genutzt \(laut Modem\)/);
+    assert.ok(el.shadowRoot.querySelector('svg.strecke').textContent.includes('Modem'), 'Grafik beginnt beim Modem');
+    assert.ok(!/undefined|NaN|\[object Object\]/.test(t), t);
   });
+});
+
+test('WU-0009: vorgeschaltetes Gerät – Befund statt Werte (Anmeldung abgelehnt), Knöpfe zu Zugang und Diagnose', async () => {
+  const v = { ...DATEN.internet_vorgeschaltet.vorgeschaltet, werte: false, befund: { kennung: 'anmeldung_abgelehnt', lage: 'rot', titel: 'Anmeldung abgelehnt', text: 'Das Gerät lehnt das Kennwort ab.' } };
+  await mitInternet({ ...DATEN.internet_vorgeschaltet, vorgeschaltet: v, mobilfunk: null }, async () => {
+    const hass = machHass();
+    const el = await seite(hass);
+    await reiter(el, 'Internet');
+    assert.match(text(el), /Anmeldung abgelehnt/);
+    assert.ok(el.shadowRoot.querySelector('.befund .punkt.rot'), 'rot wie von der Integration bewertet');
+    assert.ok(!el.shadowRoot.querySelector('heimnetz-karte'), 'keine Funkwerte');
+    const knopf = [...el.shadowRoot.querySelectorAll('.dg-knoepfe button')].find((b) => b.textContent.includes('Rohdaten'));
+    assert.ok(knopf, 'Sprung zur Diagnose');
+  });
+});
+
+test('WU-0009: ⚙ › 🌐 Zugang – gefundenes Gerät mit Beleg und „Erkannt“, Diagnose zeigt Hersteller', async () => {
+  const alt = DATEN.zugang;
+  DATEN.zugang = DATEN.zugang_vorgeschaltet;
+  try {
+    const hass = machHass();
+    const el = await seite(hass);
+    await einstellungen(el);
+    await einTab(el, 'Zugang');
+    await warten(10);
+    await el.updateComplete;
+    const b = blatt(el);
+    assert.match(b.textContent, /192\.168\.0\.1 antwortet: ZTE G5TC \(ubus\)/);
+    assert.match(b.textContent, /Erkannt.*ZTE G5TC \(ubus\) ✓/s);
+    assert.match(b.textContent, /192\.168\.18\.1, 192\.168\.100\.1/, 'die üblichen Adressen von der Integration');
+    assert.ok(b.querySelector('.zg[data-wahl=ont]'), 'Glasfaser über ein eigenes Modem wählbar');
+    await einTab(el, 'Diagnose');
+    await el.updateComplete;
+    const f = blatt(el);
+    f.querySelector('input[name=adresse]').value = '192.168.0.1';
+    knoepfe(f).find((x) => x.textContent.includes('Abfragen')).click();
+    await warten(10);
+    await el.updateComplete;
+    assert.match(text(el), /Erkannt.*ZTE G5TC \(goform\)/s);
+  } finally {
+    DATEN.zugang = alt;
+  }
 });
 
 test('WU-0009: ⚙ › 🌐 Zugang – Belege, Wahl, Adresse und Kennwort (nie im Zustand), Erneut suchen, Diagnose', async () => {

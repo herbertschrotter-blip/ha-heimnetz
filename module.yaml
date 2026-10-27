@@ -34,6 +34,19 @@ sources:
 
   # Messungen der Ookla-Integration: Sensoren lesen, Messung über deren Aktion run_speedtest starten.
   # Ohne sie gibt es kein Speedtest-Protokoll und der Messplan kann nicht messen.
+  # WU-0009 Stufe 2: vorgeschaltetes Gerät im eigenen Heimnetz (nur lesend, nur private Adressen) oder dessen
+  # HA-Integration (huawei_lte, netgear_lte, teltonika). Fällt es aus, sind nur die Funkwerte nicht verfügbar.
+  - key: vorgeschaltet
+    owner: geraet_im_heimnetz
+    interface: http
+    outage:
+      critical_for:
+        - entities:sinr_anker
+        - entities:sinr_5g
+        - entities:mobil_band
+      on_unavailable: block
+      recovery: re_evaluate
+
   - key: speedtest
     owner: ookla_speedtest
     interface: entities
@@ -113,6 +126,12 @@ owns:
     - key: glasfaser_rx
       domain: sensor
     - key: glasfaser_tx
+      domain: sensor
+    - key: sinr_anker
+      domain: sensor
+    - key: sinr_5g
+      domain: sensor
+    - key: mobil_band
       domain: sensor
     - key: pi_fritzbox
       domain: binary_sensor

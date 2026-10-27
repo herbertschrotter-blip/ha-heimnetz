@@ -143,6 +143,27 @@
           "verbunden_s": {
             "name": "Mobile connected for (s)"
           },
+          "mobil_quelle": {
+            "name": "Source of the radio values",
+            "state": {
+              "modem": "upstream modem"
+            }
+          },
+          "modem_modell": {
+            "name": "Upstream modem"
+          },
+          "sinr": {
+            "name": "SINR 4G anchor"
+          },
+          "band": {
+            "name": "Band 4G anchor"
+          },
+          "nr_sinr": {
+            "name": "SINR 5G"
+          },
+          "nr_band": {
+            "name": "Band 5G"
+          },
           "box_modell": {
             "name": "FRITZ!Box model"
           },
@@ -249,6 +270,15 @@
       },
       "glasfaser_tx": {
         "name": "Fibre transmitted optical power"
+      },
+      "sinr_anker": {
+        "name": "Signal-to-noise ratio 4G anchor"
+      },
+      "sinr_5g": {
+        "name": "Signal-to-noise ratio 5G"
+      },
+      "mobil_band": {
+        "name": "Mobile band"
       }
     },
     "binary_sensor": {
@@ -293,6 +323,14 @@
     "recorder_fehlt": {
       "title": "Heimnetz: recorder not loaded",
       "description": "Without the Home Assistant recorder, Heimnetz lacks history, usage per day and the snapshot per measurement taken from history. The recorder is the default (`default_config:` or `recorder:` in `configuration.yaml`). Then restart Home Assistant; this notice goes away by itself the next time Heimnetz loads."
+    },
+    "modem_anmeldung": {
+      "title": "Heimnetz: upstream modem rejects the password",
+      "description": "The modem in front of the FRITZ!Box rejects the stored web interface password. Heimnetz does not try again so that the modem does not lock the login. Enter the correct password under Heimnetz → ⚙ → 🌐 Access; this notice then disappears by itself."
+    },
+    "modem_fehlt": {
+      "title": "Heimnetz: upstream modem does not answer",
+      "description": "Nothing has answered at the address of the modem in front of the FRITZ!Box for at least two polls. Is the modem on and the address correct? Check the address under Heimnetz → ⚙ → 🌐 Access or use “↻ Search again”. Once it answers again, this notice disappears by itself."
     }
   },
   "options": {

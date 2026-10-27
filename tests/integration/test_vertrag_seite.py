@@ -3,6 +3,7 @@ tests/seite/daten.json, mit der die Seite getestet wird. Neu schreiben: HEIMNETZ
 
 import json
 import os
+import time
 from datetime import timedelta
 from pathlib import Path
 
@@ -14,9 +15,11 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.heimnetz.box import BoxInfo
 from custom_components.heimnetz.logik import leitung as ln
+from custom_components.heimnetz.logik import vorgeschaltet as ve
 from custom_components.heimnetz.logik import zugang as zg
 from custom_components.heimnetz.logik.messung import Messung
 from custom_components.heimnetz.logik.verlauf import geraete_id
+from custom_components.heimnetz.logik.vorgeschaltet import zte as vz
 from tests.integration.conftest import box_daten
 
 VORLAGE = Path(__file__).parents[1] / "seite" / "daten.json"
@@ -189,6 +192,64 @@ async def test_antworten_haben_die_form_der_vorlage(
         antwort = await client.receive_json()
         assert antwort["success"], (name, antwort)
         antworten[name] = antwort["result"]
+    # WU-0009 Stufe 2: hinter einem vorgeschalteten Modem (ZTE, Werte erfunden in der Form der goform-Felder)
+    abruf = eintrag.runtime_data.abruf
+    hinter = zg.Meldung(
+        zugangsart="Ethernet",
+        link="Up",
+        art_avm="IP-Client",
+        wan_netz="privat",
+        vorschlag="192.168.0.1",
+    )
+    box.return_value = box_daten(zugang=hinter, mobil=None, ohne_mobilfunk=True)
+    erkannt = ve.Erkennung("zte_ubus", "ZTE G5TC")
+    jetzt_s = time.time()
+    abruf.modem.gemerkt, abruf.modem.adresse = erkannt, "192.168.0.1"
+    abruf.modem.gelesen = abruf.modem.gesucht = jetzt_s  # nichts fällig: kein Netz im Test
+    abruf.modem.treffer = (ve.Treffer("192.168.0.1", True, erkannt),)
+    abruf.modem.stand = ve.Modemstand(
+        "192.168.0.1",
+        erkannt,
+        vz.aus_werten(
+            {
+                "network_type": "ENDC",
+                "network_provider": "3 AT",
+                "rmcc": "232",
+                "rmnc": "05",
+                "lte_rsrp": "-97",
+                "lte_rsrq": "-11",
+                "lte_snr": "8",
+                "lte_band": "3",
+                "lte_pci": "1A",
+                "cell_id": "1A2B3C4",
+                "tac": "1A2B",
+                "nr5g_rsrp": "-101",
+                "nr5g_snr": "4.5",
+                "nr5g_pci": "200",
+                "nr5g_action_band": "n78",
+                "realtime_time": "3600",
+            }
+        ),
+        None,
+        jetzt_s,
+        angemeldet=True,
+    )
+    await abruf.async_refresh()
+    await hass.async_block_till_done()
+    for name, befehl in (
+        ("internet_vorgeschaltet", "internet"),
+        ("zugang_vorgeschaltet", "zugang"),
+    ):
+        await client.send_json_auto_id(
+            {"type": f"heimnetz/{befehl}", "tage": 1}
+            if befehl == "internet"
+            else {"type": f"heimnetz/{befehl}"}
+        )
+        antwort = await client.receive_json()
+        assert antwort["success"], (name, antwort)
+        antworten[name] = antwort["result"]
+    assert antworten["internet_vorgeschaltet"]["mobilfunk"]["herkunft"] == "modem"
+    assert antworten["zugang_vorgeschaltet"]["vorgeschaltet"]["geraet"] == "ZTE G5TC (ubus)"
     assert antworten["internet_dsl"]["dsl"]["bewertung"]["abzeichen"] == "Reserve knapp"
     assert antworten["internet_dsl"]["ersatz"]["text"]
     assert antworten["internet_glasfaser"]["glasfaser"]["rx"] == -19.4

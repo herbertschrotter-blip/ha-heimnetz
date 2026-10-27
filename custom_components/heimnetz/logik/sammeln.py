@@ -16,6 +16,7 @@ from . import mobil as mb
 from . import protokoll as pr
 from . import stoerung as sg
 from . import verkehr as vk
+from . import vorgeschaltet as ve
 from . import wlan as wl
 from . import zugang as zg
 from .ereignis import INFO, KRITISCH, Ereignis
@@ -76,6 +77,12 @@ class Gedaechtnis:
     faser: ln.Faser | None = None
     faser_fehler_h: float | None = None
     dsl_seit: float | None = None  # letzte erkannte Neusynchronisierung (bleibt auch nach 7 Tagen)
+    # WU-0009 Stufe 2: erkanntes vorgeschaltetes Gerät {adresse, baustein, modell}; Funkwerte von dort schon gesehen
+    vorgeschaltet: dict[str, str] | None = None
+    modem_mobil: bool = False
+    modem_werte: list[str] = field(
+        default_factory=list
+    )  # schon einmal gelieferte Zusatzwerte (sinr_anker …)
 
     def langsam_faellig(self, jetzt: float) -> bool:
         return jetzt - self.langsam_t >= LANGSAM_S
@@ -103,6 +110,9 @@ class Rohdaten:
     zugang: zg.Meldung | None = None  # WU-0009: Zugang (langsam)
     dsl: ln.Dsl | None = None  # nur mit DSL-Dienst (langsam)
     faser: ln.Faser | None = None  # nur mit Glasfaser-Dienst (langsam)
+    modem: ve.Modemstand | None = (
+        None  # WU-0009 Stufe 2: vorgeschaltetes Gerät (eigener langsamer Takt)
+    )
     fehler: tuple[str, ...] = ()
     sprache: str = DE  # Sprache der Texte (Befunde, Journal), nach Home Assistant
 
@@ -138,6 +148,9 @@ class Stand:
     dsl_seit: float | None = None  # letzte erkannte Neusynchronisierung
     faser: ln.Faser | None = None
     faser_fehler_h: float | None = None
+    # WU-0009 Stufe 2: woher `mobil` kommt – „box“ oder „modem“ (vorgeschaltetes Gerät); dessen letzter Stand
+    mobil_quelle: str = "box"
+    modem: ve.Modemstand | None = None
 
     @property
     def online(self) -> int:
@@ -194,18 +207,27 @@ def auswerten(g: Gedaechtnis, roh: Rohdaten) -> Stand:
 
     if roh.ohne_mobilfunk:
         g.mobil_dienst = False
-    neu_mobil: Ereignis | None = None
     if roh.mobil is not None:
         g.mobil_dienst = True
-        ereignisse += mb.abgleich(g.mobil_technik, g.mobil_zelle, roh.mobil, sprache)
-        if roh.mobil.technik:
-            g.mobil_technik = roh.mobil.technik
-            g.mobil_zelle = roh.mobil.zellkennung or g.mobil_zelle
-        neu_mobil = mb.neu_eingewaehlt(g.mobil_laufzeit, roh.mobil, sprache)
+    # WU-0009 Stufe 2: liefert das vorgeschaltete Gerät Funkwerte, gelten die – die Box dahinter kennt das Funknetz nicht
+    mobil, quelle = roh.mobil, "box"
+    if roh.modem is not None and roh.modem.mobil is not None:
+        mobil, quelle = roh.modem.mobil, "modem"
+        g.modem_mobil = True
+        for k in ve.zusatzwerte(mobil):
+            if k not in g.modem_werte:
+                g.modem_werte.append(k)
+    neu_mobil: Ereignis | None = None
+    if mobil is not None:
+        ereignisse += mb.abgleich(g.mobil_technik, g.mobil_zelle, mobil, sprache)
+        if mobil.technik:
+            g.mobil_technik = mobil.technik
+            g.mobil_zelle = mobil.zellkennung or g.mobil_zelle
+        neu_mobil = mb.neu_eingewaehlt(g.mobil_laufzeit, mobil, sprache)
         if neu_mobil is not None:
             ereignisse.append(neu_mobil)
-        if roh.mobil.laufzeit_s is not None:
-            g.mobil_laufzeit = roh.mobil.laufzeit_s
+        if mobil.laufzeit_s is not None:
+            g.mobil_laufzeit = mobil.laufzeit_s
     if roh.mobil_baender is not None:
         g.mobil_baender = roh.mobil_baender
     if roh.mesh is not None:
@@ -256,10 +278,10 @@ def auswerten(g: Gedaechtnis, roh: Rohdaten) -> Stand:
 
     lage = sg.lage(
         pi.box,
-        roh.mobil.laufzeit_s if roh.mobil else None,
-        mb.schwaechster(roh.mobil),
+        mobil.laufzeit_s if mobil else None,
+        mb.schwaechster(mobil),
         neu_mobil is not None,
-        roh.mobil is not None,
+        mobil is not None,
     )
     g.stoerung, abschluss = sg.fortschreiben(g.stoerung, pi.internet, roh.jetzt, lage, sprache)
     if abschluss is not None:
@@ -282,7 +304,7 @@ def auswerten(g: Gedaechtnis, roh: Rohdaten) -> Stand:
         lan=g.lan,
         pi=pi,
         dhcp=g.dhcp,
-        mobil=roh.mobil,
+        mobil=mobil,
         rate=vk.letzte_rate(g.ring) if roh.zaehler is not None else None,
         ereignisse=tuple(ereignisse),
         protokoll=tuple(protokoll),
@@ -300,6 +322,8 @@ def auswerten(g: Gedaechtnis, roh: Rohdaten) -> Stand:
         dsl_seit=g.dsl_seit,
         faser=g.faser,
         faser_fehler_h=g.faser_fehler_h,
+        mobil_quelle=quelle,
+        modem=roh.modem,
     )
 
 
@@ -372,6 +396,9 @@ def gedaechtnis_als_dict(g: Gedaechtnis) -> dict[str, Any]:
         "dsl_neusync": g.dsl_neusync,
         "dsl_seit": g.dsl_seit,
         "faser": asdict(g.faser) if g.faser else None,
+        "vorgeschaltet": g.vorgeschaltet,
+        "modem_mobil": g.modem_mobil,
+        "modem_werte": g.modem_werte,
     }
 
 
@@ -406,4 +433,9 @@ def gedaechtnis_aus_dict(d: dict[str, Any]) -> Gedaechtnis:
     g.dsl_neusync = [float(x) for x in d.get("dsl_neusync") or []]
     g.dsl_seit = d.get("dsl_seit")
     g.faser = ln.Faser(**d["faser"]) if d.get("faser") else None
+    v = d.get("vorgeschaltet")
+    if isinstance(v, dict) and v.get("baustein") in ve.BAUSTEINE and v.get("adresse"):
+        g.vorgeschaltet = {k: str(v.get(k) or "") for k in ("adresse", "baustein", "modell")}
+    g.modem_mobil = bool(d.get("modem_mobil"))
+    g.modem_werte = [str(k) for k in d.get("modem_werte") or [] if k in ve.ZUSATZWERTE]
     return g

@@ -25,11 +25,12 @@ from dataclasses import dataclass
 
 from .ereignis import INFO, WARNUNG, Ereignis
 from .sprache import DE, merke, t
+from .vorgeschaltet import UEBLICHE_ADRESSEN
 
 ARTEN = ("mobilfunk", "dsl", "glasfaser", "kabel", "extern")
-WAHLEN = ("auto", "box_mobil", "extern", "dsl", "glasfaser", "kabel")
+# „ont“ (WU-0009 Stufe 2): Glasfaser über ein eigenes Modem vor der Box – für die Box ist das ein vorgeschaltetes Gerät
+WAHLEN = ("auto", "box_mobil", "extern", "dsl", "glasfaser", "ont", "kabel")
 ERSATZ_WAHLEN = ("auto", "kein")
-UEBLICHE_ADRESSEN = ("192.168.0.1", "192.168.1.1", "192.168.8.1")
 _PRIVAT = tuple(ipaddress.ip_network(n) for n in ("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"))
 FESTE = (
     "dsl",
@@ -170,7 +171,9 @@ def faser_lesen(m: Meldung, haupt: str = "") -> bool:
 def wirksam(auto: str, wahl: str) -> str:
     """Art nach der Wahl des Admins; „auto“ = erkannt."""
     return (
-        {"box_mobil": "mobilfunk", "extern": "extern"}.get(wahl, wahl) if wahl != "auto" else auto
+        {"box_mobil": "mobilfunk", "extern": "extern", "ont": "extern"}.get(wahl, wahl)
+        if wahl != "auto"
+        else auto
     )
 
 
@@ -314,20 +317,36 @@ def beschreiben(
     modell: str = "",
     mobil_technik: str = "",
     s: str = DE,
+    erkannt: str = "",
+    erkannt_art: str = "",
+    such_belege: tuple[str, ...] = (),
+    erkannt_adresse: str = "",
 ) -> Internetzugang:
-    """Zugang für die Seite: erkannt (`auto`, aus art_erkennen) oder festgelegt (`wahl`), mit Belegen und Ersatz."""
+    """Zugang für die Seite: erkannt (`auto`, aus art_erkennen) oder festgelegt (`wahl`), mit Belegen und Ersatz.
+    WU-0009 Stufe 2: `erkannt` ist das gefundene vorgeschaltete Gerät („ZTE G5TC (ubus)“), `erkannt_art` dessen Art
+    (mobilfunk, glasfaser), `such_belege` die Sätze der Suche, `erkannt_adresse` wo es antwortet."""
     art = wirksam(auto, wahl)
     weg = _weg(art, modell)
     box = modell or "FRITZ!Box"
     adressen = _adressen(m)
-    adr = (adresse or adressen[0]) if art == "extern" else ""
+    adr = (adresse or erkannt_adresse or adressen[0]) if art == "extern" else ""
+    glas = wahl == "ont" or (wahl == "auto" and erkannt_art == "glasfaser")
+    funk = wahl == "extern" or (wahl == "auto" and erkannt_art == "mobilfunk")
     if art == "extern":
-        geraet = t("vorgeschaltetes Modem" if wahl == "extern" else "vorgeschaltetes Gerät", s)
-        titel = t(
-            "Internet über Mobilfunk"
-            if wahl == "extern"
-            else "Internet über ein vorgeschaltetes Gerät",
+        geraet = erkannt or t(
+            "eigenes Glasfaser-Modem (ONT)"
+            if glas
+            else "vorgeschaltetes Modem"
+            if funk
+            else "vorgeschaltetes Gerät",
             s,
+        )
+        titel = (
+            t("Internet über {art}", s, art=TITEL["glasfaser"])
+            if glas
+            else t(
+                "Internet über Mobilfunk" if funk else "Internet über ein vorgeschaltetes Gerät", s
+            )
         )
     elif art:
         geraet = box
@@ -346,12 +365,23 @@ def beschreiben(
     vorschlag = (
         t("{art} über {geraet}", s, art=TITEL[auto], geraet=box)
         if auto and auto != "extern"
+        else t(
+            "{art} über {geraet}",
+            s,
+            art=TITEL["glasfaser" if erkannt_art == "glasfaser" else "mobilfunk"],
+            geraet=erkannt,
+        )
+        if auto == "extern" and erkannt and erkannt_art in ("mobilfunk", "glasfaser")
         else t("ein vorgeschaltetes Gerät", s)
         if auto == "extern"
         else t("unbekannt", s)
     )
     kurz = t(TITEL[art], s) if art != "extern" else geraet
-    zusatz = mobil_technik if art == "mobilfunk" and mobil_technik else ""
+    zusatz = (
+        mobil_technik
+        if mobil_technik and (art == "mobilfunk" or (art == "extern" and erkannt and not glas))
+        else ""
+    )
     kopf = " · ".join(
         x
         for x in (
@@ -368,7 +398,11 @@ def beschreiben(
         titel=titel,
         geraet=geraet,
         weg_text=_weg_text(art, weg, m, adr, s),
-        belege=tuple(belege(m, auto, ersatz_aktiv, mobil_technik, s)),
+        # die Funkwerte kommen dann vom Gerät davor – nicht als „Mobilfunk-Modem der Box“ ausgeben
+        belege=(
+            *belege(m, auto, ersatz_aktiv, "" if art == "extern" and erkannt else mobil_technik, s),
+            *such_belege,
+        ),
         ersatz=ersatz,
         ersatz_aktiv=bool(ersatz and ersatz_aktiv),
         ersatz_text=ersatz_text,

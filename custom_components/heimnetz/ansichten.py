@@ -33,6 +33,7 @@ from .logik import ocid as lc
 from .logik import osm as lo
 from .logik import verbrauch as vb
 from .logik import verlauf as vl
+from .logik import vorgeschaltet as ve
 from .logik import wlan as wl
 from .logik import zugang as zg
 from .logik.ereignis import Ereignis
@@ -409,8 +410,12 @@ async def mobilfunk(hass: HomeAssistant, lz: Laufzeit, tage: int) -> dict[str, A
     # Anbieter und Technik je Mast aus dem OpenCellID-Abzug (nur mit Schlüssel; gemerkt, bis sich etwas ändert)
     infos = await lz.ocid.infos(wohnung, [o.ort for o in osm]) if osm and wohnung else []
     gemerkt = await lz.mastsuche.gemerkte_anlagen()
+    vom_modem = lz.abruf.data.mobil_quelle == "modem"
     return {
         "verfuegbar": m is not None,
+        # WU-0009 Stufe 2: Herkunft der Werte – die Box selbst oder das vorgeschaltete Modem
+        "herkunft": "modem" if vom_modem else "box",
+        "herkunft_text": t("vom vorgeschalteten Modem" if vom_modem else "laut FRITZ!Box", s),
         "technik": m.technik if m else None,
         "befund": asdict(mb.befund(m.technik if m else "", anker, nr, typisch, tarif_down, s)),
         "verlauf": verlauf,
@@ -419,8 +424,11 @@ async def mobilfunk(hass: HomeAssistant, lz: Laufzeit, tage: int) -> dict[str, A
         "laufzeit": mb.dauer(m.laufzeit_s, s) if m and m.laufzeit_s is not None else None,
         "abbrueche_7": len(neu),
         "letzter_abbruch": neu[0]["t"] if neu else None,
-        "baender": lz.abruf.data.mobil_baender or None,
-        "strecke": _strecke(m, s),
+        "baender": _baender(m) if vom_modem else lz.abruf.data.mobil_baender or None,
+        "baender_unter": t(
+            "genutzt (laut Modem)" if vom_modem else "eingeschaltet (in der Box)", s
+        ),
+        "strecke": _strecke(m, s, t("Modem", s) if vom_modem else "FRITZ!Box"),
         "zellen": [_zelle(z, m, funde.get(z), s) for z in mb.zellen_sortiert(m)] if m else [],
         "karte": _karte(wohnung, m, funde, osm, infos, gemerkt, s),
     }
@@ -528,12 +536,22 @@ def _karte(
     }
 
 
-def _strecke(m: mb.Mobilfunk | None, sprache_: str) -> dict[str, Any] | None:
-    """Grafik Box → Basisstation: Empfang der Ankerzelle, Entfernung, Anbieter, welche Masten (5G/4G)."""
+def _baender(m: mb.Mobilfunk | None) -> str | None:
+    """Genutzte Bänder laut vorgeschaltetem Modem („B3 · n78“) – die Box nennt stattdessen die eingeschalteten."""
+    if m is None:
+        return None
+    return " · ".join(dict.fromkeys(z.band for z in m.zellen if z.band)) or None
+
+
+def _strecke(
+    m: mb.Mobilfunk | None, sprache_: str, geraet: str = "FRITZ!Box"
+) -> dict[str, Any] | None:
+    """Grafik Gerät → Basisstation: Empfang der Ankerzelle, Entfernung, Anbieter, welche Masten (5G/4G)."""
     if m is None or m.haupt is None:
         return None
     z = m.haupt
     return {
+        "geraet": geraet,
         "rsrp": z.rsrp,
         "lage": mb.lage_rsrp(z.rsrp),
         "wort": mb.wort_rsrp(z.rsrp, sprache_) if z.rsrp is not None else None,
@@ -555,6 +573,8 @@ def _zelle(z: mb.Zelle, m: mb.Mobilfunk, fund: ka.Fund | None, sprache_: str) ->
         "kennung": z.zelle or (f"PCI {z.pci}" if z.pci is not None else None),
         "rsrp": z.rsrp,
         "rsrq": z.rsrq,
+        "sinr": z.sinr,  # nur vom vorgeschalteten Modem
+        "band": z.band or None,
         "stufen": mb.stufen(z.rsrp),
         "lage": mb.lage_rsrp(z.rsrp),
         "tac": tac.lower() if z.art == "LTE" and tac else None,
@@ -585,6 +605,8 @@ def zugang_jetzt(lz: Laufzeit, s: str) -> zg.Internetzugang:
     """Zugang aus dem zuletzt Gelesenen und der Wahl des Admins (⚙ › Zugang)."""
     st, w = lz.abruf.data, lz.einstellungen.wert
     info = lz.abruf.box_info
+    dienst = lz.abruf.modem
+    erkannt = dienst.gemerkt if lz.abruf.modem_aktiv(st.zugang) else None
     return zg.beschreiben(
         st.zugang or zg.Meldung(),
         st.zugang_art,
@@ -595,6 +617,10 @@ def zugang_jetzt(lz: Laufzeit, s: str) -> zg.Internetzugang:
         info.modell if info else "",
         st.mobil.technik if st.mobil else "",
         s,
+        erkannt=erkannt.name if erkannt else "",
+        erkannt_art=erkannt.b.art if erkannt else "",
+        such_belege=tuple(ve.beleg(x, s) for x in dienst.treffer),
+        erkannt_adresse=dienst.adresse if erkannt else "",
     )
 
 
@@ -728,14 +754,36 @@ async def _ersatz_daten(
     }
 
 
+def _vorgeschaltet(lz: Laufzeit, s: str) -> dict[str, Any]:
+    """WU-0009 Stufe 2: was Heimnetz vom vorgeschalteten Gerät weiß – erkannt, Herkunft der Werte, Befund."""
+    dienst = lz.abruf.modem
+    stand, e = dienst.stand, dienst.gemerkt
+    befund = stand.befund if stand else ("nicht_gesucht" if e is None else None)
+    if stand is not None and stand.mobil is None and befund is None:
+        befund = "keine_werte"
+    return {
+        "geraet": e.name if e else None,
+        "hersteller": e.b.hersteller if e else None,
+        "adresse": dienst.adresse or None,
+        "art": e.b.art if e else None,  # mobilfunk, glasfaser, router
+        "quelle": stand.quelle if stand else None,  # geraet / integration
+        "integration": e.b.integration or None if e else None,
+        "gelesen": stand.zeit if stand else None,
+        "werte": lz.abruf.data.mobil_quelle == "modem",
+        "befund": ve.befund_daten(befund, s),
+    }
+
+
 async def internet(hass: HomeAssistant, lz: Laufzeit, tage: int) -> dict[str, Any]:
     """Reiter „Internet“: Herkunft des Zugangs und die Werte der gewählten Zugangsart."""
     s = sprache(hass)
     z = zugang_jetzt(lz, s)
+    vom_modem = z.art == "extern" and lz.abruf.data.mobil_quelle == "modem"
     return {
         "zugang": _zugang_kurz(z),
         # die Ansicht Ersatz braucht nur Signal und Technik (in „ersatz“) – nicht die ganze Mobilfunk-Ansicht
-        "mobilfunk": await mobilfunk(hass, lz, tage) if z.art == "mobilfunk" else None,
+        "mobilfunk": await mobilfunk(hass, lz, tage) if z.art == "mobilfunk" or vom_modem else None,
+        "vorgeschaltet": _vorgeschaltet(lz, s) if z.art == "extern" else None,
         "dsl": await _dsl_daten(hass, lz, s) if z.art == "dsl" else None,
         "glasfaser": await _faser_daten(hass, lz, s) if z.art == "glasfaser" else None,
         "kabel": _kabel_daten(lz, s) if z.art == "kabel" else None,
@@ -761,6 +809,9 @@ def zugang(hass: HomeAssistant, lz: Laufzeit) -> dict[str, Any]:
         "adressen": list(z.adressen),
         "kennwort": bool(lz.abruf.config_entry.options.get(CONF_MODEM_KENNWORT)),
         "gelesen": lz.abruf.data.zugang is not None,
+        # WU-0009 Stufe 2: gefundenes Gerät (✓ … antwortet: …) und wann zuletzt gesucht
+        "vorgeschaltet": _vorgeschaltet(lz, s) if z.art == "extern" else None,
+        "gesucht_zeit": lz.abruf.modem.gesucht,
     }
 
 

@@ -143,6 +143,27 @@
           "verbunden_s": {
             "name": "Mobilfunk verbunden seit (s)"
           },
+          "mobil_quelle": {
+            "name": "Herkunft der Funkwerte",
+            "state": {
+              "modem": "vorgeschaltetes Modem"
+            }
+          },
+          "modem_modell": {
+            "name": "Vorgeschaltetes Modem"
+          },
+          "sinr": {
+            "name": "SINR 4G-Anker"
+          },
+          "band": {
+            "name": "Band 4G-Anker"
+          },
+          "nr_sinr": {
+            "name": "SINR 5G"
+          },
+          "nr_band": {
+            "name": "Band 5G"
+          },
           "box_modell": {
             "name": "Modell der FRITZ!Box"
           },
@@ -249,6 +270,15 @@
       },
       "glasfaser_tx": {
         "name": "Glasfaser gesendete Lichtleistung"
+      },
+      "sinr_anker": {
+        "name": "Signal-Rausch-Abstand 4G-Anker"
+      },
+      "sinr_5g": {
+        "name": "Signal-Rausch-Abstand 5G"
+      },
+      "mobil_band": {
+        "name": "Mobilfunk-Band"
       }
     },
     "binary_sensor": {
@@ -293,6 +323,14 @@
     "recorder_fehlt": {
       "title": "Heimnetz: Recorder nicht geladen",
       "description": "Ohne den Recorder von Home Assistant fehlen in Heimnetz der Verlauf, der Verbrauch je Tag und die Momentaufnahme zur Messung aus dem Verlauf. Der Recorder ist Standard (`default_config:` oder `recorder:` in `configuration.yaml`). Danach Home Assistant neu starten; der Hinweis verschwindet beim nächsten Laden von Heimnetz von selbst."
+    },
+    "modem_anmeldung": {
+      "title": "Heimnetz: Vorgeschaltetes Modem lehnt das Kennwort ab",
+      "description": "Das Modem vor der FRITZ!Box lehnt das hinterlegte Kennwort der Weboberfläche ab. Heimnetz versucht es nicht noch einmal, damit das Modem die Anmeldung nicht sperrt. Unter Heimnetz → ⚙ → 🌐 Zugang das richtige Kennwort eintragen; danach verschwindet dieser Hinweis von selbst."
+    },
+    "modem_fehlt": {
+      "title": "Heimnetz: Vorgeschaltetes Modem antwortet nicht",
+      "description": "Unter der Adresse des Modems vor der FRITZ!Box antwortet seit mindestens zwei Abrufen nichts. Ist das Modem an und die Adresse richtig? Unter Heimnetz → ⚙ → 🌐 Zugang die Adresse prüfen oder „↻ Erneut suchen“. Antwortet es wieder, verschwindet dieser Hinweis von selbst."
     }
   },
   "options": {

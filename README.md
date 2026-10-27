@@ -9,10 +9,12 @@ Seite in der Seitenleiste und als Entitäten für Automationen und Dashboards.
 > **Für wen:** FRITZ!Box mit Mobilfunk (LTE/5G), getestet mit der **FRITZ!Box 6860 5G**. Ausgelegt für
 > **Österreich** (Betreibernamen, OpenCellID-Datenabzug für Österreich, Kartenkacheln von basemap.at). Andere Boxen
 > und Länder funktionieren teilweise, sind aber nicht getestet – siehe [Ausblick](#ausblick). DSL, Glasfaser und Kabel
-> zeigt der Reiter Internet mit dem, was die Box über TR-064 meldet (ab 0.26.0, ohne eigene Box getestet).
+> zeigt der Reiter Internet mit dem, was die Box über TR-064 meldet (ab 0.26.0, ohne eigene Box getestet). Ein
+> vorgeschaltetes Modem (ZTE, Huawei, TP-Link) liest Heimnetz ab 0.27.0 selbst – Beta, ungetestet am Gerät.
 >
 > Hobbyprojekt, **ohne Gewähr**. Die Integration liest nur: Sie ändert keine Einstellungen der FRITZ!Box und steuert
-> keine Geräte. Einzige Ausnahme: Sie startet Speedtest-Messungen über die Ookla-Integration.
+> keine Geräte. Ausnahmen: Sie startet Speedtest-Messungen über die Ookla-Integration und meldet sich mit dem
+> hinterlegten Kennwort an der Weboberfläche eines vorgeschalteten Modems an (nur zum Lesen).
 
 ## Schnelleinrichtung
 
@@ -46,7 +48,7 @@ Home Assistant oder HACS an der richtigen Stelle öffnen.
 | **Übersicht** | Gesamtstand (In Ordnung / Hinweise / Störung / FRITZ!Box nicht erreichbar), offene Befunde (z. B. doppelte IP-Adresse, zweiter DHCP-Server, kein Internet), Prüfungen vom Home-Assistant-Rechner aus (Box, Internet, Namensauflösung, DHCP-Test) |
 | **Speedtest** | Messungen der Ookla-Integration mit Grundlast im Netz, Raster nach Wochentag und Stunde, Tagesverlauf, Vergleich mit dem Tarif, Messplan und Serien-Messungen |
 | **Geräte** | Geräte im Heimnetz nach Verbindung oder Art, neu / online / offline, IP-Wechsel, Verlauf je Gerät; Umschalter **WLAN** (Bänder, Empfang je Gerät, Kanalwechsel, Hinweise) |
-| **Internet** | Woher das Internet kommt (erkannt oder unter ⚙ → 🌐 Zugang festgelegt) und die Werte dazu: **Mobilfunk** (Technik, Zellen, Signal, Neueinwahlen, Karte zum Mast), **DSL** (Synchronrate, Störabstandsmarge, Dämpfung, Fehler, Neusynchronisierungen), **Glasfaser** (Lichtleistung mit dem guten Bereich laut Box), **Kabel** (nur die Geschwindigkeit – Kanäle und Pegel gibt die Box über TR-064 nicht heraus), **Ersatzzugang** über einen Mobilfunk-Stick |
+| **Internet** | Woher das Internet kommt (erkannt oder unter ⚙ → 🌐 Zugang festgelegt) und die Werte dazu: **Mobilfunk** (Technik, Zellen, Signal, Neueinwahlen, Karte zum Mast), **DSL** (Synchronrate, Störabstandsmarge, Dämpfung, Fehler, Neusynchronisierungen), **Glasfaser** (Lichtleistung mit dem guten Bereich laut Box), **Kabel** (nur die Geschwindigkeit – Kanäle und Pegel gibt die Box über TR-064 nicht heraus), **Ersatzzugang** über einen Mobilfunk-Stick; bei einem **vorgeschalteten Modem** (ZTE, Huawei, TP-Link, Beta) dessen Funkwerte mit Herkunft „vom vorgeschalteten Modem“ |
 | **Verbrauch** | Datenmenge je Tag aus den Zählern von FRITZ!Box Tools |
 | **Protokoll** | Journal der Integration und Ereignisprotokoll der Box, mit Suche und Filter |
 
@@ -79,6 +81,8 @@ private Daten, Deutsch und Englisch.
 |-----|-------|------|
 | **OpenCellID-Schlüssel** (kostenlos auf [opencellid.org](https://opencellid.org)), unter Geräte & Dienste → Heimnetz → Konfigurieren | genauere Karte zum Mast; einmal im Monat der Zell-Abzug für Österreich | Standort der Zellen nur aus BeaconDB und OpenStreetMap |
 | **[Scribe](https://github.com/jonathan-gtd/scribe)** (HACS) mit **TimescaleDB** oder ein anderes Langzeitarchiv (z. B. InfluxDB) | Werte der Entitäten über Jahre aufheben | der Recorder hält den Verlauf nur so lange, wie er eingestellt ist (Standard 10 Tage); Messungen und Journal in Heimnetz bleiben trotzdem |
+| **Kennwort der Weboberfläche** eines vorgeschalteten Modems, unter ⚙ → 🌐 Zugang (nur bei Internet über ein eigenes Modem vor der Box) | Funkwerte vom Modem im Reiter Internet und in den Mobilfunk-Entitäten | die meisten Modems geben ohne Anmeldung keine Signalwerte heraus; Befund „Kennwort fehlt“ |
+| Integration **Huawei LTE**, **NETGEAR LTE** oder **Teltonika** (in Home Assistant enthalten) für das Modem davor | Heimnetz liest deren Entitäten, statt das Gerät selbst zu fragen | Huawei fragt Heimnetz selbst (mit Kennwort); NETGEAR und Teltonika nur erkennen |
 
 ## Installation
 
@@ -139,21 +143,44 @@ Heimnetz arbeitet lokal. Nach außen geht nur:
 | DNS-Server des eigenen Netzes | Auflösung von `avm.de` (Prüfung „Namensauflösung“) | jede Minute |
 | basemap.at oder OpenStreetMap | Kartenkacheln – lädt der **Browser**, nicht die Integration | beim Ansehen der Karte |
 | GitHub | vorausgefülltes Issue – öffnet der **Browser**, abgeschickt mit dem eigenen Konto | nur, wenn man selbst „öffentlich auf GitHub“ meldet |
-| Vorgeschaltetes Modem im eigenen Heimnetz | auf Knopfdruck die Weboberfläche abfragen – nur lesend, nur private Adressen (Diagnose, Beta) | nur, wenn man selbst unter ⚙ → Diagnose „Abfragen“ drückt |
+| Vorgeschaltetes Gerät im eigenen Heimnetz (nur private Adressen) | Suche: Startseite an wenigen Adressen nacheinander (gespeicherte, Vorschlag der Box, 192.168.0.1, 192.168.1.1, 192.168.8.1, 192.168.18.1, 192.168.100.1) bis ein Gerät erkannt ist; danach nur lesende Abfragen und die Anmeldung mit dem hinterlegten Kennwort (höchstens ein Versuch, abgelehnt: kein weiterer) | nur bei Internet über ein vorgeschaltetes Gerät: alle 10 Minuten, beim Einrichten, bei „↻ Erneut suchen“ und unter ⚙ → Diagnose „Abfragen“ |
 
-Die **Diagnose** (⚙ → 🔬 Diagnose, Beta) ist für den Fall, dass das Internet über ein eigenes 5G/LTE-Modem vor der
-FRITZ!Box kommt (z. B. ein ZTE): Dann kennt die Box das Funknetz nicht und „Internet → Mobilfunk“ bleibt leer. Heimnetz
-fragt dann auf Knopfdruck die Rohdaten des Modems ab und zeigt sie geschwärzt an (die Zellkennung bleibt, IMEI, Kennwort,
-Rufnummer und Adressen nicht), damit man sie dem Entwickler schicken kann. Heimnetz wertet nichts aus und sendet selbst
-nichts; ein dort eingetipptes Kennwort wird nur für die Abfrage verwendet und nicht gespeichert (leer gelassen, nimmt
-Heimnetz das unter 🌐 Zugang für genau diese Adresse hinterlegte).
+**Vorgeschaltetes Gerät** (Beta): Kommt das Internet über ein eigenes Modem vor der FRITZ!Box, kennt die Box das
+Funknetz nicht. Heimnetz sucht das Gerät dann an den oben genannten Adressen (kein Absuchen des Heimnetzes), erkennt
+Hersteller und Schnittstelle an der Startseite und liest im 10-Minuten-Takt die Funkwerte (Technik, Band, Zellen mit
+Kennung/PCI/TAC/Netz, RSRP/RSRQ/SINR, 5G, Betreiber, verbunden seit) – in den Reiter Internet, die Mobilfunk-Entitäten
+und die Momentaufnahme jeder Messung. Nur lesende Abfragen; keine Einstellung des Modems wird geändert. Antwortet es
+nicht oder lehnt es das Kennwort ab, steht ein Befund im Reiter und unter Einstellungen → Reparaturen. Die Werte
+bleiben in Home Assistant; die Zellkennung geht – wie bei der Box – nur für die Karte zum Mast an BeaconDB/OpenCellID.
 
-**Zugang** (⚙ → 🌐 Zugang): Woher das Internet kommt, liest Heimnetz nur bei der FRITZ!Box (TR-064, alle 10 Minuten) –
-kein Absuchen des Heimnetzes. Wer ein vorgeschaltetes Modem festlegt, kann dessen Adresse (nur private Adressen) und
+| Gerät | Schnittstelle | Werte | Stand |
+|-------|---------------|-------|-------|
+| ZTE (MC801A, MF289F und ähnliche) | goform (Weboberfläche) | ja | ungetestet am Gerät |
+| ZTE (G5TS, G5TC und ähnliche) | ubus (JSON-RPC der Weboberfläche) | ja | ungetestet am Gerät |
+| Huawei HiLink (B535, B818, E5xxx, 5G CPE …) | Bibliothek huawei-lte-api oder Integration Huawei LTE | ja | ungetestet am Gerät |
+| TP-Link LTE/5G (Archer MR-, NX-Serie, M-Serie) | Bibliothek tplinkrouterc6u | Signal, Netz, Betreiber (keine Zellkennung) | ungetestet am Gerät |
+| NETGEAR LTE, Teltonika | Integration von Home Assistant, wenn eingerichtet | Signal, Band, Betreiber | ungetestet am Gerät |
+| MikroTik, Sagemcom, Nokia FastMile, Zyxel 5G | – | nur erkennen | Rohdaten über 🔬 Diagnose schicken |
+| Glasfaser-Modem (ONT) von Nokia, Huawei, Zyxel | – | nur erkennen | ein ONT am Internet-Anschluss der Box ist vom Heimnetz aus oft nicht erreichbar |
+
+Neue Abhängigkeiten dafür (installiert Home Assistant aus `manifest.json`): `huawei-lte-api` ≥ 1.11.0 (LGPL-3.0, dieselbe
+wie die Integration Huawei LTE) und `tplinkrouterc6u` ≥ 5.37.0 (GPL-3.0, Projekt
+[AlexandrErohin/TP-Link-Archer-C6U](https://github.com/AlexandrErohin/TP-Link-Archer-C6U); wird nur installiert, nicht
+im Repo mitgeliefert). Beide sind Pflicht-Abhängigkeiten: Kann Home Assistant sie nicht installieren, lädt Heimnetz
+nicht. Benutzt werden sie nur bei einem solchen Gerät.
+
+Die **Diagnose** (⚙ → 🔬 Diagnose, Beta) zeigt erkannten Hersteller und Schnittstelle und die Rohdaten aller passenden
+Schnittstellen geschwärzt an (die Zellkennung bleibt, IMEI, Kennwort, Rufnummer und Adressen nicht), damit man sie dem
+Entwickler schicken kann – für Geräte, die Heimnetz noch nicht ausliest. Heimnetz sendet selbst nichts; ein dort
+eingetipptes Kennwort wird nur für die Abfrage verwendet und nicht gespeichert (leer gelassen, nimmt Heimnetz das unter
+🌐 Zugang für die gespeicherte bzw. gefundene Adresse hinterlegte).
+
+**Zugang** (⚙ → 🌐 Zugang): Woher das Internet kommt, liest Heimnetz bei der FRITZ!Box (TR-064, alle 10 Minuten) und –
+nur bei einem vorgeschalteten Gerät – an dessen wenigen Adressen; der Beleg lautet z. B. „192.168.0.1 antwortet: ZTE G5TC
+(ubus)“. Zur Wahl steht auch „Glasfaser über ein eigenes Modem“ (ONT). Wer ein vorgeschaltetes Modem festlegt, kann dessen Adresse (nur private Adressen) und
 das Kennwort der Weboberfläche eintragen. **Das Kennwort wird in Home Assistant gespeichert** (in den Optionen der
 Heimnetz-Einrichtung, wie bei anderen Integrationen), nie an die Seite zurückgegeben (sie zeigt nur „hinterlegt“), nie
-protokolliert und in der Diagnose geschwärzt; „Kennwort entfernen“ löscht es. Laufende Werte vom vorgeschalteten Gerät
-liest diese Version noch nicht.
+protokolliert und in der Diagnose geschwärzt; „Kennwort entfernen“ löscht es.
 
 **Nie** gehen hinaus: der Standort von Home Assistant, Kennwörter, Gerätenamen, Hardware- (MAC) und IP-Adressen. Der
 Zugang zur Box bleibt in FRITZ!Box Tools und wird von Heimnetz nicht gespeichert. Die **Diagnose** (Geräte & Dienste →
@@ -203,6 +230,8 @@ Alle unter dem Gerät „Heimnetz“. Die Entitäts-ID entsteht beim Einrichten 
 | `sensor.heimnetz_entfernung_zur_basisstation` | Entfernung laut Box |
 | `sensor.heimnetz_nachbarzellen` | Anzahl sichtbarer Nachbarzellen |
 | `sensor.heimnetz_5g_zelle_pci` | PCI der 5G-Zelle |
+| `sensor.heimnetz_signal_rausch_abstand_4g_anker` / `_signal_rausch_abstand_5g` | SINR (dB) – nur von einem vorgeschalteten Modem |
+| `sensor.heimnetz_mobilfunk_band` | genutzte Bänder, z. B. „B3 · n78“ – nur von einem vorgeschalteten Modem |
 | `sensor.heimnetz_internetzugang` | Zugangsart: Mobilfunk, DSL, Glasfaser, Kabel oder vorgeschaltetes Gerät (erkannt oder festgelegt) |
 | `sensor.heimnetz_dsl_synchronrate_download` / `_upload` | DSL-Synchronrate (Mbit/s) |
 | `sensor.heimnetz_dsl_storabstandsmarge_download` / `_upload` | Störabstandsmarge (dB) |
@@ -213,7 +242,8 @@ Alle unter dem Gerät „Heimnetz“. Die Entitäts-ID entsteht beim Einrichten 
 | `binary_sensor.heimnetz_internet_vom_pi_aus` | Internet vom Home-Assistant-Rechner aus erreichbar |
 | `binary_sensor.heimnetz_namensauflosung` | Namensauflösung (DNS) funktioniert |
 
-Die Mobilfunk-Sensoren gibt es nur bei Boxen mit Mobilfunk, die DSL- und Glasfaser-Sensoren nur, wenn das Internet
+Die Mobilfunk-Sensoren gibt es nur bei Boxen mit Mobilfunk oder wenn ein vorgeschaltetes Modem Funkwerte geliefert hat
+(dann kommen die Werte von dort), die DSL- und Glasfaser-Sensoren nur, wenn das Internet
 über diesen Anschluss kommt (sie erscheinen mit dem ersten Lesen). **Langzeitarchiv:** Messungen und Journal hebt Heimnetz
 selbst auf (Datenbank `<config>/heimnetz/heimnetz.db`); den Verlauf der Entitäten hält der Recorder nur begrenzt. Wer
 Jahre braucht, schreibt die Entitäten mit Scribe (TimescaleDB) oder InfluxDB mit.
@@ -222,7 +252,7 @@ Jahre braucht, schreibt die Entitäten mit Scribe (TimescaleDB) oder InfluxDB mi
 
 Geplant, aber noch nicht umgesetzt:
 
-- **Werte vom vorgeschalteten Modem** (z. B. ZTE, Huawei, TP-Link) im Reiter Internet; heute nur die Rohdaten über 🔬 Diagnose.
+- Werte eines **Glasfaser-Modems (ONT)** und weiterer vorgeschalteter Geräte, sobald echte Rohdaten vorliegen.
 - Mehr Werte bei **Kabel** und **Glasfaser**, als die Box über TR-064 herausgibt.
 - **Weitere Hersteller**, z. B. UniFi.
 - **Weitere Länder** (Betreibernamen, Zell-Abzug, Kartenkacheln).
@@ -273,10 +303,12 @@ the sidebar and as entities for automations and dashboards.
 > **For whom:** FRITZ!Box with mobile broadband (LTE/5G), tested with the **FRITZ!Box 6860 5G**. Designed for
 > **Austria** (operator names, OpenCellID export for Austria, map tiles from basemap.at). Other boxes and countries
 > partly work but are untested – see [Outlook](#outlook). DSL, fibre and cable are shown in the Internet tab with
-> what the box reports via TR-064 (from 0.26.0, not tested with a real box of that kind).
+> what the box reports via TR-064 (from 0.26.0, not tested with a real box of that kind). From 0.27.0 Heimnetz reads an
+> upstream modem (ZTE, Huawei, TP-Link) itself – beta, untested on a real device.
 >
 > Hobby project, **no warranty**. The integration only reads: it never changes FRITZ!Box settings and controls no
-> devices. The one exception: it starts speed tests through the Ookla integration.
+> devices. Exceptions: it starts speed tests through the Ookla integration and logs in to the web interface of an
+> upstream modem with the stored password (read-only).
 
 ### Quick start
 
@@ -309,7 +341,7 @@ Home Assistant or HACS at the right place.
 | **Overview** | Overall state (OK / warnings / problem / FRITZ!Box unreachable), open findings (e.g. duplicate IP address, second DHCP server, no internet), checks from the Home Assistant host (box, internet, name resolution, DHCP test) |
 | **Speed test** | Ookla measurements with background load, grid by weekday and hour, daily curve, comparison with your plan, test schedule and series |
 | **Devices** | Devices by connection or type, new / online / offline, IP changes, history per device; switch **Wi-Fi** (bands, signal per device, channel changes, hints) |
-| **Internet** | Where the internet comes from (detected or set under ⚙ → 🌐 Access) and its values: **mobile** (technology, cells, signal, reconnects, map to the mast), **DSL** (sync rate, noise margin, attenuation, errors, resyncs), **fibre** (optical power with the good range reported by the box), **cable** (speed only – the box does not provide channels and levels via TR-064), **backup access** via a mobile stick |
+| **Internet** | Where the internet comes from (detected or set under ⚙ → 🌐 Access) and its values: **mobile** (technology, cells, signal, reconnects, map to the mast), **DSL** (sync rate, noise margin, attenuation, errors, resyncs), **fibre** (optical power with the good range reported by the box), **cable** (speed only – the box does not provide channels and levels via TR-064), **backup access** via a mobile stick; with an **upstream modem** (ZTE, Huawei, TP-Link, beta) its radio values, marked “from the upstream modem” |
 | **Usage** | Data per day from the FRITZ!Box Tools counters |
 | **Log** | Journal of the integration and the box event log, with search and filter |
 
@@ -342,6 +374,8 @@ without private data, German and English.
 |------|-----|---------|
 | **OpenCellID key** (free at [opencellid.org](https://opencellid.org)), under Devices & services → Heimnetz → Configure | more accurate map to the mast; monthly cell export for Austria | cell locations from BeaconDB and OpenStreetMap only |
 | **[Scribe](https://github.com/jonathan-gtd/scribe)** (HACS) with **TimescaleDB**, or another long-term store (e.g. InfluxDB) | keep entity values for years | the recorder keeps history only as long as configured (default 10 days); measurements and journal in Heimnetz are kept anyway |
+| **Web interface password** of an upstream modem, under ⚙ → 🌐 Access (only when the internet comes through an own modem in front of the box) | radio values from the modem in the Internet tab and in the mobile entities | most modems give no signal values without login; finding “Password missing” |
+| Integration **Huawei LTE**, **NETGEAR LTE** or **Teltonika** (built into Home Assistant) for that modem | Heimnetz reads its entities instead of querying the device itself | Heimnetz queries Huawei itself (with password); NETGEAR and Teltonika detection only |
 
 ### Installation
 
@@ -402,21 +436,44 @@ Heimnetz works locally. Only this leaves your network:
 | DNS server of your network | lookup of `avm.de` (check “Name resolution”) | every minute |
 | basemap.at or OpenStreetMap | map tiles – loaded by the **browser**, not the integration | when viewing the map |
 | GitHub | prefilled issue – opened by the **browser**, submitted with your own account | only when you report "publicly on GitHub" yourself |
-| Upstream modem in your own home network | query its web interface at the push of a button – read-only, private addresses only (Diagnostics, beta) | only when you press "Query" under ⚙ → Diagnostics yourself |
+| Upstream device in your own home network (private addresses only) | search: home page at a few addresses (stored one, box suggestion, 192.168.0.1, 192.168.1.1, 192.168.8.1, 192.168.18.1, 192.168.100.1) until a device is recognised; then read-only queries and the login with the stored password (at most one attempt; rejected: no further attempt) | only with internet via an upstream device: every 10 minutes, at setup, on “↻ Search again” and under ⚙ → Diagnostics “Query” |
 
-The **Diagnostics** tab (⚙ → 🔬 Diagnostics, beta) is for the case where the internet comes through a separate 5G/LTE
-modem in front of the FRITZ!Box (e.g. a ZTE): the box then does not know the mobile network and "Internet → Mobile"
-stays empty. At the push of a button Heimnetz reads the modem's raw data and shows it redacted (the cell ID stays; IMEI,
-password, phone number and addresses do not), so you can send it to the developer. Heimnetz evaluates nothing and sends
-nothing itself; a password typed there is used only for the query and not stored (left empty, Heimnetz uses the one
-stored under 🌐 Access for exactly this address).
+**Upstream device** (beta): if the internet comes through an own modem in front of the FRITZ!Box, the box does not
+know the mobile network. Heimnetz then looks for the device at the addresses above (no scanning of the home network),
+recognises maker and interface from its home page and reads the radio values every 10 minutes (technology, band, cells
+with ID/PCI/TAC/network, RSRP/RSRQ/SINR, 5G, operator, connected since) – into the Internet tab, the mobile entities and
+the snapshot of each measurement. Read-only queries; no modem setting is changed. If it does not answer or rejects the
+password, a finding shows in the tab and under Settings → Repairs. The values stay in Home Assistant; as with the box,
+only the cell ID goes to BeaconDB/OpenCellID for the map to the mast.
 
-**Access** (⚙ → 🌐 Access): Heimnetz finds out where the internet comes from by asking only the FRITZ!Box (TR-064,
-every 10 minutes) – no scanning of the home network. If you set an upstream modem, you can enter its address (private
+| Device | Interface | Values | Status |
+|--------|-----------|--------|--------|
+| ZTE (MC801A, MF289F and similar) | goform (web interface) | yes | untested on a real device |
+| ZTE (G5TS, G5TC and similar) | ubus (JSON-RPC of the web interface) | yes | untested on a real device |
+| Huawei HiLink (B535, B818, E5xxx, 5G CPE …) | library huawei-lte-api or the Huawei LTE integration | yes | untested on a real device |
+| TP-Link LTE/5G (Archer MR, NX series, M series) | library tplinkrouterc6u | signal, network, operator (no cell ID) | untested on a real device |
+| NETGEAR LTE, Teltonika | Home Assistant integration, if set up | signal, band, operator | untested on a real device |
+| MikroTik, Sagemcom, Nokia FastMile, Zyxel 5G | – | detection only | send raw data via 🔬 Diagnostics |
+| Fibre modem (ONT) from Nokia, Huawei, Zyxel | – | detection only | an ONT on the internet port of the box is often not reachable from the home network |
+
+New dependencies for this (installed by Home Assistant from `manifest.json`): `huawei-lte-api` ≥ 1.11.0 (LGPL-3.0, the
+same as the Huawei LTE integration) and `tplinkrouterc6u` ≥ 5.37.0 (GPL-3.0, project
+[AlexandrErohin/TP-Link-Archer-C6U](https://github.com/AlexandrErohin/TP-Link-Archer-C6U); only installed, not shipped in
+this repository). Both are required dependencies: if Home Assistant cannot install them, Heimnetz does not load. They
+are used only with such a device.
+
+The **Diagnostics** tab (⚙ → 🔬 Diagnostics, beta) shows the detected maker and interface and the raw data of all
+matching interfaces, redacted (the cell ID stays; IMEI, password, phone number and addresses do not), so you can send
+it to the developer – for devices Heimnetz does not read yet. Heimnetz sends nothing itself; a password typed there is
+used only for the query and not stored (left empty, Heimnetz uses the one stored under 🌐 Access for the stored or found
+address).
+
+**Access** (⚙ → 🌐 Access): Heimnetz finds out where the internet comes from by asking the FRITZ!Box (TR-064, every
+10 minutes) and – only with an upstream device – its few addresses; the evidence reads e.g. “192.168.0.1 answers: ZTE
+G5TC (ubus)”. You can also choose “Fibre via an own modem” (ONT). If you set an upstream modem, you can enter its address (private
 addresses only) and the password of its web interface. **The password is stored in Home Assistant** (in the options of
 the Heimnetz entry, like other integrations), never returned to the page (it only shows "stored"), never logged and
-redacted in the diagnostics; "Remove password" deletes it. This version does not read live values from the upstream
-device yet.
+redacted in the diagnostics; "Remove password" deletes it.
 
 **Never** sent: the Home Assistant location, passwords, device names, hardware (MAC) and IP addresses. Box credentials
 stay in FRITZ!Box Tools and are not stored by Heimnetz. The **diagnostics** (Devices & services → Heimnetz → ⋮ →
@@ -466,6 +523,8 @@ All under the device "Heimnetz". The entity ID is created at setup from the name
 | `sensor.heimnetz_distance_to_base_station` | distance reported by the box |
 | `sensor.heimnetz_neighbour_cells` | number of visible neighbour cells |
 | `sensor.heimnetz_5g_cell_pci` | PCI of the 5G cell |
+| `sensor.heimnetz_signal_to_noise_ratio_4g_anchor` / `_signal_to_noise_ratio_5g` | SINR (dB) – only from an upstream modem |
+| `sensor.heimnetz_mobile_band` | bands in use, e.g. “B3 · n78” – only from an upstream modem |
 | `sensor.heimnetz_internet_access` | access type: mobile, DSL, fibre, cable or upstream device (detected or set) |
 | `sensor.heimnetz_dsl_sync_rate_download` / `_upload` | DSL sync rate (Mbit/s) |
 | `sensor.heimnetz_dsl_noise_margin_download` / `_upload` | noise margin (dB) |
@@ -476,7 +535,8 @@ All under the device "Heimnetz". The entity ID is created at setup from the name
 | `binary_sensor.heimnetz_internet_from_the_pi` | internet reachable from the Home Assistant host |
 | `binary_sensor.heimnetz_name_resolution` | name resolution (DNS) works |
 
-Mobile sensors exist only for boxes with mobile broadband, DSL and fibre sensors only when the internet comes through
+Mobile sensors exist only for boxes with mobile broadband or once an upstream modem has delivered radio values (the
+values then come from there), DSL and fibre sensors only when the internet comes through
 that connection (they appear with the first reading). **Long-term archive:** Heimnetz keeps measurements and
 journal itself (database `<config>/heimnetz/heimnetz.db`); the recorder keeps entity history only for a limited time.
 For years of history, record the entities with Scribe (TimescaleDB) or InfluxDB.
@@ -485,7 +545,7 @@ For years of history, record the entities with Scribe (TimescaleDB) or InfluxDB.
 
 Planned, not yet done:
 
-- **Values from the upstream modem** (e.g. ZTE, Huawei, TP-Link) in the Internet tab; today only the raw data via 🔬 Diagnostics.
+- Values of a **fibre modem (ONT)** and further upstream devices, once real raw data is available.
 - More values for **cable** and **fibre** than the box provides via TR-064.
 - **Other vendors**, e.g. UniFi.
 - **Other countries** (operator names, cell export, map tiles).

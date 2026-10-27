@@ -379,8 +379,67 @@ nachgetragen.
   der Diagnose geschwärzt; die Optionen von Heimnetz behalten es beim Speichern. Die 🔬 Diagnose (WU-0008) nimmt es,
   wenn ihr Kennwortfeld leer bleibt und die Adresse genau die gespeicherte ist; ein dort eingetipptes Kennwort wird
   weiterhin nicht gespeichert. Laufende Werte vom vorgeschalteten
-  Gerät kommen in Stufe 2 (Bibliotheken huawei-lte-api und tplinkrouterc6u erlaubt); bis dahin der Hinweis und
-  🔬 Diagnose.
+  Gerät seit Stufe 2 (siehe unten; Bibliotheken huawei-lte-api und tplinkrouterc6u erlaubt).
+
+## Vorgeschaltetes Gerät – laufende Werte (Herbert, 27.10.2026, WU-0009 Stufe 2)
+
+- Mockup `netzwerk.html` · Internet und Zugang (abgenommen 27.10.2026, „bau das alles“): bei einem Modem vor der Box
+  oben „Werte vom vorgeschalteten Modem (Beta)“, darunter die Mobilfunk-Ansicht wie bei der Box; in ⚙ › 🌐 Zugang der
+  Beleg „Gateway antwortet: ZTE G5TC“ und die Zeile „Erkannt · über ubus · zuletzt gelesen“.
+- Bausteine je Hersteller/Schnittstelle mit einem Muster: erkennen aus Startseite und Antwortkopf
+  (`logik/vorgeschaltet/__init__.py`, Weiterleitungen werden nur gelesen, nicht verfolgt), nur lesende Abfragen,
+  Anmeldung nur mit dem Kennwort des Besitzers über das normale Web-Login, höchstens ein Versuch je Abruf, umrechnen in
+  `mobil.Mobilfunk` (neu je Zelle `sinr` und `band`). Fachlogik ohne HA mit Tests, Netz dünn in `vorgeschaltet/`.
+  - ZTE goform und ZTE ubus (eigener Code). ubus nach dem öffentlichen Protokoll von chennest/zte-cpe-go nachgebaut –
+    das Projekt ist GPL-3.0, Heimnetz Apache-2.0, deshalb kein Code übernommen. Erlaubt sind nur
+    `zwrt_web.web_login_info/web_login/web_logout`, `zte_nwinfo_api.nwinfo_get_netinfo`, `zwrt_data.get_wwaniface`;
+    `uci get` bewusst nicht (liest beliebige Einstellungen, auch WLAN-Kennwörter).
+  - Huawei HiLink über `huawei-lte-api` (bewährt, in HA für Huawei LTE). Anforderung `>=1.11.0`, kein `==`: Home
+    Assistant pinnt für Huawei LTE 1.11.0, ein eigener Pin würde sich mit dessen Anforderung beißen; die genutzten
+    Aufrufe gibt es in 1.11 und 2.0. Ist Huawei LTE eingerichtet, liest Heimnetz deren Entitäten und fragt das Gerät
+    nicht selbst – eine zweite Anmeldung würde deren Sitzung stören. Die Bibliothek schreibt im Debug-Protokoll
+    Kennwort und Anmeldedaten mit; ein Filter an ihren Loggern verwirft diese Zeilen.
+  - TP-Link über `tplinkrouterc6u` (`>=5.37.0`, GPL-3.0, AlexandrErohin/TP-Link-Archer-C6U – nur als Abhängigkeit
+    installiert, nicht im Repo; Herbert, 28.10.2026: bleibt, Lizenz und Projekt im README). Nicht
+    `TplinkRouterProvider.get_client` und nicht `supports()`: bei den EX- und MR-GCM-Clients meldet sich `supports()`
+    in Wahrheit an, der Provider probiert so mehrere Kennwörter. Die Familie (MR600, EX, MR, MR200) bestimmen nur die
+    Schlüssel-Abfragen ohne Anmeldung (`cgi/getParm`, `cgi/getGDPRParm`); ohne Kennwort keine Anmeldung; mit Kennwort
+    genau ein `authorize()` mit der GCM-Variante der Familie (die Variante CBC/GCM/OAEP lässt sich ohne Anmeldung nicht
+    unterscheiden – passt sie nicht, meldet das Gerät „abgelehnt“; am Gerät prüfen). `REQUEST_RETRIES = 1`. Fehler der
+    Bibliothek, die nicht nach Ablehnung klingen, gelten als „Lesen fehlgeschlagen“, nicht als abgelehnt.
+  - NETGEAR LTE und Teltonika: nur deren HA-Integration lesen, falls eingerichtet (Entitäten über die `unique_id`);
+    MikroTik, Sagemcom, Nokia FastMile, Zyxel 5G und Glasfaser-Modems (Nokia, Huawei, Zyxel) nur erkennen, keine Werte,
+    solange keine echte Antwort vorliegt. Neue Zugangsart „Glasfaser über ein eigenes Modem“ (`ont`, für die Box ein
+    vorgeschaltetes Gerät).
+- Suche: nacheinander an gespeicherter Adresse, Vorschlag der Box und 192.168.0.1, .1.1, .8.1, .18.1, .100.1 – nie die
+  Adresse der Box, Ende beim ersten erkannten Gerät; kein Absuchen weiterer Adressen. Angestoßen beim Einrichten (Wahl
+  oder Adresse geändert), bei „↻ Erneut suchen“ und – solange nichts gefunden ist – höchstens alle 10 Minuten. Das
+  erkannte Gerät steht im Gedächtnis des Abrufs (Adresse, Baustein, Modell), ohne neue Schema-Version.
+- Abruf: nur bei Internet über ein vorgeschaltetes Gerät (festgelegt oder erkannt), im eigenen 10-Minuten-Takt im
+  Hintergrund, getrennt von der Sperre der Box (anderes Gerät), nie zweimal zugleich und nie neben der Diagnose (eine
+  Sperre). Liefert das Gerät Funkwerte, gelten sie als `Stand.mobil` (Herkunft `modem`): Reiter Internet, die
+  vorhandenen Mobilfunk-Entitäten, Journal (Zellwechsel, Neueinwahl) und Momentaufnahme. Werte gelten 22 Minuten, danach
+  „nicht verfügbar“. Neu als Entitäten nur, was das Modem zusätzlich liefert: SINR (Anker, 5G) und Band.
+- Befunde statt Stille (Texte von der Integration): nicht gefunden, nicht erreichbar, Kennwort fehlt, abgelehnt,
+  gesperrt, keine Funkwerte, nicht unterstützt, Integration fehlt, Glasfaser-Modem. Abgelehnt: der Hash von Adresse und
+  Kennwort bleibt nur im Speicher; mit diesem Kennwort keine weitere Anmeldung, bis ein anderes hinterlegt ist
+  (Reparatur-Hinweis sofort). Nicht erreichbar: Reparatur-Hinweis erst nach zwei Takten (kein Flattern).
+- Außenkontakt: nur das vorgeschaltete Gerät im eigenen Heimnetz (private Adresse). Sicherheit wie in WU-0008, dazu für
+  die Bibliotheken eine eigene requests-Session, deren Adapter jede Anfrage an eine andere Adresse ablehnt und die
+  Antwortgröße begrenzt; Weiterleitungen nur innerhalb derselben Adresse (HiLink leitet „/“ weiter). Das hinterlegte
+  Kennwort nimmt die Diagnose für die gespeicherte oder – ohne gespeicherte – die gefundene Adresse.
+- Pflicht-Abhängigkeiten (Herbert, 28.10.2026): `huawei-lte-api` und `tplinkrouterc6u` stehen in `manifest.json`
+  und werden bei jeder Installation mitinstalliert, auch ohne vorgeschaltetes Gerät. Folge: Scheitert pip (Index,
+  Plattform), lädt Heimnetz nicht. Importiert werden sie erst, wenn ein solches Gerät gelesen wird.
+- Anmeldefehler unterscheiden: angenommen / abgelehnt / Fehler (Netz, keine lesbare Antwort, Fehlercode der
+  Schnittstelle). Nur „abgelehnt“ setzt den Merker; bei Werten aus einer HA-Integration gibt es keinen. Die Diagnose
+  meldet sich nicht selbst an, wenn die passende HA-Integration eingerichtet ist, und nimmt ein als abgelehnt
+  gemerktes hinterlegtes Kennwort nicht noch einmal – nur ein frisch eingetipptes.
+- Zusatz-Entitäten (SINR Anker/5G, Band) je Wert erst, wenn genau dieser Wert einmal geliefert wurde (Gedächtnis
+  `modem_werte`). ZTE ubus: PCI nur mit Ziffern dezimal, sonst hexadezimal (am Gerät prüfen). Dauer aus Huawei LTE
+  (CurrentConnectTime) nach der Einheit der Entität in Sekunden.
+- Ungetestet am Gerät: alle Bausteine sind nach öffentlicher Doku und erfundenen Antworten gebaut; echte Rohdaten
+  über 🔬 Diagnose bessern sie nach.
 
 ## Offene Entscheidungen
 

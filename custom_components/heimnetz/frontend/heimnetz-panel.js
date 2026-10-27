@@ -3833,21 +3833,12 @@ var EN = {
   // Diagnose: vorgeschaltetes Modem (WU-0008)
   "🔬 Diagnose": "🔬 Diagnostics",
   "Diese Abfrage können nur Admins starten.": "Only admins can run this query.",
-  "Kommt das Internet über ein eigenes 5G/LTE-Modem vor der FRITZ!Box (z. B. ZTE), kennt die Box das Funknetz nicht – Internet › Mobilfunk bleibt leer. Hier liest Heimnetz die Rohdaten des Modems aus, damit der Entwickler es unterstützen kann.": "If the internet comes through a separate 5G/LTE modem in front of the FRITZ!Box (e.g. a ZTE), the box does not know the mobile network – Internet › Mobile stays empty. Here Heimnetz reads the modem's raw data so the developer can add support for it.",
   "Adresse des Modems": "Modem address",
   "Kennwort der Weboberfläche (optional)": "Web interface password (optional)",
   "wie beim Anmelden im Browser": "as when logging in via the browser",
   "⏳ fragt ab …": "⏳ querying …",
   "▶ Abfragen": "▶ Query",
   "Nur Adressen im eigenen Heimnetz (z. B. 192.168.x.x). Heimnetz liest nur und ändert am Modem nichts.": "Only addresses inside your home network (e.g. 192.168.x.x). Heimnetz only reads and changes nothing on the modem.",
-  "Adresse nicht erlaubt": "Address not allowed",
-  "Die Adresse liegt nicht im eigenen Heimnetz. Abgefragt werden nur private Adressen (192.168.x.x, 10.x.x.x, 172.16–31.x.x).": "The address is not inside your home network. Only private addresses are queried (192.168.x.x, 10.x.x.x, 172.16–31.x.x).",
-  "Modem nicht erreichbar": "Modem not reachable",
-  "Unter dieser Adresse antwortet nichts. Adresse prüfen – sie steht in den Einstellungen des Modems oder auf einem Aufkleber.": "Nothing answers at this address. Check the address – it is in the modem settings or on a sticker.",
-  "Kein ZTE-Modem erkannt": "No ZTE modem detected",
-  "Unter dieser Adresse antwortet etwas, aber kein ZTE-Modem. Diese Version unterstützt vorerst nur ZTE-Modems.": "Something answers at this address, but not a ZTE modem. For now this version only supports ZTE modems.",
-  "Anmeldung abgelehnt": "Login rejected",
-  "Das Modem lehnt das Kennwort ab. Ohne Anmeldung fehlen die Signalwerte. Kennwort prüfen und noch einmal abfragen.": "The modem rejects the password. Without login the signal values are missing. Check the password and query again.",
   "Ergebnis": "Result",
   "{ok} von {gesamt} Abfragen · {werte} Werte · {geschwaerzt} geschwärzt": "{ok} of {gesamt} queries · {werte} values · {geschwaerzt} redacted",
   "Geschwärzt:": "Redacted:",
@@ -3953,7 +3944,6 @@ var EN = {
   "ohne Neueinwahl (7 Tage)": "no reconnect (7 days)",
   "Neueinwahlen, letzte 7 Tage": "reconnects, last 7 days",
   "Bänder": "Bands",
-  "eingeschaltet (in der Box)": "enabled (in the box)",
   "Verlauf Signalstärke": "Signal strength history",
   "4G-Anker": "4G anchor",
   "schwach (unter {n} dBm)": "weak (below {n} dBm)",
@@ -3961,7 +3951,6 @@ var EN = {
   "Noch kein Verlauf aufgezeichnet.": "No history recorded yet.",
   "{art}-Zelle": "{art} cell",
   "Zelle {kennung}": "cell {kennung}",
-  "Verbindung der FRITZ!Box zur Basisstation": "Connection of the FRITZ!Box to the base station",
   "Signal {wort} · {n} dBm": "signal {wort} · {n} dBm",
   "Basisstation": "Base station",
   "BeaconDB kennt diese Zellen nicht. Mit einem Schlüssel von opencellid.org (Einstellungen → Geräte & Dienste → Heimnetz → Konfigurieren) fragt die Integration zusätzlich OpenCellID.": "BeaconDB does not know these cells. With a key from opencellid.org (Settings → Devices & services → Heimnetz → Configure) the integration also asks OpenCellID.",
@@ -4127,7 +4116,6 @@ var EN = {
   "DSL über die FRITZ!Box": "DSL via the FRITZ!Box",
   "ADSL, VDSL, Supervectoring": "ADSL, VDSL, supervectoring",
   "Glasfaser": "Fibre",
-  "über die FRITZ!Box oder ein eigenes Glasfaser-Modem": "via the FRITZ!Box or an own fibre modem",
   "Kabel": "Cable",
   "über die FRITZ!Box": "via the FRITZ!Box",
   "keiner": "none",
@@ -4142,13 +4130,11 @@ var EN = {
   "hinterlegt – zum Ändern neu eingeben": "stored – enter again to change",
   "wird in Home Assistant gespeichert (wie bei anderen Integrationen), nie angezeigt": "stored in Home Assistant (like other integrations), never shown",
   "Kennwort entfernen": "Remove password",
-  "Laufende Werte vom vorgeschalteten Gerät folgen in einer späteren Fassung; bis dahin zeigt 🔬 Diagnose die Rohdaten.": "Live values from the upstream device follow in a later version; until then 🔬 Diagnostics shows the raw data.",
   "Ersatzzugang bei Ausfall": "Backup access on failure",
   "Ersatz": "Backup",
   "z. B. Mobilfunk-Stick an der FRITZ!Box, wenn DSL ausfällt": "e.g. a mobile stick on the FRITZ!Box when DSL fails",
   "↻ Erneut suchen": "↻ Search again",
   "🔬 Rohdaten abfragen ›": "🔬 Query raw data ›",
-  "Gefragt wird nur die FRITZ!Box – kein Absuchen des Heimnetzes. Vorgeschlagen werden die Adresse vor der Box und übliche Modem-Adressen (192.168.0.1, 192.168.1.1, 192.168.8.1). Heimnetz liest nur.": "Only the FRITZ!Box is asked – no scanning of the home network. Suggested are the address in front of the box and common modem addresses (192.168.0.1, 192.168.1.1, 192.168.8.1). Heimnetz only reads.",
   "automatisch erkannt": "detected automatically",
   "festgelegt": "set manually",
   "Ersatz: {text}": "Backup: {text}",
@@ -4197,7 +4183,6 @@ var EN = {
   "Seriennummer und Kennung zeigt die Seite nicht": "the page does not show serial number and ID",
   "Lichtleistung": "optical power",
   "empfangene Lichtleistung (dBm)": "received optical power (dBm)",
-  "Mit einem eigenen Glasfaser-Modem (ONT) vor der FRITZ!Box kommen diese Werte vom ONT – das folgt in einer späteren Fassung.": "With an own fibre modem (ONT) in front of the FRITZ!Box these values come from the ONT – that follows in a later version.",
   "Kabelanschluss getrennt": "Cable connection down",
   "Kabelanschluss verbunden": "Cable connection up",
   "Kanäle, Pegel und Fehler des Kabelmodems gibt die Schnittstelle der FRITZ!Box (TR-064) nicht heraus – nur die Geschwindigkeit der Verbindung.": "The FRITZ!Box interface (TR-064) does not provide channels, levels and errors of the cable modem – only the connection speed.",
@@ -4208,8 +4193,6 @@ var EN = {
   "Sendepegel": "Upstream level",
   "Fehler korrigiert / nicht korrigierbar": "Errors corrected / uncorrectable",
   "Kanalliste": "Channel list",
-  "Werte vom vorgeschalteten Gerät folgen": "Values from the upstream device will follow",
-  "Die FRITZ!Box hängt hinter einem eigenen Modem oder Router und kennt dessen Leitung nicht. Heimnetz liest die Werte dieses Geräts in einer späteren Fassung; die Rohdaten gibt es schon über 🔬 Diagnose.": "The FRITZ!Box sits behind an own modem or router and does not know its line. Heimnetz will read the values of this device in a later version; the raw data is already available via 🔬 Diagnostics.",
   "Ersatzzugang Mobilfunk": "Mobile backup access",
   "bereit · nicht aktiv": "ready · not active",
   "zuletzt aktiv {zeit}": "last active {zeit}",
@@ -4223,7 +4206,34 @@ var EN = {
   "Zugang nicht abrufbar: {fehler}": "Access not available: {fehler}",
   "Gesucht: FRITZ!Box neu gefragt": "Searched: FRITZ!Box asked again",
   "Eben erst gesucht – in einer halben Minute wieder": "Just searched – again in half a minute",
-  "wird nur für diese Abfrage verwendet und nicht gespeichert – leer: das unter 🌐 Zugang für diese Adresse hinterlegte": "used only for this query and not stored – empty: the one stored under 🌐 Access for this address"
+  "wird nur für diese Abfrage verwendet und nicht gespeichert – leer: das unter 🌐 Zugang für diese Adresse hinterlegte": "used only for this query and not stored – empty: the one stored under 🌐 Access for this address",
+  // Vorgeschaltetes Gerät (WU-0009 Stufe 2)
+  "Glasfaser über die FRITZ!Box": "Fibre via the FRITZ!Box",
+  "eingebautes Glasfaser-Modem (z. B. FRITZ!Box 5590 Fiber)": "built-in fibre modem (e.g. FRITZ!Box 5590 Fiber)",
+  "Glasfaser über ein eigenes Modem": "Fibre via an own modem",
+  "ONT von Nokia, Huawei, Zyxel … – nur erkennen (Beta)": "ONT from Nokia, Huawei, Zyxel … – detection only (beta)",
+  "Gesucht wird nur an der gespeicherten Adresse, am Vorschlag der FRITZ!Box und an den üblichen Modem-Adressen ({liste}) – kein Absuchen des Heimnetzes. Heimnetz liest nur.": "Only the stored address, the address suggested by the FRITZ!Box and the common modem addresses ({liste}) are asked – no scanning of the home network. Heimnetz only reads.",
+  "über die Integration in Home Assistant": "via the Home Assistant integration",
+  "zuletzt gelesen {zeit}": "last read {zeit}",
+  "Erkannt": "Detected",
+  "noch nicht gesucht": "not searched yet",
+  "Hier fragt Heimnetz ein Gerät vor der FRITZ!Box (5G/LTE-Modem, Glasfaser-Modem) ab: erkennt Hersteller und Schnittstelle und zeigt alle Rohdaten, geschwärzt – damit der Entwickler weitere Geräte unterstützen kann.": "Here Heimnetz queries a device in front of the FRITZ!Box (5G/LTE modem, fibre modem): it detects maker and interface and shows all raw data, redacted – so the developer can support more devices.",
+  "Heimnetz liest dieses Gerät laufend": "Heimnetz reads this device continuously",
+  "nur erkennen – Werte noch nicht unterstützt": "detection only – values not supported yet",
+  "Mit einem eigenen Glasfaser-Modem (ONT) vor der FRITZ!Box: unter ⚙ › 🌐 Zugang „Glasfaser über eigenes Modem“ wählen. Heimnetz erkennt das ONT; seine Werte liest es noch nicht.": "With an own fibre modem (ONT) in front of the FRITZ!Box: choose “Fibre via an own modem” under ⚙ › 🌐 Access. Heimnetz detects the ONT; it does not read its values yet.",
+  "Werte vom vorgeschalteten Modem (Beta)": "Values from the upstream modem (beta)",
+  "Die FRITZ!Box hängt hinter dem {geraet} und kennt das Funknetz nicht. Die Werte kommen aus dessen Integration in Home Assistant. Was sie nicht liefert, steht als „–“.": "The FRITZ!Box sits behind the {geraet} and does not know the mobile network. The values come from its Home Assistant integration. Whatever it does not provide shows as “–”.",
+  "Modem": "modem",
+  "Die FRITZ!Box hängt hinter dem {geraet} und kennt das Funknetz nicht. Heimnetz liest Zelle und Signal direkt am Gerät (Anmeldung mit dem in ⚙ › 🌐 Zugang hinterlegten Kennwort). Was es nicht liefert, steht als „–“.": "The FRITZ!Box sits behind the {geraet} and does not know the mobile network. Heimnetz reads cell and signal directly from the device (login with the password stored under ⚙ › 🌐 Access). Whatever it does not provide shows as “–”.",
+  "Zuletzt gelesen {zeit}.": "Last read {zeit}.",
+  "🌐 Zugang ›": "🌐 Access ›",
+  "Band {band}": "band {band}",
+  "Verbindung von {geraet} zur Basisstation": "Connection of {geraet} to the base station",
+  "Werte von": "Values from",
+  "vorgeschaltetes Modem": "upstream modem",
+  "Band · SINR": "Band · SINR",
+  "Funkwerte vom vorgeschalteten Modem – was es nicht liefert, fehlt.": "Radio values from the upstream modem – whatever it does not provide is missing.",
+  "Gesucht: FRITZ!Box und vorgeschaltetes Gerät neu gefragt": "Searched: FRITZ!Box and upstream device asked again"
 };
 
 // src/format.js
@@ -4508,10 +4518,12 @@ function messungBlatt(p4) {
     ${z2(t3("Auslöser"), k2.ausloeser ? `${AUSLOESER[k2.ausloeser] ? t3(AUSLOESER[k2.ausloeser]) : k2.ausloeser}${k2.serie_n ? `, ${t3("Durchlauf {lauf} von {n}", { lauf: k2.serie_lauf, n: k2.serie_n })}` : ""}` : null)}
     ${z2(t3("Grundlast"), m3.last != null ? `${zahl(m3.last, 1)} Mbit/s${m3.belastet ? ` · ${t3("belastet")}` : ""}` : null)}
     <div class="gruppe">${t3("Mobilfunk")}</div>
+    ${k2.mobil_quelle === "modem" ? z2(t3("Werte von"), k2.modem_modell || t3("vorgeschaltetes Modem")) : A}
     ${z2(t3("Netz"), k2.netz ? b2`<span class="badge ${k2.netz.startsWith("5G") ? "blau-b" : ""}">${k2.netz}</span>` : null)}
     ${z2(t3("Ankerzelle · Sendeanlage"), k2.zelle ? [k2.zelle, k2.anlage && t3("Anlage {anlage}", { anlage: k2.anlage })].filter(Boolean).join(" · ") : null)}
     ${z2(t3("RSRP · RSRQ Anker"), k2.rsrp != null ? [dbm(k2.rsrp), dbm(k2.rsrq, "dB")].filter(Boolean).join(" · ") : null)}
     ${z2("5G", k2.nr_aktiv === false ? t3("aus") : k2.nr_aktiv ? [t3("aktiv"), k2.nr_pci != null && `PCI ${k2.nr_pci}`, dbm(k2.nr_rsrp), dbm(k2.nr_rsrq, "dB")].filter(Boolean).join(" · ") : null)}
+    ${k2.band || k2.sinr != null || k2.nr_band || k2.nr_sinr != null ? z2(t3("Band · SINR"), [k2.band, k2.sinr != null && `${zahl(k2.sinr, 1)} dB`, k2.nr_band, k2.nr_sinr != null && `5G ${zahl(k2.nr_sinr, 1)} dB`].filter(Boolean).join(" · ")) : A}
     ${z2(t3("Entfernung laut Box"), k2.entfernung_m ? `${zahl(k2.entfernung_m / 1e3, 1)} km` : null)}
     ${z2(t3("Nachbarzellen"), k2.nachbarzellen)}
     ${z2(t3("Netz · Gebiet"), mit(k2.plmn, k2.tac && `TAC ${k2.tac}`))}
@@ -4526,7 +4538,7 @@ function messungBlatt(p4) {
     <div class="gruppe">${t3("Umgebung")}</div>
     ${z2(t3("Wetter"), k2.wetter ? [WETTER[k2.wetter] ? t3(WETTER[k2.wetter]) : k2.wetter, k2.temperatur != null && `${zahl(k2.temperatur, 1)} °C`, k2.feuchte != null && t3("{n} % Feuchte", { n: zahl(k2.feuchte) }), k2.wolken != null && t3("{n} % Wolken", { n: zahl(k2.wolken) })].filter(Boolean).join(" · ") : null)}
     ${z2(t3("Tag"), TAGESART[k2.tagesart] && t3(TAGESART[k2.tagesart]))}
-    <p class="hinweis" style="margin-top:10px">${t3("Nicht verfügbar über die Schnittstelle der Box: genutztes Band, SINR, Bandbreite, MIMO, Carrier Aggregation.")}</p>`;
+    <p class="hinweis" style="margin-top:10px">${k2.mobil_quelle === "modem" ? t3("Funkwerte vom vorgeschalteten Modem – was es nicht liefert, fehlt.") : t3("Nicht verfügbar über die Schnittstelle der Box: genutztes Band, SINR, Bandbreite, MIMO, Carrier Aggregation.")}</p>`;
 }
 var BELASTET_KURZ = { aus: merke("zählt nicht"), halb: merke("zählt ¼"), mit: merke("belastet") };
 function kachelPopup(p4) {
@@ -5797,7 +5809,7 @@ function mobilfunk(p4, d3) {
       <p class="hinweis">${d3.befund.text}</p>
     </details>
     ${d3.zellen.length ? b2`<div class="glas-panel block">
-      <div class="block-kopf"><h3>${t3("Verbindung zur Basisstation")}</h3><span class="leise">${[d3.technik, d3.strecke?.anbieter].filter(Boolean).join(" · ")}</span></div>
+      <div class="block-kopf"><h3>${t3("Verbindung zur Basisstation")}</h3><span class="leise">${[d3.technik, d3.strecke?.anbieter, d3.herkunft === "modem" ? d3.herkunft_text : ""].filter(Boolean).join(" · ")}</span></div>
       ${d3.strecke ? strecke(d3.strecke) : A}
       <div class="zellen">${d3.zellen.map(zelle)}</div>
       <details class="klapp"><summary><span class="leise">ⓘ ${t3("Was zeigt die Liste?")}</span></summary>
@@ -5807,7 +5819,7 @@ function mobilfunk(p4, d3) {
     <div class="glas-raster">
       ${kachel(t3("Verbunden seit"), d3.laufzeit ?? "–", d3.letzter_abbruch ? t3("Neueinwahl {zeit}", { zeit: zeit(d3.letzter_abbruch) }) : t3("ohne Neueinwahl (7 Tage)"))}
       ${kachel(t3("Abbrüche"), b2`${d3.abbrueche_7}`, t3("Neueinwahlen, letzte 7 Tage"))}
-      ${kachel(t3("Bänder"), d3.baender ? b2`<span style="font-size:15px">${d3.baender}</span>` : "–", t3("eingeschaltet (in der Box)"))}
+      ${kachel(t3("Bänder"), d3.baender ? b2`<span style="font-size:15px">${d3.baender}</span>` : "–", d3.baender_unter)}
     </div>
     <div class="glas-panel block">
       <div class="block-kopf"><h3>${t3("Verlauf Signalstärke")}</h3>${seg([[1, "24 h"], [7, t3("{n} Tage", { n: 7 })], [30, t3("{n} Tage", { n: 30 })]], o7.tage, (v2) => p4.setze("mobilfunk", { tage: v2 }))}</div>
@@ -5828,7 +5840,7 @@ function stufen(n4, lage) {
 }
 function zelle(z2) {
   const titel = z2.anker && z2.rolle_art === "anker" ? t3("4G-Anker") : t3("{art}-Zelle", { art: z2.art });
-  const kennung = [z2.tac ? `TAC ${z2.tac}` : "", z2.plmn ? `PLMN ${z2.plmn}` : ""].filter(Boolean).join(" · ");
+  const kennung = [z2.band ? t3("Band {band}", { band: z2.band }) : "", z2.sinr != null ? `SINR ${zahl(z2.sinr, 1)} dB` : "", z2.tac ? `TAC ${z2.tac}` : "", z2.plmn ? `PLMN ${z2.plmn}` : ""].filter(Boolean).join(" · ");
   const wo = z2.fund ? b2`<span class="z-wo">📍 ${z2.fund.quelle}${z2.fund.genau ? ` · ±${z2.fund.genau}` : ""}</span>` : z2.such ? b2`<span class="z-wo">${z2.such}</span>` : A;
   return b2`<div class="zelle"><span class="badge ${z2.anker ? "blau-b" : ""}">${z2.art}</span>
     <span class="z-name"><b>${titel}</b><span class="leise">${z2.kennung ? `${t3("Zelle {kennung}", { kennung: z2.kennung })} · ` : ""}${z2.rolle}</span>
@@ -5843,11 +5855,11 @@ function strecke(s4) {
     <path d="M0,46 L-17,104 M0,46 L17,104 M-11,82 L11,82 M-14,94 L14,94 M-8,70 L8,70" stroke="var(--ink2)" stroke-width="2" fill="none" stroke-linecap="round"></path>
     <path d="M-10,36 a14,14 0 0 1 0,-20 M10,36 a14,14 0 0 0 0,-20 M-17,42 a24,24 0 0 1 0,-32 M17,42 a24,24 0 0 0 0,-32" stroke="var(--ink2)" stroke-width="1.6" fill="none" opacity=".7"></path>
     <circle cx="0" cy="62" r="13" fill="var(--sheet)" stroke="var(--panel-rand)"></circle><text x="0" y="66" text-anchor="middle" class="m-t">${t7}</text></g>`;
-  return b2`<svg class="strecke" viewBox="0 0 600 132" role="img" aria-label=${t3("Verbindung der FRITZ!Box zur Basisstation")}>
+  return b2`<svg class="strecke" viewBox="0 0 600 132" role="img" aria-label=${t3("Verbindung von {geraet} zur Basisstation", { geraet: s4.geraet ?? "FRITZ!Box" })}>
     <rect x="30" y="22" width="44" height="74" rx="9" fill="var(--panel)" stroke="var(--ink2)" stroke-width="2"></rect>
     <rect x="30" y="84" width="44" height="12" rx="4" fill="var(--s2)"></rect>
     <line x1="58" y1="44" x2="66" y2="44" stroke="var(--ink2)" stroke-width="2"></line><line x1="58" y1="50" x2="66" y2="50" stroke="var(--ink2)" stroke-width="2"></line>
-    <text x="52" y="122" text-anchor="middle" class="m-t">FRITZ!Box</text>
+    <text x="52" y="122" text-anchor="middle" class="m-t">${s4.geraet ?? "FRITZ!Box"}</text>
     <line x1="96" y1="62" x2=${mitte - 60} y2="62" stroke=${f3} stroke-width="5" stroke-linecap="round"></line>
     <line class="fluss" x1="96" y1="62" x2=${mitte - 60} y2="62" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-dasharray="2 22" opacity=".45"></line>
     ${s4.entfernung ? w`<text x=${(36 + mitte) / 2} y="48" text-anchor="middle" class="m-w">↔ ${s4.entfernung}</text>` : A}
@@ -5904,7 +5916,7 @@ function internet(p4, d3) {
   const z2 = d3.zugang;
   const sicht = p4._opt.internet.sicht === "ersatz" && d3.ersatz ? "ersatz" : "haupt";
   const knoepfe = [["haupt", `${SYMBOL2[z2.art] ?? "🌐"} ${art(z2)}`], ...d3.ersatz ? [["ersatz", t3("📶 Ersatz")]] : []];
-  const inhalt = sicht === "ersatz" ? ersatz(d3.ersatz) : z2.art === "dsl" ? dsl(d3.dsl) : z2.art === "glasfaser" ? glasfaser(d3.glasfaser) : z2.art === "kabel" ? kabel(d3.kabel) : z2.art === "extern" ? extern(p4) : z2.art === "mobilfunk" && d3.mobilfunk ? mobilfunk(p4, d3.mobilfunk) : b2`<div class="glas-panel block"><div class="leer">${t3("Die Box meldet noch nicht, woher das Internet kommt – sie wird alle 10 Minuten gefragt.")}</div></div>`;
+  const inhalt = sicht === "ersatz" ? ersatz(d3.ersatz) : z2.art === "dsl" ? dsl(d3.dsl) : z2.art === "glasfaser" ? glasfaser(d3.glasfaser) : z2.art === "kabel" ? kabel(d3.kabel) : z2.art === "extern" ? extern(p4, d3) : z2.art === "mobilfunk" && d3.mobilfunk ? mobilfunk(p4, d3.mobilfunk) : b2`<div class="glas-panel block"><div class="leer">${t3("Die Box meldet noch nicht, woher das Internet kommt – sie wird alle 10 Minuten gefragt.")}</div></div>`;
   return b2`${zugangZeile(p4, z2)}
     ${knoepfe.length > 1 ? b2`<div class="leiste">${seg(knoepfe, sicht, (v2) => p4.setze("internet", { sicht: v2 }, false), false)}</div>` : A}
     ${inhalt}`;
@@ -5959,7 +5971,7 @@ function glasfaser(g2) {
       ${iz(t3("Anschluss-Kennung"), b2`<span class="amber-t">${t3("⟨nur in der Box⟩")}</span>`, t3("Seriennummer und Kennung zeigt die Seite nicht"))}
     </div>
     ${verlauf(t3("Verlauf 7 Tage"), t3("Lichtleistung"), [{ punkte: g2.verlauf.rx, farbe: "var(--s1)", name: t3("empfangene Lichtleistung (dBm)") }], [], g2.rx_bereich)}
-    <p class="hinweis">${t3("Mit einem eigenen Glasfaser-Modem (ONT) vor der FRITZ!Box kommen diese Werte vom ONT – das folgt in einer späteren Fassung.")}</p>`;
+    <p class="hinweis">${t3("Mit einem eigenen Glasfaser-Modem (ONT) vor der FRITZ!Box: unter ⚙ › 🌐 Zugang „Glasfaser über eigenes Modem“ wählen. Heimnetz erkennt das ONT; seine Werte liest es noch nicht.")}</p>`;
 }
 function kabel(k2) {
   if (!k2) return lade();
@@ -5978,10 +5990,15 @@ function kabel(k2) {
       ${iz(t3("Kanalliste"), "–", k2.fehlt)}
     </div>`;
 }
-function extern(p4) {
-  return b2`<div class="glas-panel block"><div class="befund"><span class="punkt grau"></span><div><b>${t3("Werte vom vorgeschalteten Gerät folgen")}</b>
-    <p>${t3("Die FRITZ!Box hängt hinter einem eigenen Modem oder Router und kennt dessen Leitung nicht. Heimnetz liest die Werte dieses Geräts in einer späteren Fassung; die Rohdaten gibt es schon über 🔬 Diagnose.")}</p></div></div>
-    ${p4.istAdmin ? b2`<div class="dg-knoepfe"><button @click=${() => p4.einstellungenOeffnen("diag")}>${t3("🔬 Rohdaten abfragen ›")}</button></div>` : A}</div>`;
+var PUNKT2 = { grau: "grau", amber: "amber", rot: "rot" };
+function extern(p4, d3) {
+  const v2 = d3.vorgeschaltet || {};
+  const b3 = v2.befund;
+  const kopf = b3 ? b2`<div class="befund"><span class="punkt ${PUNKT2[b3.lage] ?? "grau"}"></span><div><b>${b3.titel}</b><p>${b3.text}</p></div></div>` : b2`<div class="befund"><span class="punkt grau"></span><div><b>${t3("Werte vom vorgeschalteten Modem (Beta)")}</b>
+      <p>${v2.quelle === "integration" ? t3("Die FRITZ!Box hängt hinter dem {geraet} und kennt das Funknetz nicht. Die Werte kommen aus dessen Integration in Home Assistant. Was sie nicht liefert, steht als „–“.", { geraet: v2.geraet ?? t3("Modem") }) : t3("Die FRITZ!Box hängt hinter dem {geraet} und kennt das Funknetz nicht. Heimnetz liest Zelle und Signal direkt am Gerät (Anmeldung mit dem in ⚙ › 🌐 Zugang hinterlegten Kennwort). Was es nicht liefert, steht als „–“.", { geraet: v2.geraet ?? t3("Modem") })}${v2.gelesen ? ` ${t3("Zuletzt gelesen {zeit}.", { zeit: zeit(v2.gelesen) })}` : ""}</p></div></div>`;
+  const knoepfe = p4.istAdmin && b3 ? b2`<div class="dg-knoepfe"><button @click=${() => p4.einstellungenOeffnen("zugang")}>${t3("🌐 Zugang ›")}</button><button @click=${() => p4.einstellungenOeffnen("diag")}>${t3("🔬 Rohdaten abfragen ›")}</button></div>` : A;
+  return b2`<div class="glas-panel block">${kopf}${knoepfe}</div>
+    ${d3.mobilfunk ? mobilfunk(p4, d3.mobilfunk) : A}`;
 }
 function ersatz(e6) {
   return b2`<div class="glas-panel block"><div class="block-kopf"><h3>${t3("Ersatzzugang Mobilfunk")}</h3>
@@ -6184,7 +6201,8 @@ var WAHL2 = {
   box_mobil: [merke("Mobilfunk über die FRITZ!Box"), merke("eingebautes Modem oder Stick")],
   extern: [merke("Mobilfunk über ein vorgeschaltetes Modem"), merke("ZTE, Huawei, TP-Link … (Beta)")],
   dsl: [merke("DSL über die FRITZ!Box"), merke("ADSL, VDSL, Supervectoring")],
-  glasfaser: [merke("Glasfaser"), merke("über die FRITZ!Box oder ein eigenes Glasfaser-Modem")],
+  glasfaser: [merke("Glasfaser über die FRITZ!Box"), merke("eingebautes Glasfaser-Modem (z. B. FRITZ!Box 5590 Fiber)")],
+  ont: [merke("Glasfaser über ein eigenes Modem"), merke("ONT von Nokia, Huawei, Zyxel … – nur erkennen (Beta)")],
   kabel: [merke("Kabel"), merke("über die FRITZ!Box")]
 };
 var ERSATZ = [["auto", merke("automatisch")], ["kein", merke("keiner")]];
@@ -6274,7 +6292,7 @@ function zugang(p4) {
   if (!p4.istAdmin) return b2`<p class="hinweis" style="padding-top:8px">${t3("Den Zugang legen nur Admins fest.")}</p>`;
   const z2 = p4._daten.zugang;
   if (!z2) return p4._hinweisZugang ? b2`<p class="fein">${p4._hinweisZugang}</p>` : b2`<div class="leer">${t3("lädt …")}</div>`;
-  const vorgeschaltet = z2.wahl === "extern" || z2.wahl === "auto" && z2.vorschlag_art === "extern";
+  const vorgeschaltet = z2.wahl === "extern" || z2.wahl === "ont" || z2.wahl === "auto" && z2.vorschlag_art === "extern";
   const adresseFeld = (ev) => ev.target.closest(".sheet").querySelector("input[name=zg-adresse]");
   const kennwortFeld = (ev) => ev.target.closest(".sheet").querySelector("input[name=zg-kennwort]");
   const speichern = (ev) => {
@@ -6298,13 +6316,19 @@ function zugang(p4) {
       <label class="dg-feld">${t3("Kennwort der Weboberfläche")}<input name="zg-kennwort" type="password" autocomplete="off" placeholder=${z2.kennwort ? t3("hinterlegt – zum Ändern neu eingeben") : t3("wie beim Anmelden im Browser")}>
         <small>${t3("wird in Home Assistant gespeichert (wie bei anderen Integrationen), nie angezeigt")}</small></label>
       <div class="dg-knoepfe"><button class="amber" @click=${speichern}>${t3("Speichern")}</button>${z2.kennwort ? b2`<button @click=${() => p4.zugangSetzen({ kennwort_loeschen: true })}>${t3("Kennwort entfernen")}</button>` : A}</div>
-      <p class="hinweis" style="margin-top:6px">${t3("Laufende Werte vom vorgeschalteten Gerät folgen in einer späteren Fassung; bis dahin zeigt 🔬 Diagnose die Rohdaten.")}</p>` : A}
+      ${erkannt(z2.vorgeschaltet)}` : A}
     <div class="vs-stufe"><span>${t3("Ersatzzugang bei Ausfall")}</span><span></span></div>
     <div class="ez"><span>${t3("Ersatz")}<small>${t3("z. B. Mobilfunk-Stick an der FRITZ!Box, wenn DSL ausfällt")}</small></span>${seg(tl(ERSATZ), z2.ersatz_wahl, (v2) => p4.zugangSetzen({ ersatz: v2 }))}</div>
     ${p4._hinweisZugang ? b2`<p class="fein">${p4._hinweisZugang}</p>` : A}
     <div class="dg-knoepfe" style="margin-top:8px"><button @click=${() => p4.zugangSuchen()}>${t3("↻ Erneut suchen")}</button>
       <button @click=${() => p4.zuDiagnose(vorgeschaltet ? z2.adresse || z2.adresse_jetzt || z2.adressen[0] : null)}>${t3("🔬 Rohdaten abfragen ›")}</button></div>
-    <p class="hinweis" style="margin-top:8px">${t3("Gefragt wird nur die FRITZ!Box – kein Absuchen des Heimnetzes. Vorgeschlagen werden die Adresse vor der Box und übliche Modem-Adressen (192.168.0.1, 192.168.1.1, 192.168.8.1). Heimnetz liest nur.")}</p>`;
+    <p class="hinweis" style="margin-top:8px">${t3("Gesucht wird nur an der gespeicherten Adresse, am Vorschlag der FRITZ!Box und an den üblichen Modem-Adressen ({liste}) – kein Absuchen des Heimnetzes. Heimnetz liest nur.", { liste: z2.adressen.join(", ") })}</p>`;
+}
+function erkannt(v2) {
+  if (!v2) return A;
+  const unter = [v2.adresse, v2.quelle === "integration" ? t3("über die Integration in Home Assistant") : "", v2.gelesen ? t3("zuletzt gelesen {zeit}", { zeit: zeit(v2.gelesen) }) : ""].filter(Boolean).join(" · ");
+  return b2`<div class="ez"><span>${t3("Erkannt")}<small>${unter || t3("noch nicht gesucht")}</small></span><span class="leise" style="color:var(--ink)">${v2.geraet ? `${v2.geraet}${v2.befund ? "" : " ✓"}` : "–"}</span></div>
+    ${v2.befund ? b2`<div class="befund"><span class="punkt ${v2.befund.lage}"></span><div><b>${v2.befund.titel}</b><p>${v2.befund.text}</p></div></div>` : A}`;
 }
 function punkt2(p4) {
   const d3 = p4.istAdmin && p4._daten.einrichtung;
@@ -6324,17 +6348,11 @@ function einrichtung(p4) {
     <p class="hinweis" style="margin-top:8px">${t3("Heimnetz installiert nichts selbst: die Knöpfe öffnen Home Assistant oder HACS an der richtigen Stelle. Nach einem Download aus HACS Home Assistant neu starten, dann einrichten. Geprüft wird beim Öffnen dieses Reiters.")}</p>`;
 }
 var ROH = "⟨geschwärzt⟩";
-var BEFUND = {
-  adresse_nicht_erlaubt: ["amber", merke("Adresse nicht erlaubt"), merke("Die Adresse liegt nicht im eigenen Heimnetz. Abgefragt werden nur private Adressen (192.168.x.x, 10.x.x.x, 172.16–31.x.x).")],
-  nicht_erreichbar: ["rot", merke("Modem nicht erreichbar"), merke("Unter dieser Adresse antwortet nichts. Adresse prüfen – sie steht in den Einstellungen des Modems oder auf einem Aufkleber.")],
-  kein_zte: ["amber", merke("Kein ZTE-Modem erkannt"), merke("Unter dieser Adresse antwortet etwas, aber kein ZTE-Modem. Diese Version unterstützt vorerst nur ZTE-Modems.")],
-  anmeldung_abgelehnt: ["rot", merke("Anmeldung abgelehnt"), merke("Das Modem lehnt das Kennwort ab. Ohne Anmeldung fehlen die Signalwerte. Kennwort prüfen und noch einmal abfragen.")]
-};
 function diagnose(p4) {
   if (!p4.istAdmin) return b2`<p class="hinweis" style="padding-top:8px">${t3("Diese Abfrage können nur Admins starten.")}</p>`;
   const d3 = p4._diag;
   const kopf = b2`
-    <p class="hinweis" style="margin:4px 0 6px">${t3("Kommt das Internet über ein eigenes 5G/LTE-Modem vor der FRITZ!Box (z. B. ZTE), kennt die Box das Funknetz nicht – Internet › Mobilfunk bleibt leer. Hier liest Heimnetz die Rohdaten des Modems aus, damit der Entwickler es unterstützen kann.")} <span class="neu">BETA</span></p>
+    <p class="hinweis" style="margin:4px 0 6px">${t3("Hier fragt Heimnetz ein Gerät vor der FRITZ!Box (5G/LTE-Modem, Glasfaser-Modem) ab: erkennt Hersteller und Schnittstelle und zeigt alle Rohdaten, geschwärzt – damit der Entwickler weitere Geräte unterstützen kann.")} <span class="neu">BETA</span></p>
     <label class="dg-feld">${t3("Adresse des Modems")}<input name="adresse" inputmode="decimal" .value=${l3(d3.adresse)} ?disabled=${d3.laeuft} @input=${(ev) => {
     p4._diag = { ...p4._diag, adresse: ev.target.value };
   }}></label>
@@ -6344,10 +6362,14 @@ function diagnose(p4) {
   if (!d3.antwort) return b2`${kopf}<p class="hinweis" style="margin-top:8px">${t3("Nur Adressen im eigenen Heimnetz (z. B. 192.168.x.x). Heimnetz liest nur und ändert am Modem nichts.")}</p>`;
   return b2`${kopf}${ergebnis(p4, d3.antwort)}`;
 }
-function befundBlock(befund) {
-  const b3 = BEFUND[befund];
+function befundBlock(a3) {
+  const b3 = a3.hinweis;
   if (!b3) return A;
-  return b2`<div class="befund" style="margin-top:8px"><span class="punkt ${b3[0]}"></span><div><b>${t3(b3[1])}</b><p>${t3(b3[2])}</p></div></div>`;
+  return b2`<div class="befund" style="margin-top:8px"><span class="punkt ${b3.lage}"></span><div><b>${b3.titel}</b><p>${b3.text}</p></div></div>`;
+}
+function erkanntZeile(e6) {
+  if (!e6) return A;
+  return b2`<div class="ez"><span>${t3("Erkannt")}<small>${e6.werte ? t3("Heimnetz liest dieses Gerät laufend") : t3("nur erkennen – Werte noch nicht unterstützt")}</small></span><span class="leise" style="color:var(--ink)">${e6.name}</span></div>`;
 }
 function rohAnzeige(daten) {
   const text = JSON.stringify(daten, null, 2);
@@ -6355,10 +6377,10 @@ function rohAnzeige(daten) {
 }
 function ergebnis(p4, a3) {
   if (!a3.abfragen.length) {
-    return b2`${befundBlock(a3.befund)}${a3.befund === "anmeldung_abgelehnt" ? b2`<div class="dg-knoepfe"><button @click=${() => p4.modemSpeichern()}>${t3("⬇ Trotzdem als Datei speichern")}</button></div>` : A}`;
+    return b2`${befundBlock(a3)}${a3.befund === "anmeldung_abgelehnt" ? b2`<div class="dg-knoepfe"><button @click=${() => p4.modemSpeichern()}>${t3("⬇ Trotzdem als Datei speichern")}</button></div>` : A}`;
   }
   const s4 = a3.summen;
-  return b2`${befundBlock(a3.befund)}
+  return b2`${befundBlock(a3)}${erkanntZeile(a3.erkannt)}
     <div class="vs-stufe" style="margin-top:6px"><span>${t3("Ergebnis")}</span><span>${t3("{ok} von {gesamt} Abfragen · {werte} Werte · {geschwaerzt} geschwärzt", { ok: s4.ok, gesamt: s4.gesamt, werte: s4.werte, geschwaerzt: s4.geschwaerzt })}</span></div>
     ${a3.abfragen.map((ab) => b2`<div class="dg-ab"><span class="vs-st ${ab.status === "ok" ? "ok" : "aus"}" style="width:18px;height:18px;font-size:10px">${ab.status === "ok" ? "✓" : "–"}</span><span>${ab.name}</span><code>${ab.angabe}</code></div>`)}
     <div class="dg-roh">${rohAnzeige(a3.daten)}</div>
@@ -6434,7 +6456,7 @@ function protokoll(p4, d3) {
 }
 
 // src/heimnetz-panel.js
-var VERSION = true ? "0.26.0" : "entwicklung";
+var VERSION = true ? "0.27.0" : "entwicklung";
 var REITER = [
   ["uebersicht", merke("Übersicht")],
   ["speedtest", merke("Speedtest")],
@@ -6458,7 +6480,7 @@ var TITEL = {
   kritisch: merke("Störung"),
   box_fehlt: merke("FRITZ!Box nicht erreichbar")
 };
-var PUNKT2 = { ok: "", warnung: "amber", kritisch: "rot", box_fehlt: "grau" };
+var PUNKT3 = { ok: "", warnung: "amber", kritisch: "rot", box_fehlt: "grau" };
 var standZeit = (s4) => zeit(s4).replace(new RegExp(`^${t3("Heute {uhr}", { uhr: "" })}`), "");
 var HeimnetzPanel = class extends i4 {
   static properties = {
@@ -6752,7 +6774,7 @@ var HeimnetzPanel = class extends i4 {
       const { gesucht, ...zugang2 } = await this.ws("zugang/suchen");
       this._daten = { ...this._daten, zugang: zugang2 };
       this._hinweisZugang = "";
-      this.toast(gesucht ? t3("Gesucht: FRITZ!Box neu gefragt") : t3("Eben erst gesucht – in einer halben Minute wieder"));
+      this.toast(!gesucht ? t3("Eben erst gesucht – in einer halben Minute wieder") : zugang2.vorgeschaltet ? t3("Gesucht: FRITZ!Box und vorgeschaltetes Gerät neu gefragt") : t3("Gesucht: FRITZ!Box neu gefragt"));
       this.laden();
     } catch (err) {
       this._hinweisZugang = err && err.message || String(err);
@@ -7144,7 +7166,7 @@ var HeimnetzPanel = class extends i4 {
         <div>
           <div class="glas-klein">Heimnetz · ${t3("Stand {zeit}", { zeit: standZeit(u3.stand) })}</div>
           <div class="kopf-titel" style="margin-top:6px">
-            <span class="punkt ${PUNKT2[u3.gesamt] ?? "grau"}"></span>
+            <span class="punkt ${PUNKT3[u3.gesamt] ?? "grau"}"></span>
             <span class="glas-kw" style="font-size:30px">${TITEL[u3.gesamt] ? t3(TITEL[u3.gesamt]) : u3.gesamt}</span>
           </div>
           <div class="leise" style="margin-top:6px">${unter}</div>

@@ -4,6 +4,7 @@ Jeder Test bekommt ein eigenes Home Assistant; kein Test beeinflusst einen ander
 DHCP-Test werden ersetzt; die Beispieldaten sind dieselben wie in den Tests der Fachlogik.
 """
 
+import asyncio
 from unittest.mock import patch
 
 import pytest
@@ -42,6 +43,17 @@ def beacondb_kennt_nichts(aioclient_mock):
     """Kein Test fragt das echte Internet: BeaconDB kennt nichts, Overpass meldet keine Masten – außer ein Test sagt es anders."""
     aioclient_mock.post(BEACONDB, status=404, json={"error": {"code": 404, "message": "Not found"}})
     aioclient_mock.post(OVERPASS, json={"elements": []})
+
+
+@pytest.fixture(autouse=True)
+def modem_netz(aioclient_mock, monkeypatch):
+    """WU-0009: Kein Test spricht ein echtes Gerät vor der Box – jede eigene Session des vorgeschalteten Geräts (Suche,
+    Abruf, 🔬 Diagnose) ist eine Mock-Session; die Antworten stellt der Test mit `aioclient_mock` ein."""
+    monkeypatch.setattr(
+        f"custom_components.{DOMAIN}.vorgeschaltet.netz.neue_session",
+        lambda _zeit: aioclient_mock.create_session(asyncio.get_running_loop()),
+    )
+    return aioclient_mock
 
 
 @pytest.fixture(autouse=True)

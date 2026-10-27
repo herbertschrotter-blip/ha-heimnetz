@@ -1819,7 +1819,8 @@
    "masten": [
     "5G",
     "4G"
-   ]
+   ],
+   "geraet": "FRITZ!Box"
   },
   "zellen": [
    {
@@ -1835,7 +1836,9 @@
     "tac": null,
     "plmn": null,
     "fund": null,
-    "such": "nur PCI – nicht nachschlagbar"
+    "such": "nur PCI – nicht nachschlagbar",
+    "sinr": null,
+    "band": null
    },
    {
     "art": "LTE",
@@ -1850,7 +1853,9 @@
     "tac": "c0fc",
     "plmn": "232 05",
     "fund": null,
-    "such": "nicht gefunden"
+    "such": "nicht gefunden",
+    "sinr": null,
+    "band": null
    }
   ],
   "karte": {
@@ -1872,7 +1877,10 @@
    "masten": [],
    "punkte": [],
    "osm": []
-  }
+  },
+  "herkunft": "box",
+  "herkunft_text": "laut FRITZ!Box",
+  "baender_unter": "eingeschaltet (in der Box)"
  },
  "wlan": {
   "verfuegbar": true,
@@ -2896,7 +2904,8 @@
     "masten": [
      "5G",
      "4G"
-    ]
+    ],
+    "geraet": "FRITZ!Box"
    },
    "zellen": [
     {
@@ -2912,7 +2921,9 @@
      "tac": null,
      "plmn": null,
      "fund": null,
-     "such": "nur PCI – nicht nachschlagbar"
+     "such": "nur PCI – nicht nachschlagbar",
+     "sinr": null,
+     "band": null
     },
     {
      "art": "LTE",
@@ -2927,7 +2938,9 @@
      "tac": "c0fc",
      "plmn": "232 05",
      "fund": null,
-     "such": "nicht gefunden"
+     "such": "nicht gefunden",
+     "sinr": null,
+     "band": null
     }
    ],
    "karte": {
@@ -2949,12 +2962,16 @@
     "masten": [],
     "punkte": [],
     "osm": []
-   }
+   },
+   "herkunft": "box",
+   "herkunft_text": "laut FRITZ!Box",
+   "baender_unter": "eingeschaltet (in der Box)"
   },
   "dsl": null,
   "glasfaser": null,
   "kabel": null,
-  "ersatz": null
+  "ersatz": null,
+  "vorgeschaltet": null
  },
  "zugang": {
   "art": "mobilfunk",
@@ -2992,7 +3009,9 @@
    "192.168.8.1"
   ],
   "kennwort": false,
-  "gelesen": true
+  "gelesen": true,
+  "vorgeschaltet": null,
+  "gesucht_zeit": null
  },
  "internet_dsl": {
   "zugang": {
@@ -3055,7 +3074,8 @@
    "letzte": null,
    "rsrp": -100,
    "technik": "5G-NSA"
-  }
+  },
+  "vorgeschaltet": null
  },
  "internet_glasfaser": {
   "zugang": {
@@ -3103,7 +3123,8 @@
    }
   },
   "kabel": null,
-  "ersatz": null
+  "ersatz": null,
+  "vorgeschaltet": null
  },
  "internet_kabel": {
   "zugang": {
@@ -3129,6 +3150,179 @@
    "verbunden": true,
    "fehlt": "liefert die Schnittstelle der Box nicht"
   },
+  "ersatz": null,
+  "vorgeschaltet": null
+ },
+ "internet_vorgeschaltet": {
+  "zugang": {
+   "art": "extern",
+   "quelle": "automatisch",
+   "weg": "vorgeschaltet",
+   "titel": "Internet über Mobilfunk",
+   "geraet": "ZTE G5TC (ubus)",
+   "weg_text": "vorgeschaltet über 192.168.0.1 · Beta",
+   "ersatz": null,
+   "ersatz_aktiv": false,
+   "ersatz_text": null,
+   "abweichung": null,
+   "adresse": "192.168.0.1",
+   "kopf": "FRITZ!Box 6690 Cable · ZTE G5TC (ubus) 5G-NSA"
+  },
+  "mobilfunk": {
+   "verfuegbar": true,
+   "herkunft": "modem",
+   "herkunft_text": "vom vorgeschalteten Modem",
+   "technik": "5G-NSA",
+   "befund": {
+    "lage": 0.475,
+    "titel": "Empfang mittelmäßig – Standort der Box lohnt einen Versuch",
+    "text": "Signalstärke -97 dBm (4G-Anker) und -101 dBm (5G). Der Download der letzten 7 Tage liegt typisch bei 114,5 Mbit/s = 76 % vom Tarif. Bei mittlerem Empfang kann beides bremsen: die Funkstrecke und eine volle Zelle. Test: die Box an ein anderes Fenster oder höher stellen – steigt die Signalstärke um etwa 10 dBm und der Download nicht, liegt es an der Zelle (Anbieter)."
+   },
+   "verlauf": {
+    "anker": [],
+    "nr": []
+   },
+   "schwach_unter": -105,
+   "laufzeit_s": 3600,
+   "laufzeit": "1 h 0 min",
+   "abbrueche_7": 1,
+   "letzter_abbruch": 1793139572.8469253,
+   "baender": "B3 · n78",
+   "baender_unter": "genutzt (laut Modem)",
+   "strecke": {
+    "geraet": "Modem",
+    "rsrp": -97,
+    "lage": 0.575,
+    "wort": "mittel",
+    "entfernung": null,
+    "anbieter": "3 AT",
+    "masten": [
+     "5G",
+     "4G"
+    ]
+   },
+   "zellen": [
+    {
+     "art": "5G",
+     "rolle": "bündelt dazu",
+     "rolle_art": "dazu",
+     "anker": false,
+     "kennung": "PCI 512",
+     "rsrp": -101,
+     "rsrq": null,
+     "sinr": 4.5,
+     "band": "n78",
+     "stufen": 2,
+     "lage": 0.475,
+     "tac": null,
+     "plmn": null,
+     "fund": null,
+     "such": "nur PCI – nicht nachschlagbar"
+    },
+    {
+     "art": "LTE",
+     "rolle": "Anker",
+     "rolle_art": "anker",
+     "anker": true,
+     "kennung": "1a2b3-c4",
+     "rsrp": -97,
+     "rsrq": -11,
+     "sinr": 8.0,
+     "band": "B3",
+     "stufen": 2,
+     "lage": 0.575,
+     "tac": "1a2b",
+     "plmn": "232 05",
+     "fund": null,
+     "such": "nicht gefunden"
+    }
+   ],
+   "karte": {
+    "stand": "ohne_schluessel",
+    "gefunden": 0,
+    "zellen": 2,
+    "rahmen": null,
+    "wohnung": [
+     32.87336,
+     -117.22743
+    ],
+    "ring_m": null,
+    "ring": null,
+    "masten": [],
+    "punkte": [],
+    "osm": []
+   }
+  },
+  "vorgeschaltet": {
+   "geraet": "ZTE G5TC (ubus)",
+   "hersteller": "ZTE",
+   "adresse": "192.168.0.1",
+   "art": "mobilfunk",
+   "quelle": "geraet",
+   "integration": null,
+   "gelesen": 1793139572.846563,
+   "werte": true,
+   "befund": null
+  },
+  "dsl": null,
+  "glasfaser": null,
+  "kabel": null,
   "ersatz": null
+ },
+ "zugang_vorgeschaltet": {
+  "art": "extern",
+  "quelle": "automatisch",
+  "weg": "vorgeschaltet",
+  "titel": "Internet über Mobilfunk",
+  "geraet": "ZTE G5TC (ubus)",
+  "weg_text": "vorgeschaltet über 192.168.0.1 · Beta",
+  "ersatz": null,
+  "ersatz_aktiv": false,
+  "ersatz_text": null,
+  "abweichung": null,
+  "adresse": null,
+  "kopf": "FRITZ!Box 6690 Cable · ZTE G5TC (ubus) 5G-NSA",
+  "vorschlag": "Mobilfunk über ZTE G5TC (ubus)",
+  "vorschlag_art": "extern",
+  "belege": [
+   "FRITZ!Box meldet: Internet über LAN 1 (externes Modem oder Router), verbunden",
+   "Betriebsart der Box: IP-Client (hinter einem anderen Router)",
+   "Mobilfunk an der Box: meldet die Box nicht",
+   "Die Box hat im WAN eine private Adresse – davor steht ein Modem oder Router (vermutlich unter 192.168.0.1)",
+   "192.168.0.1 antwortet: ZTE G5TC (ubus)"
+  ],
+  "wahl": "auto",
+  "wahlen": [
+   "auto",
+   "box_mobil",
+   "extern",
+   "dsl",
+   "glasfaser",
+   "ont",
+   "kabel"
+  ],
+  "ersatz_wahl": "auto",
+  "adresse_jetzt": "192.168.0.1",
+  "adressen": [
+   "192.168.0.1",
+   "192.168.1.1",
+   "192.168.8.1",
+   "192.168.18.1",
+   "192.168.100.1"
+  ],
+  "kennwort": false,
+  "gelesen": true,
+  "vorgeschaltet": {
+   "geraet": "ZTE G5TC (ubus)",
+   "hersteller": "ZTE",
+   "adresse": "192.168.0.1",
+   "art": "mobilfunk",
+   "quelle": "geraet",
+   "integration": null,
+   "gelesen": 1793139572.846563,
+   "werte": true,
+   "befund": null
+  },
+  "gesucht_zeit": 1793139572.846563
  }
 }

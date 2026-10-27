@@ -53,6 +53,13 @@ KEYS = (
     "plmn",
     "tac",
     "verbunden_s",
+    # WU-0009 Stufe 2: nur von einem vorgeschalteten Modem
+    "mobil_quelle",
+    "modem_modell",
+    "sinr",
+    "band",
+    "nr_sinr",
+    "nr_band",
     "mast_m",
     "mast_richtung",
     # Box
@@ -121,6 +128,10 @@ def mobilfunk(m: Mobilfunk | None) -> dict[str, Any]:
             "plmn": h.plmn if h else None,
             "tac": h.tac if h else None,
             "verbunden_s": m.laufzeit_s,
+            "sinr": h.sinr if h else None,
+            "band": h.band if h else None,
+            "nr_sinr": nr.sinr if nr and nr is not h else None,
+            "nr_band": nr.band if nr and nr is not h else None,
         }
     )
 

@@ -15,6 +15,7 @@ from homeassistant.helpers import config_validation as cv
 from . import ansichten, einrichtung, modem
 from .const import CONF_MODEM_KENNWORT, DOMAIN, SEITEN_SPRACHE
 from .logik import auswertung as aw
+from .logik import vorgeschaltet as ve
 from .logik import zugang as zg
 from .logik.einstellungen import Ungueltig
 from .logik.sprache import t
@@ -243,7 +244,19 @@ async def _zugang_setzen(
                 optionen[CONF_MODEM_KENNWORT] = msg["kennwort"]
             hass.config_entries.async_update_entry(entry, options=optionen)
         lz.abruf.async_update_listeners()  # Sensor „Internetzugang“ folgt der Wahl gleich
+        if daten or "kennwort" in msg:
+            # WU-0009 Stufe 2: neue Wahl, Adresse oder neues Kennwort – das Gerät gleich (im Hintergrund) suchen/lesen
+            entry.async_create_background_task(
+                hass,
+                _modem_neu(lz, suchen="zugang_wahl" in daten or "zugang_adresse" in daten),
+                f"{DOMAIN}_modem_neu",
+            )
         connection.send_result(msg["id"], ansichten.zugang(hass, lz))
+
+
+async def _modem_neu(lz: Any, *, suchen: bool) -> None:
+    if await lz.abruf.modem_jetzt(suchen=suchen):
+        await lz.abruf.async_request_refresh()
 
 
 @websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/zugang/suchen"})
@@ -417,13 +430,34 @@ async def _modem(
     """WU-0008: Rohdaten eines vorgeschalteten Modems abfragen (nur Admins; nur lesen). Das Kennwort wird nur für
     diese Abfrage verwendet, nie gespeichert und steht in keiner Antwort; die Rohdaten kommen geschwärzt zurück."""
     kennwort = msg.get("kennwort")
-    if not kennwort:
-        # WU-0009: ohne eingetipptes Kennwort das in ⚙ › Zugang hinterlegte – nur für genau diese Adresse
-        for e in hass.config_entries.async_loaded_entries(DOMAIN):
-            if msg["adresse"].strip() == (e.runtime_data.einstellungen.wert.zugang_adresse or ""):
-                kennwort = e.options.get(CONF_MODEM_KENNWORT) or None
-    antwort = await modem.abfragen(hass, msg["adresse"], kennwort, ansichten.sprache(hass))
+    sperre = None
+    hinterlegt_abgelehnt = False
+    adresse = msg["adresse"].strip()
+    for e in hass.config_entries.async_loaded_entries(DOMAIN):
+        dienst = e.runtime_data.abruf.modem
+        sperre = dienst.sperre  # nie zugleich mit dem laufenden Abruf am Gerät
+        if not kennwort and adresse == _hinterlegt_fuer(e.runtime_data):
+            # WU-0009: ohne eingetipptes Kennwort das in ⚙ › Zugang hinterlegte – nur für genau diese Adresse und
+            # nicht, wenn das Gerät genau dieses schon abgelehnt hat (nur ein frisch eingetipptes wird versucht)
+            hinterlegt = e.options.get(CONF_MODEM_KENNWORT) or None
+            if dienst.kennwort_abgelehnt(adresse, hinterlegt):
+                hinterlegt_abgelehnt = True
+            else:
+                kennwort = hinterlegt
+    s = ansichten.sprache(hass)
+    antwort = await modem.abfragen(hass, msg["adresse"], kennwort, s, sperre)
+    if hinterlegt_abgelehnt and antwort.get("befund") is None:
+        antwort = {
+            **antwort,
+            "befund": "anmeldung_abgelehnt",
+            "hinweis": ve.befund_daten("anmeldung_abgelehnt", s),
+        }
     connection.send_result(msg["id"], antwort)
+
+
+def _hinterlegt_fuer(lz: Any) -> str:
+    """Adresse, für die das hinterlegte Kennwort gilt: die gespeicherte, sonst die des gefundenen Geräts."""
+    return lz.einstellungen.wert.zugang_adresse or lz.abruf.modem.adresse or ""
 
 
 BEFEHLE = (

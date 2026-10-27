@@ -76,6 +76,14 @@ class Laufzeit:
             "pi": {"box": s.pi.box, "internet": s.pi.internet, "dns": s.pi.dns},
             "fehler": list(s.fehler),
             "speedtest": self.abruf.speedtest.sensoren is not None,
+            # WU-0009 Stufe 2: nur Baustein und Befund – keine Adresse, kein Kennwort
+            "vorgeschaltet": {
+                "baustein": m.gemerkt.baustein if m.gemerkt else None,
+                "befund": m.stand.befund if m.stand else None,
+                "werte": s.mobil_quelle == "modem",
+            }
+            if (m := self.abruf.modem).gemerkt or m.stand
+            else None,
         }
 
 

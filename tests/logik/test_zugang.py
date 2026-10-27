@@ -166,7 +166,13 @@ def test_beschreiben_vorgeschaltet_erkannt_und_festgelegt():
     z = zg.beschreiben(HINTER_ZTE, "extern", False, modell="FRITZ!Box 7530")
     assert z.titel == "Internet über ein vorgeschaltetes Gerät" and z.weg == "vorgeschaltet"
     assert z.adresse == "192.168.0.1" and z.weg_text == "vorgeschaltet über 192.168.0.1 · Beta"
-    assert z.adressen == ("192.168.0.1", "192.168.1.1", "192.168.8.1")
+    assert z.adressen == (
+        "192.168.0.1",
+        "192.168.1.1",
+        "192.168.8.1",
+        "192.168.18.1",
+        "192.168.100.1",
+    )
     assert "Betriebsart der Box: IP-Client (hinter einem anderen Router)" in z.belege
     assert any("private Adresse" in b and "192.168.0.1" in b for b in z.belege)
     f = zg.beschreiben(HINTER_ZTE, "extern", False, "extern", "192.168.8.1")

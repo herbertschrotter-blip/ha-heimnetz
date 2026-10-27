@@ -27,6 +27,9 @@ class Zelle:
     entfernung_m: int | None = None  # Distance; 0 = die Box kennt sie nicht
     plmn: str = ""  # Netzkennung, z. B. „23205“ (MCC 232, MNC 05)
     tac: str = ""  # Tracking Area Code, hexadezimal
+    # WU-0009: nur von einem vorgeschalteten Modem – die Box meldet beides über TR-064 nicht
+    sinr: float | None = None  # Signal zu Störung und Rauschen in dB
+    band: str = ""  # „B3“, „n78“
 
 
 @dataclass(frozen=True)

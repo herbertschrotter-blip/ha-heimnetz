@@ -102,6 +102,10 @@ async def momentaufnahme(hass: HomeAssistant, lz: Laufzeit, messung: Messung) ->
             else:
                 del mobil["verbunden_s"]
         teile.append(mobil)
+        if stand.mobil_quelle == "modem" and stand.modem is not None:
+            # WU-0009 Stufe 2: Funkwerte vom vorgeschalteten Modem, nicht von der Box
+            e = stand.modem.erkennung
+            teile.append({"mobil_quelle": "modem", "modem_modell": e.name if e else None})
         teile.append(
             {
                 "online": stand.online,

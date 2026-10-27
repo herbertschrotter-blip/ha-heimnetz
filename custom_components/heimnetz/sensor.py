@@ -125,6 +125,24 @@ MOBILFUNK = (
     ),
     Beschreibung(key="pci_5g", wert=_zelle("nr", "pci")),
 )
+# WU-0009 Stufe 2: was nur ein vorgeschaltetes Modem liefert (die Box über TR-064 nicht) – erst, wenn es Werte hatte
+_SINR = {
+    "native_unit_of_measurement": SIGNAL_STRENGTH_DECIBELS,
+    "state_class": SensorStateClass.MEASUREMENT,
+    "suggested_display_precision": 1,
+}
+MODEM = (
+    Beschreibung(key="sinr_anker", wert=_zelle("haupt", "sinr"), **_SINR),
+    Beschreibung(key="sinr_5g", wert=_zelle("nr", "sinr"), **_SINR),
+    Beschreibung(
+        key="mobil_band",
+        wert=lambda s: (
+            " · ".join(dict.fromkeys(z.band for z in s.mobil.zellen if z.band)) or None
+            if s.mobil
+            else None
+        ),
+    ),
+)
 
 
 # WU-0009: Werte der Leitung – Entitäten nur, wenn die Box diesen Anschluss hat (kommen mit dem ersten Lesen dazu)
@@ -206,26 +224,22 @@ async def async_setup_entry(
     leitung_pruefen()
     entry.async_on_unload(abruf.async_add_listener(leitung_pruefen))
 
-    # Empfangssensoren erst, wenn die Box ein Mobilfunk-Modem gemeldet hat – war sie beim Start nicht erreichbar,
-    # kommen sie mit dem ersten gelungenen Abruf dazu; eine Box ohne Modem bekommt keine.
-    def mobilfunk_pruefen() -> bool:
-        if abruf.gedaechtnis.mobil_dienst is None:
-            return False
-        if abruf.gedaechtnis.mobil_dienst:
+    # Empfangssensoren erst, wenn die Box ein Mobilfunk-Modem gemeldet hat oder ein vorgeschaltetes Modem Funkwerte
+    # geliefert hat (WU-0009 Stufe 2) – war die Box beim Start nicht erreichbar, kommen sie mit dem ersten gelungenen
+    # Abruf dazu; eine Box ohne Modem und ohne Gerät davor bekommt keine.
+    def funk_pruefen() -> None:
+        g = abruf.gedaechtnis
+        if "mobil" not in angelegt and (g.mobil_dienst or g.modem_mobil):
+            angelegt.add("mobil")
             async_add_entities(HeimnetzSensor(abruf, b) for b in MOBILFUNK)
-        return True
+        # je Zusatzwert erst, wenn genau dieser Wert einmal da war
+        neu = [b for b in MODEM if b.key in g.modem_werte and b.key not in angelegt]
+        if neu:
+            angelegt.update(b.key for b in neu)
+            async_add_entities(HeimnetzSensor(abruf, b) for b in neu)
 
-    if not mobilfunk_pruefen():
-        abmelden: Callable[[], None] | None = None
-
-        def nach_abruf() -> None:
-            nonlocal abmelden
-            if abmelden is not None and mobilfunk_pruefen():
-                abmelden()
-                abmelden = None
-
-        abmelden = abruf.async_add_listener(nach_abruf)
-        entry.async_on_unload(lambda: abmelden() if abmelden else None)
+    funk_pruefen()
+    entry.async_on_unload(abruf.async_add_listener(funk_pruefen))
 
 
 class HeimnetzSensor(HeimnetzEntitaet, SensorEntity):
@@ -244,7 +258,9 @@ class HeimnetzSensor(HeimnetzEntitaet, SensorEntity):
         if da is not None and not da(self.coordinator.data):
             return False
         mobil: Mobilfunk | None = self.coordinator.data.mobil
-        return mobil is not None or self.entity_description not in MOBILFUNK
+        return mobil is not None or (
+            self.entity_description not in MOBILFUNK and self.entity_description not in MODEM
+        )
 
     @property
     def native_value(self) -> str | int | float | None:

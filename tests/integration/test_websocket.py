@@ -332,7 +332,9 @@ async def test_wlan_und_mobilfunk_neu(hass, geladen, hass_ws_client):
     m = (await _frage(hass_ws_client, hass, type="heimnetz/mobilfunk"))["result"]
     assert "antennen" not in m and m["laufzeit"] == "1 h 2 min"
     assert m["baender"] == "LTE 1, 3 · 5G n78" and m["abbrueche_7"] == 0
+    assert m["herkunft"] == "box" and m["herkunft_text"] == "laut FRITZ!Box"
     assert m["strecke"] == {
+        "geraet": "FRITZ!Box",
         "rsrp": -100,
         "lage": 0.5,
         "wort": "mittel",

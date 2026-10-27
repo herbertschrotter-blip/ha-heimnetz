@@ -100,7 +100,13 @@ async def test_zugang_festlegen_kennwort_nie_zurueck(
     client = await hass_ws_client(hass)
     z = (await _frage(client, type="heimnetz/zugang"))["result"]
     assert z["wahl"] == "auto" and z["belege"] and z["kennwort"] is False
-    assert z["adressen"] == ["192.168.0.1", "192.168.1.1", "192.168.8.1"]
+    assert z["adressen"] == [
+        "192.168.0.1",
+        "192.168.1.1",
+        "192.168.8.1",
+        "192.168.18.1",
+        "192.168.100.1",
+    ]
 
     antwort = await _frage(
         client,

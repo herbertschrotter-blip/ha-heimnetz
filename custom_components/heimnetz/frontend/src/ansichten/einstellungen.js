@@ -28,7 +28,8 @@ const WAHL = {
   box_mobil: [merke('Mobilfunk über die FRITZ!Box'), merke('eingebautes Modem oder Stick')],
   extern: [merke('Mobilfunk über ein vorgeschaltetes Modem'), merke('ZTE, Huawei, TP-Link … (Beta)')],
   dsl: [merke('DSL über die FRITZ!Box'), merke('ADSL, VDSL, Supervectoring')],
-  glasfaser: [merke('Glasfaser'), merke('über die FRITZ!Box oder ein eigenes Glasfaser-Modem')],
+  glasfaser: [merke('Glasfaser über die FRITZ!Box'), merke('eingebautes Glasfaser-Modem (z. B. FRITZ!Box 5590 Fiber)')],
+  ont: [merke('Glasfaser über ein eigenes Modem'), merke('ONT von Nokia, Huawei, Zyxel … – nur erkennen (Beta)')],
   kabel: [merke('Kabel'), merke('über die FRITZ!Box')],
 };
 const ERSATZ = [['auto', merke('automatisch')], ['kein', merke('keiner')]];
@@ -129,7 +130,7 @@ function zugang(p) {
   if (!p.istAdmin) return html`<p class="hinweis" style="padding-top:8px">${t('Den Zugang legen nur Admins fest.')}</p>`;
   const z = p._daten.zugang;
   if (!z) return p._hinweisZugang ? html`<p class="fein">${p._hinweisZugang}</p>` : html`<div class="leer">${t('lädt …')}</div>`;
-  const vorgeschaltet = z.wahl === 'extern' || (z.wahl === 'auto' && z.vorschlag_art === 'extern');
+  const vorgeschaltet = z.wahl === 'extern' || z.wahl === 'ont' || (z.wahl === 'auto' && z.vorschlag_art === 'extern');
   const adresseFeld = (ev) => ev.target.closest('.sheet').querySelector('input[name=zg-adresse]');
   const kennwortFeld = (ev) => ev.target.closest('.sheet').querySelector('input[name=zg-kennwort]');
   const speichern = (ev) => {
@@ -153,13 +154,22 @@ function zugang(p) {
       <label class="dg-feld">${t('Kennwort der Weboberfläche')}<input name="zg-kennwort" type="password" autocomplete="off" placeholder=${z.kennwort ? t('hinterlegt – zum Ändern neu eingeben') : t('wie beim Anmelden im Browser')}>
         <small>${t('wird in Home Assistant gespeichert (wie bei anderen Integrationen), nie angezeigt')}</small></label>
       <div class="dg-knoepfe"><button class="amber" @click=${speichern}>${t('Speichern')}</button>${z.kennwort ? html`<button @click=${() => p.zugangSetzen({ kennwort_loeschen: true })}>${t('Kennwort entfernen')}</button>` : nothing}</div>
-      <p class="hinweis" style="margin-top:6px">${t('Laufende Werte vom vorgeschalteten Gerät folgen in einer späteren Fassung; bis dahin zeigt 🔬 Diagnose die Rohdaten.')}</p>` : nothing}
+      ${erkannt(z.vorgeschaltet)}` : nothing}
     <div class="vs-stufe"><span>${t('Ersatzzugang bei Ausfall')}</span><span></span></div>
     <div class="ez"><span>${t('Ersatz')}<small>${t('z. B. Mobilfunk-Stick an der FRITZ!Box, wenn DSL ausfällt')}</small></span>${seg(tl(ERSATZ), z.ersatz_wahl, (v) => p.zugangSetzen({ ersatz: v }))}</div>
     ${p._hinweisZugang ? html`<p class="fein">${p._hinweisZugang}</p>` : nothing}
     <div class="dg-knoepfe" style="margin-top:8px"><button @click=${() => p.zugangSuchen()}>${t('↻ Erneut suchen')}</button>
       <button @click=${() => p.zuDiagnose(vorgeschaltet ? z.adresse || z.adresse_jetzt || z.adressen[0] : null)}>${t('🔬 Rohdaten abfragen ›')}</button></div>
-    <p class="hinweis" style="margin-top:8px">${t('Gefragt wird nur die FRITZ!Box – kein Absuchen des Heimnetzes. Vorgeschlagen werden die Adresse vor der Box und übliche Modem-Adressen (192.168.0.1, 192.168.1.1, 192.168.8.1). Heimnetz liest nur.')}</p>`;
+    <p class="hinweis" style="margin-top:8px">${t('Gesucht wird nur an der gespeicherten Adresse, am Vorschlag der FRITZ!Box und an den üblichen Modem-Adressen ({liste}) – kein Absuchen des Heimnetzes. Heimnetz liest nur.', { liste: z.adressen.join(', ') })}</p>`;
+}
+
+/** WU-0009 Stufe 2 (Mockup: „Erkannt · über ubus · zuletzt gelesen vor 1 min · ZTE G5TC ✓“): was die Integration
+ *  gefunden hat und ihr Befund – fertig von heimnetz/zugang. */
+function erkannt(v) {
+  if (!v) return nothing;
+  const unter = [v.adresse, v.quelle === 'integration' ? t('über die Integration in Home Assistant') : '', v.gelesen ? t('zuletzt gelesen {zeit}', { zeit: zeit(v.gelesen) }) : ''].filter(Boolean).join(' · ');
+  return html`<div class="ez"><span>${t('Erkannt')}<small>${unter || t('noch nicht gesucht')}</small></span><span class="leise" style="color:var(--ink)">${v.geraet ? `${v.geraet}${v.befund ? '' : ' ✓'}` : '–'}</span></div>
+    ${v.befund ? html`<div class="befund"><span class="punkt ${v.befund.lage}"></span><div><b>${v.befund.titel}</b><p>${v.befund.text}</p></div></div>` : nothing}`;
 }
 
 /** WU-0007: Punkt am Reiter – rot, wenn Nötiges fehlt, orange, wenn Empfohlenes fehlt (Farbe von der Integration). */
@@ -189,18 +199,11 @@ function einrichtung(p) {
 
 /** WU-0008: Diagnose – Rohdaten eines vorgeschalteten Modems. Nur Admins; Abfragen und Schwärzen macht die Integration. */
 const ROH = '⟨geschwärzt⟩';
-const BEFUND = {
-  adresse_nicht_erlaubt: ['amber', merke('Adresse nicht erlaubt'), merke('Die Adresse liegt nicht im eigenen Heimnetz. Abgefragt werden nur private Adressen (192.168.x.x, 10.x.x.x, 172.16–31.x.x).')],
-  nicht_erreichbar: ['rot', merke('Modem nicht erreichbar'), merke('Unter dieser Adresse antwortet nichts. Adresse prüfen – sie steht in den Einstellungen des Modems oder auf einem Aufkleber.')],
-  kein_zte: ['amber', merke('Kein ZTE-Modem erkannt'), merke('Unter dieser Adresse antwortet etwas, aber kein ZTE-Modem. Diese Version unterstützt vorerst nur ZTE-Modems.')],
-  anmeldung_abgelehnt: ['rot', merke('Anmeldung abgelehnt'), merke('Das Modem lehnt das Kennwort ab. Ohne Anmeldung fehlen die Signalwerte. Kennwort prüfen und noch einmal abfragen.')],
-};
-
 function diagnose(p) {
   if (!p.istAdmin) return html`<p class="hinweis" style="padding-top:8px">${t('Diese Abfrage können nur Admins starten.')}</p>`;
   const d = p._diag;
   const kopf = html`
-    <p class="hinweis" style="margin:4px 0 6px">${t('Kommt das Internet über ein eigenes 5G/LTE-Modem vor der FRITZ!Box (z. B. ZTE), kennt die Box das Funknetz nicht – Internet › Mobilfunk bleibt leer. Hier liest Heimnetz die Rohdaten des Modems aus, damit der Entwickler es unterstützen kann.')} <span class="neu">BETA</span></p>
+    <p class="hinweis" style="margin:4px 0 6px">${t('Hier fragt Heimnetz ein Gerät vor der FRITZ!Box (5G/LTE-Modem, Glasfaser-Modem) ab: erkennt Hersteller und Schnittstelle und zeigt alle Rohdaten, geschwärzt – damit der Entwickler weitere Geräte unterstützen kann.')} <span class="neu">BETA</span></p>
     <label class="dg-feld">${t('Adresse des Modems')}<input name="adresse" inputmode="decimal" .value=${live(d.adresse)} ?disabled=${d.laeuft} @input=${(ev) => { p._diag = { ...p._diag, adresse: ev.target.value }; }}></label>
     <label class="dg-feld">${t('Kennwort der Weboberfläche (optional)')}<input name="kennwort" type="password" autocomplete="off" placeholder=${t('wie beim Anmelden im Browser')} ?disabled=${d.laeuft}><small>${t('wird nur für diese Abfrage verwendet und nicht gespeichert – leer: das unter 🌐 Zugang für diese Adresse hinterlegte')}</small></label>
     <div class="dg-knoepfe"><button class="amber" ?disabled=${d.laeuft} @click=${() => p.modemAbfragen()}>${d.laeuft ? t('⏳ fragt ab …') : t('▶ Abfragen')}</button></div>
@@ -209,10 +212,16 @@ function diagnose(p) {
   return html`${kopf}${ergebnis(p, d.antwort)}`;
 }
 
-function befundBlock(befund) {
-  const b = BEFUND[befund];
+/** Befund und erkanntes Gerät kommen fertig von der Integration (heimnetz/modem → hinweis, erkannt). */
+function befundBlock(a) {
+  const b = a.hinweis;
   if (!b) return nothing;
-  return html`<div class="befund" style="margin-top:8px"><span class="punkt ${b[0]}"></span><div><b>${t(b[1])}</b><p>${t(b[2])}</p></div></div>`;
+  return html`<div class="befund" style="margin-top:8px"><span class="punkt ${b.lage}"></span><div><b>${b.titel}</b><p>${b.text}</p></div></div>`;
+}
+
+function erkanntZeile(e) {
+  if (!e) return nothing;
+  return html`<div class="ez"><span>${t('Erkannt')}<small>${e.werte ? t('Heimnetz liest dieses Gerät laufend') : t('nur erkennen – Werte noch nicht unterstützt')}</small></span><span class="leise" style="color:var(--ink)">${e.name}</span></div>`;
 }
 
 function rohAnzeige(daten) {
@@ -222,12 +231,12 @@ function rohAnzeige(daten) {
 
 function ergebnis(p, a) {
   if (!a.abfragen.length) {
-    return html`${befundBlock(a.befund)}${a.befund === 'anmeldung_abgelehnt'
+    return html`${befundBlock(a)}${a.befund === 'anmeldung_abgelehnt'
       ? html`<div class="dg-knoepfe"><button @click=${() => p.modemSpeichern()}>${t('⬇ Trotzdem als Datei speichern')}</button></div>`
       : nothing}`;
   }
   const s = a.summen;
-  return html`${befundBlock(a.befund)}
+  return html`${befundBlock(a)}${erkanntZeile(a.erkannt)}
     <div class="vs-stufe" style="margin-top:6px"><span>${t('Ergebnis')}</span><span>${t('{ok} von {gesamt} Abfragen · {werte} Werte · {geschwaerzt} geschwärzt', { ok: s.ok, gesamt: s.gesamt, werte: s.werte, geschwaerzt: s.geschwaerzt })}</span></div>
     ${a.abfragen.map((ab) => html`<div class="dg-ab"><span class="vs-st ${ab.status === 'ok' ? 'ok' : 'aus'}" style="width:18px;height:18px;font-size:10px">${ab.status === 'ok' ? '✓' : '–'}</span><span>${ab.name}</span><code>${ab.angabe}</code></div>`)}
     <div class="dg-roh">${rohAnzeige(a.daten)}</div>

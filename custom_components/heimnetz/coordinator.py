@@ -25,6 +25,7 @@ from homeassistant.util import dt as dt_util
 from . import pi
 from .box import AnmeldungAbgelehnt, Box, BoxDaten, BoxInfo, Zugang
 from .const import (
+    CONF_MODEM_KENNWORT,
     DOMAIN,
     INTERVALL,
     ISSUE_ANMELDUNG,
@@ -37,10 +38,13 @@ from .logik import messplan as mp
 from .logik import sammeln as sm
 from .logik import serie as sr
 from .logik import sprache as sp
+from .logik import vorgeschaltet as ve
+from .logik import zugang as zg
 from .logik.messung import Messung
 from .logik.protokoll import Protokolleintrag
 from .speedtest import OOKLA, Speedtest, alle_finden, async_messen, lauf, zeitpunkt
 from .speicher import Datenbank, Journalzeile
+from .vorgeschaltet import Dienst
 
 AUFRAEUMEN_S = 86_400
 AUSSTEHEND_HOECHSTENS = (
@@ -123,6 +127,11 @@ class Abruf(DataUpdateCoordinator[sm.Stand]):
         self.speedtest = Speedtest(
             hass, lambda: self.gedaechtnis.ring, lambda: self.letzte_messung, self._messung
         )
+        # WU-0009 Stufe 2: vorgeschaltetes Gerät – eigener langsamer Takt, getrennt von der Sperre der Box
+        self.modem = Dienst(hass)
+        if (v := gedaechtnis.vorgeschaltet) is not None:
+            self.modem.gemerkt = ve.Erkennung(v["baustein"], v.get("modell", ""))
+            self.modem.adresse = v["adresse"]
 
     async def _async_update_data(self) -> sm.Stand:
         g, jetzt = self.gedaechtnis, time.time()
@@ -139,6 +148,7 @@ class Abruf(DataUpdateCoordinator[sm.Stand]):
             else None
         )
 
+        modem = self._modem(daten.zugang, router, jetzt, sprache)
         roh = sm.Rohdaten(
             jetzt=jetzt,
             pi=verbindung,
@@ -159,6 +169,7 @@ class Abruf(DataUpdateCoordinator[sm.Stand]):
             zugang=daten.zugang,
             dsl=daten.dsl,
             faser=daten.faser,
+            modem=modem,
             sprache=sprache,
         )
         stand = sm.auswerten(g, roh)
@@ -196,15 +207,116 @@ class Abruf(DataUpdateCoordinator[sm.Stand]):
             self.plan_status = None
 
     async def zugang_suchen(self) -> bool:
-        """WU-0009: „Erneut suchen“ – den Zugang gleich im gemeinsamen Abruf lesen (keine eigene Verbindung). Öfter
-        als alle ZUGANG_SUCHEN_S fragt das die Box nicht (mehrfaches Tippen)."""
+        """WU-0009: „Erneut suchen“ – den Zugang gleich im gemeinsamen Abruf lesen (keine eigene Verbindung), bei
+        einem vorgeschalteten Gerät dazu dieses an den wenigen Adressen suchen (Stufe 2). Öfter als alle
+        ZUGANG_SUCHEN_S geht das nicht (mehrfaches Tippen)."""
         jetzt = time.monotonic()
         if jetzt - self._zugang_gesucht < ZUGANG_SUCHEN_S:
             return False
         self._zugang_gesucht = jetzt
         self.zugang_neu = True
         await self.async_refresh()
+        if await self.modem_jetzt(suchen=True):
+            await self.async_refresh()
         return True
+
+    # ── WU-0009 Stufe 2: vorgeschaltetes Gerät ──
+    def modem_aktiv(self, meldung: zg.Meldung | None = None) -> bool:
+        """Kommt das Internet über ein vorgeschaltetes Gerät (festgelegt oder erkannt)? Nur dann wird es gefragt."""
+        wahl = self.einstellungen.wert.zugang_wahl if self.einstellungen else "auto"
+        if wahl != "auto":
+            return zg.wirksam("", wahl) == "extern"
+        g = self.gedaechtnis
+        art = zg.art_erkennen(meldung, g.zugang_haupt)[0] if meldung else g.zugang_art
+        return art == "extern"
+
+    def _modem_parameter(
+        self, meldung: zg.Meldung | None, router: str
+    ) -> tuple[tuple[str, ...], str | None, str | None]:
+        """Kandidaten der Suche, Kennwort (aus den Optionen) und gespeicherte Adresse."""
+        gespeichert = self.einstellungen.wert.zugang_adresse if self.einstellungen else None
+        meldung = meldung or self.gedaechtnis.zugang
+        kandidaten = ve.kandidaten(gespeichert, meldung.vorschlag if meldung else None, router)
+        kennwort = self.config_entry.options.get(CONF_MODEM_KENNWORT) or None
+        return kandidaten, kennwort, gespeichert
+
+    def _modem(
+        self, meldung: zg.Meldung | None, router: str, jetzt: float, sprache: str
+    ) -> ve.Modemstand | None:
+        """Im langsamen Takt Arbeit im Hintergrund anstoßen; zurück kommt der zuletzt gelesene Stand (Werte nur,
+        solange sie frisch sind)."""
+        if not self.modem_aktiv(meldung):
+            self._modem_hinweise(None)
+            return None
+        if self.modem.faellig(jetzt):
+            kandidaten, kennwort, gespeichert = self._modem_parameter(meldung, router)
+            # als Hintergrund-Aufgabe des Eintrags: beim Entladen abgebrochen
+            self.modem.aufgabe = self.config_entry.async_create_background_task(
+                self.hass,
+                self._modem_arbeiten(kandidaten, kennwort, sprache, gespeichert),
+                f"{DOMAIN}_modem",
+            )
+        stand = self.modem.stand
+        if stand is not None and not stand.frisch(jetzt):
+            return replace(stand, mobil=None)
+        return stand
+
+    async def _modem_arbeiten(
+        self,
+        kandidaten: tuple[str, ...],
+        kennwort: str | None,
+        sprache: str,
+        gespeichert: str | None,
+    ) -> None:
+        """Suchen/lesen; ein Fehler hier macht den Abruf der Box nie ungültig."""
+        try:
+            await self.modem.arbeiten(kandidaten, kennwort, sprache, gespeichert)
+        except Exception:
+            LOGGER.exception("Heimnetz: Lesen des vorgeschalteten Geräts fehlgeschlagen")
+            self.modem.stand = ve.Modemstand(
+                self.modem.adresse, self.modem.gemerkt, None, "fehler", time.time()
+            )
+        g = self.modem.gemerkt
+        self.gedaechtnis.vorgeschaltet = (
+            {"adresse": self.modem.adresse, "baustein": g.baustein, "modell": g.modell}
+            if g
+            else None
+        )
+        self._modem_hinweise(self.modem.stand)
+
+    async def modem_jetzt(self, *, suchen: bool = False) -> bool:
+        """Gleich suchen bzw. lesen (⚙ › Zugang: neue Wahl, Adresse, Kennwort, „↻ Erneut suchen“). False, wenn das
+        Internet nicht über ein vorgeschaltetes Gerät kommt."""
+        meldung = self.data.zugang if self.data else None
+        if not self.modem_aktiv(meldung):
+            self._modem_hinweise(None)
+            return False
+        self.modem.anstossen(suchen=suchen)
+        if (laufend := self.modem.aufgabe) is not None and not laufend.done():
+            await asyncio.wait(
+                {laufend}
+            )  # die laufende zuerst fertig werden lassen – kein Weg an ihr vorbei
+        router = self.gedaechtnis.lan.router or self.box.zugang.host
+        kandidaten, kennwort, gespeichert = self._modem_parameter(meldung, router)
+        # als Hintergrund-Aufgabe des Eintrags (beim Entladen abgebrochen); arbeiten() prüft unter der Sperre selbst,
+        # ob noch etwas fällig ist
+        aufgabe = self.config_entry.async_create_background_task(
+            self.hass,
+            self._modem_arbeiten(kandidaten, kennwort, sprache_von(self.hass), gespeichert),
+            f"{DOMAIN}_modem_jetzt",
+        )
+        self.modem.aufgabe = aufgabe
+        await asyncio.wait({aufgabe})
+        return True
+
+    def _modem_hinweise(self, stand: ve.Modemstand | None) -> None:
+        """Reparatur-Hinweise: Kennwort abgelehnt (gleich), Gerät nicht erreichbar (erst nach zwei Takten)."""
+        befund = stand.befund if stand else None
+        self._hinweis(ve.REPARATUR["anmeldung_abgelehnt"], befund == "anmeldung_abgelehnt")
+        self._hinweis(
+            ve.REPARATUR["nicht_erreichbar"],
+            befund == "nicht_erreichbar" and self.modem.nicht_erreichbar_lange,
+        )
 
     async def messen(self, grund: str, jetzt: float | None = None) -> bool:
         """Messung bei Ookla starten (Messplan oder „Jetzt messen“); als ausgelöst gilt sie ab jetzt."""
@@ -328,6 +440,8 @@ class Abruf(DataUpdateCoordinator[sm.Stand]):
     async def async_schliessen(self) -> None:
         """Beim Entladen: Speedtest lösen, laufende Schreibvorgänge abwarten – danach darf die Datenbank zu."""
         self.speedtest.trennen()
+        if self.modem.aufgabe is not None and not self.modem.aufgabe.done():
+            self.modem.aufgabe.cancel()
         if self._serie_aufgabe is not None and not self._serie_aufgabe.done():
             self._serie_aufgabe.cancel()
         if self._schreibvorgaenge:
