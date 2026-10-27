@@ -8,7 +8,8 @@ Seite in der Seitenleiste und als Entitäten für Automationen und Dashboards.
 
 > **Für wen:** FRITZ!Box mit Mobilfunk (LTE/5G), getestet mit der **FRITZ!Box 6860 5G**. Ausgelegt für
 > **Österreich** (Betreibernamen, OpenCellID-Datenabzug für Österreich, Kartenkacheln von basemap.at). Andere Boxen
-> und Länder funktionieren teilweise, sind aber nicht getestet – siehe [Ausblick](#ausblick).
+> und Länder funktionieren teilweise, sind aber nicht getestet – siehe [Ausblick](#ausblick). DSL, Glasfaser und Kabel
+> zeigt der Reiter Internet mit dem, was die Box über TR-064 meldet (ab 0.26.0, ohne eigene Box getestet).
 >
 > Hobbyprojekt, **ohne Gewähr**. Die Integration liest nur: Sie ändert keine Einstellungen der FRITZ!Box und steuert
 > keine Geräte. Einzige Ausnahme: Sie startet Speedtest-Messungen über die Ookla-Integration.
@@ -44,8 +45,8 @@ Home Assistant oder HACS an der richtigen Stelle öffnen.
 |--------|--------|
 | **Übersicht** | Gesamtstand (In Ordnung / Hinweise / Störung / FRITZ!Box nicht erreichbar), offene Befunde (z. B. doppelte IP-Adresse, zweiter DHCP-Server, kein Internet), Prüfungen vom Home-Assistant-Rechner aus (Box, Internet, Namensauflösung, DHCP-Test) |
 | **Speedtest** | Messungen der Ookla-Integration mit Grundlast im Netz, Raster nach Wochentag und Stunde, Tagesverlauf, Vergleich mit dem Tarif, Messplan und Serien-Messungen |
-| **Geräte** | Geräte im Heimnetz nach Verbindung oder Art, neu / online / offline, IP-Wechsel, Verlauf je Gerät |
-| **Funk** | WLAN (Bänder, Empfang je Gerät, Kanalwechsel, Hinweise) und Mobilfunk (Technik, Zellen, Signal, Neueinwahlen, Karte zum Mast) |
+| **Geräte** | Geräte im Heimnetz nach Verbindung oder Art, neu / online / offline, IP-Wechsel, Verlauf je Gerät; Umschalter **WLAN** (Bänder, Empfang je Gerät, Kanalwechsel, Hinweise) |
+| **Internet** | Woher das Internet kommt (erkannt oder unter ⚙ → 🌐 Zugang festgelegt) und die Werte dazu: **Mobilfunk** (Technik, Zellen, Signal, Neueinwahlen, Karte zum Mast), **DSL** (Synchronrate, Störabstandsmarge, Dämpfung, Fehler, Neusynchronisierungen), **Glasfaser** (Lichtleistung mit dem guten Bereich laut Box), **Kabel** (nur die Geschwindigkeit – Kanäle und Pegel gibt die Box über TR-064 nicht heraus), **Ersatzzugang** über einen Mobilfunk-Stick |
 | **Verbrauch** | Datenmenge je Tag aus den Zählern von FRITZ!Box Tools |
 | **Protokoll** | Journal der Integration und Ereignisprotokoll der Box, mit Suche und Filter |
 
@@ -141,10 +142,18 @@ Heimnetz arbeitet lokal. Nach außen geht nur:
 | Vorgeschaltetes Modem im eigenen Heimnetz | auf Knopfdruck die Weboberfläche abfragen – nur lesend, nur private Adressen (Diagnose, Beta) | nur, wenn man selbst unter ⚙ → Diagnose „Abfragen“ drückt |
 
 Die **Diagnose** (⚙ → 🔬 Diagnose, Beta) ist für den Fall, dass das Internet über ein eigenes 5G/LTE-Modem vor der
-FRITZ!Box kommt (z. B. ein ZTE): Dann kennt die Box das Funknetz nicht und „Funk → Mobilfunk“ bleibt leer. Heimnetz
+FRITZ!Box kommt (z. B. ein ZTE): Dann kennt die Box das Funknetz nicht und „Internet → Mobilfunk“ bleibt leer. Heimnetz
 fragt dann auf Knopfdruck die Rohdaten des Modems ab und zeigt sie geschwärzt an (die Zellkennung bleibt, IMEI, Kennwort,
 Rufnummer und Adressen nicht), damit man sie dem Entwickler schicken kann. Heimnetz wertet nichts aus und sendet selbst
-nichts; das Kennwort (falls nötig) wird nur für die Abfrage verwendet und nicht gespeichert.
+nichts; ein dort eingetipptes Kennwort wird nur für die Abfrage verwendet und nicht gespeichert (leer gelassen, nimmt
+Heimnetz das unter 🌐 Zugang für genau diese Adresse hinterlegte).
+
+**Zugang** (⚙ → 🌐 Zugang): Woher das Internet kommt, liest Heimnetz nur bei der FRITZ!Box (TR-064, alle 10 Minuten) –
+kein Absuchen des Heimnetzes. Wer ein vorgeschaltetes Modem festlegt, kann dessen Adresse (nur private Adressen) und
+das Kennwort der Weboberfläche eintragen. **Das Kennwort wird in Home Assistant gespeichert** (in den Optionen der
+Heimnetz-Einrichtung, wie bei anderen Integrationen), nie an die Seite zurückgegeben (sie zeigt nur „hinterlegt“), nie
+protokolliert und in der Diagnose geschwärzt; „Kennwort entfernen“ löscht es. Laufende Werte vom vorgeschalteten Gerät
+liest diese Version noch nicht.
 
 **Nie** gehen hinaus: der Standort von Home Assistant, Kennwörter, Gerätenamen, Hardware- (MAC) und IP-Adressen. Der
 Zugang zur Box bleibt in FRITZ!Box Tools und wird von Heimnetz nicht gespeichert. Die **Diagnose** (Geräte & Dienste →
@@ -194,11 +203,18 @@ Alle unter dem Gerät „Heimnetz“. Die Entitäts-ID entsteht beim Einrichten 
 | `sensor.heimnetz_entfernung_zur_basisstation` | Entfernung laut Box |
 | `sensor.heimnetz_nachbarzellen` | Anzahl sichtbarer Nachbarzellen |
 | `sensor.heimnetz_5g_zelle_pci` | PCI der 5G-Zelle |
+| `sensor.heimnetz_internetzugang` | Zugangsart: Mobilfunk, DSL, Glasfaser, Kabel oder vorgeschaltetes Gerät (erkannt oder festgelegt) |
+| `sensor.heimnetz_dsl_synchronrate_download` / `_upload` | DSL-Synchronrate (Mbit/s) |
+| `sensor.heimnetz_dsl_storabstandsmarge_download` / `_upload` | Störabstandsmarge (dB) |
+| `sensor.heimnetz_dsl_dampfung_download` / `_upload` | Dämpfung (dB) |
+| `sensor.heimnetz_dsl_fehler_je_stunde` | nicht korrigierbare Fehler (CRC) je Stunde |
+| `sensor.heimnetz_glasfaser_empfangene_lichtleistung` / `_gesendete_lichtleistung` | Lichtleistung (dBm) |
 | `binary_sensor.heimnetz_fritz_box_vom_pi_aus` | Box vom Home-Assistant-Rechner aus erreichbar |
 | `binary_sensor.heimnetz_internet_vom_pi_aus` | Internet vom Home-Assistant-Rechner aus erreichbar |
 | `binary_sensor.heimnetz_namensauflosung` | Namensauflösung (DNS) funktioniert |
 
-Die Mobilfunk-Sensoren gibt es nur bei Boxen mit Mobilfunk. **Langzeitarchiv:** Messungen und Journal hebt Heimnetz
+Die Mobilfunk-Sensoren gibt es nur bei Boxen mit Mobilfunk, die DSL- und Glasfaser-Sensoren nur, wenn das Internet
+über diesen Anschluss kommt (sie erscheinen mit dem ersten Lesen). **Langzeitarchiv:** Messungen und Journal hebt Heimnetz
 selbst auf (Datenbank `<config>/heimnetz/heimnetz.db`); den Verlauf der Entitäten hält der Recorder nur begrenzt. Wer
 Jahre braucht, schreibt die Entitäten mit Scribe (TimescaleDB) oder InfluxDB mit.
 
@@ -206,7 +222,8 @@ Jahre braucht, schreibt die Entitäten mit Scribe (TimescaleDB) oder InfluxDB mi
 
 Geplant, aber noch nicht umgesetzt:
 
-- FRITZ!Box mit **DSL oder Glasfaser** (ohne Mobilfunk) als vollwertiger Fall.
+- **Werte vom vorgeschalteten Modem** (z. B. ZTE, Huawei, TP-Link) im Reiter Internet; heute nur die Rohdaten über 🔬 Diagnose.
+- Mehr Werte bei **Kabel** und **Glasfaser**, als die Box über TR-064 herausgibt.
 - **Weitere Hersteller**, z. B. UniFi.
 - **Weitere Länder** (Betreibernamen, Zell-Abzug, Kartenkacheln).
 - Aufnahme in die HACS-Standardliste.
@@ -255,7 +272,8 @@ the sidebar and as entities for automations and dashboards.
 
 > **For whom:** FRITZ!Box with mobile broadband (LTE/5G), tested with the **FRITZ!Box 6860 5G**. Designed for
 > **Austria** (operator names, OpenCellID export for Austria, map tiles from basemap.at). Other boxes and countries
-> partly work but are untested – see [Outlook](#outlook).
+> partly work but are untested – see [Outlook](#outlook). DSL, fibre and cable are shown in the Internet tab with
+> what the box reports via TR-064 (from 0.26.0, not tested with a real box of that kind).
 >
 > Hobby project, **no warranty**. The integration only reads: it never changes FRITZ!Box settings and controls no
 > devices. The one exception: it starts speed tests through the Ookla integration.
@@ -290,8 +308,8 @@ Home Assistant or HACS at the right place.
 |-----|---------|
 | **Overview** | Overall state (OK / warnings / problem / FRITZ!Box unreachable), open findings (e.g. duplicate IP address, second DHCP server, no internet), checks from the Home Assistant host (box, internet, name resolution, DHCP test) |
 | **Speed test** | Ookla measurements with background load, grid by weekday and hour, daily curve, comparison with your plan, test schedule and series |
-| **Devices** | Devices by connection or type, new / online / offline, IP changes, history per device |
-| **Wireless** | Wi-Fi (bands, signal per device, channel changes, hints) and mobile (technology, cells, signal, reconnects, map to the mast) |
+| **Devices** | Devices by connection or type, new / online / offline, IP changes, history per device; switch **Wi-Fi** (bands, signal per device, channel changes, hints) |
+| **Internet** | Where the internet comes from (detected or set under ⚙ → 🌐 Access) and its values: **mobile** (technology, cells, signal, reconnects, map to the mast), **DSL** (sync rate, noise margin, attenuation, errors, resyncs), **fibre** (optical power with the good range reported by the box), **cable** (speed only – the box does not provide channels and levels via TR-064), **backup access** via a mobile stick |
 | **Usage** | Data per day from the FRITZ!Box Tools counters |
 | **Log** | Journal of the integration and the box event log, with search and filter |
 
@@ -387,10 +405,18 @@ Heimnetz works locally. Only this leaves your network:
 | Upstream modem in your own home network | query its web interface at the push of a button – read-only, private addresses only (Diagnostics, beta) | only when you press "Query" under ⚙ → Diagnostics yourself |
 
 The **Diagnostics** tab (⚙ → 🔬 Diagnostics, beta) is for the case where the internet comes through a separate 5G/LTE
-modem in front of the FRITZ!Box (e.g. a ZTE): the box then does not know the mobile network and "Wireless → Mobile"
+modem in front of the FRITZ!Box (e.g. a ZTE): the box then does not know the mobile network and "Internet → Mobile"
 stays empty. At the push of a button Heimnetz reads the modem's raw data and shows it redacted (the cell ID stays; IMEI,
 password, phone number and addresses do not), so you can send it to the developer. Heimnetz evaluates nothing and sends
-nothing itself; the password (if needed) is used only for the query and not stored.
+nothing itself; a password typed there is used only for the query and not stored (left empty, Heimnetz uses the one
+stored under 🌐 Access for exactly this address).
+
+**Access** (⚙ → 🌐 Access): Heimnetz finds out where the internet comes from by asking only the FRITZ!Box (TR-064,
+every 10 minutes) – no scanning of the home network. If you set an upstream modem, you can enter its address (private
+addresses only) and the password of its web interface. **The password is stored in Home Assistant** (in the options of
+the Heimnetz entry, like other integrations), never returned to the page (it only shows "stored"), never logged and
+redacted in the diagnostics; "Remove password" deletes it. This version does not read live values from the upstream
+device yet.
 
 **Never** sent: the Home Assistant location, passwords, device names, hardware (MAC) and IP addresses. Box credentials
 stay in FRITZ!Box Tools and are not stored by Heimnetz. The **diagnostics** (Devices & services → Heimnetz → ⋮ →
@@ -440,11 +466,18 @@ All under the device "Heimnetz". The entity ID is created at setup from the name
 | `sensor.heimnetz_distance_to_base_station` | distance reported by the box |
 | `sensor.heimnetz_neighbour_cells` | number of visible neighbour cells |
 | `sensor.heimnetz_5g_cell_pci` | PCI of the 5G cell |
+| `sensor.heimnetz_internet_access` | access type: mobile, DSL, fibre, cable or upstream device (detected or set) |
+| `sensor.heimnetz_dsl_sync_rate_download` / `_upload` | DSL sync rate (Mbit/s) |
+| `sensor.heimnetz_dsl_noise_margin_download` / `_upload` | noise margin (dB) |
+| `sensor.heimnetz_dsl_attenuation_download` / `_upload` | attenuation (dB) |
+| `sensor.heimnetz_dsl_errors_per_hour` | uncorrectable errors (CRC) per hour |
+| `sensor.heimnetz_fibre_received_optical_power` / `_transmitted_optical_power` | optical power (dBm) |
 | `binary_sensor.heimnetz_fritz_box_from_the_pi` | box reachable from the Home Assistant host |
 | `binary_sensor.heimnetz_internet_from_the_pi` | internet reachable from the Home Assistant host |
 | `binary_sensor.heimnetz_name_resolution` | name resolution (DNS) works |
 
-Mobile sensors exist only for boxes with mobile broadband. **Long-term archive:** Heimnetz keeps measurements and
+Mobile sensors exist only for boxes with mobile broadband, DSL and fibre sensors only when the internet comes through
+that connection (they appear with the first reading). **Long-term archive:** Heimnetz keeps measurements and
 journal itself (database `<config>/heimnetz/heimnetz.db`); the recorder keeps entity history only for a limited time.
 For years of history, record the entities with Scribe (TimescaleDB) or InfluxDB.
 
@@ -452,7 +485,8 @@ For years of history, record the entities with Scribe (TimescaleDB) or InfluxDB.
 
 Planned, not yet done:
 
-- FRITZ!Box with **DSL or fibre** (without mobile) as a first-class case.
+- **Values from the upstream modem** (e.g. ZTE, Huawei, TP-Link) in the Internet tab; today only the raw data via 🔬 Diagnostics.
+- More values for **cable** and **fibre** than the box provides via TR-064.
 - **Other vendors**, e.g. UniFi.
 - **Other countries** (operator names, cell export, map tiles).
 - Inclusion in the HACS default list.

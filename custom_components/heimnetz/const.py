@@ -22,6 +22,9 @@ ISSUE_FRITZ_FEHLT = "fritz_fehlt"
 ISSUE_ANMELDUNG = "anmeldung"
 ISSUE_RECORDER_FEHLT = "recorder_fehlt"  # WU-0007: Recorder nicht geladen (kein Verlauf)
 CONF_OPENCELLID = "opencellid_schluessel"  # Optionen: Schlüssel für OpenCellID (Standort des Masts)
+# WU-0009: Kennwort der Weboberfläche eines vorgeschalteten Modems – nur in den Optionen des Eintrags, nie an die Seite,
+# nie ins Protokoll, in der Diagnose geschwärzt
+CONF_MODEM_KENNWORT = "modem_kennwort"
 # WU-0006: Umstieg von der alten Integration „netzwerk“ (Daten übernehmen, nie beide zugleich an der Box)
 ALT_DOMAIN = "netzwerk"
 CONF_ALT_EINTRAG = "alt_eintrag"  # Einrichtung der alten Integration, deren Daten übernommen werden

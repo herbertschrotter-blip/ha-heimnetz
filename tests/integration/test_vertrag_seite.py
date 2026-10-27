@@ -12,8 +12,12 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components.heimnetz.box import BoxInfo
+from custom_components.heimnetz.logik import leitung as ln
+from custom_components.heimnetz.logik import zugang as zg
 from custom_components.heimnetz.logik.messung import Messung
 from custom_components.heimnetz.logik.verlauf import geraete_id
+from tests.integration.conftest import box_daten
 
 VORLAGE = Path(__file__).parents[1] / "seite" / "daten.json"
 BEFEHLE = {
@@ -26,6 +30,72 @@ BEFEHLE = {
     "protokoll": {"art": "journal"},
     "einstellungen": {},
     "einrichtung": {},
+    "internet": {"tage": 1},
+    "zugang": {},
+}
+# WU-0009: Reiter „Internet“ je Zugangsart – DSL, Glasfaser und Kabel mit erfundenen Werten in der Form der FRITZ!-Doku
+ANDERE_ZUGAENGE = {
+    "internet_dsl": {
+        "info": BoxInfo("FRITZ!Box 7590 AX", "8.03", 3600, 0.0),
+        "zugang": zg.Meldung(
+            zugangsart="DSL",
+            link="Up",
+            art_avm="DSL",
+            down_bit=108_396_000,
+            up_bit=38_189_000,
+            mobil_dienst=True,
+            mobil_an=True,
+            dsl_dienst=True,
+            dsl_status="Up",
+            wan_netz="oeffentlich",
+        ),
+        "dsl": ln.Dsl(
+            t=0.0,
+            status="Up",
+            sync_down=108_396,
+            sync_up=38_189,
+            max_down=124_620,
+            max_up=41_012,
+            marge_down=52,
+            marge_up=79,
+            daempfung_down=140,
+            daempfung_up=90,
+            modulation="VDSL",
+            profil="35b",
+            crc=120,
+            fec=18_400,
+        ),
+    },
+    "internet_glasfaser": {
+        "info": BoxInfo("FRITZ!Box 5590 Fiber", "8.03", 3600, 0.0),
+        "zugang": zg.Meldung(
+            zugangsart="X_AVM-DE_Fiber",
+            link="Up",
+            down_bit=1_000_000_000,
+            up_bit=500_000_000,
+            faser_dienst=True,
+            faser_modus="GPON",
+        ),
+        "faser": ln.Faser(
+            t=0.0,
+            modus="GPON",
+            rx=-19_400,
+            rx_min=-28_000,
+            rx_max=-8_000,
+            tx=2_100,
+            tx_min=500,
+            tx_max=5_000,
+            fehler_rx=0,
+            resyncs=1,
+            minuten=30_240,
+        ),
+    },
+    "internet_kabel": {
+        "info": BoxInfo("FRITZ!Box 6690 Cable", "8.03", 3600, 0.0),
+        "zugang": zg.Meldung(
+            zugangsart="X_AVM-DE_Cable", link="Up", down_bit=1_000_000_000, up_bit=50_000_000
+        ),
+    },
 }
 
 
@@ -105,6 +175,24 @@ async def test_antworten_haben_die_form_der_vorlage(
     )
     antworten["speedtest/kachel"] = (await client.receive_json())["result"]
     assert antworten["speedtest/kachel"]["messungen"], "Vorlage braucht mindestens eine Messung"
+    assert (
+        antworten["internet"]["zugang"]["art"] == "mobilfunk" and antworten["internet"]["mobilfunk"]
+    )
+    for name, teile in ANDERE_ZUGAENGE.items():
+        box.return_value = box_daten(
+            mobil=None if name != "internet_dsl" else box_daten().mobil,
+            **{k: v for k, v in teile.items()},
+        )
+        await eintrag.runtime_data.abruf.async_refresh()
+        await hass.async_block_till_done()
+        await client.send_json_auto_id({"type": "heimnetz/internet", "tage": 1})
+        antwort = await client.receive_json()
+        assert antwort["success"], (name, antwort)
+        antworten[name] = antwort["result"]
+    assert antworten["internet_dsl"]["dsl"]["bewertung"]["abzeichen"] == "Reserve knapp"
+    assert antworten["internet_dsl"]["ersatz"]["text"]
+    assert antworten["internet_glasfaser"]["glasfaser"]["rx"] == -19.4
+    assert antworten["internet_kabel"]["kabel"]["down_mbit"] == 1000
     if os.environ.get("HEIMNETZ_VORLAGE"):
         VORLAGE.write_text(
             json.dumps(antworten, ensure_ascii=False, indent=1) + "\n", encoding="utf-8"

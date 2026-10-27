@@ -3527,6 +3527,19 @@ select.ga-wahl { font: inherit; font-size: 13px; color: var(--ink); background: 
 .dg-roh i { font-style: normal; color: var(--amber); }
 .dg-knoepfe { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; } .dg-knoepfe button { flex: 1 1 140px; padding: 10px; border-radius: 14px; font-size: 14px; font-weight: 600; background: rgba(120,120,128,.2); }
 .dg-knoepfe button.amber { background: var(--amber); color: #1c1c1e; } .dg-knoepfe button[disabled] { opacity: .5; cursor: not-allowed; }
+/* WU-0009: Internet – Herkunft des Zugangs, ⚙ › Zugang (Mockup netzwerk.html · Internet und Zugang) */
+.iq { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 14px; }
+.iq-ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: rgba(127,127,127,.18); font-size: 17px; }
+.iq b { display: block; font-size: 15px; } .iq small { display: block; color: var(--ink2); font-size: 12px; }
+.iq-r { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.iq-r button { background: none; padding: 2px 0; font-size: 12px; }
+.amber-k .glas-wert { color: var(--amber); }
+.iz-w { font-size: 13px; color: var(--ink); text-align: right; }
+.zg { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; align-items: center; padding: 9px 0; font-size: 14px; cursor: pointer; width: 100%; text-align: left; background: none; color: var(--ink); border-radius: 0; }
+.zg + .zg { border-top: 1px solid var(--gridc); } .zg small { display: block; color: var(--ink2); font-size: 11px; }
+.zg[disabled] { cursor: default; }
+.zg-r { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--ink2); box-sizing: border-box; } .zg-r.on { border-color: var(--blau); background: radial-gradient(var(--blau) 45%, transparent 50%); }
+@container (max-width: 520px) { .iq { grid-template-columns: 34px minmax(0, 1fr); } .iq-r { grid-column: 2; flex-direction: row; align-items: center; } }
 /* Melden (Tickets wie im Baustrommanager; Mockup netzwerk.html · Melden, 13.10.2026) */
 .melden-knopf { position: absolute; right: 16px; bottom: 96px; z-index: 6; width: 40px; height: 40px; border-radius: 50% !important; display: grid; place-items: center; color: var(--ink2); opacity: .85; }
 .melden-knopf:hover { opacity: 1; color: var(--ink); }
@@ -3588,7 +3601,6 @@ var EN = {
   "Speedtest": "Speedtest",
   // Name des Dienstes (Ookla), bleibt
   "Geräte": "Devices",
-  "Funk": "Wireless",
   "Verbrauch": "Usage",
   "Protokoll": "Log",
   "Alles in Ordnung": "All good",
@@ -3821,11 +3833,10 @@ var EN = {
   // Diagnose: vorgeschaltetes Modem (WU-0008)
   "🔬 Diagnose": "🔬 Diagnostics",
   "Diese Abfrage können nur Admins starten.": "Only admins can run this query.",
-  "Kommt das Internet über ein eigenes 5G/LTE-Modem vor der FRITZ!Box (z. B. ZTE), kennt die Box das Funknetz nicht – Funk › Mobilfunk bleibt leer. Hier liest Heimnetz die Rohdaten des Modems aus, damit der Entwickler es unterstützen kann.": "If the internet comes through a separate 5G/LTE modem in front of the FRITZ!Box (e.g. a ZTE), the box does not know the mobile network – Wireless › Mobile stays empty. Here Heimnetz reads the modem's raw data so the developer can add support for it.",
+  "Kommt das Internet über ein eigenes 5G/LTE-Modem vor der FRITZ!Box (z. B. ZTE), kennt die Box das Funknetz nicht – Internet › Mobilfunk bleibt leer. Hier liest Heimnetz die Rohdaten des Modems aus, damit der Entwickler es unterstützen kann.": "If the internet comes through a separate 5G/LTE modem in front of the FRITZ!Box (e.g. a ZTE), the box does not know the mobile network – Internet › Mobile stays empty. Here Heimnetz reads the modem's raw data so the developer can add support for it.",
   "Adresse des Modems": "Modem address",
   "Kennwort der Weboberfläche (optional)": "Web interface password (optional)",
   "wie beim Anmelden im Browser": "as when logging in via the browser",
-  "wird nur für diese Abfrage verwendet und nicht gespeichert": "used only for this query and not stored",
   "⏳ fragt ab …": "⏳ querying …",
   "▶ Abfragen": "▶ Query",
   "Nur Adressen im eigenen Heimnetz (z. B. 192.168.x.x). Heimnetz liest nur und ändert am Modem nichts.": "Only addresses inside your home network (e.g. 192.168.x.x). Heimnetz only reads and changes nothing on the modem.",
@@ -4104,7 +4115,115 @@ var EN = {
   "Zurück": "Back",
   "Vorschau nicht abrufbar: {fehler}": "Preview not available: {fehler}",
   "Gemeldet als {ticket} – GitHub öffnet sich in einem neuen Fenster": "Reported as {ticket} – GitHub opens in a new window",
-  "Gemeldet als {ticket} – im Issue auf GitHub steht {vorher}, bitte dort ändern": "Reported as {ticket} – the GitHub issue says {vorher}, please change it there"
+  "Gemeldet als {ticket} – im Issue auf GitHub steht {vorher}, bitte dort ändern": "Reported as {ticket} – the GitHub issue says {vorher}, please change it there",
+  // Internet und Zugang (WU-0009)
+  "Internet": "Internet",
+  "🌐 Zugang": "🌐 Access",
+  "Automatisch (empfohlen)": "Automatic (recommended)",
+  "Mobilfunk über die FRITZ!Box": "Mobile via the FRITZ!Box",
+  "eingebautes Modem oder Stick": "built-in modem or stick",
+  "Mobilfunk über ein vorgeschaltetes Modem": "Mobile via an upstream modem",
+  "ZTE, Huawei, TP-Link … (Beta)": "ZTE, Huawei, TP-Link … (beta)",
+  "DSL über die FRITZ!Box": "DSL via the FRITZ!Box",
+  "ADSL, VDSL, Supervectoring": "ADSL, VDSL, supervectoring",
+  "Glasfaser": "Fibre",
+  "über die FRITZ!Box oder ein eigenes Glasfaser-Modem": "via the FRITZ!Box or an own fibre modem",
+  "Kabel": "Cable",
+  "über die FRITZ!Box": "via the FRITZ!Box",
+  "keiner": "none",
+  "Den Zugang legen nur Admins fest.": "Only admins set the access.",
+  "Vorschlag: {text}": "Suggestion: {text}",
+  "Internet kommt über": "Internet comes via",
+  "jetzt: {text}": "now: {text}",
+  "Vorgeschaltetes Gerät": "Upstream device",
+  "Adresse": "Address",
+  "vorgeschlagen: {liste} – nur Adressen im eigenen Heimnetz": "suggested: {liste} – only addresses in your own home network",
+  "Kennwort der Weboberfläche": "Password of the web interface",
+  "hinterlegt – zum Ändern neu eingeben": "stored – enter again to change",
+  "wird in Home Assistant gespeichert (wie bei anderen Integrationen), nie angezeigt": "stored in Home Assistant (like other integrations), never shown",
+  "Kennwort entfernen": "Remove password",
+  "Laufende Werte vom vorgeschalteten Gerät folgen in einer späteren Fassung; bis dahin zeigt 🔬 Diagnose die Rohdaten.": "Live values from the upstream device follow in a later version; until then 🔬 Diagnostics shows the raw data.",
+  "Ersatzzugang bei Ausfall": "Backup access on failure",
+  "Ersatz": "Backup",
+  "z. B. Mobilfunk-Stick an der FRITZ!Box, wenn DSL ausfällt": "e.g. a mobile stick on the FRITZ!Box when DSL fails",
+  "↻ Erneut suchen": "↻ Search again",
+  "🔬 Rohdaten abfragen ›": "🔬 Query raw data ›",
+  "Gefragt wird nur die FRITZ!Box – kein Absuchen des Heimnetzes. Vorgeschlagen werden die Adresse vor der Box und übliche Modem-Adressen (192.168.0.1, 192.168.1.1, 192.168.8.1). Heimnetz liest nur.": "Only the FRITZ!Box is asked – no scanning of the home network. Suggested are the address in front of the box and common modem addresses (192.168.0.1, 192.168.1.1, 192.168.8.1). Heimnetz only reads.",
+  "automatisch erkannt": "detected automatically",
+  "festgelegt": "set manually",
+  "Ersatz: {text}": "Backup: {text}",
+  "Die FRITZ!Box meldet etwas anderes: {vorschlag}": "The FRITZ!Box reports something else: {vorschlag}",
+  "ändern ›": "change ›",
+  "📶 Ersatz": "📶 Backup",
+  "Die Box meldet noch nicht, woher das Internet kommt – sie wird alle 10 Minuten gefragt.": "The box does not report yet where the internet comes from – it is asked every 10 minutes.",
+  "Vorgeschaltet": "Upstream",
+  "Die Box meldet gerade keine DSL-Werte.": "The box currently reports no DSL values.",
+  "möglich {n}": "attainable {n}",
+  "Tarif {n}": "plan {n}",
+  "laut Box": "according to the box",
+  "Synchron Download": "Sync download",
+  "Synchron Upload": "Sync upload",
+  "Störabstand ↓ / ↑": "Noise margin ↓ / ↑",
+  "Marge, gut ab {n} dB": "margin, good from {n} dB",
+  "Dämpfung ↓ / ↑": "Attenuation ↓ / ↑",
+  "Leitung": "Line",
+  "laut FRITZ!Box": "according to the FRITZ!Box",
+  "Status": "Status",
+  "Verfahren": "Mode",
+  "Vectoring: {text}": "Vectoring: {text}",
+  "letzte Neusynchronisierung {zeit}": "last resync {zeit}",
+  "seit dem Start von Heimnetz keine Neusynchronisierung gesehen": "no resync seen since Heimnetz started",
+  "Fehler je Stunde": "Errors per hour",
+  "CRC = nicht korrigierbar, FEC = korrigiert": "CRC = uncorrectable, FEC = corrected",
+  "Neusynchronisierungen": "Resyncs",
+  "{n} in 7 Tagen": "{n} in 7 days",
+  "Gegenstelle (DSLAM)": "Remote end (DSLAM)",
+  "Verlauf 7 Tage": "History 7 days",
+  "Synchron-Download und Störabstand": "sync download and noise margin",
+  "Synchron-Download (Mbit/s)": "sync download (Mbit/s)",
+  "Störabstand Download (dB)": "noise margin download (dB)",
+  "Die Box meldet gerade keine Glasfaser-Werte.": "The box currently reports no fibre values.",
+  "gut {von} … {bis}": "good {von} … {bis}",
+  "Bereich meldet die Box nicht": "range not reported by the box",
+  "Empfangene Lichtleistung": "Received optical power",
+  "Gesendete Lichtleistung": "Transmitted optical power",
+  "Verbindung": "Connection",
+  "Glasfaser-Anschluss": "Fibre connection",
+  "{n} Neusynchronisierungen laut Box": "{n} resyncs according to the box",
+  "fehlerhaft empfangene Pakete": "packets received with errors",
+  "Temperatur Modul": "Module temperature",
+  "Anschluss-Kennung": "Connection ID",
+  "⟨nur in der Box⟩": "⟨only in the box⟩",
+  "Seriennummer und Kennung zeigt die Seite nicht": "the page does not show serial number and ID",
+  "Lichtleistung": "optical power",
+  "empfangene Lichtleistung (dBm)": "received optical power (dBm)",
+  "Mit einem eigenen Glasfaser-Modem (ONT) vor der FRITZ!Box kommen diese Werte vom ONT – das folgt in einer späteren Fassung.": "With an own fibre modem (ONT) in front of the FRITZ!Box these values come from the ONT – that follows in a later version.",
+  "Kabelanschluss getrennt": "Cable connection down",
+  "Kabelanschluss verbunden": "Cable connection up",
+  "Kanäle, Pegel und Fehler des Kabelmodems gibt die Schnittstelle der FRITZ!Box (TR-064) nicht heraus – nur die Geschwindigkeit der Verbindung.": "The FRITZ!Box interface (TR-064) does not provide channels, levels and errors of the cable modem – only the connection speed.",
+  "Empfangskanäle": "Downstream channels",
+  "Empfangspegel": "Downstream level",
+  "Signal/Rausch (MER)": "Signal/noise (MER)",
+  "Kanäle": "Channels",
+  "Sendepegel": "Upstream level",
+  "Fehler korrigiert / nicht korrigierbar": "Errors corrected / uncorrectable",
+  "Kanalliste": "Channel list",
+  "Werte vom vorgeschalteten Gerät folgen": "Values from the upstream device will follow",
+  "Die FRITZ!Box hängt hinter einem eigenen Modem oder Router und kennt dessen Leitung nicht. Heimnetz liest die Werte dieses Geräts in einer späteren Fassung; die Rohdaten gibt es schon über 🔬 Diagnose.": "The FRITZ!Box sits behind an own modem or router and does not know its line. Heimnetz will read the values of this device in a later version; the raw data is already available via 🔬 Diagnostics.",
+  "Ersatzzugang Mobilfunk": "Mobile backup access",
+  "bereit · nicht aktiv": "ready · not active",
+  "zuletzt aktiv {zeit}": "last active {zeit}",
+  "Signal gerade {n} dBm": "signal now {n} dBm",
+  "Umschaltungen": "Switchovers",
+  "letzte 30 Tage": "last 30 days",
+  "Über Ersatz": "Via backup",
+  "Datenmenge": "Data volume",
+  "über Ersatz: meldet die Box nicht getrennt": "via backup: not reported separately by the box",
+  "Neusynchronisierung": "Resync",
+  "Zugang nicht abrufbar: {fehler}": "Access not available: {fehler}",
+  "Gesucht: FRITZ!Box neu gefragt": "Searched: FRITZ!Box asked again",
+  "Eben erst gesucht – in einer halben Minute wieder": "Just searched – again in half a minute",
+  "wird nur für diese Abfrage verwendet und nicht gespeichert – leer: das unter 🌐 Zugang für diese Adresse hinterlegte": "used only for this query and not stored – empty: the one stored under 🌐 Access for this address"
 };
 
 // src/format.js
@@ -4166,15 +4285,15 @@ function phase(sonne) {
 }
 
 // src/ansichten/teile.js
-function seg(liste, wert, wahl, klein = true) {
+function seg(liste, wert2, wahl, klein = true) {
   return b2`<div class="seg ${klein ? "klein" : ""}">
-    ${liste.map(([k2, t7]) => b2`<button class=${k2 === wert ? "on" : ""} @click=${() => wahl(k2)}>${t7}</button>`)}
+    ${liste.map(([k2, t7]) => b2`<button class=${k2 === wert2 ? "on" : ""} @click=${() => wahl(k2)}>${t7}</button>`)}
   </div>`;
 }
-function kachel(titel, wert, unter, klick) {
+function kachel(titel, wert2, unter, klick) {
   return b2`<button class="glas-k glas-panel" @click=${klick || (() => {
   })}>
-    <span class="glas-klein">${titel}</span><span class="glas-wert">${wert}</span><span class="glas-kwk">${unter}</span>
+    <span class="glas-klein">${titel}</span><span class="glas-wert">${wert2}</span><span class="glas-kwk">${unter}</span>
   </button>`;
 }
 function streifen(felder) {
@@ -4207,8 +4326,8 @@ function uebersicht(p4, u3) {
       e6 ? b2`${e6.rsrp_anker ?? "–"}<small> dBm</small>` : "–",
       e6 ? `${e6.wort ?? ""}${e6.rsrp_5g != null ? ` · 5G ${e6.rsrp_5g} dBm` : ""}` : t3("nicht verfügbar"),
       () => {
-        p4.setze("funk", { teil: "mobilfunk" }, false);
-        p4.geh("funk");
+        p4.setze("internet", { sicht: "haupt" }, false);
+        p4.geh("internet");
       }
     ),
     kachel(
@@ -4374,7 +4493,7 @@ function dauer(s4) {
 }
 function messungBlatt(p4) {
   const m3 = p4._blatt.m, k2 = m3.kontext || {}, nach = k2.quelle === "nachgetragen", leer = !k2.quelle;
-  const z2 = (titel, wert) => b2`<div class="zeile"><span class="leise">${titel}</span><span style="text-align:right">${wert ?? b2`<span class="leise">–</span>`}</span></div>`;
+  const z2 = (titel, wert2) => b2`<div class="zeile"><span class="leise">${titel}</span><span style="text-align:right">${wert2 ?? b2`<span class="leise">–</span>`}</span></div>`;
   const mit = (...w2) => w2.some((x2) => x2 == null) ? null : w2.join(" · ");
   const dbm = (v2, e6 = "dBm") => v2 == null ? null : `${zahl(v2)} ${e6}`;
   return b2`<div class="griff"></div><button class="zu" @click=${() => p4.zu()}>✕</button>
@@ -4579,7 +4698,48 @@ var l3 = e4(class extends i5 {
   }
 });
 
+// src/ansichten/wlan.js
+function wlan(p4, d3) {
+  if (!d3.verfuegbar) return b2`<div class="glas-panel block"><div class="leer">${t3("Die Box meldet gerade keine WLAN-Werte.")}</div></div>`;
+  const band = (b3) => kachel(
+    `${b3.band} GHz`,
+    b3.an ? t3("Kanal {k}", { k: b3.kanal ?? "–" }) : t3("aus"),
+    b3.an ? `${b3.auto ? t3("automatisch") : t3("fest")}${b3.standard ? ` · Wi-Fi ${standard(b3.standard)}` : ""} · ${t3(b3.geraete === 1 ? "{n} Gerät" : "{n} Geräte", { n: b3.geraete })}` : t3("abgeschaltet")
+  );
+  return b2`
+    ${d3.befunde.length ? b2`<div class="glas-panel block">${d3.befunde.map((b3) => b2`<div class="befund"><span class="punkt ${punkt(b3.stufe)}"></span>
+      <div><b>${b3.titel}</b><p>${b3.text}</p></div></div>`)}</div>` : A}
+    <div class="glas-raster">
+      ${d3.baender.map(band)}
+      ${kachel(t3("Gast-WLAN"), d3.gast_an == null ? "–" : d3.gast_an ? t3("an") : t3("aus"), t3("nur lesen"))}
+    </div>
+    <div class="glas-panel block">
+      <div class="block-kopf"><h3>${t3("Geräte im WLAN")}</h3><span class="leise">${t3("{n} verbunden · schwächstes zuerst", { n: d3.geraete.length })}</span></div>
+      ${d3.geraete.length ? b2`<div class="tab-scroll"><table class="t">
+        <tr><th>${t3("Gerät")}</th><th>Band</th><th>${t3("Empfang")}</th><th class="r">%</th><th class="r">Mbit/s</th></tr>
+        ${d3.geraete.map((g2) => b2`<tr class="klick" @click=${() => p4.geraetOeffnen(g2.id)}>
+          <td>${g2.name} ${g2.schwach ? b2`<span class="badge amber-b">${t3("schwach")}</span>` : A}${g2.gast ? b2` <span class="badge">${t3("Gast")}</span>` : A}</td>
+          <td>${g2.band ? `${g2.band} GHz` : "–"}</td>
+          <td><span class="sig"><i style="width:${Math.round((g2.lage ?? 0) * 100)}%;background:${farbe(g2.lage)}"></i></span></td>
+          <td class="r">${g2.signal ?? "–"}</td><td class="r">${g2.mbit ?? "–"}</td></tr>`)}
+      </table></div>` : b2`<div class="leer">${t3("Kein Gerät im WLAN.")}</div>`}
+      <p class="hinweis">${t3("Empfang und Geschwindigkeit meldet die FRITZ!Box je Gerät; schwach = unter {n} % (⚙). Tippen öffnet den Verlauf des Geräts.", { n: d3.schwach_unter })}</p>
+    </div>
+    <div class="glas-panel block"><div class="block-kopf"><h3>${t3("Kanalwechsel")}</h3><span class="leise">${t3("letzte 7 Tage · die Box wählt selbst")}</span></div>
+      ${d3.kanalwechsel.length ? d3.kanalwechsel.map((k2) => b2`<div class="ereig"><span class="punkt grau"></span><time>${zeit(k2.t)}</time><span>${k2.text}</span></div>`) : b2`<div class="leer">${t3("Kein Wechsel in den letzten 7 Tagen.")}</div>`}
+    </div>`;
+}
+function standard(s4) {
+  return { be: "7", ax: "6", ac: "5", n: "4" }[s4] ?? s4;
+}
+
 // src/ansichten/geraete.js
+var TEILE = [["geraete", merke("Geräte")], ["wlan", merke("WLAN")]];
+function geraeteReiter(p4, d3) {
+  const teil = p4._opt.geraete.teil;
+  return b2`<div class="leiste">${seg(tl(TEILE), teil, (v2) => p4.setze("geraete", { teil: v2 }), false)}</div>
+    ${!d3 ? b2`<div class="glas-panel block"><div class="leer">${t3("lädt …")}</div></div>` : teil === "wlan" ? wlan(p4, d3) : geraete(p4, d3)}`;
+}
 var FILTER = [["alle", merke("Alle")], ["online", "Online"], ["offline", "Offline"], ["auff", merke("Auffällig")]];
 var PUNKT = { an: ["", "online"], aus: ["grau", "offline"], neu: ["blau", merke("neu")], wackelt: ["amber", merke("wackelt")] };
 var ZU = "WLAN, nicht verbunden";
@@ -4647,41 +4807,6 @@ function geraetBlatt(p4, b3) {
     <div class="achse" style="padding-left:76px"><span>0</span><span>6</span><span>12</span><span>18</span><span>24</span></div>
     <div class="gruppe">${t3("Ereignisse")}</div>
     ${g2.ereignisse.length ? g2.ereignisse.map((e6) => b2`<div class="ereig"><span class="punkt ${punkt(e6.stufe)}"></span><time>${zeit(e6.t)}</time><span>${e6.text}</span></div>`) : b2`<div class="leer">${t3("Keine Ereignisse in den letzten 7 Tagen.")}</div>`}`;
-}
-
-// src/ansichten/wlan.js
-function wlan(p4, d3) {
-  if (!d3.verfuegbar) return b2`<div class="glas-panel block"><div class="leer">${t3("Die Box meldet gerade keine WLAN-Werte.")}</div></div>`;
-  const band = (b3) => kachel(
-    `${b3.band} GHz`,
-    b3.an ? t3("Kanal {k}", { k: b3.kanal ?? "–" }) : t3("aus"),
-    b3.an ? `${b3.auto ? t3("automatisch") : t3("fest")}${b3.standard ? ` · Wi-Fi ${standard(b3.standard)}` : ""} · ${t3(b3.geraete === 1 ? "{n} Gerät" : "{n} Geräte", { n: b3.geraete })}` : t3("abgeschaltet")
-  );
-  return b2`
-    ${d3.befunde.length ? b2`<div class="glas-panel block">${d3.befunde.map((b3) => b2`<div class="befund"><span class="punkt ${punkt(b3.stufe)}"></span>
-      <div><b>${b3.titel}</b><p>${b3.text}</p></div></div>`)}</div>` : A}
-    <div class="glas-raster">
-      ${d3.baender.map(band)}
-      ${kachel(t3("Gast-WLAN"), d3.gast_an == null ? "–" : d3.gast_an ? t3("an") : t3("aus"), t3("nur lesen"))}
-    </div>
-    <div class="glas-panel block">
-      <div class="block-kopf"><h3>${t3("Geräte im WLAN")}</h3><span class="leise">${t3("{n} verbunden · schwächstes zuerst", { n: d3.geraete.length })}</span></div>
-      ${d3.geraete.length ? b2`<div class="tab-scroll"><table class="t">
-        <tr><th>${t3("Gerät")}</th><th>Band</th><th>${t3("Empfang")}</th><th class="r">%</th><th class="r">Mbit/s</th></tr>
-        ${d3.geraete.map((g2) => b2`<tr class="klick" @click=${() => p4.geraetOeffnen(g2.id)}>
-          <td>${g2.name} ${g2.schwach ? b2`<span class="badge amber-b">${t3("schwach")}</span>` : A}${g2.gast ? b2` <span class="badge">${t3("Gast")}</span>` : A}</td>
-          <td>${g2.band ? `${g2.band} GHz` : "–"}</td>
-          <td><span class="sig"><i style="width:${Math.round((g2.lage ?? 0) * 100)}%;background:${farbe(g2.lage)}"></i></span></td>
-          <td class="r">${g2.signal ?? "–"}</td><td class="r">${g2.mbit ?? "–"}</td></tr>`)}
-      </table></div>` : b2`<div class="leer">${t3("Kein Gerät im WLAN.")}</div>`}
-      <p class="hinweis">${t3("Empfang und Geschwindigkeit meldet die FRITZ!Box je Gerät; schwach = unter {n} % (⚙). Tippen öffnet den Verlauf des Geräts.", { n: d3.schwach_unter })}</p>
-    </div>
-    <div class="glas-panel block"><div class="block-kopf"><h3>${t3("Kanalwechsel")}</h3><span class="leise">${t3("letzte 7 Tage · die Box wählt selbst")}</span></div>
-      ${d3.kanalwechsel.length ? d3.kanalwechsel.map((k2) => b2`<div class="ereig"><span class="punkt grau"></span><time>${zeit(k2.t)}</time><span>${k2.text}</span></div>`) : b2`<div class="leer">${t3("Kein Wechsel in den letzten 7 Tagen.")}</div>`}
-    </div>`;
-}
-function standard(s4) {
-  return { be: "7", ax: "6", ac: "5", n: "4" }[s4] ?? s4;
 }
 
 // src/karte.js
@@ -5621,7 +5746,7 @@ var HeimnetzKarte = class extends i4 {
     e6.clearLayers();
     if (!d3 || !d3.wohnung) return;
     const stil2 = getComputedStyle(this);
-    const f3 = Object.fromEntries(Object.entries(FARBEN).map(([k2, [v2, ersatz]]) => [k2, stil2.getPropertyValue(v2).trim() || ersatz]));
+    const f3 = Object.fromEntries(Object.entries(FARBEN).map(([k2, [v2, ersatz2]]) => [k2, stil2.getPropertyValue(v2).trim() || ersatz2]));
     const name = (lage, text, klein, richtung = "auto") => lage.bindTooltip(sicher(text), {
       permanent: true,
       direction: richtung,
@@ -5753,12 +5878,142 @@ function karte(p4, k2, dunkel) {
 }
 var WOHER = merke("Die Box meldet nur die Entfernung (Ring), nicht die Richtung. Jede Zelle mit voller Kennung schlägt die Integration bei BeaconDB (ohne Schlüssel) und – mit eigenem Schlüssel – bei OpenCellID nach und merkt sich das Ergebnis; es zählt der genauere Fund. Hinaus geht nur die Kennung der Zelle, nie dein Standort. Beide Dienste kennen nicht den Mast selbst, sondern die Orte, an denen Nutzer die Zelle empfangen haben – daher der Kreis für die Genauigkeit. Zellen derselben Sendeanlage (Kennung vor dem Bindestrich) hängen am selben Mast; sein Standort ist das Mittel ihrer Punkte, genauere zählen mehr. Zellen, von denen die Box nur die PCI nennt, lassen sich nicht nachschlagen – auch 5G nicht: Die Box nennt für 5G nur diese Nummer. Bei 5G-NSA hängt die 5G-Zelle aber meist am selben Mast wie die LTE-Ankerzelle, deshalb steht dort „4G + 5G (vermutlich)“, solange 5G mitläuft. Die Namen der Zellen erscheinen beim Hineinzoomen. Zoomen mit ＋/−, Mausrad oder zwei Fingern, ziehen zum Verschieben, ⌖ zeigt wieder alles. Die Kartenkacheln lädt dein Browser von basemap.at (Server der Stadt Wien) oder OpenStreetMap; der Anbieter sieht dabei den Kartenausschnitt, nicht mehr. Die gewählte Grundlage merkt sich dein Browser. „📡 Masten (OSM)“ zeigt Funkmasten, die in OpenStreetMap eingetragen sind – echte Bauwerke, aber meist ohne Betreiber. Orange umrandet ist der Mast, der am nächsten am geschätzten Mast der Zellen steht (höchstens 1,5 km daneben); ist der nicht bekannt, der Mast, dessen Entfernung am besten zur Entfernung laut Box passt – die schwankt je Zelle aber stark. Ein Hinweis, kein Beweis. Zellen einer Sendeanlage, die einmal gefunden wurden, zählen einen Monat lang mit – auch wenn die Box gerade an einem Sektor hängt, den keine Datenbank kennt. Antippen eines Masts zeigt Entfernung und Richtung und – mit OpenCellID-Schlüssel – Anbieter und Technik der Zellen, die OpenCellID in höchstens 500 m Abstand kennt (aus dem Datenabzug für ganz Österreich, einmal im Monat geladen und hier ausgewertet). ⛶ öffnet die Karte über die ganze Seite. Die Integration fragt dafür einmal im Monat einen großen Ausschnitt auf festem Raster bei OpenStreetMap ab; daraus lässt sich deine Wohnung nur auf etwa 22 × 15 km eingrenzen.");
 
-// src/ansichten/funk.js
-var TEILE = [["wlan", merke("WLAN")], ["mobilfunk", merke("Mobilfunk")]];
-function funk(p4, d3) {
-  const teil = p4._opt.funk.teil;
-  return b2`<div class="leiste">${seg(tl(TEILE), teil, (v2) => p4.setze("funk", { teil: v2 }), false)}</div>
-    ${d3 ? teil === "wlan" ? wlan(p4, d3) : mobilfunk(p4, d3) : b2`<div class="glas-panel block"><div class="leer">${t3("lädt …")}</div></div>`}`;
+// src/ansichten/internet.js
+var SYMBOL2 = { mobilfunk: "📶", dsl: "☎️", glasfaser: "💡", kabel: "📺", extern: "📶" };
+var ABZEICHEN = { gut: "gruen", knapp: "amber-b", schlecht: "rot-b" };
+var QUELLE = { automatisch: merke("automatisch erkannt"), festgelegt: merke("festgelegt") };
+var lade = () => b2`<div class="glas-panel block"><div class="leer">${t3("lädt …")}</div></div>`;
+var wert = (w2, stellen = 1) => w2 == null ? "–" : zahl(w2, stellen);
+function ik(titel, w2, unter, cls = "") {
+  return b2`<div class="glas-k glas-panel ${cls}"><span class="glas-klein">${titel}</span><span class="glas-wert">${w2}</span><span class="glas-kwk">${unter}</span></div>`;
+}
+function iz(name, w2, unter = "") {
+  return b2`<div class="ez"><span>${name}${unter ? b2`<small>${unter}</small>` : A}</span><span class="iz-w">${w2}</span></div>`;
+}
+function zugangZeile(p4, z2) {
+  return b2`<div class="glas-panel block iq">
+    <span class="iq-ic">${SYMBOL2[z2.art] ?? "🌐"}</span>
+    <span><b>${z2.titel}</b><small>${[z2.geraet, z2.weg_text, z2.ersatz_text ? t3("Ersatz: {text}", { text: z2.ersatz_text }) : ""].filter(Boolean).join(" · ")}</small>
+      ${z2.abweichung ? b2`<small class="amber-t">${t3("Die FRITZ!Box meldet etwas anderes: {vorschlag}", { vorschlag: z2.abweichung })}</small>` : A}</span>
+    <span class="iq-r"><span class="badge">${t3(QUELLE[z2.quelle] ?? z2.quelle)}</span>
+      ${p4.istAdmin ? b2`<button class="leise blau" @click=${() => p4.einstellungenOeffnen("zugang")}>${t3("ändern ›")}</button>` : A}</span>
+  </div>`;
+}
+function internet(p4, d3) {
+  if (!d3) return lade();
+  const z2 = d3.zugang;
+  const sicht = p4._opt.internet.sicht === "ersatz" && d3.ersatz ? "ersatz" : "haupt";
+  const knoepfe = [["haupt", `${SYMBOL2[z2.art] ?? "🌐"} ${art(z2)}`], ...d3.ersatz ? [["ersatz", t3("📶 Ersatz")]] : []];
+  const inhalt = sicht === "ersatz" ? ersatz(d3.ersatz) : z2.art === "dsl" ? dsl(d3.dsl) : z2.art === "glasfaser" ? glasfaser(d3.glasfaser) : z2.art === "kabel" ? kabel(d3.kabel) : z2.art === "extern" ? extern(p4) : z2.art === "mobilfunk" && d3.mobilfunk ? mobilfunk(p4, d3.mobilfunk) : b2`<div class="glas-panel block"><div class="leer">${t3("Die Box meldet noch nicht, woher das Internet kommt – sie wird alle 10 Minuten gefragt.")}</div></div>`;
+  return b2`${zugangZeile(p4, z2)}
+    ${knoepfe.length > 1 ? b2`<div class="leiste">${seg(knoepfe, sicht, (v2) => p4.setze("internet", { sicht: v2 }, false), false)}</div>` : A}
+    ${inhalt}`;
+}
+function art(z2) {
+  return { mobilfunk: t3("Mobilfunk"), dsl: "DSL", glasfaser: t3("Glasfaser"), kabel: t3("Kabel"), extern: t3("Vorgeschaltet") }[z2.art] ?? t3("Internet");
+}
+function bewertung(b3) {
+  const rahmen = b3.stufe === "knapp" ? "border-color:color-mix(in srgb, var(--amber) 60%, var(--panel-rand))" : b3.stufe === "schlecht" ? "border-color:color-mix(in srgb, var(--rot) 60%, var(--panel-rand))" : "";
+  return b2`<div class="glas-panel block" style=${rahmen}>
+    <div class="block-kopf"><h3>${b3.titel}</h3>${b3.abzeichen ? b2`<span class="badge ${ABZEICHEN[b3.stufe] ?? ""}">${b3.abzeichen}</span>` : A}</div>
+    ${b3.text ? b2`<p class="hinweis" style="font-size:13px">${b3.text}</p>` : A}</div>`;
+}
+var fehlt = (text) => b2`<span class="leise" title=${text}>–</span>`;
+function dsl(d3) {
+  if (!d3) return b2`<div class="glas-panel block"><div class="leer">${t3("Die Box meldet gerade keine DSL-Werte.")}</div></div>`;
+  const moeglich = (m3, tarif) => [m3 != null ? t3("möglich {n}", { n: zahl(m3, 1) }) : "", tarif ? t3("Tarif {n}", { n: zahl(tarif) }) : ""].filter(Boolean).join(" · ") || t3("laut Box");
+  return b2`${bewertung(d3.bewertung)}
+    <div class="glas-raster">
+      ${ik(t3("Synchron Download"), b2`${wert(d3.sync_down)}<small> Mbit/s</small>`, moeglich(d3.max_down, d3.tarif_down))}
+      ${ik(t3("Synchron Upload"), b2`${wert(d3.sync_up)}<small> Mbit/s</small>`, moeglich(d3.max_up, d3.tarif_up))}
+      ${ik(t3("Störabstand ↓ / ↑"), b2`${wert(d3.marge_down)} / ${wert(d3.marge_up)}<small> dB</small>`, t3("Marge, gut ab {n} dB", { n: zahl(d3.marge_gut) }), ["knapp", "schlecht"].includes(d3.marge_stufe) ? "amber-k" : "")}
+      ${ik(t3("Dämpfung ↓ / ↑"), b2`${wert(d3.daempfung_down)} / ${wert(d3.daempfung_up)}<small> dB</small>`, t3("laut Box"))}
+    </div>
+    <div class="glas-panel block"><div class="block-kopf"><h3>${t3("Leitung")}</h3><span class="leise">${t3("laut FRITZ!Box")}</span></div>
+      ${iz(t3("Status"), d3.status)}
+      ${iz(t3("Verfahren"), d3.verfahren ?? fehlt(d3.fehlt), t3("Vectoring: {text}", { text: d3.fehlt }))}
+      ${iz(t3("Verbunden seit"), d3.seit_text ?? "–", d3.seit ? t3("letzte Neusynchronisierung {zeit}", { zeit: zeit(d3.seit) }) : t3("seit dem Start von Heimnetz keine Neusynchronisierung gesehen"))}
+      ${iz(t3("Fehler je Stunde"), d3.crc_h == null && d3.fec_h == null ? "–" : `CRC ${wert(d3.crc_h, 0)} · FEC ${wert(d3.fec_h, 0)}`, t3("CRC = nicht korrigierbar, FEC = korrigiert"))}
+      ${iz(t3("Neusynchronisierungen"), t3("{n} in 7 Tagen", { n: d3.neusync_7 }))}
+      ${iz(t3("Gegenstelle (DSLAM)"), fehlt(d3.fehlt), d3.fehlt)}
+    </div>
+    ${verlauf(t3("Verlauf 7 Tage"), t3("Synchron-Download und Störabstand"), [
+    { punkte: d3.verlauf.sync, farbe: "var(--s1)", name: t3("Synchron-Download (Mbit/s)") },
+    { punkte: d3.verlauf.marge, farbe: "var(--amber)", name: t3("Störabstand Download (dB)") }
+  ], d3.neusync.map((n4) => n4.t))}`;
+}
+function glasfaser(g2) {
+  if (!g2) return b2`<div class="glas-panel block"><div class="leer">${t3("Die Box meldet gerade keine Glasfaser-Werte.")}</div></div>`;
+  const bereich = (b3, abwaerts) => b3 ? t3("gut {von} … {bis}", { von: zahl(b3[abwaerts ? 1 : 0], 1), bis: zahl(b3[abwaerts ? 0 : 1], 1) }) : t3("Bereich meldet die Box nicht");
+  return b2`${bewertung(g2.bewertung)}
+    <div class="glas-raster">
+      ${ik(t3("Empfangene Lichtleistung"), b2`${wert(g2.rx)}<small> dBm</small>`, bereich(g2.rx_bereich, true), g2.bewertung.stufe === "knapp" || g2.bewertung.stufe === "schlecht" ? "amber-k" : "")}
+      ${ik(t3("Gesendete Lichtleistung"), b2`${wert(g2.tx)}<small> dBm</small>`, bereich(g2.tx_bereich, false))}
+      ${ik(t3("Verbindung"), g2.modus ?? "–", g2.down_mbit ? `${zahl(g2.down_mbit)} / ${zahl(g2.up_mbit)} Mbit/s` : t3("laut Box"))}
+      ${ik(t3("Status"), "–", g2.fehlt)}
+    </div>
+    <div class="glas-panel block"><div class="block-kopf"><h3>${t3("Glasfaser-Anschluss")}</h3><span class="leise">${t3("laut FRITZ!Box")}</span></div>
+      ${iz(t3("Verbunden seit"), g2.seit_text ?? "–", g2.resyncs != null ? t3("{n} Neusynchronisierungen laut Box", { n: g2.resyncs }) : "")}
+      ${iz(t3("Fehler je Stunde"), g2.fehler_h == null ? "–" : wert(g2.fehler_h, 0), t3("fehlerhaft empfangene Pakete"))}
+      ${iz(t3("Temperatur Modul"), fehlt(g2.fehlt), g2.fehlt)}
+      ${iz(t3("Anschluss-Kennung"), b2`<span class="amber-t">${t3("⟨nur in der Box⟩")}</span>`, t3("Seriennummer und Kennung zeigt die Seite nicht"))}
+    </div>
+    ${verlauf(t3("Verlauf 7 Tage"), t3("Lichtleistung"), [{ punkte: g2.verlauf.rx, farbe: "var(--s1)", name: t3("empfangene Lichtleistung (dBm)") }], [], g2.rx_bereich)}
+    <p class="hinweis">${t3("Mit einem eigenen Glasfaser-Modem (ONT) vor der FRITZ!Box kommen diese Werte vom ONT – das folgt in einer späteren Fassung.")}</p>`;
+}
+function kabel(k2) {
+  if (!k2) return lade();
+  return b2`<div class="glas-panel block"><div class="block-kopf"><h3>${k2.verbunden === false ? t3("Kabelanschluss getrennt") : t3("Kabelanschluss verbunden")}</h3>
+      <span class="badge ${k2.verbunden === false ? "rot-b" : "gruen"}">${k2.verbunden === false ? t3("getrennt") : t3("verbunden")}</span></div>
+    <p class="hinweis" style="font-size:13px">${t3("Kanäle, Pegel und Fehler des Kabelmodems gibt die Schnittstelle der FRITZ!Box (TR-064) nicht heraus – nur die Geschwindigkeit der Verbindung.")}</p></div>
+    <div class="glas-raster">
+      ${ik(t3("Verbindung"), k2.down_mbit ? b2`${zahl(k2.down_mbit)}<small> / ${zahl(k2.up_mbit)} Mbit/s</small>` : "–", t3("laut Box"))}
+      ${ik(t3("Empfangskanäle"), "–", k2.fehlt)}
+      ${ik(t3("Empfangspegel"), "–", k2.fehlt)}
+      ${ik(t3("Signal/Rausch (MER)"), "–", k2.fehlt)}
+    </div>
+    <div class="glas-panel block"><div class="block-kopf"><h3>${t3("Kanäle")}</h3><span class="leise">${t3("laut FRITZ!Box")}</span></div>
+      ${iz(t3("Sendepegel"), "–", k2.fehlt)}
+      ${iz(t3("Fehler korrigiert / nicht korrigierbar"), "–", k2.fehlt)}
+      ${iz(t3("Kanalliste"), "–", k2.fehlt)}
+    </div>`;
+}
+function extern(p4) {
+  return b2`<div class="glas-panel block"><div class="befund"><span class="punkt grau"></span><div><b>${t3("Werte vom vorgeschalteten Gerät folgen")}</b>
+    <p>${t3("Die FRITZ!Box hängt hinter einem eigenen Modem oder Router und kennt dessen Leitung nicht. Heimnetz liest die Werte dieses Geräts in einer späteren Fassung; die Rohdaten gibt es schon über 🔬 Diagnose.")}</p></div></div>
+    ${p4.istAdmin ? b2`<div class="dg-knoepfe"><button @click=${() => p4.einstellungenOeffnen("diag")}>${t3("🔬 Rohdaten abfragen ›")}</button></div>` : A}</div>`;
+}
+function ersatz(e6) {
+  return b2`<div class="glas-panel block"><div class="block-kopf"><h3>${t3("Ersatzzugang Mobilfunk")}</h3>
+      <span class="badge ${e6.aktiv ? "amber-b" : ""}">${e6.aktiv ? t3("aktiv") : t3("bereit · nicht aktiv")}</span></div>
+    <p class="hinweis" style="font-size:13px">${e6.text}${e6.letzte ? ` · ${t3("zuletzt aktiv {zeit}", { zeit: zeit(e6.letzte) })}` : ""}${e6.rsrp != null ? ` · ${t3("Signal gerade {n} dBm", { n: e6.rsrp })}${e6.technik ? ` (${e6.technik})` : ""}` : ""}</p></div>
+    <div class="glas-raster">
+      ${ik(t3("Umschaltungen"), b2`${e6.umschaltungen_30}`, t3("letzte 30 Tage"))}
+      ${ik(t3("Über Ersatz"), e6.dauer_30 ?? "–", t3("letzte 30 Tage"))}
+      ${ik(t3("Datenmenge"), "–", t3("über Ersatz: meldet die Box nicht getrennt"))}
+    </div>`;
+}
+function verlauf(titel, unter, linien, marken = [], band = null) {
+  const W3 = 600, H4 = 150;
+  const bis = Date.now() / 1e3, von = bis - 7 * 86400;
+  const x2 = (z2) => (z2 - von) / (bis - von) * W3;
+  const da = linien.some((l4) => l4.punkte.length);
+  const pfad = (l4) => {
+    const v2 = l4.punkte.map((q) => q[1]).concat(band ? band : []);
+    const lo = Math.min(...v2), hi = Math.max(...v2), spanne = hi - lo || 1;
+    const y4 = (w2) => H4 - (w2 - lo) / spanne * (H4 - 10) - 5;
+    return { d: l4.punkte.map(([z2, w2], i6) => `${i6 ? "L" : "M"}${x2(z2).toFixed(1)},${y4(w2).toFixed(1)}`).join(""), y: y4 };
+  };
+  const erste = da ? pfad(linien[0]) : null;
+  return b2`<div class="glas-panel block"><div class="block-kopf"><h3>${titel}</h3><span class="leise">${unter}</span></div>
+    ${da ? b2`<svg class="dia" viewBox="0 -6 ${W3} ${H4 + 24}">
+        ${band && erste ? w`<rect x="0" y=${Math.min(erste.y(band[0]), erste.y(band[1]))} width=${W3} height=${Math.abs(erste.y(band[0]) - erste.y(band[1]))} fill="var(--s3)" opacity=".1"></rect>` : A}
+        ${linien.map((l4) => w`<path d=${pfad(l4).d} fill="none" stroke=${l4.farbe} stroke-width="1.6"></path>`)}
+        ${marken.map((m3) => w`<circle cx=${x2(m3)} cy=${H4 - 4} r="4" fill="var(--rot)"></circle>`)}
+        ${w`<text x="0" y=${H4 + 16}>${t3("vor {n} Tagen", { n: 7 })}</text><text x=${W3} y=${H4 + 16} text-anchor="end">${t3("jetzt")}</text>`}
+      </svg>
+      <div class="legende">${linien.map((l4) => b2`<span><i style="background:${l4.farbe}"></i>${l4.name}</span>`)}${marken.length ? b2`<span><i style="background:var(--rot)"></i>${t3("Neusynchronisierung")}</span>` : A}</div>` : b2`<div class="leer">${t3("Noch kein Verlauf aufgezeichnet.")}</div>`}
+  </div>`;
 }
 
 // node_modules/lit-html/directives/unsafe-html.js
@@ -5920,9 +6175,19 @@ var TEILE2 = [
   ["plan", merke("⏱️ Messplan")],
   ["wlan", merke("📶 WLAN")],
   ["meld", merke("💬 Meldungen")],
+  ["zugang", merke("🌐 Zugang")],
   ["einr", merke("🧩 Einrichtung")],
   ["diag", merke("🔬 Diagnose")]
 ];
+var WAHL2 = {
+  auto: [merke("Automatisch (empfohlen)"), ""],
+  box_mobil: [merke("Mobilfunk über die FRITZ!Box"), merke("eingebautes Modem oder Stick")],
+  extern: [merke("Mobilfunk über ein vorgeschaltetes Modem"), merke("ZTE, Huawei, TP-Link … (Beta)")],
+  dsl: [merke("DSL über die FRITZ!Box"), merke("ADSL, VDSL, Supervectoring")],
+  glasfaser: [merke("Glasfaser"), merke("über die FRITZ!Box oder ein eigenes Glasfaser-Modem")],
+  kabel: [merke("Kabel"), merke("über die FRITZ!Box")]
+};
+var ERSATZ = [["auto", merke("automatisch")], ["kein", merke("keiner")]];
 var STUFEN = { muss: merke("Muss"), soll: merke("Soll – empfohlen"), kann: merke("Kann – optional") };
 var ZEICHEN = { ok: "✓", fehlt: "!", muss: "✕", aus: "–" };
 function einstellungenBlatt(p4) {
@@ -5933,15 +6198,17 @@ function einstellungenBlatt(p4) {
     <div class="seg e-reiter">${TEILE2.map(([k2, name]) => b2`<button class=${k2 === teil ? "on" : ""} @click=${() => {
     p4._blatt = { ...p4._blatt, teil: k2 };
     if (k2 === "einr") p4.einrichtungLaden();
+    if (k2 === "zugang") p4.zugangLaden();
   }}>${t3(name)}${k2 === "einr" ? punkt2(p4) : A}</button>`)}</div>`;
   if (teil === "einr") return b2`${kopf}<div class="ek"><div class="ek-inhalt">${einrichtung(p4)}</div></div>`;
   if (teil === "diag") return b2`${kopf}<div class="ek"><div class="ek-inhalt">${diagnose(p4)}</div></div>`;
+  if (teil === "zugang") return b2`${kopf}<div class="ek"><div class="ek-inhalt">${zugang(p4)}</div></div>`;
   if (!e6) return b2`${kopf}<div class="leer">${t3("lädt …")}</div>`;
   const inhalt = { speed: auswertung, plan: messplan, wlan: wlan2, meld: (q) => meldungenZeile(q) }[teil](p4, e6);
   return b2`${kopf}<div class="ek"><div class="ek-inhalt">${inhalt}</div></div>`;
 }
-function feld(name, wert, einheit, admin, typ = "number") {
-  return b2`<label class="ein"><input name=${name} type=${typ} min="0" step="1" .value=${wert ?? ""} ?disabled=${!admin}>${einheit ? b2`<small>${einheit}</small>` : A}</label>`;
+function feld(name, wert2, einheit, admin, typ = "number") {
+  return b2`<label class="ein"><input name=${name} type=${typ} min="0" step="1" .value=${wert2 ?? ""} ?disabled=${!admin}>${einheit ? b2`<small>${einheit}</small>` : A}</label>`;
 }
 function auswertung(p4, e6) {
   const admin = p4.istAdmin;
@@ -6003,6 +6270,42 @@ function wlan2(p4, e6) {
     <div class="ez"><span>${t3("Schwacher Empfang unter")}<small>${t3("so meldet die Box den Empfang je Gerät")}</small></span>${admin ? seg(SCHWACH, e6.wlan_schwach, (v2) => p4.einstellungenSpeichern({ wlan_schwach: v2 })) : b2`<span class="leise">${e6.wlan_schwach} %</span>`}</div>
     <p class="hinweis">${t3("Kanal, Gast-WLAN und Bänder stellst du in der FRITZ!Box ein – die Seite ändert dort nichts.")}</p>`;
 }
+function zugang(p4) {
+  if (!p4.istAdmin) return b2`<p class="hinweis" style="padding-top:8px">${t3("Den Zugang legen nur Admins fest.")}</p>`;
+  const z2 = p4._daten.zugang;
+  if (!z2) return p4._hinweisZugang ? b2`<p class="fein">${p4._hinweisZugang}</p>` : b2`<div class="leer">${t3("lädt …")}</div>`;
+  const vorgeschaltet = z2.wahl === "extern" || z2.wahl === "auto" && z2.vorschlag_art === "extern";
+  const adresseFeld = (ev) => ev.target.closest(".sheet").querySelector("input[name=zg-adresse]");
+  const kennwortFeld = (ev) => ev.target.closest(".sheet").querySelector("input[name=zg-kennwort]");
+  const speichern = (ev) => {
+    const kw = kennwortFeld(ev);
+    const werte = { adresse: adresseFeld(ev).value.trim() || null };
+    if (kw && kw.value) werte.kennwort = kw.value;
+    p4.zugangSetzen(werte, kw);
+  };
+  return b2`
+    <div class="vs-kopf"><b>${t3("Vorschlag: {text}", { text: z2.vorschlag })}</b><br><span class="leise">${z2.belege.map((b3, i6) => b2`${i6 ? b2`<br>` : A}✓ ${b3}`)}</span></div>
+    <div class="vs-stufe"><span>${t3("Internet kommt über")}</span><span></span></div>
+    ${z2.wahlen.map((k2) => {
+    const [name, unter] = WAHL2[k2] || [k2, ""];
+    const text = k2 === "auto" ? t3("jetzt: {text}", { text: z2.vorschlag }) : t3(unter);
+    return b2`<button class="zg" data-wahl=${k2} @click=${() => z2.wahl !== k2 && p4.zugangSetzen({ wahl: k2 })}><span class="zg-r ${z2.wahl === k2 ? "on" : ""}"></span><span>${t3(name)}<small>${text}</small></span></button>`;
+  })}
+    ${vorgeschaltet ? b2`<div class="vs-stufe"><span>${t3("Vorgeschaltetes Gerät")}</span><span></span></div>
+      <label class="dg-feld">${t3("Adresse")}<input name="zg-adresse" inputmode="decimal" list="zg-adressen" .value=${l3(z2.adresse || z2.adresse_jetzt || z2.adressen[0] || "")}>
+        <small>${t3("vorgeschlagen: {liste} – nur Adressen im eigenen Heimnetz", { liste: z2.adressen.join(", ") })}</small></label>
+      <datalist id="zg-adressen">${z2.adressen.map((a3) => b2`<option value=${a3}></option>`)}</datalist>
+      <label class="dg-feld">${t3("Kennwort der Weboberfläche")}<input name="zg-kennwort" type="password" autocomplete="off" placeholder=${z2.kennwort ? t3("hinterlegt – zum Ändern neu eingeben") : t3("wie beim Anmelden im Browser")}>
+        <small>${t3("wird in Home Assistant gespeichert (wie bei anderen Integrationen), nie angezeigt")}</small></label>
+      <div class="dg-knoepfe"><button class="amber" @click=${speichern}>${t3("Speichern")}</button>${z2.kennwort ? b2`<button @click=${() => p4.zugangSetzen({ kennwort_loeschen: true })}>${t3("Kennwort entfernen")}</button>` : A}</div>
+      <p class="hinweis" style="margin-top:6px">${t3("Laufende Werte vom vorgeschalteten Gerät folgen in einer späteren Fassung; bis dahin zeigt 🔬 Diagnose die Rohdaten.")}</p>` : A}
+    <div class="vs-stufe"><span>${t3("Ersatzzugang bei Ausfall")}</span><span></span></div>
+    <div class="ez"><span>${t3("Ersatz")}<small>${t3("z. B. Mobilfunk-Stick an der FRITZ!Box, wenn DSL ausfällt")}</small></span>${seg(tl(ERSATZ), z2.ersatz_wahl, (v2) => p4.zugangSetzen({ ersatz: v2 }))}</div>
+    ${p4._hinweisZugang ? b2`<p class="fein">${p4._hinweisZugang}</p>` : A}
+    <div class="dg-knoepfe" style="margin-top:8px"><button @click=${() => p4.zugangSuchen()}>${t3("↻ Erneut suchen")}</button>
+      <button @click=${() => p4.zuDiagnose(vorgeschaltet ? z2.adresse || z2.adresse_jetzt || z2.adressen[0] : null)}>${t3("🔬 Rohdaten abfragen ›")}</button></div>
+    <p class="hinweis" style="margin-top:8px">${t3("Gefragt wird nur die FRITZ!Box – kein Absuchen des Heimnetzes. Vorgeschlagen werden die Adresse vor der Box und übliche Modem-Adressen (192.168.0.1, 192.168.1.1, 192.168.8.1). Heimnetz liest nur.")}</p>`;
+}
 function punkt2(p4) {
   const d3 = p4.istAdmin && p4._daten.einrichtung;
   if (!d3 || !d3.punkt) return A;
@@ -6031,11 +6334,11 @@ function diagnose(p4) {
   if (!p4.istAdmin) return b2`<p class="hinweis" style="padding-top:8px">${t3("Diese Abfrage können nur Admins starten.")}</p>`;
   const d3 = p4._diag;
   const kopf = b2`
-    <p class="hinweis" style="margin:4px 0 6px">${t3("Kommt das Internet über ein eigenes 5G/LTE-Modem vor der FRITZ!Box (z. B. ZTE), kennt die Box das Funknetz nicht – Funk › Mobilfunk bleibt leer. Hier liest Heimnetz die Rohdaten des Modems aus, damit der Entwickler es unterstützen kann.")} <span class="neu">BETA</span></p>
+    <p class="hinweis" style="margin:4px 0 6px">${t3("Kommt das Internet über ein eigenes 5G/LTE-Modem vor der FRITZ!Box (z. B. ZTE), kennt die Box das Funknetz nicht – Internet › Mobilfunk bleibt leer. Hier liest Heimnetz die Rohdaten des Modems aus, damit der Entwickler es unterstützen kann.")} <span class="neu">BETA</span></p>
     <label class="dg-feld">${t3("Adresse des Modems")}<input name="adresse" inputmode="decimal" .value=${l3(d3.adresse)} ?disabled=${d3.laeuft} @input=${(ev) => {
     p4._diag = { ...p4._diag, adresse: ev.target.value };
   }}></label>
-    <label class="dg-feld">${t3("Kennwort der Weboberfläche (optional)")}<input name="kennwort" type="password" autocomplete="off" placeholder=${t3("wie beim Anmelden im Browser")} ?disabled=${d3.laeuft}><small>${t3("wird nur für diese Abfrage verwendet und nicht gespeichert")}</small></label>
+    <label class="dg-feld">${t3("Kennwort der Weboberfläche (optional)")}<input name="kennwort" type="password" autocomplete="off" placeholder=${t3("wie beim Anmelden im Browser")} ?disabled=${d3.laeuft}><small>${t3("wird nur für diese Abfrage verwendet und nicht gespeichert – leer: das unter 🌐 Zugang für diese Adresse hinterlegte")}</small></label>
     <div class="dg-knoepfe"><button class="amber" ?disabled=${d3.laeuft} @click=${() => p4.modemAbfragen()}>${d3.laeuft ? t3("⏳ fragt ab …") : t3("▶ Abfragen")}</button></div>
     ${d3.fehler ? b2`<p class="fein">${d3.fehler}</p>` : A}`;
   if (!d3.antwort) return b2`${kopf}<p class="hinweis" style="margin-top:8px">${t3("Nur Adressen im eigenen Heimnetz (z. B. 192.168.x.x). Heimnetz liest nur und ändert am Modem nichts.")}</p>`;
@@ -6131,16 +6434,17 @@ function protokoll(p4, d3) {
 }
 
 // src/heimnetz-panel.js
-var VERSION = true ? "0.25.1" : "entwicklung";
+var VERSION = true ? "0.26.0" : "entwicklung";
 var REITER = [
   ["uebersicht", merke("Übersicht")],
   ["speedtest", merke("Speedtest")],
   ["geraete", merke("Geräte")],
-  ["funk", merke("Funk")],
+  ["internet", merke("Internet")],
+  // WU-0009: vorher „Funk“; WLAN steht jetzt unter Geräte
   ["verbrauch", merke("Verbrauch")],
   ["protokoll", merke("Protokoll")]
 ];
-var ANSICHT = { uebersicht, speedtest, geraete, funk, verbrauch, protokoll };
+var ANSICHT = { uebersicht, speedtest, geraete: geraeteReiter, internet, verbrauch, protokoll };
 var NEU_LADEN_MS = 6e4;
 var KACHEL_WARTEN_MS = 150;
 var ENTWURF = "heimnetz-melden-entwurf";
@@ -6171,6 +6475,7 @@ var HeimnetzPanel = class extends i4 {
     _hinweisPlan: { state: true },
     _hinweisEinr: { state: true },
     _diag: { state: true },
+    _hinweisZugang: { state: true },
     _toast: { state: true },
     _kachel: { state: true }
   };
@@ -6184,6 +6489,7 @@ var HeimnetzPanel = class extends i4 {
     this._hinweisPlan = "";
     this._hinweisEinr = "";
     this._diag = { adresse: "192.168.0.1", laeuft: false, antwort: null, fehler: "" };
+    this._hinweisZugang = "";
     this._blatt = null;
     this._toast = "";
     this._bilder = /* @__PURE__ */ new Map();
@@ -6191,8 +6497,9 @@ var HeimnetzPanel = class extends i4 {
     if (entwurf) this._blatt = { art: "melden", form: { ...entwurf, version: VERSION }, vorher: null };
     this._opt = {
       speedtest: { tage: 84, groesse: "down", grundlast: "aus", server: "", tag: null, datum: null, stunde: null },
-      geraete: { filter: "alle", suche: "" },
-      funk: { teil: "wlan" },
+      geraete: { filter: "alle", suche: "", teil: "geraete" },
+      internet: { sicht: "haupt" },
+      // haupt = Zugangsart, ersatz = Ersatzzugang
       mobilfunk: { tage: 1 },
       verbrauch: { tage: 30 },
       protokoll: { art: "journal", nur_warnungen: false, suche: "" }
@@ -6277,9 +6584,9 @@ var HeimnetzPanel = class extends i4 {
       if (nummer === this._abfrage) this._laedt = false;
     }
   }
-  /** Welche Daten der gewählte Reiter braucht; „Funk“ lädt nur den gewählten Teil (WLAN oder Mobilfunk). */
+  /** Welche Daten der gewählte Reiter braucht; „Geräte“ lädt nur den gewählten Teil (Geräte oder WLAN). */
   get _datenReiter() {
-    return this._reiter === "funk" ? this._opt.funk.teil : this._reiter;
+    return this._reiter === "geraete" && this._opt.geraete.teil === "wlan" ? "wlan" : this._reiter;
   }
   _parameter(reiter) {
     const o7 = this._opt[reiter];
@@ -6292,6 +6599,9 @@ var HeimnetzPanel = class extends i4 {
           ...o7.server ? { server: o7.server } : {},
           ...o7.datum ? { datum: o7.datum } : o7.tag != null ? { tag: o7.tag } : {}
         };
+      case "internet":
+        return { tage: this._opt.mobilfunk.tage };
+      // Zeitraum des Mobilfunk-Verlaufs
       case "mobilfunk":
       case "verbrauch":
         return { tage: o7.tage };
@@ -6394,9 +6704,9 @@ var HeimnetzPanel = class extends i4 {
     this._blatt = null;
   }
   /** Art eines Geräts selbst wählen oder wieder automatisch (AN-0001, nur Admins). */
-  async geraetArt(kennung, art) {
+  async geraetArt(kennung, art2) {
     try {
-      const daten = await this.ws("geraet/art", { geraet: kennung, art });
+      const daten = await this.ws("geraet/art", { geraet: kennung, art: art2 });
       if (this._blatt && this._blatt.kennung === kennung) this._blatt = { art: "geraet", kennung, daten };
       this.laden();
     } catch (err) {
@@ -6404,12 +6714,54 @@ var HeimnetzPanel = class extends i4 {
       this.requestUpdate();
     }
   }
-  /** Fenster „Einstellungen“ (⚙ im Kopf). */
-  einstellungenOeffnen() {
-    this._blatt = { art: "einstellungen" };
+  /** Fenster „Einstellungen“ (⚙ im Kopf); `teil` öffnet gleich einen Reiter (z. B. „zugang“ aus dem Reiter Internet). */
+  einstellungenOeffnen(teil) {
+    this._blatt = { art: "einstellungen", ...teil ? { teil } : {} };
+    const z2 = this._daten.internet && this._daten.internet.zugang || this._daten.zugang;
+    if (teil === "diag" && z2 && z2.adresse) this._diag = { ...this._diag, adresse: z2.adresse };
     this.laden();
     this.meldungenLaden();
     this.einrichtungLaden();
+    if (teil === "zugang") this.zugangLaden();
+  }
+  /* ---- WU-0009: ⚙ › 🌐 Zugang (nur Admins; erkennen und prüfen macht die Integration) ---- */
+  async zugangLaden() {
+    if (!this.istAdmin) return;
+    try {
+      this._daten = { ...this._daten, zugang: await this.ws("zugang") };
+      this._hinweisZugang = "";
+    } catch (err) {
+      this._hinweisZugang = t3("Zugang nicht abrufbar: {fehler}", { fehler: err && err.message || err });
+    }
+  }
+  /** Wahl, Adresse, Ersatz oder Kennwort speichern. Das Kennwort geht nur mit diesem Befehl mit, wird nie im
+   *  Zustand behalten und danach im Feld gelöscht; zurück kommt nur „hinterlegt ja/nein“. */
+  async zugangSetzen(werte, feld2 = null) {
+    try {
+      this._daten = { ...this._daten, zugang: await this.ws("zugang/setzen", werte) };
+      this._hinweisZugang = "";
+      if (feld2) feld2.value = "";
+      this.laden();
+    } catch (err) {
+      this._hinweisZugang = err && err.message || String(err);
+      this.requestUpdate();
+    }
+  }
+  async zugangSuchen() {
+    try {
+      const { gesucht, ...zugang2 } = await this.ws("zugang/suchen");
+      this._daten = { ...this._daten, zugang: zugang2 };
+      this._hinweisZugang = "";
+      this.toast(gesucht ? t3("Gesucht: FRITZ!Box neu gefragt") : t3("Eben erst gesucht – in einer halben Minute wieder"));
+      this.laden();
+    } catch (err) {
+      this._hinweisZugang = err && err.message || String(err);
+    }
+  }
+  /** „🔬 Rohdaten abfragen ›“: in den Reiter Diagnose, die Adresse des vorgeschalteten Geräts übernehmen. */
+  zuDiagnose(adresse) {
+    if (adresse) this._diag = { ...this._diag, adresse };
+    this._blatt = { ...this._blatt, teil: "diag" };
   }
   /** WU-0007: was eingerichtet ist und was fehlt – geprüft beim Öffnen (nur Admins; die Integration erkennt). */
   async einrichtungLaden() {
@@ -6482,12 +6834,24 @@ var HeimnetzPanel = class extends i4 {
     const reiter = t3((REITER.find(([k2]) => k2 === this._reiter) || [, this._reiter])[1]);
     const kontext = [
       reiter,
-      this._reiter === "funk" ? t3(this._opt.funk.teil === "wlan" ? "WLAN" : "Mobilfunk") : "",
+      this._teilText(),
       this._blatt ? t3("Dialog „{art}“", { art: this._blatt.art }) : ""
     ].filter(Boolean).join(" · ");
     const form = { art: "fehler", text: "", kontext, version: VERSION, geraet: this.narrow ? t3("Handy") : "Desktop", stand: true, zelle: false, bilder: [] };
     this._blatt = { art: "melden", form, vorher: this._blatt };
     this.entwurfMerken();
+  }
+  /** Gewählter Teil des Reiters in Worten (für den Kontext einer Meldung). */
+  _teilText() {
+    if (this._reiter === "geraete" && this._opt.geraete.teil === "wlan") return t3("WLAN");
+    if (this._reiter !== "internet") return "";
+    if (this._opt.internet.sicht === "ersatz") return t3("Ersatz");
+    const z2 = this._daten.internet && this._daten.internet.zugang;
+    return z2 ? z2.titel : "";
+  }
+  /** Teil des Reiters als Kennung (Stand der Seite einer Meldung). */
+  get _teil() {
+    return this._reiter === "geraete" ? this._opt.geraete.teil : this._reiter === "internet" ? this._opt.internet.sicht : null;
   }
   meldenZu() {
     const b3 = this._blatt && this._blatt.art === "github" ? this._blatt.vorher : this._blatt;
@@ -6572,7 +6936,7 @@ var HeimnetzPanel = class extends i4 {
     const vorschau = github ? b3.vorschau : null;
     if (github && !vorschau) return;
     if (vorschau) window.open(vorschau.url, "_blank", "noopener");
-    const seite = f3.stand ? { reiter: this._reiter, funk: this._opt.funk.teil, dialog: melden.vorher ? melden.vorher.art : null } : null;
+    const seite = f3.stand ? { reiter: this._reiter, teil: this._teil, dialog: melden.vorher ? melden.vorher.art : null } : null;
     f3.sendet = true;
     f3.fehler = "";
     this.requestUpdate();
@@ -6597,8 +6961,8 @@ var HeimnetzPanel = class extends i4 {
     this._entwurfWeg();
     delete this._daten.meldungen;
     const mit = angekommen ? t3(angekommen === 1 ? " mit {n} Bild" : " mit {n} Bildern", { n: angekommen }) : "";
-    const fehlt = f3.bilder.length - angekommen;
-    const verloren = fehlt ? t3(fehlt === 1 ? " · {n} Bild kam nicht an" : " · {n} Bilder kamen nicht an", { n: fehlt }) + (fehler ? ` (${fehler})` : "") : "";
+    const fehlt2 = f3.bilder.length - angekommen;
+    const verloren = fehlt2 ? t3(fehlt2 === 1 ? " · {n} Bild kam nicht an" : " · {n} Bilder kamen nicht an", { n: fehlt2 }) + (fehler ? ` (${fehler})` : "") : "";
     const gemeldet = !vorschau ? t3("Danke – gemeldet als {ticket}", { ticket: neu.ticket }) : vorschau.ticket === neu.ticket ? t3("Gemeldet als {ticket} – GitHub öffnet sich in einem neuen Fenster", { ticket: neu.ticket }) : t3("Gemeldet als {ticket} – im Issue auf GitHub steht {vorher}, bitte dort ändern", { ticket: neu.ticket, vorher: vorschau.ticket });
     this.toast(gemeldet + mit + verloren);
   }
@@ -6774,7 +7138,7 @@ var HeimnetzPanel = class extends i4 {
     const befunde = u3.befunde || [];
     const kritisch = befunde.filter((b3) => b3.stufe === "kritisch").length;
     const warnung = befunde.filter((b3) => b3.stufe === "warnung").length;
-    const unter = !u3.box_erreichbar ? t3("Die Box antwortet nicht · Home Assistant versucht es jede Minute") : [u3.internet && u3.internet.technik, u3.internet && u3.internet.ok ? t3("Internet erreichbar") : t3("kein Internet")].filter(Boolean).join(" · ");
+    const unter = !u3.box_erreichbar ? t3("Die Box antwortet nicht · Home Assistant versucht es jede Minute") : [u3.zugang ? u3.zugang.kopf : u3.internet && u3.internet.technik, u3.internet && u3.internet.ok ? t3("Internet erreichbar") : t3("kein Internet")].filter(Boolean).join(" · ");
     return b2`
       <div class="glas-panel glas-kopf">
         <div>
@@ -6795,8 +7159,8 @@ var HeimnetzPanel = class extends i4 {
   _blattInhalt() {
     const b3 = this._blatt;
     if (!b3) return A;
-    const art = { einstellungen: einstellungenBlatt, melden: meldenBlatt, github: githubBlatt, meldungen: meldungenBlatt, bild: bildBlatt, messung: messungBlatt }[b3.art];
-    return art ? art(this) : geraetBlatt(this, b3);
+    const art2 = { einstellungen: einstellungenBlatt, melden: meldenBlatt, github: githubBlatt, meldungen: meldungenBlatt, bild: bildBlatt, messung: messungBlatt }[b3.art];
+    return art2 ? art2(this) : geraetBlatt(this, b3);
   }
   render() {
     const hell = !(this.hass && this.hass.themes && this.hass.themes.darkMode);
@@ -6816,7 +7180,7 @@ var HeimnetzPanel = class extends i4 {
           <div class="scroll" @scroll=${() => this.kachelWeg(true)}><div class="seite ${this._laedt ? "laden" : ""}">
             ${this._kopf(u3)}
             ${this._fehler ? b2`<div class="glas-panel fehler-band">${t3("Daten nicht abrufbar: {fehler}", { fehler: this._fehler })}</div>` : A}
-            ${daten || this._reiter === "funk" ? ansicht(this, daten) : b2`<div class="glas-panel block"><div class="leer">${t3("lädt …")}</div></div>`}
+            ${daten || this._reiter === "geraete" ? ansicht(this, daten) : b2`<div class="glas-panel block"><div class="leer">${t3("lädt …")}</div></div>`}
             <div class="leise" style="text-align:center;padding:8px">Heimnetz ${VERSION}</div>
           </div></div>
           <div class="schleier ${this._blatt ? "an" : ""}" @click=${() => this.zu()}></div>

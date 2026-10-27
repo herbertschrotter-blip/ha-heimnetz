@@ -19,7 +19,7 @@ VERTRAULICH = frozenset(
     {
         # Zugang und Schlüssel
         "adresse", "host", "username", "user", "benutzer", "passwort", "password", "kennwort", "token",
-        "api_key", "schluessel", "opencellid_schluessel",
+        "api_key", "schluessel", "opencellid_schluessel", "modem_kennwort", "zugang_adresse",
         # Netz und Geräte
         "ip", "ipv4", "ipv6", "mac", "gw_mac", "name", "namen", "hostname", "geraete_namen", "ssid",
         # Zellen und Ort

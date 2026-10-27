@@ -118,7 +118,8 @@ nachgetragen.
 
 ## Funk und Einstellungen (Herbert, 12.10.2026)
 
-- Reiter „Mobilfunk“ wird „Funk“ mit Umschalter WLAN/Mobilfunk – es bleibt bei sechs Reitern. Alle Einstellungen
+- Reiter „Mobilfunk“ wird „Funk“ mit Umschalter WLAN/Mobilfunk – es bleibt bei sechs Reitern (seit 0.26.0 „Internet“,
+  WLAN unter Geräte – siehe „Internet und Zugang“). Alle Einstellungen
   (Tarif, Auswerten ab, belastete Messungen, Messplan, WLAN-Grenze) liegen in einem Fenster hinter ⚙ im Kopf; die
   Reiter zeigen nur noch Werte (Mockup netzwerk.html · Funk und Einstellungen).
 - WLAN und Mobilfunk werden nur über die offiziellen TR-064-Dienste gelesen (WLANConfiguration,
@@ -337,6 +338,49 @@ nachgetragen.
   und Zeitpunkt. Heimnetz sendet selbst nichts an GitHub oder sonst nach außen; die Datei schickt der Nutzer selbst.
 - Bewusst weggelassen: Versand an GitHub, Speichern des Kennworts, Auswerten der Werte (kommt mit der Unterstützung des
   Modems).
+
+## Internet und Zugang (Herbert, 27.10.2026, WU-0009 Stufe 1)
+
+- Mockup `netzwerk.html` · Internet und Zugang abgenommen („bau das alles“): Reiter „Funk“ heißt **„Internet“** und
+  zeigt oben, woher das Internet kommt (Art, Gerät, Weg, „automatisch erkannt“/„festgelegt“, „ändern ›“), darunter die
+  Werte der Zugangsart (Mobilfunk, DSL, Glasfaser, Kabel) und den Ersatzzugang als eigenen Umschalter. **WLAN wandert
+  in den Reiter Geräte** (Umschalter „Geräte | WLAN“) – es bleibt bei sechs Reitern. Kopfzeile: Box und Zugang.
+- Erkennen macht die Integration (`logik/zugang.py`, ohne HA), die Seite zeigt nur an. Grundlage ist nur, was die
+  FRITZ!Box über die offiziellen TR-064-Dienste meldet (FRITZ!-Doku „TR-064 Support“, fritz.support/resources):
+  `WANCommonInterfaceConfig1` `GetCommonLinkProperties` (NewWANAccessType, NewPhysicalLinkStatus, Layer1-Raten) und –
+  ab neueren FRITZ!OS – `X_AVM-DE_GetAddonInfos` (NewX_AVM-DE_WANAccessType, z. B. „IP-Client“ = hinter einem anderen
+  Router), Mobilfunk `GetInfo` (NewEnable), DSL `GetInfo` (NewStatus), Glasfaser `X_AVM-DE_WANFiber1` `GetInfo`
+  (NewFiberMode), `Layer3Forwarding1` `GetDefaultConnectionService` + `GetExternalIPAddress` nur für die Art der
+  WAN-Adresse (privat / Netz des Anbieters / öffentlich) und den Vorschlag „.1 im selben /24-Netz“ – die Adresse selbst
+  bleibt in `box.py`. Ein Gateway der WAN-Verbindung meldet TR-064 nicht. Kein Absuchen des Heimnetzes, kein Abfragen
+  fremder Adressen in dieser Stufe.
+- Gelesen wird nur im gemeinsamen Abruf, im langsamen Takt (10 min); „↻ Erneut suchen“ liest den Zugang beim nächsten,
+  sofort ausgelösten Abruf mit. Eine Sperre in `Box` sorgt dafür, dass nie zwei Abrufe gleichzeitig an der Box sind.
+- Ersatz: Meldet eine Box, die vorher DSL/Glasfaser/Kabel hatte (Anschluss noch da), plötzlich Mobilfunk, ist das der
+  Ersatz bei Ausfall, nicht ein Wechsel; nach 14 Tagen gilt der Mobilfunk als neuer Zugang. Ob ein Stick wirklich als
+  Ersatz eingestellt ist, meldet TR-064 nicht – „Mobilfunk an der Box eingeschaltet“ zählt als bereit. Die Datenmenge
+  über den Ersatz meldet die Box nicht getrennt („–“).
+- Werte der Leitung (`logik/leitung.py`, mit Tests), nur wenn das Internet über diesen Anschluss kommt: DSL aus
+  `WANDSLInterfaceConfig1` (`GetInfo`, `X_AVM-DE_GetDSLInfo`, `GetStatisticsTotal`; Raten kbit/s, Marge und Dämpfung
+  0,1 dB nach der TR-064-Norm); Bewertung Marge gut ab 6 dB / unter 3 dB kritisch, CRC je Stunde über 10 erhöht / über
+  100 hoch, Neusynchronisierungen in 7 Tagen ab 2 auffällig / ab 5 instabil (erkannt an „Up“ nach Ausfall oder
+  zurückgesetzten Zählern). Glasfaser aus `X_AVM-DE_WANFiber1` (`GetInfo`, `GetStatistics`; dBm/1000), bewertet nach
+  den Schwellen, die die Box selbst meldet (bis 2 dB über der unteren knapp). Kabel: TR-064 hat keinen DOCSIS-Dienst.
+  Was TR-064 nicht liefert (DSLAM, Vectoring, Status O1–O7, Temperatur, Kanäle/Pegel/MER), steht als „–“ – **kein
+  Auslesen der Weboberfläche der Box** (bräche mit FRITZ!OS-Updates, wie beim Mobilfunk). Seriennummern und Kennungen
+  (SFP, GPON) werden nicht übernommen.
+- Entitäten: „Internetzugang“ immer; DSL (Synchronrate, Störabstandsmarge, Dämpfung je Richtung, Fehler je Stunde) und
+  Glasfaser (Lichtleistung empfangen/gesendet) erst, wenn die Box diese Werte gemeldet hat – eine Box mit ungenutztem
+  Anschluss bekommt keine. Verläufe wie beim Mobilfunk aus dem Recorder.
+- ⚙ → 🌐 Zugang (vor „Einrichtung“, nur Admins): Wahl Automatisch / Mobilfunk über die Box / vorgeschaltetes Modem /
+  DSL / Glasfaser / Kabel und Ersatz automatisch/keiner im Einstellungsspeicher; Adresse eines vorgeschalteten Geräts
+  nur privat (`modem.adresse_erlaubt`). Das **Kennwort der Weboberfläche wird gespeichert** (Herbert) – in den Optionen
+  der Einrichtung (`modem_kennwort`, `async_update_entry`), nie an die Seite (nur „hinterlegt“), nie protokolliert, in
+  der Diagnose geschwärzt; die Optionen von Heimnetz behalten es beim Speichern. Die 🔬 Diagnose (WU-0008) nimmt es,
+  wenn ihr Kennwortfeld leer bleibt und die Adresse genau die gespeicherte ist; ein dort eingetipptes Kennwort wird
+  weiterhin nicht gespeichert. Laufende Werte vom vorgeschalteten
+  Gerät kommen in Stufe 2 (Bibliotheken huawei-lte-api und tplinkrouterc6u erlaubt); bis dahin der Hinweis und
+  🔬 Diagnose.
 
 ## Offene Entscheidungen
 

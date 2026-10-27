@@ -23,5 +23,5 @@
     "fritzconnection>=1.15.1"
   ],
   "single_config_entry": true,
-  "version": "0.25.1"
+  "version": "0.26.0"
 }

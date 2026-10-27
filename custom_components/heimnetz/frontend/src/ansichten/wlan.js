@@ -1,5 +1,5 @@
-// Reiter „Funk“ · WLAN (Mockup netzwerk.html · Funk und Einstellungen): Befunde, Bänder, Geräte schwächstes zuerst,
-// Kanalwechsel. Lagen (0…1) und Befundtexte kommen fertig von der Integration.
+// Reiter „Geräte“ · WLAN (vorher „Funk“, WU-0009; Mockup netzwerk.html · Funk und Einstellungen): Befunde, Bänder,
+// Geräte schwächstes zuerst, Kanalwechsel. Lagen (0…1) und Befundtexte kommen fertig von der Integration.
 import { html, nothing } from 'lit';
 import { farbe, punkt, zeit } from '../format.js';
 import { t } from '../sprache.js';

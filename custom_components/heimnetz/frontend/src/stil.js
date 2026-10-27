@@ -233,6 +233,19 @@ select.ga-wahl { font: inherit; font-size: 13px; color: var(--ink); background: 
 .dg-roh i { font-style: normal; color: var(--amber); }
 .dg-knoepfe { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; } .dg-knoepfe button { flex: 1 1 140px; padding: 10px; border-radius: 14px; font-size: 14px; font-weight: 600; background: rgba(120,120,128,.2); }
 .dg-knoepfe button.amber { background: var(--amber); color: #1c1c1e; } .dg-knoepfe button[disabled] { opacity: .5; cursor: not-allowed; }
+/* WU-0009: Internet – Herkunft des Zugangs, ⚙ › Zugang (Mockup netzwerk.html · Internet und Zugang) */
+.iq { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 14px; }
+.iq-ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: rgba(127,127,127,.18); font-size: 17px; }
+.iq b { display: block; font-size: 15px; } .iq small { display: block; color: var(--ink2); font-size: 12px; }
+.iq-r { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.iq-r button { background: none; padding: 2px 0; font-size: 12px; }
+.amber-k .glas-wert { color: var(--amber); }
+.iz-w { font-size: 13px; color: var(--ink); text-align: right; }
+.zg { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; align-items: center; padding: 9px 0; font-size: 14px; cursor: pointer; width: 100%; text-align: left; background: none; color: var(--ink); border-radius: 0; }
+.zg + .zg { border-top: 1px solid var(--gridc); } .zg small { display: block; color: var(--ink2); font-size: 11px; }
+.zg[disabled] { cursor: default; }
+.zg-r { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--ink2); box-sizing: border-box; } .zg-r.on { border-color: var(--blau); background: radial-gradient(var(--blau) 45%, transparent 50%); }
+@container (max-width: 520px) { .iq { grid-template-columns: 34px minmax(0, 1fr); } .iq-r { grid-column: 2; flex-direction: row; align-items: center; } }
 /* Melden (Tickets wie im Baustrommanager; Mockup netzwerk.html · Melden, 13.10.2026) */
 .melden-knopf { position: absolute; right: 16px; bottom: 96px; z-index: 6; width: 40px; height: 40px; border-radius: 50% !important; display: grid; place-items: center; color: var(--ink2); opacity: .85; }
 .melden-knopf:hover { opacity: 1; color: var(--ink); }

@@ -14,7 +14,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.loader import async_get_integration
 
 from . import EintragMitLaufzeit
-from .const import DOMAIN, sprache
+from .const import CONF_MODEM_KENNWORT, DOMAIN, sprache
 from .logik import diagnose as dg
 from .logik import github as gh
 from .speedtest import ookla_einstellung
@@ -41,12 +41,23 @@ async def async_get_config_entry_diagnostics(
             "sprache": sprache(hass),
         },
         "eintrag": dict(entry.data),
-        "optionen": dict(entry.options),
+        # WU-0009: das Kennwort des vorgeschalteten Modems nie, auch nicht als Länge
+        "optionen": {
+            k: (dg.GESCHWAERZT if k == CONF_MODEM_KENNWORT else v) for k, v in entry.options.items()
+        },
         "laufzeit": lz.diagnose(),
         "box": {
             "modell": info.modell if info else None,
             "firmware": info.firmware if info else None,
             "netztechnik": stand.mobil.technik if stand and stand.mobil else None,
+        },
+        "zugang": {
+            "erkannt": stand.zugang_art if stand else None,
+            "wahl": lz.einstellungen.wert.zugang_wahl,
+            "ersatz_aktiv": stand.ersatz_aktiv if stand else None,
+            "zugangsart": stand.zugang.zugangsart if stand and stand.zugang else None,
+            "dsl": stand.dsl is not None if stand else None,
+            "glasfaser": stand.faser is not None if stand else None,
         },
         "speedtest": {
             "ookla": ookla_einstellung(hass) is not None,

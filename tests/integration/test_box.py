@@ -59,6 +59,7 @@ AKTIONEN = {
         "NewSoftwareVersion": "268.08.03",
         "NewUpTime": "3600",
     },
+    ("LANHostConfigManagement1", "GetInfo"): {"NewIPRouters": "192.168.170.1"},
     ("Hosts1", "X_AVM-DE_GetHostListPath"): {"NewX_AVM-DE_HostListPath": "/hosts?sid=abc123"},
     ("Hosts1", "X_AVM-DE_GetMeshListPath"): {"NewX_AVM-DE_MeshListPath": "/mesh?sid=abc123"},
     ("X_AVM-DE_WANMobileConnection1", "GetInfoEx"): {
@@ -270,3 +271,149 @@ def test_ohne_wlan_dienst_und_ohne_baender_aktion():
 def test_mesh_nur_im_langsamen_abruf():
     assert holen().mesh is None
     assert holen(langsam=True).mesh["00:11:22:33:44:04"] == "FRITZ!Repeater 3000"
+
+
+# WU-0009: Zugang und Werte der Leitung – Antworten in der Form der FRITZ!-Doku (TR-064 Support), erfunden
+ZUGANG_MOBIL = {
+    ("WANCommonInterfaceConfig1", "GetCommonLinkProperties"): {
+        "NewWANAccessType": "X_AVM-DE_LTE",
+        "NewLayer1UpstreamMaxBitRate": 150_000_000,
+        "NewLayer1DownstreamMaxBitRate": 1_000_000_000,
+        "NewPhysicalLinkStatus": "Up",
+    },
+    ("X_AVM-DE_WANMobileConnection1", "GetInfo"): {
+        "NewEnable": True,
+        "NewStatus": "PIN successful",
+    },
+    ("Layer3Forwarding1", "GetDefaultConnectionService"): {
+        "NewDefaultConnectionService": "1.WANIPConnection.1"
+    },
+    ("WANIPConnection1", "GetExternalIPAddress"): {"NewExternalIPAddress": "10.120.7.88"},
+}
+DIENSTE_MOBIL = ("X_AVM-DE_WANMobileConnection1", "WANCommonInterfaceConfig1", "Layer3Forwarding1")
+DSL_ANTWORTEN = {
+    ("WANCommonInterfaceConfig1", "GetCommonLinkProperties"): {
+        "NewWANAccessType": "DSL",
+        "NewLayer1UpstreamMaxBitRate": 38_189_000,
+        "NewLayer1DownstreamMaxBitRate": 108_396_000,
+        "NewPhysicalLinkStatus": "Up",
+    },
+    ("WANCommonInterfaceConfig1", "X_AVM-DE_GetAddonInfos"): {"NewX_AVM-DE_WANAccessType": "DSL"},
+    ("WANDSLInterfaceConfig1", "GetInfo"): {
+        "NewEnable": True,
+        "NewStatus": "Up",
+        "NewDataPath": "Interleaved",
+        "NewUpstreamCurrRate": 38_189,
+        "NewDownstreamCurrRate": 108_396,
+        "NewUpstreamMaxRate": 41_012,
+        "NewDownstreamMaxRate": 124_620,
+        "NewUpstreamNoiseMargin": 79,
+        "NewDownstreamNoiseMargin": 52,
+        "NewUpstreamAttenuation": 90,
+        "NewDownstreamAttenuation": 140,
+        "NewATURVendor": "41564d00",
+        "NewATURCountry": "0",
+        "NewUpstreamPower": 0,
+        "NewDownstreamPower": 0,
+    },
+    ("WANDSLInterfaceConfig1", "X_AVM-DE_GetDSLInfo"): {
+        "NewModulationType": "VDSL",
+        "NewCurrentProfile": "35b",
+    },
+    ("WANDSLInterfaceConfig1", "GetStatisticsTotal"): {
+        "NewCRCErrors": 120,
+        "NewFECErrors": 18_400,
+        "NewATUCCRCErrors": 3,
+        "NewATUCFECErrors": 200,
+    },
+    ("Layer3Forwarding1", "GetDefaultConnectionService"): {
+        "NewDefaultConnectionService": "1.WANPPPConnection.1"
+    },
+    ("WANPPPConnection1", "GetExternalIPAddress"): {"NewExternalIPAddress": "84.115.20.7"},
+}
+FASER_ANTWORTEN = {
+    ("WANCommonInterfaceConfig1", "GetCommonLinkProperties"): {
+        "NewWANAccessType": "X_AVM-DE_Fiber",
+        "NewPhysicalLinkStatus": "Up",
+    },
+    ("X_AVM-DE_WANFiber1", "GetInfo"): {
+        "NewOpticalSignalLevel": -19_400,
+        "NewLowerOpticalThreshold": -28_000,
+        "NewUpperOpticalThreshold": -8_000,
+        "NewTransmitOpticalLevel": 2_100,
+        "NewLowerTransmitPowerThreshold": 500,
+        "NewUpperTransmitPowerThreshold": 5_000,
+        "NewSFPVendor": "Erfunden",
+        "NewSFPPartNumber": "X1",
+        "NewSFPSerialNumber": "SN-NIE-ZEIGEN",
+        "NewSFPType": 1,
+        "NewTXWaveLength": 1310,
+        "NewFiberMode": "GPON",
+    },
+    ("X_AVM-DE_WANFiber1", "GetStatistics"): {
+        "NewPacketErrorsReceived": 0,
+        "NewPacketErrorsSent": 0,
+        "NewResyncs": 1,
+        "NewMinutesInShowtime": 30_240,
+    },
+}
+
+
+def test_zugang_mobilfunk_nur_im_langsamen_takt():
+    assert holen(ZUGANG_MOBIL, dienste=DIENSTE_MOBIL).zugang is None
+    d = holen(ZUGANG_MOBIL, langsam=True, dienste=DIENSTE_MOBIL)
+    z = d.zugang
+    assert d.fehler == [] and z is not None
+    assert (z.zugangsart, z.link, z.mobil_dienst, z.mobil_an) == ("X_AVM-DE_LTE", "Up", True, True)
+    assert (z.dsl_dienst, z.faser_dienst, z.down_bit) == (False, False, 1_000_000_000)
+    assert (z.wan_netz, z.vorschlag) == ("privat", "10.120.7.1")
+    assert "10.120.7.88" not in repr(d), "die WAN-Adresse selbst bleibt in box.py"
+    assert d.dsl is None and d.faser is None
+    # „Erneut suchen“: auch außerhalb des langsamen Takts
+    b = bx.Box(ZUGANG)
+    with patch.object(
+        bx,
+        "FritzConnection",
+        return_value=fake_box({**AKTIONEN, **ZUGANG_MOBIL}, DATEIEN, DIENSTE_MOBIL),
+    ):
+        assert b.holen(False, True, "192.0.2.1", "de", zugang_fragen=True).zugang is not None
+
+
+def test_zugang_dsl_mit_werten():
+    dienste = (*DIENSTE_MOBIL, "WANDSLInterfaceConfig1")
+    d = holen(DSL_ANTWORTEN, langsam=True, dienste=dienste)
+    assert d.fehler == []
+    assert (
+        d.zugang.zugangsart == "DSL" and d.zugang.art_avm == "DSL" and d.zugang.dsl_status == "Up"
+    )
+    assert d.zugang.wan_netz == "oeffentlich" and d.zugang.vorschlag == ""
+    x = d.dsl
+    assert (x.sync_down, x.max_down, x.marge_down, x.daempfung_down) == (108_396, 124_620, 52, 140)
+    assert (x.modulation, x.profil, x.crc, x.fec, x.crc_gegen) == ("VDSL", "35b", 120, 18_400, 3)
+
+
+def test_dsl_ohne_neuere_aktionen_und_ausgeschaltet():
+    """Ältere FRITZ!OS ohne X_AVM-DE_GetDSLInfo/X_AVM-DE_GetAddonInfos: der Rest gilt; ausgeschaltet: keine Werte."""
+    dienste = (*DIENSTE_MOBIL, "WANDSLInterfaceConfig1")
+    alt = {k: v for k, v in DSL_ANTWORTEN.items() if "X_AVM-DE" not in k[1]}
+    d = holen(alt, langsam=True, dienste=dienste)
+    assert d.fehler == [] and d.dsl.profil == "" and d.dsl.sync_down == 108_396
+    assert d.zugang.art_avm == ""
+    aus = {**DSL_ANTWORTEN, ("WANDSLInterfaceConfig1", "GetInfo"): {"NewStatus": "Disabled"}}
+    d = holen(aus, langsam=True, dienste=dienste)
+    assert d.zugang.dsl_status == "Disabled" and d.dsl is not None, (
+        "Internet über DSL: Werte auch so"
+    )
+    # Mobilfunk-Box mit ungenutztem DSL-Anschluss: keine DSL-Werte (und damit keine DSL-Entitäten)
+    ungenutzt = {**ZUGANG_MOBIL, ("WANDSLInterfaceConfig1", "GetInfo"): {"NewStatus": "NoSignal"}}
+    d = holen(ungenutzt, langsam=True, dienste=dienste)
+    assert d.zugang.dsl_status == "NoSignal" and d.dsl is None and d.fehler == []
+
+
+def test_zugang_glasfaser_ohne_seriennummer():
+    dienste = ("WANCommonInterfaceConfig1", "X_AVM-DE_WANFiber1")
+    d = holen(FASER_ANTWORTEN, langsam=True, dienste=dienste)
+    assert d.zugang.faser_modus == "GPON" and d.zugang.wan_netz == ""
+    f = d.faser
+    assert (f.rx, f.rx_min, f.rx_max, f.tx, f.minuten) == (-19_400, -28_000, -8_000, 2_100, 30_240)
+    assert "SN-NIE-ZEIGEN" not in repr(d)

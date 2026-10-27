@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import logging
 import re
+import threading
 import time
 import xml.etree.ElementTree as ET
 from collections.abc import Callable
@@ -23,16 +24,21 @@ from requests.exceptions import HTTPError, RequestException, Timeout
 from .logik import arten as ar
 from .logik import befunde as bf
 from .logik import geraete as gr
+from .logik import leitung as ln
 from .logik import mobil as mb
 from .logik import protokoll as pr
 from .logik import verkehr as vk
 from .logik import wlan as wl
+from .logik import zugang as zg
 from .logik.sprache import merke, t
 from .logik.werte import ganzzahl, ja, text
 
 LOGGER = logging.getLogger(__package__)
 TIMEOUT = 10.0
 MOBIL = "X_AVM-DE_WANMobileConnection1"
+WAN = "WANCommonInterfaceConfig1"
+DSL = "WANDSLInterfaceConfig1"
+FASER = "X_AVM-DE_WANFiber1"
 FEHLER = (FritzConnectionException, RequestException, OSError, KeyError, ValueError, ET.ParseError)
 VERBINDUNG_WEG = (RequestsConnectionError, Timeout)
 
@@ -88,6 +94,9 @@ class BoxDaten:
     wlan_geraete: tuple[wl.Funkgeraet, ...] | None = None
     mesh: dict[str, str] | None = None  # MAC → Modell der Mesh-Geräte (langsam, AN-0001)
     info: BoxInfo | None = None  # langsam (WU-0005)
+    zugang: zg.Meldung | None = None  # langsam (WU-0009)
+    dsl: ln.Dsl | None = None  # langsam, nur mit DSL-Dienst
+    faser: ln.Faser | None = None  # langsam, nur mit Glasfaser-Dienst
     fehler: list[str] = field(default_factory=list)
 
 
@@ -98,6 +107,8 @@ class Box:
         self.zugang = zugang
         self._fc: FritzConnection | None = None
         self._geschlossen = False
+        # nie zwei Abrufe gleichzeitig an der Box (z. B. „Erneut suchen“ während des Takts, WU-0009)
+        self._sperre = threading.Lock()
 
     def verbinden(self) -> FritzConnection:
         if self._geschlossen:
@@ -157,9 +168,50 @@ class Box:
             antwort.raise_for_status()
             return bytes(antwort.content)
 
-    def holen(self, langsam: bool, mobil_fragen: bool, router: str, sprache: str) -> BoxDaten:
-        """Alles für einen Abruf. `langsam`: auch Heimnetz und Adressquelle je Gerät (alle 10 min). Die Namen der
-        Teile in `fehler` (für die Übersicht) und die Bänder („automatisch“) in `sprache`."""
+    def _wan_adresse(self) -> str:
+        """Adresse der Box im WAN über die Standardverbindung (Layer3Forwarding); nur für logik.zugang.wan_netz, sie
+        verlässt box.py nicht. Fehlt etwas, bleibt sie leer."""
+        try:
+            dienst = text(
+                self._aktion("Layer3Forwarding1", "GetDefaultConnectionService")[
+                    "NewDefaultConnectionService"
+                ]
+            )
+            teile = dienst.split(".")
+            if len(teile) < 2 or not teile[1].startswith(("WANIPConnection", "WANPPPConnection")):
+                return ""
+            name = teile[1] + (teile[2] if len(teile) > 2 and teile[2].isdigit() else "1")
+            return text(self._aktion(name, "GetExternalIPAddress").get("NewExternalIPAddress"))
+        except WEITERREICHEN:
+            raise
+        except FEHLER:
+            return ""
+
+    def holen(
+        self,
+        langsam: bool,
+        mobil_fragen: bool,
+        router: str,
+        sprache: str,
+        zugang_fragen: bool = False,
+        haupt: str = "",
+    ) -> BoxDaten:
+        """Alles für einen Abruf. `langsam`: auch Heimnetz und Adressquelle je Gerät (alle 10 min) und der Zugang;
+        `zugang_fragen`: den Zugang auch diesmal (⚙ › Zugang „Erneut suchen“). Die Namen der Teile in `fehler` (für
+        die Übersicht) und die Bänder („automatisch“) in `sprache`. `haupt`: zuletzt erkannter fester Zugang – dessen
+        Werte werden auch während eines Ausfalls gelesen (logik.zugang.dsl_lesen)."""
+        with self._sperre:
+            return self._holen(langsam, mobil_fragen, router, sprache, zugang_fragen, haupt)
+
+    def _holen(
+        self,
+        langsam: bool,
+        mobil_fragen: bool,
+        router: str,
+        sprache: str,
+        zugang_fragen: bool,
+        haupt: str,
+    ) -> BoxDaten:
         d = BoxDaten()
         try:
             fc = self.verbinden()
@@ -294,6 +346,89 @@ class Box:
                 round(time.time(), 1),
             )
 
+        def optional(dienst: str, aktion: str) -> dict[str, Any]:
+            """Aktion, die ältere FRITZ!OS nicht kennen: fehlt sie, bleibt es leer."""
+            try:
+                return self._aktion(dienst, aktion)
+            except WEITERREICHEN:
+                raise
+            except FEHLER:
+                return {}
+
+        def zugang() -> None:
+            # WU-0009: woher kommt das Internet – nur lesen, im langsamen Takt (logik/zugang.py)
+            link = self._aktion(WAN, "GetCommonLinkProperties")
+            avm = optional(WAN, "X_AVM-DE_GetAddonInfos")
+            mobil_an = None
+            if MOBIL in fc.services:
+                info_mobil = optional(MOBIL, "GetInfo")
+                mobil_an = ja(info_mobil["NewEnable"]) if "NewEnable" in info_mobil else None
+            dsl_status = (
+                text(optional(DSL, "GetInfo").get("NewStatus")) if DSL in fc.services else ""
+            )
+            modus = (
+                text(optional(FASER, "GetInfo").get("NewFiberMode")) if FASER in fc.services else ""
+            )
+            netz, vorschlag = zg.wan_netz(self._wan_adresse())
+            d.zugang = zg.Meldung(
+                zugangsart=text(link.get("NewWANAccessType")),
+                link=text(link.get("NewPhysicalLinkStatus")),
+                art_avm=text(avm.get("NewX_AVM-DE_WANAccessType")),
+                down_bit=ganzzahl(link.get("NewLayer1DownstreamMaxBitRate")),
+                up_bit=ganzzahl(link.get("NewLayer1UpstreamMaxBitRate")),
+                mobil_dienst=MOBIL in fc.services,
+                mobil_an=mobil_an,
+                dsl_dienst=DSL in fc.services,
+                dsl_status=dsl_status,
+                faser_dienst=FASER in fc.services,
+                faser_modus=modus,
+                wan_netz=netz,
+                vorschlag=vorschlag,
+            )
+
+        def dsl() -> None:
+            # WU-0009: Werte der DSL-Leitung (logik/leitung.py); X_AVM-DE_GetDSLInfo erst ab neueren FRITZ!OS
+            i = self._aktion(DSL, "GetInfo")
+            x = optional(DSL, "X_AVM-DE_GetDSLInfo")
+            st = optional(DSL, "GetStatisticsTotal")
+            d.dsl = ln.Dsl(
+                t=round(time.time(), 1),
+                status=text(i.get("NewStatus")),
+                sync_down=ganzzahl(i.get("NewDownstreamCurrRate")),
+                sync_up=ganzzahl(i.get("NewUpstreamCurrRate")),
+                max_down=ganzzahl(i.get("NewDownstreamMaxRate")),
+                max_up=ganzzahl(i.get("NewUpstreamMaxRate")),
+                marge_down=ganzzahl(i.get("NewDownstreamNoiseMargin")),
+                marge_up=ganzzahl(i.get("NewUpstreamNoiseMargin")),
+                daempfung_down=ganzzahl(i.get("NewDownstreamAttenuation")),
+                daempfung_up=ganzzahl(i.get("NewUpstreamAttenuation")),
+                modulation=text(x.get("NewModulationType")),
+                profil=text(x.get("NewCurrentProfile")),
+                crc=ganzzahl(st.get("NewCRCErrors")),
+                fec=ganzzahl(st.get("NewFECErrors")),
+                crc_gegen=ganzzahl(st.get("NewATUCCRCErrors")),
+                fec_gegen=ganzzahl(st.get("NewATUCFECErrors")),
+            )
+
+        def faser() -> None:
+            # WU-0009: Glasfaser-Modul (logik/leitung.py); Seriennummern und Kennungen werden nicht übernommen
+            i = self._aktion(FASER, "GetInfo")
+            st = optional(FASER, "GetStatistics")
+            d.faser = ln.Faser(
+                t=round(time.time(), 1),
+                modus=text(i.get("NewFiberMode")),
+                rx=ganzzahl(i.get("NewOpticalSignalLevel")),
+                rx_min=ganzzahl(i.get("NewLowerOpticalThreshold")),
+                rx_max=ganzzahl(i.get("NewUpperOpticalThreshold")),
+                tx=ganzzahl(i.get("NewTransmitOpticalLevel")),
+                tx_min=ganzzahl(i.get("NewLowerTransmitPowerThreshold")),
+                tx_max=ganzzahl(i.get("NewUpperTransmitPowerThreshold")),
+                fehler_rx=ganzzahl(st.get("NewPacketErrorsReceived")),
+                fehler_tx=ganzzahl(st.get("NewPacketErrorsSent")),
+                resyncs=ganzzahl(st.get("NewResyncs")),
+                minuten=ganzzahl(st.get("NewMinutesInShowtime")),
+            )
+
         def mesh() -> None:
             pfad = text(
                 self._aktion("Hosts1", "X_AVM-DE_GetMeshListPath")["NewX_AVM-DE_MeshListPath"]
@@ -312,6 +447,16 @@ class Box:
             if langsam:
                 teil("Mesh", mesh)
                 teil(merke("Gerät"), info)
+            if langsam or zugang_fragen:
+                if WAN in fc.services:
+                    teil(merke("Zugang"), zugang)
+                z = d.zugang
+                # Werte der Leitung nur, wenn das Internet darüber kommt (auch während eines Ausfalls) – eine Box
+                # mit ungenutztem Anschluss bekommt so keine DSL- oder Glasfaser-Entitäten (WU-0009)
+                if z is not None and zg.dsl_lesen(z, haupt):
+                    teil("DSL", dsl)
+                if z is not None and zg.faser_lesen(z, haupt):
+                    teil(merke("Glasfaser"), faser)
         except _Abbruch:
             pass
         return d

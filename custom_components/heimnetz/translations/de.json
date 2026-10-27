@@ -212,6 +212,43 @@
       },
       "pci_5g": {
         "name": "5G-Zelle (PCI)"
+      },
+      "zugang": {
+        "name": "Internetzugang",
+        "state": {
+          "mobilfunk": "Mobilfunk",
+          "dsl": "DSL",
+          "glasfaser": "Glasfaser",
+          "kabel": "Kabel",
+          "extern": "Vorgeschaltetes Gerät"
+        }
+      },
+      "dsl_sync_down": {
+        "name": "DSL Synchronrate Download"
+      },
+      "dsl_sync_up": {
+        "name": "DSL Synchronrate Upload"
+      },
+      "dsl_snr_down": {
+        "name": "DSL Störabstandsmarge Download"
+      },
+      "dsl_snr_up": {
+        "name": "DSL Störabstandsmarge Upload"
+      },
+      "dsl_daempfung_down": {
+        "name": "DSL Dämpfung Download"
+      },
+      "dsl_daempfung_up": {
+        "name": "DSL Dämpfung Upload"
+      },
+      "dsl_crc_stunde": {
+        "name": "DSL Fehler je Stunde"
+      },
+      "glasfaser_rx": {
+        "name": "Glasfaser empfangene Lichtleistung"
+      },
+      "glasfaser_tx": {
+        "name": "Glasfaser gesendete Lichtleistung"
       }
     },
     "binary_sensor": {

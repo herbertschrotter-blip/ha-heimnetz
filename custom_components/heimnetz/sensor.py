@@ -20,6 +20,7 @@ from homeassistant.components.sensor import (
 from homeassistant.const import (
     SIGNAL_STRENGTH_DECIBELS,
     SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+    UnitOfDataRate,
     UnitOfLength,
 )
 from homeassistant.core import HomeAssistant
@@ -29,6 +30,8 @@ from homeassistant.util import dt as dt_util
 from . import EintragMitLaufzeit
 from .coordinator import Abruf
 from .entity import HeimnetzEntitaet
+from .logik import leitung as ln
+from .logik import zugang as zg
 from .logik.befunde import GESAMTSTAENDE
 from .logik.mobil import Mobilfunk, Zelle
 from .logik.sammeln import Stand
@@ -36,8 +39,11 @@ from .logik.sammeln import Stand
 
 @dataclass(frozen=True, kw_only=True)
 class Beschreibung(SensorEntityDescription):
-    wert: Callable[[Stand], str | int | None]
+    wert: Callable[[Stand], str | int | float | None]
     braucht_box: bool = True
+    da: Callable[[Stand], bool] | None = (
+        None  # nur verfügbar, wenn das zutrifft (z. B. DSL-Werte gelesen)
+    )
 
 
 def _zelle(welche: str, groesse: str) -> Callable[[Stand], int | None]:
@@ -121,6 +127,63 @@ MOBILFUNK = (
 )
 
 
+# WU-0009: Werte der Leitung – Entitäten nur, wenn die Box diesen Anschluss hat (kommen mit dem ersten Lesen dazu)
+def _dsl(f: Callable[[ln.Dsl], int | float | None]) -> Callable[[Stand], int | float | None]:
+    return lambda s: f(s.dsl) if s.dsl else None
+
+
+def _faser(f: Callable[[ln.Faser], int | float | None]) -> Callable[[Stand], int | float | None]:
+    return lambda s: f(s.faser) if s.faser else None
+
+
+_MBIT = {
+    "device_class": SensorDeviceClass.DATA_RATE,
+    "native_unit_of_measurement": UnitOfDataRate.MEGABITS_PER_SECOND,
+    "state_class": SensorStateClass.MEASUREMENT,
+}
+_DB = {"native_unit_of_measurement": "dB", "state_class": SensorStateClass.MEASUREMENT}
+_DBM = {
+    "device_class": SensorDeviceClass.SIGNAL_STRENGTH,
+    "native_unit_of_measurement": SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+    "state_class": SensorStateClass.MEASUREMENT,
+}
+
+
+def _hat_dsl(s: Stand) -> bool:
+    return s.dsl is not None
+
+
+def _hat_faser(s: Stand) -> bool:
+    return s.faser is not None
+
+
+DSL = (
+    Beschreibung(
+        key="dsl_sync_down", wert=_dsl(lambda d: ln.mbit(d.sync_down)), da=_hat_dsl, **_MBIT
+    ),
+    Beschreibung(key="dsl_sync_up", wert=_dsl(lambda d: ln.mbit(d.sync_up)), da=_hat_dsl, **_MBIT),
+    Beschreibung(key="dsl_snr_down", wert=_dsl(lambda d: ln.db(d.marge_down)), da=_hat_dsl, **_DB),
+    Beschreibung(key="dsl_snr_up", wert=_dsl(lambda d: ln.db(d.marge_up)), da=_hat_dsl, **_DB),
+    Beschreibung(
+        key="dsl_daempfung_down", wert=_dsl(lambda d: ln.db(d.daempfung_down)), da=_hat_dsl, **_DB
+    ),
+    Beschreibung(
+        key="dsl_daempfung_up", wert=_dsl(lambda d: ln.db(d.daempfung_up)), da=_hat_dsl, **_DB
+    ),
+    Beschreibung(
+        key="dsl_crc_stunde",
+        native_unit_of_measurement="1/h",
+        state_class=SensorStateClass.MEASUREMENT,
+        wert=lambda s: s.dsl_crc_h,
+        da=_hat_dsl,
+    ),
+)
+GLASFASER = (
+    Beschreibung(key="glasfaser_rx", wert=_faser(lambda f: ln.dbm(f.rx)), da=_hat_faser, **_DBM),
+    Beschreibung(key="glasfaser_tx", wert=_faser(lambda f: ln.dbm(f.tx)), da=_hat_faser, **_DBM),
+)
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: EintragMitLaufzeit,
@@ -128,7 +191,20 @@ async def async_setup_entry(
 ) -> None:
     abruf = entry.runtime_data.abruf
     async_add_entities(HeimnetzSensor(abruf, b) for b in ALLGEMEIN)
-    async_add_entities([LetzteMessung(abruf)])
+    async_add_entities([LetzteMessung(abruf), Zugangsart(abruf)])
+
+    # WU-0009: DSL- und Glasfaser-Werte erst, wenn die Box sie gemeldet hat (auch später, nach einem Wechsel)
+    angelegt: set[str] = set()
+
+    def leitung_pruefen() -> None:
+        s = abruf.data
+        for name, da, liste in (("dsl", _hat_dsl, DSL), ("glasfaser", _hat_faser, GLASFASER)):
+            if name not in angelegt and s is not None and da(s):
+                angelegt.add(name)
+                async_add_entities(HeimnetzSensor(abruf, b) for b in liste)
+
+    leitung_pruefen()
+    entry.async_on_unload(abruf.async_add_listener(leitung_pruefen))
 
     # Empfangssensoren erst, wenn die Box ein Mobilfunk-Modem gemeldet hat – war sie beim Start nicht erreichbar,
     # kommen sie mit dem ersten gelungenen Abruf dazu; eine Box ohne Modem bekommt keine.
@@ -164,12 +240,31 @@ class HeimnetzSensor(HeimnetzEntitaet, SensorEntity):
     def available(self) -> bool:
         if not super().available:
             return False
+        da = self.entity_description.da
+        if da is not None and not da(self.coordinator.data):
+            return False
         mobil: Mobilfunk | None = self.coordinator.data.mobil
         return mobil is not None or self.entity_description not in MOBILFUNK
 
     @property
-    def native_value(self) -> str | int | None:
+    def native_value(self) -> str | int | float | None:
         return self.entity_description.wert(self.coordinator.data)
+
+
+class Zugangsart(HeimnetzEntitaet, SensorEntity):
+    """WU-0009: woher das Internet kommt – erkannt oder in ⚙ › Zugang festgelegt."""
+
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options = list(zg.ARTEN)
+
+    def __init__(self, abruf: Abruf) -> None:
+        super().__init__(abruf, "zugang")
+
+    @property
+    def native_value(self) -> str | None:
+        e = self.coordinator.einstellungen
+        wahl = e.wert.zugang_wahl if e else "auto"
+        return zg.wirksam(self.coordinator.data.zugang_art, wahl) or None
 
 
 # Aus Mast-Entfernung und -Richtung ließe sich mit dem öffentlichen Standort des Masts die Wohnung bestimmen – nicht in

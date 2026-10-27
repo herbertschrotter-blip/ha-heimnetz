@@ -59,7 +59,7 @@ test('alle Reiter rendern ohne Fehler und ohne „undefined“', async () => {
     assert.ok(!t.includes('Daten nicht abrufbar'), name);
   }
   const typen = new Set(hass.aufrufe.map((a) => a.type));
-  for (const b of ['uebersicht', 'speedtest', 'einstellungen', 'geraete', 'wlan', 'verbrauch', 'protokoll']) {
+  for (const b of ['uebersicht', 'speedtest', 'einstellungen', 'geraete', 'internet', 'verbrauch', 'protokoll']) {
     assert.ok(typen.has(`heimnetz/${b}`), b);
   }
 });
@@ -438,10 +438,15 @@ test('Messplan: abgelehnter Wert springt auf den gespeicherten zurück', async (
   assert.equal(el.shadowRoot.querySelectorAll('input[type=time]')[0].value, DATEN.einstellungen.messplan.von);
 });
 
-test('Funk: WLAN mit Befund, Bändern und Geräten; Umschalten lädt Mobilfunk', async () => {
+test('WU-0009: Geräte · WLAN mit Befund, Bändern und Geräten; Internet zeigt den Mobilfunk', async () => {
   const hass = machHass();
   const el = await seite(hass);
-  await reiter(el, 'Funk');
+  await reiter(el, 'Geräte');
+  assert.ok(!hass.aufrufe.some((a) => a.type === 'heimnetz/wlan'), 'WLAN erst beim Umschalten');
+  knoepfe(el.shadowRoot.querySelector('.seite')).find((b) => b.textContent === 'WLAN').click();
+  await warten(10);
+  await el.updateComplete;
+  assert.ok(hass.aufrufe.some((a) => a.type === 'heimnetz/wlan'));
   let t = text(el);
   assert.match(t, /Geräte im WLAN/);
   assert.match(t, /mit schwachem Empfang/);
@@ -451,11 +456,11 @@ test('Funk: WLAN mit Befund, Bändern und Geräten; Umschalten lädt Mobilfunk',
   await warten(10);
   assert.ok(hass.aufrufe.some((a) => a.type === 'heimnetz/geraet' && a.geraet === DATEN.wlan.geraete[0].id));
   el.zu();
-  knoepfe(el.shadowRoot.querySelector('.seite')).find((b) => b.textContent === 'Mobilfunk').click();
-  await warten(10);
-  await el.updateComplete;
+  await reiter(el, 'Internet');
   t = text(el);
-  assert.ok(hass.aufrufe.some((a) => a.type === 'heimnetz/mobilfunk'));
+  assert.ok(hass.aufrufe.some((a) => a.type === 'heimnetz/internet' && a.tage === 1));
+  assert.match(t, /Internet über Mobilfunk/);
+  assert.match(t, /automatisch erkannt/);
   assert.match(t, /Verbindung zur Basisstation/);
   assert.match(t, new RegExp(`↔ ${DATEN.mobilfunk.strecke.entfernung}`));
   assert.equal(el.shadowRoot.querySelectorAll('.zelle').length, DATEN.mobilfunk.zellen.length);
@@ -477,7 +482,7 @@ test('Funk: WLAN mit Befund, Bändern und Geräten; Umschalten lädt Mobilfunk',
   assert.ok(!/undefined|NaN/.test(t), t.slice(0, 400));
 });
 
-test('Funk · Mobilfunk: Zellen mit Fundstelle, Mast je Sendeanlage auf der Karte (WU-0002)', async () => {
+test('Internet · Mobilfunk: Zellen mit Fundstelle, Mast je Sendeanlage auf der Karte (WU-0002)', async () => {
   const alt = DATEN.mobilfunk;
   const anker = alt.zellen.find((z) => z.anker);
   DATEN.mobilfunk = {
@@ -489,13 +494,12 @@ test('Funk · Mobilfunk: Zellen mit Fundstelle, Mast je Sendeanlage auf der Kart
       osm: [{ ort: [48.19, 16.37], betreiber: null, passt: true, entfernung: '1,3 km', richtung: 'Süd', anbieter: ['Drei'], technik: ['LTE', '5G'], zellen: 4 },
         { ort: [48.25, 16.40], betreiber: 'A1', passt: false, entfernung: '5,6 km', richtung: 'Nord', anbieter: null, technik: null, zellen: 0 }] },
   };
+  const altInternet = DATEN.internet;
+  DATEN.internet = { ...altInternet, mobilfunk: DATEN.mobilfunk };
   try {
     const hass = machHass();
     const el = await seite(hass);
-    await reiter(el, 'Funk');
-    knoepfe(el.shadowRoot.querySelector('.seite')).find((b) => b.textContent === 'Mobilfunk').click();
-    await warten(10);
-    await el.updateComplete;
+    await reiter(el, 'Internet');
     const t = text(el);
     assert.match(t, new RegExp(`TAC ${anker.tac} · PLMN ${anker.plmn} · 📍 BeaconDB · ±50 m`));
     assert.match(t, /nur PCI – nicht nachschlagbar/);
@@ -552,6 +556,7 @@ test('Funk · Mobilfunk: Zellen mit Fundstelle, Mast je Sendeanlage auf der Kart
     assert.ok(!/opencellid\.org|undefined|NaN/.test(t));  // gefunden: kein Hinweis auf den Schlüssel
   } finally {
     DATEN.mobilfunk = alt;
+    DATEN.internet = altInternet;
   }
 });
 
@@ -564,10 +569,7 @@ test('Karte: Grundlage automatisch nach Design, Wahl bleibt im Browser', async (
   assert.equal(grundlage('kaputt', false).url, GRUNDLAGEN.bmap.url);
   const hass = machHass();
   const el = await seite(hass);
-  await reiter(el, 'Funk');
-  knoepfe(el.shadowRoot.querySelector('.seite')).find((b) => b.textContent === 'Mobilfunk').click();
-  await warten(10);
-  await el.updateComplete;
+  await reiter(el, 'Internet');
   const kk = el.shadowRoot.querySelector('heimnetz-karte');
   const wahl = kk.shadowRoot.querySelector('.k-lage');
   wahl.value = 'osm';
@@ -578,15 +580,15 @@ test('Karte: Grundlage automatisch nach Design, Wahl bleibt im Browser', async (
   localStorage.removeItem('heimnetz.karte.grundlage');
 });
 
-test('Übersicht: Kachel Empfang springt zu Funk · Mobilfunk', async () => {
+test('Übersicht: Kachel Empfang springt zu Internet (Mobilfunk)', async () => {
   const hass = machHass();
   const el = await seite(hass);
   [...el.shadowRoot.querySelectorAll('.glas-k')].find((k) => k.textContent.includes('Empfang')).click();
   await warten(10);
   await el.updateComplete;
-  assert.equal(el._reiter, 'funk');
-  assert.equal(el._opt.funk.teil, 'mobilfunk');
-  assert.ok(hass.aufrufe.some((a) => a.type === 'heimnetz/mobilfunk'));
+  assert.equal(el._reiter, 'internet');
+  assert.equal(el._opt.internet.sicht, 'haupt');
+  assert.ok(hass.aufrufe.some((a) => a.type === 'heimnetz/internet'));
 });
 
 test('Einstellungen: Grenze für schwachen WLAN-Empfang', async () => {
@@ -627,7 +629,7 @@ test('Melden: Knopf öffnet den Dialog, Senden schickt Meldung und Bilder einzel
   assert.deepEqual(typen.filter((t) => t.startsWith('heimnetz/meldung/')), ['heimnetz/meldung/neu', 'heimnetz/meldung/bild', 'heimnetz/meldung/bild']);
   const neu = hass.aufrufe.find((a) => a.type === 'heimnetz/meldung/neu').meldung;
   assert.equal(neu.art, 'fehler');
-  assert.deepEqual(neu.seite, { reiter: 'uebersicht', funk: 'wlan', dialog: null });
+  assert.deepEqual(neu.seite, { reiter: 'uebersicht', teil: null, dialog: null });
   assert.ok(!('bilder' in neu), 'Bilder nicht in der Meldung selbst');
   assert.equal(el._blatt, null, 'Dialog zu');
   assert.match(el.shadowRoot.querySelector('.toast').textContent, /gemeldet als FE-0003 mit 1 Bild · 1 Bild kam nicht an \(bild: nur JPEG/);
@@ -697,7 +699,7 @@ test('WU-0006: öffentlich auf GitHub melden – Vorschau, Schalter mit Warnung,
   const neu = hass.aufrufe.find((a) => a.type === 'heimnetz/meldung/neu');
   assert.ok(!('github' in neu));
   assert.equal(neu.meldung.text, 'Karte grau');
-  assert.deepEqual(neu.meldung.seite, { reiter: 'uebersicht', funk: 'wlan', dialog: null });
+  assert.deepEqual(neu.meldung.seite, { reiter: 'uebersicht', teil: null, dialog: null });
   assert.equal(geoeffnet.length, 1);
   assert.match(geoeffnet[0][0], /^https:\/\/github\.com\/x\/ha-heimnetz\/issues\/new\?title=.*Lokales%20Ticket%3A%20FE-0003/);
   assert.deepEqual(geoeffnet[0].slice(1), ['_blank', 'noopener', 0], 'vor dem Speichern, ohne Zugriff auf die Seite');
@@ -903,7 +905,7 @@ test('AN-0002: Einstellungen mit Reitern, je eine Gruppe, Schalter statt Checkbo
   await warten(10);
   await el.updateComplete;
   const reiter = [...blatt(el).querySelectorAll('.e-reiter button')].map((b) => b.textContent.trim());
-  assert.deepEqual(reiter, ['📈 Speedtest', '⏱️ Messplan', '📶 WLAN', '💬 Meldungen', '🧩 Einrichtung', '🔬 Diagnose']);
+  assert.deepEqual(reiter, ['📈 Speedtest', '⏱️ Messplan', '📶 WLAN', '💬 Meldungen', '🌐 Zugang', '🧩 Einrichtung', '🔬 Diagnose']);
   assert.ok(blatt(el).querySelector('[name=tarif_down]'), 'Speedtest zuerst');
   assert.ok(!blatt(el).querySelector('input[type=time]'), 'Messplan nicht gleichzeitig');
   const vorher = hass.aufrufe.length;
@@ -1110,4 +1112,153 @@ test('WU-0008: ohne Admin kein Diagnose-Formular', async () => {
   await el.updateComplete;
   assert.match(text(el), /nur Admins/);
   assert.ok(!blatt(el).querySelector('input[name=adresse]'));
+});
+
+/* ---- WU-0009: Reiter Internet je Zugangsart und ⚙ › 🌐 Zugang ---- */
+async function mitInternet(daten, fn) {
+  const alt = DATEN.internet;
+  DATEN.internet = daten;
+  try {
+    return await fn();
+  } finally {
+    DATEN.internet = alt;
+  }
+}
+
+test('WU-0009: Kopf zeigt Box und Zugang; Internet über Mobilfunk mit Herkunftszeile', async () => {
+  const hass = machHass();
+  const el = await seite(hass);
+  assert.match(el.shadowRoot.querySelector('.glas-kopf').textContent, new RegExp(DATEN.uebersicht.zugang.kopf));
+  assert.deepEqual(REITER.map(([k]) => k), ['uebersicht', 'speedtest', 'geraete', 'internet', 'verbrauch', 'protokoll']);
+  await reiter(el, 'Internet');
+  const zeile = el.shadowRoot.querySelector('.iq');
+  assert.match(zeile.textContent, /Internet über Mobilfunk/);
+  assert.match(zeile.textContent, /eingebautes Modem/);
+  assert.match(zeile.textContent, /automatisch erkannt/);
+  // „ändern ›“ öffnet ⚙ › 🌐 Zugang und holt den Zugang (nur Admins)
+  [...zeile.querySelectorAll('button')].find((b) => b.textContent.includes('ändern')).click();
+  await warten(10);
+  await el.updateComplete;
+  assert.equal(el._blatt.teil, 'zugang');
+  assert.ok(hass.aufrufe.some((a) => a.type === 'heimnetz/zugang'));
+  assert.match(blatt(el).textContent, /Vorschlag: Mobilfunk über FRITZ!Box/);
+});
+
+test('WU-0009: Internet über DSL – Bewertung, Werte, „–“ wo die Box nichts liefert, Ersatz als Umschalter', async () => {
+  await mitInternet(DATEN.internet_dsl, async () => {
+    const hass = machHass();
+    const el = await seite(hass);
+    await reiter(el, 'Internet');
+    let t = text(el);
+    const d = DATEN.internet_dsl.dsl;
+    assert.match(t, /Internet über DSL/);
+    assert.match(t, new RegExp(d.bewertung.titel));
+    assert.equal(el.shadowRoot.querySelector('.block .badge.amber-b').textContent, 'Reserve knapp');
+    assert.match(t, /Synchron Download\s*108,4 Mbit\/s\s*möglich 124,6 · Tarif 150/);
+    assert.match(t, /Störabstand ↓ \/ ↑\s*5,2 \/ 7,9 dB/);
+    assert.ok(el.shadowRoot.querySelector('.amber-k'), 'Marge knapp in Amber');
+    assert.match(t, /VDSL · Profil 35b/);
+    assert.match(t, /Gegenstelle \(DSLAM\)\s*liefert die Schnittstelle der Box nicht\s*–/);
+    assert.match(t, /Ersatz: Mobilfunk an der FRITZ!Box, springt bei Ausfall ein/);
+    knoepfe(el.shadowRoot.querySelector('.seite')).find((b) => b.textContent.includes('Ersatz') && b.closest('.leiste')).click();
+    await warten(10);
+    await el.updateComplete;
+    t = text(el);
+    assert.match(t, /Ersatzzugang Mobilfunk/);
+    assert.match(t, /bereit · nicht aktiv/);
+    assert.match(t, /Umschaltungen\s*0/);
+    assert.ok(!/undefined|NaN|\[object Object\]/.test(t), t.slice(0, 400));
+  });
+});
+
+test('WU-0009: Glasfaser und Kabel – was TR-064 nicht liefert, steht als „–“', async () => {
+  await mitInternet(DATEN.internet_glasfaser, async () => {
+    const el = await seite(machHass());
+    await reiter(el, 'Internet');
+    const t = text(el);
+    assert.match(t, /Glasfaser in Ordnung/);
+    assert.match(t, /Empfangene Lichtleistung\s*-19,4 dBm\s*gut -8,0 … -28,0/);
+    assert.match(t, /Temperatur Modul\s*liefert die Schnittstelle der Box nicht\s*–/);
+    assert.match(t, /Gesendete Lichtleistung\s*2,1 dBm\s*gut 0,5 … 5,0/);
+    assert.match(t, /⟨nur in der Box⟩/);
+    assert.ok(!/undefined|NaN/.test(t));
+    el.remove();
+  });
+  await mitInternet(DATEN.internet_kabel, async () => {
+    const el = await seite(machHass());
+    await reiter(el, 'Internet');
+    const t = text(el);
+    assert.match(t, /Kabelanschluss verbunden/);
+    assert.match(t, /Verbindung\s*1\.000 \/ 50 Mbit\/s/);
+    assert.match(t, /Empfangskanäle\s*–\s*liefert die Schnittstelle der Box nicht/);
+    assert.ok(!/undefined|NaN/.test(t));
+    el.remove();
+  });
+});
+
+test('WU-0009: vorgeschaltetes Gerät – Hinweis und Sprung zur Diagnose mit der Adresse', async () => {
+  const z = { ...DATEN.internet.zugang, art: 'extern', weg: 'vorgeschaltet', titel: 'Internet über Mobilfunk', geraet: 'vorgeschaltetes Modem', weg_text: 'vorgeschaltet über 192.168.8.1 · Beta', quelle: 'festgelegt' };
+  await mitInternet({ ...DATEN.internet, zugang: z, mobilfunk: null }, async () => {
+    const hass = machHass();
+    const el = await seite(hass);
+    await reiter(el, 'Internet');
+    assert.match(text(el), /Werte vom vorgeschalteten Gerät folgen/);
+    assert.match(text(el), /festgelegt/);
+    assert.ok(!el.shadowRoot.querySelector('heimnetz-karte'), 'keine Mobilfunk-Werte der Box');
+  });
+});
+
+test('WU-0009: ⚙ › 🌐 Zugang – Belege, Wahl, Adresse und Kennwort (nie im Zustand), Erneut suchen, Diagnose', async () => {
+  const hass = machHass();
+  const el = await seite(hass);
+  await einstellungen(el);
+  await einTab(el, 'Zugang');
+  await warten(10);
+  await el.updateComplete;
+  let b = blatt(el);
+  for (const beleg of DATEN.zugang.belege) assert.ok(b.textContent.includes(beleg), beleg);
+  assert.equal(b.querySelectorAll('.zg').length, DATEN.zugang.wahlen.length);
+  assert.ok(b.querySelector('.zg[data-wahl=auto] .zg-r.on'), 'Automatisch gewählt');
+  assert.ok(!b.querySelector('input[name=zg-kennwort]'), 'ohne vorgeschaltetes Gerät kein Kennwort');
+  b.querySelector('.zg[data-wahl=extern]').click();
+  await warten(10);
+  await el.updateComplete;
+  assert.equal(hass.aufrufe.find((a) => a.type === 'heimnetz/zugang/setzen').wahl, 'extern');
+  b = blatt(el);
+  const adresse = b.querySelector('input[name=zg-adresse]');
+  const kennwort = b.querySelector('input[name=zg-kennwort]');
+  assert.ok(adresse && kennwort, 'Adresse und Kennwort bei vorgeschaltetem Modem');
+  assert.equal(adresse.value, DATEN.zugang.adressen[0]);
+  assert.match(b.textContent, /wird in Home Assistant gespeichert/);
+  adresse.value = '192.168.8.1';
+  kennwort.value = 'geheim-123';
+  knoepfe(b).find((x) => x.textContent === 'Speichern').click();
+  await warten(10);
+  await el.updateComplete;
+  const setzen = hass.aufrufe.filter((a) => a.type === 'heimnetz/zugang/setzen').at(-1);
+  assert.deepEqual([setzen.adresse, setzen.kennwort], ['192.168.8.1', 'geheim-123']);
+  assert.equal(kennwort.value, '', 'Kennwort im Feld gelöscht');
+  assert.ok(!JSON.stringify(el._daten).includes('geheim-123'), 'Kennwort nie im Zustand der Seite');
+  assert.match(blatt(el).querySelector('input[name=zg-kennwort]').placeholder, /hinterlegt/);
+  // Ersatz, Erneut suchen
+  knoepfe(blatt(el)).find((x) => x.textContent === 'keiner').click();
+  await warten(10);
+  assert.equal(hass.aufrufe.filter((a) => a.type === 'heimnetz/zugang/setzen').at(-1).ersatz, 'kein');
+  knoepfe(blatt(el)).find((x) => x.textContent.includes('Erneut suchen')).click();
+  await warten(10);
+  assert.ok(hass.aufrufe.some((a) => a.type === 'heimnetz/zugang/suchen'));
+  // 🔬 Rohdaten abfragen › → Reiter Diagnose mit der Adresse
+  knoepfe(blatt(el)).find((x) => x.textContent.includes('Rohdaten abfragen')).click();
+  await el.updateComplete;
+  assert.equal(el._blatt.teil, 'diag');
+  assert.equal(blatt(el).querySelector('input[name=adresse]').value, '192.168.8.1');
+});
+
+test('WU-0009: ⚙ › 🌐 Zugang nur für Admins', async () => {
+  const hass = machHass({ admin: false });
+  const el = await seite(hass);
+  await einstellungen(el);
+  await einTab(el, 'Zugang');
+  assert.match(blatt(el).textContent, /Den Zugang legen nur Admins fest/);
+  assert.ok(!hass.aufrufe.some((a) => a.type.startsWith('heimnetz/zugang')));
 });

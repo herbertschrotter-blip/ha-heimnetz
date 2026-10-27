@@ -1,9 +1,20 @@
 // Reiter „Geräte“: Liste mit 24-h-Streifen, Filter und Suche (nur Anzeige); Einblendung je Gerät mit 7 Tagen.
+// WU-0009: WLAN steht hier als Umschalter „Geräte | WLAN“ (vorher unter „Funk“).
 import { html, nothing } from 'lit';
 import { live } from 'lit/directives/live.js';
 import { zahl, zeit, tag, punkt } from '../format.js';
 import { merke, t, tl } from '../sprache.js';
 import { seg, streifen } from './teile.js';
+import { wlan } from './wlan.js';
+
+export const TEILE = [['geraete', merke('Geräte')], ['wlan', merke('WLAN')]];
+
+/** Reiter „Geräte“ mit Umschalter; geladen wird nur der gewählte Teil (heimnetz/geraete oder heimnetz/wlan). */
+export function geraeteReiter(p, d) {
+  const teil = p._opt.geraete.teil;
+  return html`<div class="leiste">${seg(tl(TEILE), teil, (v) => p.setze('geraete', { teil: v }), false)}</div>
+    ${!d ? html`<div class="glas-panel block"><div class="leer">${t('lädt …')}</div></div>` : teil === 'wlan' ? wlan(p, d) : geraete(p, d)}`;
+}
 
 const FILTER = [['alle', merke('Alle')], ['online', 'Online'], ['offline', 'Offline'], ['auff', merke('Auffällig')]];
 // AN-0001 (Mockup netzwerk.html · Geräte kompakt, Variante D): eine Zeile je Gerät, Punkt statt Abzeichen

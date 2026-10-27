@@ -71,6 +71,12 @@ owns:
       exposure: websocket
     - key: opencellid_schluessel
       storage: config_entry_options
+    # WU-0009: Wahl des Zugangs, Adresse eines vorgeschalteten Geräts; Kennwort nur in den Optionen, nie an die Seite
+    - key: zugang
+      storage: store
+      exposure: websocket
+    - key: modem_kennwort
+      storage: config_entry_options
   entities:
     - key: gesamtstand
       domain: sensor
@@ -88,6 +94,26 @@ owns:
       domain: sensor
     - key: rsrq_5g
       domain: sensor
+    - key: zugang
+      domain: sensor
+    - key: dsl_sync_down
+      domain: sensor
+    - key: dsl_sync_up
+      domain: sensor
+    - key: dsl_snr_down
+      domain: sensor
+    - key: dsl_snr_up
+      domain: sensor
+    - key: dsl_daempfung_down
+      domain: sensor
+    - key: dsl_daempfung_up
+      domain: sensor
+    - key: dsl_crc_stunde
+      domain: sensor
+    - key: glasfaser_rx
+      domain: sensor
+    - key: glasfaser_tx
+      domain: sensor
     - key: pi_fritzbox
       domain: binary_sensor
     - key: pi_internet
@@ -104,6 +130,8 @@ interfaces:
     - geraete
     - geraet
     - mobilfunk
+    - internet
+    - zugang
     - wlan
     - verbrauch
     - protokoll

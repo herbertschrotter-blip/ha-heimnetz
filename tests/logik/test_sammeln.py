@@ -206,3 +206,106 @@ def test_internet_stoerung_wird_zusammengefasst():
     texte = [e.text for e in s.ereignisse]
     assert any(t.startswith("Internet-Störung vorbei: 2 Unterbrechungen") for t in texte), texte
     assert g.stoerung is None
+
+
+def test_zugang_dsl_ersatz_und_neusync():
+    """WU-0009: Zugang und DSL-Werte über mehrere Abrufe – Ersatz springt ein, Neusynchronisierung ins Journal,
+    Fehler je Stunde, alles übersteht das Gedächtnis."""
+    from logik import leitung as ln
+    from logik import zugang as zg
+
+    dsl_meldung = zg.Meldung(
+        zugangsart="DSL",
+        link="Up",
+        mobil_dienst=True,
+        mobil_an=True,
+        dsl_dienst=True,
+        dsl_status="Up",
+    )
+    leitung = ln.Dsl(t=T0, status="Up", sync_down=108_396, marge_down=52, crc=100, fec=1000)
+    g = sm.Gedaechtnis()
+    s = sm.auswerten(g, roh(zugang=dsl_meldung, dsl=leitung))
+    assert s.zugang_art == "dsl" and not s.ersatz_aktiv and s.dsl == leitung
+    assert not {e.art for e in s.ereignisse} & {"zugang", "ersatz_an", "dsl_sync"}
+
+    # 10 min später: Fehler je Stunde
+    s = sm.auswerten(
+        g, roh(T0 + 600, zugang=dsl_meldung, dsl=replace(leitung, t=T0 + 600, crc=102, fec=1100))
+    )
+    assert (s.dsl_crc_h, s.dsl_fec_h) == (12.0, 600.0)
+
+    # DSL weg, der Stick trägt
+    ausfall = replace(dsl_meldung, zugangsart="X_AVM-DE_LTE", dsl_status="NoSignal")
+    s = sm.auswerten(g, roh(T0 + 1200, zugang=ausfall, dsl=ln.Dsl(t=T0 + 1200, status="NoSignal")))
+    assert s.zugang_art == "dsl" and s.ersatz_aktiv
+    assert "ersatz_an" in {e.art for e in s.ereignisse}
+
+    # zurück: neu synchronisiert, Ersatz aus
+    s = sm.auswerten(
+        g, roh(T0 + 1800, zugang=dsl_meldung, dsl=replace(leitung, t=T0 + 1800, crc=0, fec=0))
+    )
+    arten = {e.art for e in s.ereignisse}
+    assert {"ersatz_aus", "dsl_sync"} <= arten and not s.ersatz_aktiv
+    assert s.dsl_neusync == 1 and s.dsl_seit == T0 + 1800
+
+    # Gedächtnis hin und zurück
+    g2 = sm.gedaechtnis_aus_dict(sm.gedaechtnis_als_dict(g))
+    assert (g2.zugang, g2.zugang_art, g2.zugang_haupt, g2.dsl, g2.dsl_neusync) == (
+        g.zugang,
+        g.zugang_art,
+        g.zugang_haupt,
+        g.dsl,
+        g.dsl_neusync,
+    )
+
+    # Zwischen den langsamen Abrufen bleibt der Stand; Zugang ohne DSL-Werte → DSL weg
+    s = sm.auswerten(g, roh(T0 + 1860))
+    assert s.zugang_art == "dsl" and s.dsl is not None
+    s = sm.auswerten(g, roh(T0 + 2400, zugang=replace(dsl_meldung, dsl_dienst=False)))
+    assert s.dsl is None
+
+
+def test_zugang_glasfaser_und_wechsel():
+    from logik import leitung as ln
+    from logik import zugang as zg
+
+    g = sm.Gedaechtnis()
+    s = sm.auswerten(g, roh(zugang=zg.Meldung(zugangsart="X_AVM-DE_LTE", mobil_dienst=True)))
+    assert s.zugang_art == "mobilfunk" and s.faser is None
+    faser = ln.Faser(t=T0 + 600, rx=-19_400, fehler_rx=10)
+    s = sm.auswerten(
+        g,
+        roh(
+            T0 + 600,
+            zugang=zg.Meldung(zugangsart="X_AVM-DE_Fiber", faser_dienst=True, faser_modus="GPON"),
+            faser=faser,
+        ),
+    )
+    assert s.zugang_art == "glasfaser" and s.faser == faser
+    assert [e.text for e in s.ereignisse if e.art == "zugang"] == [
+        "Internetzugang: jetzt Glasfaser (vorher Mobilfunk)"
+    ]
+
+
+def test_dsl_lesefehler_und_verbunden_seit():
+    """Ein einzelner Lesefehler lässt den DSL-Stand stehen; „verbunden seit“ bleibt auch nach 7 Tagen."""
+    from logik import leitung as ln
+    from logik import zugang as zg
+
+    m = zg.Meldung(zugangsart="DSL", link="Up", dsl_dienst=True, dsl_status="Up")
+    leitung = ln.Dsl(t=T0, status="Up", crc=10, fec=10)
+    g = sm.Gedaechtnis()
+    sm.auswerten(g, roh(zugang=m, dsl=leitung))
+    s = sm.auswerten(g, roh(T0 + 600, zugang=m, dsl=replace(leitung, t=T0 + 600, crc=0, fec=0)))
+    assert s.dsl_seit == T0 + 600
+    s = sm.auswerten(g, roh(T0 + 1200, zugang=m))  # DSL-Abfrage gescheitert
+    assert s.dsl is not None and s.dsl_seit == T0 + 600
+    spaet = T0 + 9 * 86_400
+    s = sm.auswerten(g, roh(spaet, zugang=m, dsl=replace(leitung, t=spaet, crc=5, fec=5)))
+    assert s.dsl_neusync == 0 and s.dsl_seit == T0 + 600
+    # während des Ausfalls (Ersatz) bleibt die Leitung mit „nicht synchron“
+    aus = replace(m, zugangsart="X_AVM-DE_LTE", dsl_status="NoSignal", mobil_dienst=True)
+    s = sm.auswerten(g, roh(spaet + 600, zugang=aus, dsl=ln.Dsl(t=spaet + 600, status="NoSignal")))
+    assert s.ersatz_aktiv and s.dsl.status == "NoSignal"
+    s = sm.auswerten(g, roh(spaet + 1200, zugang=m, dsl=replace(leitung, t=spaet + 1200)))
+    assert "dsl_sync" in {e.art for e in s.ereignisse} and s.dsl_seit == spaet + 1200

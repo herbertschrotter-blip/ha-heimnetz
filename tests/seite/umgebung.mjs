@@ -24,6 +24,7 @@ export const QUELLE = join(hier, '../../custom_components/heimnetz/frontend/src'
 export function machHass({ admin = true, dunkel = true, sprache = 'de' } = {}) {
   const aufrufe = [];
   let bilder = 0;
+  let zugang = null; // WU-0009: zuletzt gespeicherter Zugang (wie in der Integration)
   return {
     aufrufe,
     language: sprache,
@@ -47,6 +48,15 @@ export function machHass({ admin = true, dunkel = true, sprache = 'de' } = {}) {
       if (befehl === 'meldung/status') return { ...MELDUNGEN[0], status: msg.status, offen: msg.status !== 'geschlossen' };
       if (befehl === 'meldung/loeschen') return { ok: true };
       if (befehl === 'modem') return MODEM_ANTWORT(msg);
+      if (befehl === 'zugang/setzen') {
+        // WU-0009: wie die Integration – das Kennwort kommt nie zurück, nur „hinterlegt“
+        const z = zugang ?? DATEN.zugang;
+        zugang = { ...z, wahl: msg.wahl ?? z.wahl, adresse: 'adresse' in msg ? msg.adresse : z.adresse, ersatz_wahl: msg.ersatz ?? z.ersatz_wahl,
+          kennwort: msg.kennwort_loeschen ? false : !!msg.kennwort || z.kennwort, quelle: (msg.wahl ?? z.wahl) === 'auto' ? 'automatisch' : 'festgelegt' };
+        return zugang;
+      }
+      if (befehl === 'zugang/suchen') return { ...(zugang ?? DATEN.zugang), gesucht: true };
+      if (befehl === 'zugang' && zugang) return zugang;
       if (!(befehl in DATEN)) throw new Error(`unbekannt: ${msg.type}`);
       return DATEN[befehl];
     },

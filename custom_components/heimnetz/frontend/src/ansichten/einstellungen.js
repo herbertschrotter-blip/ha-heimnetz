@@ -5,7 +5,9 @@
 // (heimnetz/einrichtung), die Seite zeigt nur an und öffnet Home Assistant oder HACS an der richtigen Stelle.
 // WU-0008: sechster Reiter „Diagnose“ (Mockup netzwerk.html · Diagnose, 27.10.2026) – fragt auf Knopfdruck die
 // Rohdaten eines vorgeschalteten Modems ab (heimnetz/modem); Abfragen und Schwärzen macht die Integration, die Seite
-// zeigt nur an und speichert/kopiert die geschwärzte Antwort.
+// zeigt nur an und speichert/kopiert die geschwärzte Antwort. WU-0009: Reiter „Zugang“ vor „Einrichtung“ (Mockup
+// netzwerk.html · Internet und Zugang, 27.10.2026) – Vorschlag der Integration mit Belegen, Wahl des Admins, Adresse und
+// Kennwort eines vorgeschalteten Geräts (das Kennwort speichert die Integration, die Seite bekommt nur „hinterlegt“).
 import { html, nothing } from 'lit';
 import { live } from 'lit/directives/live.js';
 import { uhr, zahl, zeit } from '../format.js';
@@ -20,7 +22,16 @@ const SERIE = [[2, '2'], [3, '3'], [4, '4'], [5, '5']];
 const SCHWACH = [[30, '30 %'], [40, '40 %'], [50, '50 %']];
 
 export const TEILE = [['speed', '📈 Speedtest'], ['plan', merke('⏱️ Messplan')], ['wlan', merke('📶 WLAN')], ['meld', merke('💬 Meldungen')],
-  ['einr', merke('🧩 Einrichtung')], ['diag', merke('🔬 Diagnose')]];
+  ['zugang', merke('🌐 Zugang')], ['einr', merke('🧩 Einrichtung')], ['diag', merke('🔬 Diagnose')]];
+const WAHL = {
+  auto: [merke('Automatisch (empfohlen)'), ''],
+  box_mobil: [merke('Mobilfunk über die FRITZ!Box'), merke('eingebautes Modem oder Stick')],
+  extern: [merke('Mobilfunk über ein vorgeschaltetes Modem'), merke('ZTE, Huawei, TP-Link … (Beta)')],
+  dsl: [merke('DSL über die FRITZ!Box'), merke('ADSL, VDSL, Supervectoring')],
+  glasfaser: [merke('Glasfaser'), merke('über die FRITZ!Box oder ein eigenes Glasfaser-Modem')],
+  kabel: [merke('Kabel'), merke('über die FRITZ!Box')],
+};
+const ERSATZ = [['auto', merke('automatisch')], ['kein', merke('keiner')]];
 const STUFEN = { muss: merke('Muss'), soll: merke('Soll – empfohlen'), kann: merke('Kann – optional') };
 const ZEICHEN = { ok: '✓', fehlt: '!', muss: '✕', aus: '–' };
 
@@ -29,9 +40,10 @@ export function einstellungenBlatt(p) {
   const teil = p._blatt.teil || 'speed';
   const kopf = html`<div class="griff"></div><button class="zu" @click=${() => p.zu()}>✕</button>
     <h3>${t('Einstellungen')}</h3><div class="leise">${p.istAdmin ? t('gelten für die ganze Seite') : t('nur Admins ändern')}</div>
-    <div class="seg e-reiter">${TEILE.map(([k, name]) => html`<button class=${k === teil ? 'on' : ''} @click=${() => { p._blatt = { ...p._blatt, teil: k }; if (k === 'einr') p.einrichtungLaden(); }}>${t(name)}${k === 'einr' ? punkt(p) : nothing}</button>`)}</div>`;
+    <div class="seg e-reiter">${TEILE.map(([k, name]) => html`<button class=${k === teil ? 'on' : ''} @click=${() => { p._blatt = { ...p._blatt, teil: k }; if (k === 'einr') p.einrichtungLaden(); if (k === 'zugang') p.zugangLaden(); }}>${t(name)}${k === 'einr' ? punkt(p) : nothing}</button>`)}</div>`;
   if (teil === 'einr') return html`${kopf}<div class="ek"><div class="ek-inhalt">${einrichtung(p)}</div></div>`;
   if (teil === 'diag') return html`${kopf}<div class="ek"><div class="ek-inhalt">${diagnose(p)}</div></div>`;
+  if (teil === 'zugang') return html`${kopf}<div class="ek"><div class="ek-inhalt">${zugang(p)}</div></div>`;
   if (!e) return html`${kopf}<div class="leer">${t('lädt …')}</div>`;
   const inhalt = { speed: auswertung, plan: messplan, wlan, meld: (q) => meldungenZeile(q) }[teil](p, e);
   return html`${kopf}<div class="ek"><div class="ek-inhalt">${inhalt}</div></div>`;
@@ -112,6 +124,44 @@ function wlan(p, e) {
     <p class="hinweis">${t('Kanal, Gast-WLAN und Bänder stellst du in der FRITZ!Box ein – die Seite ändert dort nichts.')}</p>`;
 }
 
+/** WU-0009: Zugang – Vorschlag mit Belegen, Auswahl, vorgeschaltetes Gerät, Ersatz. Nur Admins. */
+function zugang(p) {
+  if (!p.istAdmin) return html`<p class="hinweis" style="padding-top:8px">${t('Den Zugang legen nur Admins fest.')}</p>`;
+  const z = p._daten.zugang;
+  if (!z) return p._hinweisZugang ? html`<p class="fein">${p._hinweisZugang}</p>` : html`<div class="leer">${t('lädt …')}</div>`;
+  const vorgeschaltet = z.wahl === 'extern' || (z.wahl === 'auto' && z.vorschlag_art === 'extern');
+  const adresseFeld = (ev) => ev.target.closest('.sheet').querySelector('input[name=zg-adresse]');
+  const kennwortFeld = (ev) => ev.target.closest('.sheet').querySelector('input[name=zg-kennwort]');
+  const speichern = (ev) => {
+    const kw = kennwortFeld(ev);
+    const werte = { adresse: adresseFeld(ev).value.trim() || null };
+    if (kw && kw.value) werte.kennwort = kw.value;
+    p.zugangSetzen(werte, kw);
+  };
+  return html`
+    <div class="vs-kopf"><b>${t('Vorschlag: {text}', { text: z.vorschlag })}</b><br><span class="leise">${z.belege.map((b, i) => html`${i ? html`<br>` : nothing}✓ ${b}`)}</span></div>
+    <div class="vs-stufe"><span>${t('Internet kommt über')}</span><span></span></div>
+    ${z.wahlen.map((k) => {
+      const [name, unter] = WAHL[k] || [k, ''];
+      const text = k === 'auto' ? t('jetzt: {text}', { text: z.vorschlag }) : t(unter);
+      return html`<button class="zg" data-wahl=${k} @click=${() => z.wahl !== k && p.zugangSetzen({ wahl: k })}><span class="zg-r ${z.wahl === k ? 'on' : ''}"></span><span>${t(name)}<small>${text}</small></span></button>`;
+    })}
+    ${vorgeschaltet ? html`<div class="vs-stufe"><span>${t('Vorgeschaltetes Gerät')}</span><span></span></div>
+      <label class="dg-feld">${t('Adresse')}<input name="zg-adresse" inputmode="decimal" list="zg-adressen" .value=${live(z.adresse || z.adresse_jetzt || z.adressen[0] || '')}>
+        <small>${t('vorgeschlagen: {liste} – nur Adressen im eigenen Heimnetz', { liste: z.adressen.join(', ') })}</small></label>
+      <datalist id="zg-adressen">${z.adressen.map((a) => html`<option value=${a}></option>`)}</datalist>
+      <label class="dg-feld">${t('Kennwort der Weboberfläche')}<input name="zg-kennwort" type="password" autocomplete="off" placeholder=${z.kennwort ? t('hinterlegt – zum Ändern neu eingeben') : t('wie beim Anmelden im Browser')}>
+        <small>${t('wird in Home Assistant gespeichert (wie bei anderen Integrationen), nie angezeigt')}</small></label>
+      <div class="dg-knoepfe"><button class="amber" @click=${speichern}>${t('Speichern')}</button>${z.kennwort ? html`<button @click=${() => p.zugangSetzen({ kennwort_loeschen: true })}>${t('Kennwort entfernen')}</button>` : nothing}</div>
+      <p class="hinweis" style="margin-top:6px">${t('Laufende Werte vom vorgeschalteten Gerät folgen in einer späteren Fassung; bis dahin zeigt 🔬 Diagnose die Rohdaten.')}</p>` : nothing}
+    <div class="vs-stufe"><span>${t('Ersatzzugang bei Ausfall')}</span><span></span></div>
+    <div class="ez"><span>${t('Ersatz')}<small>${t('z. B. Mobilfunk-Stick an der FRITZ!Box, wenn DSL ausfällt')}</small></span>${seg(tl(ERSATZ), z.ersatz_wahl, (v) => p.zugangSetzen({ ersatz: v }))}</div>
+    ${p._hinweisZugang ? html`<p class="fein">${p._hinweisZugang}</p>` : nothing}
+    <div class="dg-knoepfe" style="margin-top:8px"><button @click=${() => p.zugangSuchen()}>${t('↻ Erneut suchen')}</button>
+      <button @click=${() => p.zuDiagnose(vorgeschaltet ? z.adresse || z.adresse_jetzt || z.adressen[0] : null)}>${t('🔬 Rohdaten abfragen ›')}</button></div>
+    <p class="hinweis" style="margin-top:8px">${t('Gefragt wird nur die FRITZ!Box – kein Absuchen des Heimnetzes. Vorgeschlagen werden die Adresse vor der Box und übliche Modem-Adressen (192.168.0.1, 192.168.1.1, 192.168.8.1). Heimnetz liest nur.')}</p>`;
+}
+
 /** WU-0007: Punkt am Reiter – rot, wenn Nötiges fehlt, orange, wenn Empfohlenes fehlt (Farbe von der Integration). */
 function punkt(p) {
   const d = p.istAdmin && p._daten.einrichtung;
@@ -150,9 +200,9 @@ function diagnose(p) {
   if (!p.istAdmin) return html`<p class="hinweis" style="padding-top:8px">${t('Diese Abfrage können nur Admins starten.')}</p>`;
   const d = p._diag;
   const kopf = html`
-    <p class="hinweis" style="margin:4px 0 6px">${t('Kommt das Internet über ein eigenes 5G/LTE-Modem vor der FRITZ!Box (z. B. ZTE), kennt die Box das Funknetz nicht – Funk › Mobilfunk bleibt leer. Hier liest Heimnetz die Rohdaten des Modems aus, damit der Entwickler es unterstützen kann.')} <span class="neu">BETA</span></p>
+    <p class="hinweis" style="margin:4px 0 6px">${t('Kommt das Internet über ein eigenes 5G/LTE-Modem vor der FRITZ!Box (z. B. ZTE), kennt die Box das Funknetz nicht – Internet › Mobilfunk bleibt leer. Hier liest Heimnetz die Rohdaten des Modems aus, damit der Entwickler es unterstützen kann.')} <span class="neu">BETA</span></p>
     <label class="dg-feld">${t('Adresse des Modems')}<input name="adresse" inputmode="decimal" .value=${live(d.adresse)} ?disabled=${d.laeuft} @input=${(ev) => { p._diag = { ...p._diag, adresse: ev.target.value }; }}></label>
-    <label class="dg-feld">${t('Kennwort der Weboberfläche (optional)')}<input name="kennwort" type="password" autocomplete="off" placeholder=${t('wie beim Anmelden im Browser')} ?disabled=${d.laeuft}><small>${t('wird nur für diese Abfrage verwendet und nicht gespeichert')}</small></label>
+    <label class="dg-feld">${t('Kennwort der Weboberfläche (optional)')}<input name="kennwort" type="password" autocomplete="off" placeholder=${t('wie beim Anmelden im Browser')} ?disabled=${d.laeuft}><small>${t('wird nur für diese Abfrage verwendet und nicht gespeichert – leer: das unter 🌐 Zugang für diese Adresse hinterlegte')}</small></label>
     <div class="dg-knoepfe"><button class="amber" ?disabled=${d.laeuft} @click=${() => p.modemAbfragen()}>${d.laeuft ? t('⏳ fragt ab …') : t('▶ Abfragen')}</button></div>
     ${d.fehler ? html`<p class="fein">${d.fehler}</p>` : nothing}`;
   if (!d.antwort) return html`${kopf}<p class="hinweis" style="margin-top:8px">${t('Nur Adressen im eigenen Heimnetz (z. B. 192.168.x.x). Heimnetz liest nur und ändert am Modem nichts.')}</p>`;

@@ -1,4 +1,4 @@
-// Reiter „Funk“ · Mobilfunk: Befund, Verbindung zur Basisstation (Grafik und alle Zellen), Verbindung, Bänder, Verlauf.
+// Reiter „Internet“ · Mobilfunk (WU-0009, vorher „Funk“): Befund, Verbindung zur Basisstation (Grafik und alle Zellen), Verbindung, Bänder, Verlauf.
 import { html, svg, nothing } from 'lit';
 import { farbe, zeit } from '../format.js';
 import { kachel, seg } from './teile.js';

@@ -11,11 +11,13 @@ from typing import Any
 
 from . import befunde as bf
 from . import geraete as gr
+from . import leitung as ln
 from . import mobil as mb
 from . import protokoll as pr
 from . import stoerung as sg
 from . import verkehr as vk
 from . import wlan as wl
+from . import zugang as zg
 from .ereignis import INFO, KRITISCH, Ereignis
 from .sprache import DE, merke, t
 
@@ -60,6 +62,20 @@ class Gedaechtnis:
     gw_wechsel_seit: float | None = None
     dhcp: bf.DhcpTest | None = None
     langsam_t: float = 0.0
+    # WU-0009: Zugang (langsam gelesen) und Werte der Leitung
+    zugang: zg.Meldung | None = None
+    zugang_art: str = ""  # zuletzt erkannte Art (ohne Wahl des Admins)
+    zugang_haupt: str = (
+        ""  # zuletzt erkannter fester Zugang (DSL, Glasfaser, Kabel): Mobilfunk danach = Ersatz
+    )
+    ersatz_seit: float | None = None
+    dsl: ln.Dsl | None = None
+    dsl_neusync: list[float] = field(default_factory=list)
+    dsl_crc_h: float | None = None
+    dsl_fec_h: float | None = None
+    faser: ln.Faser | None = None
+    faser_fehler_h: float | None = None
+    dsl_seit: float | None = None  # letzte erkannte Neusynchronisierung (bleibt auch nach 7 Tagen)
 
     def langsam_faellig(self, jetzt: float) -> bool:
         return jetzt - self.langsam_t >= LANGSAM_S
@@ -84,6 +100,9 @@ class Rohdaten:
     wlan_gast: bool | None = None
     wlan_geraete: tuple[wl.Funkgeraet, ...] | None = None
     mesh: dict[str, str] | None = None  # Mesh-Geräte (langsam)
+    zugang: zg.Meldung | None = None  # WU-0009: Zugang (langsam)
+    dsl: ln.Dsl | None = None  # nur mit DSL-Dienst (langsam)
+    faser: ln.Faser | None = None  # nur mit Glasfaser-Dienst (langsam)
     fehler: tuple[str, ...] = ()
     sprache: str = DE  # Sprache der Texte (Befunde, Journal), nach Home Assistant
 
@@ -108,6 +127,17 @@ class Stand:
     wlan: wl.Wlan | None = None  # None = Box ohne WLAN-Dienst oder nicht gelesen
     mobil_baender: str = ""
     mesh: dict[str, str] = field(default_factory=dict)
+    # WU-0009: Zugang (zuletzt gelesen) und Werte der Leitung; None = noch nicht gelesen oder nicht vorhanden
+    zugang: zg.Meldung | None = None
+    zugang_art: str = ""  # erkannt, ohne Wahl des Admins
+    ersatz_aktiv: bool = False
+    dsl: ln.Dsl | None = None
+    dsl_crc_h: float | None = None
+    dsl_fec_h: float | None = None
+    dsl_neusync: int = 0  # in 7 Tagen
+    dsl_seit: float | None = None  # letzte erkannte Neusynchronisierung
+    faser: ln.Faser | None = None
+    faser_fehler_h: float | None = None
 
     @property
     def online(self) -> int:
@@ -193,6 +223,8 @@ def auswerten(g: Gedaechtnis, roh: Rohdaten) -> Stand:
     if roh.zaehler is not None:
         g.ring = vk.fortschreiben(g.ring, roh.zaehler)
 
+    ereignisse += _zugang(g, roh, sprache)
+
     alt = g.pi
     gw_mac = roh.pi.gw_mac or (
         alt.gw_mac if alt else ""
@@ -258,7 +290,54 @@ def auswerten(g: Gedaechtnis, roh: Rohdaten) -> Stand:
         wlan=wlan,
         mobil_baender=g.mobil_baender,
         mesh=dict(g.mesh),
+        zugang=g.zugang,
+        zugang_art=g.zugang_art,
+        ersatz_aktiv=g.ersatz_seit is not None,
+        dsl=g.dsl,
+        dsl_crc_h=g.dsl_crc_h,
+        dsl_fec_h=g.dsl_fec_h,
+        dsl_neusync=len(ln.neusync_fortschreiben(g.dsl_neusync, False, roh.jetzt)),
+        dsl_seit=g.dsl_seit,
+        faser=g.faser,
+        faser_fehler_h=g.faser_fehler_h,
     )
+
+
+def _zugang(g: Gedaechtnis, roh: Rohdaten, sprache: str) -> list[Ereignis]:
+    """WU-0009: Zugang erkennen (mit Gedächtnis für den Ersatz) und die Werte der Leitung fortschreiben."""
+    ereignisse: list[Ereignis] = []
+    haupt = g.zugang_haupt  # wie im Abruf (box.py liest DSL/Glasfaser auch während des Ersatzes)
+    if roh.zugang is not None:
+        art, ersatz = zg.art_erkennen(roh.zugang, g.zugang_haupt)
+        ereignisse += zg.abgleich(
+            g.zugang_art if g.zugang is not None else "",
+            art,
+            g.ersatz_seit is not None,
+            ersatz,
+            sprache,
+        )
+        g.zugang, g.zugang_art = roh.zugang, art
+        g.zugang_haupt, g.ersatz_seit = zg.haupt_merken(
+            g.zugang_haupt, g.ersatz_seit, art, ersatz, roh.jetzt
+        )
+    if roh.dsl is not None:
+        neu = ln.dsl_neu_synchron(g.dsl, roh.dsl)
+        if neu:
+            ereignisse.append(Ereignis("dsl_sync", INFO, t("DSL neu synchronisiert", sprache)))
+        g.dsl_crc_h, g.dsl_fec_h = ln.dsl_fehler_je_stunde(g.dsl, roh.dsl)
+        g.dsl_neusync = ln.neusync_fortschreiben(g.dsl_neusync, neu, roh.jetzt)
+        if neu:
+            g.dsl_seit = roh.jetzt
+        g.dsl = roh.dsl
+    elif roh.zugang is not None and not zg.dsl_lesen(roh.zugang, haupt):
+        # kein oder ungenutzter Anschluss; ein einzelner Lesefehler lässt den letzten Stand stehen
+        g.dsl, g.dsl_crc_h, g.dsl_fec_h, g.dsl_seit = None, None, None, None
+    if roh.faser is not None:
+        g.faser_fehler_h = ln.faser_fehler_je_stunde(g.faser, roh.faser)
+        g.faser = roh.faser
+    elif roh.zugang is not None and not zg.faser_lesen(roh.zugang, haupt):
+        g.faser, g.faser_fehler_h = None, None
+    return ereignisse
 
 
 GEDAECHTNIS_VERSION = 1
@@ -285,6 +364,14 @@ def gedaechtnis_als_dict(g: Gedaechtnis) -> dict[str, Any]:
         "stoerung": g.stoerung.als_dict() if g.stoerung else None,
         "gw_mac_bekannt": g.gw_mac_bekannt,
         "gw_wechsel_seit": g.gw_wechsel_seit,
+        "zugang": asdict(g.zugang) if g.zugang else None,
+        "zugang_art": g.zugang_art,
+        "zugang_haupt": g.zugang_haupt,
+        "ersatz_seit": g.ersatz_seit,
+        "dsl": asdict(g.dsl) if g.dsl else None,
+        "dsl_neusync": g.dsl_neusync,
+        "dsl_seit": g.dsl_seit,
+        "faser": asdict(g.faser) if g.faser else None,
     }
 
 
@@ -311,4 +398,12 @@ def gedaechtnis_aus_dict(d: dict[str, Any]) -> Gedaechtnis:
     g.stoerung = sg.aus_dict(d.get("stoerung"))
     g.gw_mac_bekannt = d.get("gw_mac_bekannt") or ""
     g.gw_wechsel_seit = d.get("gw_wechsel_seit")
+    g.zugang = zg.Meldung(**d["zugang"]) if d.get("zugang") else None
+    g.zugang_art = d.get("zugang_art") or ""
+    g.zugang_haupt = d.get("zugang_haupt") or ""
+    g.ersatz_seit = d.get("ersatz_seit")
+    g.dsl = ln.Dsl(**d["dsl"]) if d.get("dsl") else None
+    g.dsl_neusync = [float(x) for x in d.get("dsl_neusync") or []]
+    g.dsl_seit = d.get("dsl_seit")
+    g.faser = ln.Faser(**d["faser"]) if d.get("faser") else None
     return g

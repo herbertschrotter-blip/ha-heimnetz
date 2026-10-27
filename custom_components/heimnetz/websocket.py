@@ -13,8 +13,9 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import config_validation as cv
 
 from . import ansichten, einrichtung, modem
-from .const import DOMAIN, SEITEN_SPRACHE
+from .const import CONF_MODEM_KENNWORT, DOMAIN, SEITEN_SPRACHE
 from .logik import auswertung as aw
+from .logik import zugang as zg
 from .logik.einstellungen import Ungueltig
 from .logik.sprache import t
 
@@ -184,6 +185,79 @@ async def _mobilfunk(
         connection.send_result(msg["id"], await ansichten.mobilfunk(hass, lz, msg["tage"]))
 
 
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): f"{DOMAIN}/internet",
+        vol.Optional("tage", default=1): vol.In((1, 7, 30)),
+    }
+)
+@websocket_api.async_response
+async def _internet(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
+) -> None:
+    """WU-0009: Reiter „Internet“ – Herkunft des Zugangs und die Werte der Zugangsart."""
+    if lz := _laufzeit(hass, connection, msg):
+        connection.send_result(msg["id"], await ansichten.internet(hass, lz, msg["tage"]))
+
+
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/zugang"})
+@websocket_api.require_admin
+@callback
+def _zugang(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
+) -> None:
+    """WU-0009: ⚙ › Zugang (nur Admins) – vom Kennwort nur, ob eines hinterlegt ist."""
+    if lz := _laufzeit(hass, connection, msg):
+        connection.send_result(msg["id"], ansichten.zugang(hass, lz))
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): f"{DOMAIN}/zugang/setzen",
+        vol.Optional("wahl"): vol.In(zg.WAHLEN),
+        vol.Optional("adresse"): vol.Any(None, vol.All(str, vol.Length(max=60))),
+        vol.Optional("ersatz"): vol.In(zg.ERSATZ_WAHLEN),
+        vol.Optional("kennwort"): vol.All(str, vol.Length(min=1, max=200)),
+        vol.Optional("kennwort_loeschen", default=False): bool,
+    }
+)
+@websocket_api.require_admin
+@websocket_api.async_response
+async def _zugang_setzen(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
+) -> None:
+    """WU-0009: Zugang festlegen (nur Admins). Wahl und Adresse über den Einstellungsdienst; das Kennwort nur in den
+    Optionen des Eintrags – es steht in keiner Antwort und in keinem Protokoll."""
+    if lz := _laufzeit(hass, connection, msg):
+        daten = {f"zugang_{k}": msg[k] for k in ("wahl", "adresse", "ersatz") if k in msg}
+        try:
+            if daten:
+                await lz.einstellungen.async_setzen(daten)
+        except Ungueltig as err:
+            connection.send_error(msg["id"], "ungueltig", err.text(ansichten.sprache(hass)))
+            return
+        entry = lz.abruf.config_entry
+        if "kennwort" in msg or msg["kennwort_loeschen"]:
+            optionen = {k: v for k, v in entry.options.items() if k != CONF_MODEM_KENNWORT}
+            if "kennwort" in msg and not msg["kennwort_loeschen"]:
+                optionen[CONF_MODEM_KENNWORT] = msg["kennwort"]
+            hass.config_entries.async_update_entry(entry, options=optionen)
+        lz.abruf.async_update_listeners()  # Sensor „Internetzugang“ folgt der Wahl gleich
+        connection.send_result(msg["id"], ansichten.zugang(hass, lz))
+
+
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/zugang/suchen"})
+@websocket_api.require_admin
+@websocket_api.async_response
+async def _zugang_suchen(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
+) -> None:
+    """WU-0009: „Erneut suchen“ – den Zugang im gemeinsamen Abruf neu lesen (nur die Box, nichts absuchen)."""
+    if lz := _laufzeit(hass, connection, msg):
+        gesucht = await lz.abruf.zugang_suchen()
+        connection.send_result(msg["id"], {**ansichten.zugang(hass, lz), "gesucht": gesucht})
+
+
 @websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/wlan"})
 @websocket_api.async_response
 async def _wlan(
@@ -342,9 +416,13 @@ async def _modem(
 ) -> None:
     """WU-0008: Rohdaten eines vorgeschalteten Modems abfragen (nur Admins; nur lesen). Das Kennwort wird nur für
     diese Abfrage verwendet, nie gespeichert und steht in keiner Antwort; die Rohdaten kommen geschwärzt zurück."""
-    antwort = await modem.abfragen(
-        hass, msg["adresse"], msg.get("kennwort"), ansichten.sprache(hass)
-    )
+    kennwort = msg.get("kennwort")
+    if not kennwort:
+        # WU-0009: ohne eingetipptes Kennwort das in ⚙ › Zugang hinterlegte – nur für genau diese Adresse
+        for e in hass.config_entries.async_loaded_entries(DOMAIN):
+            if msg["adresse"].strip() == (e.runtime_data.einstellungen.wert.zugang_adresse or ""):
+                kennwort = e.options.get(CONF_MODEM_KENNWORT) or None
+    antwort = await modem.abfragen(hass, msg["adresse"], kennwort, ansichten.sprache(hass))
     connection.send_result(msg["id"], antwort)
 
 
@@ -356,6 +434,10 @@ BEFEHLE = (
     _geraet,
     _geraet_art,
     _mobilfunk,
+    _internet,
+    _zugang,
+    _zugang_setzen,
+    _zugang_suchen,
     _wlan,
     _verbrauch,
     _protokoll,

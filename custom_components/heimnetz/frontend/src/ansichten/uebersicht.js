@@ -17,7 +17,7 @@ export function uebersicht(p, u) {
       aus ? t('nicht verfügbar') : [g.neu ? t('{n} neu', { n: g.neu }) : '', g.wackelt ? t('{n} wackelt', { n: g.wackelt }) : ''].filter(Boolean).join(' · ') || t('alles ruhig'),
       () => p.geh('geraete')),
     kachel(t('Empfang'), e ? html`${e.rsrp_anker ?? '–'}<small> dBm</small>` : '–',
-      e ? `${e.wort ?? ''}${e.rsrp_5g != null ? ` · 5G ${e.rsrp_5g} dBm` : ''}` : t('nicht verfügbar'), () => { p.setze('funk', { teil: 'mobilfunk' }, false); p.geh('funk'); }),
+      e ? `${e.wort ?? ''}${e.rsrp_5g != null ? ` · 5G ${e.rsrp_5g} dBm` : ''}` : t('nicht verfügbar'), () => { p.setze('internet', { sicht: 'haupt' }, false); p.geh('internet'); }),
     kachel('Speedtest', s && s.down != null ? html`${zahl(s.down)}<small> Mbit/s</small>` : '–',
       s ? `↑ ${zahl(s.up)} · ${zahl(s.ping)} ms · ${vor(s.t)}` : t('noch keine Messung'), () => p.geh('speedtest')),
     kachel(t('Heute'), h ? html`${zahl(h.down + h.up, 1)}<small> GB</small>` : '–',

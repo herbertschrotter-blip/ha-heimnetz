@@ -72,7 +72,11 @@ class Optionen(OptionsFlow):
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         if user_input is not None:
             wert = (user_input.get(CONF_OPENCELLID) or "").strip()
-            return self.async_create_entry(data={CONF_OPENCELLID: wert} if wert else {})
+            # andere Optionen (WU-0009: Kennwort des vorgeschalteten Modems) bleiben, wie sie sind
+            daten = {k: v for k, v in self.config_entry.options.items() if k != CONF_OPENCELLID}
+            if wert:
+                daten[CONF_OPENCELLID] = wert
+            return self.async_create_entry(data=daten)
         schema = vol.Schema(
             {
                 vol.Optional(

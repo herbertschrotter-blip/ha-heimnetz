@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Any
 
+from . import zugang as zg
+from .modem import adresse_erlaubt
 from .sprache import Ungueltig, merke
 
 __all__ = ["Einstellungen", "Ungueltig", "pruefen"]
@@ -21,6 +23,10 @@ class Einstellungen:
     tarif_up: float | None = None
     ab: date | None = None  # Messungen davor zählen nicht mit
     wlan_schwach: int = 40  # Empfang darunter gilt als schwach
+    # WU-0009: woher kommt das Internet – „auto“ = erkannt; Adresse eines vorgeschalteten Geräts (nur private)
+    zugang_wahl: str = "auto"
+    zugang_adresse: str | None = None
+    zugang_ersatz: str = "auto"
 
     def als_dict(self) -> dict[str, Any]:
         return {
@@ -28,6 +34,9 @@ class Einstellungen:
             "tarif_up": self.tarif_up,
             "ab": self.ab.isoformat() if self.ab else None,
             "wlan_schwach": self.wlan_schwach,
+            "zugang_wahl": self.zugang_wahl,
+            "zugang_adresse": self.zugang_adresse,
+            "zugang_ersatz": self.zugang_ersatz,
         }
 
 
@@ -67,9 +76,23 @@ def pruefen(daten: dict[str, Any], heute: date) -> Einstellungen:
         raise Ungueltig(
             "Schwacher Empfang: {werte} Prozent", werte=", ".join(str(x) for x in WLAN_SCHWACH)
         )
+    wahl = daten.get("zugang_wahl") or "auto"
+    if wahl not in zg.WAHLEN:
+        raise Ungueltig("Zugang: {werte}", werte=", ".join(zg.WAHLEN))
+    ersatz = daten.get("zugang_ersatz") or "auto"
+    if ersatz not in zg.ERSATZ_WAHLEN:
+        raise Ungueltig("Ersatzzugang: {werte}", werte=", ".join(zg.ERSATZ_WAHLEN))
+    adresse = str(daten.get("zugang_adresse") or "").strip() or None
+    if adresse is not None and not adresse_erlaubt(adresse):
+        raise Ungueltig(
+            "Adresse nicht erlaubt: nur private Adressen im eigenen Heimnetz (z. B. 192.168.0.1)"
+        )
     return Einstellungen(
         _tarif(daten.get("tarif_down"), merke("Tarif Download")),
         _tarif(daten.get("tarif_up"), merke("Tarif Upload")),
         datum,
         int(schwach),
+        wahl,
+        adresse,
+        ersatz,
     )

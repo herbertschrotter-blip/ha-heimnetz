@@ -20,12 +20,13 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.util import dt as dt_util
 
 from . import abfragen as ab
-from .const import sprache
+from .const import CONF_MODEM_KENNWORT, sprache
 from .logik import arten as ar
 from .logik import auswertung as aw
 from .logik import befunde as bf
 from .logik import geraete as gr
 from .logik import karte as ka
+from .logik import leitung as ln
 from .logik import messplan as mp
 from .logik import mobil as mb
 from .logik import ocid as lc
@@ -33,6 +34,7 @@ from .logik import osm as lo
 from .logik import verbrauch as vb
 from .logik import verlauf as vl
 from .logik import wlan as wl
+from .logik import zugang as zg
 from .logik.ereignis import Ereignis
 from .logik.sprache import merke, t
 from .logik.werte import ohne_mac
@@ -575,6 +577,193 @@ def _journal_art(lz: Laufzeit, art: str, ab_: float) -> list[dict[str, Any]]:
     ]
 
 
+# ── Internet: Zugang und Werte je Zugangsart (WU-0009) ──
+FEHLT = merke("liefert die Schnittstelle der Box nicht")
+
+
+def zugang_jetzt(lz: Laufzeit, s: str) -> zg.Internetzugang:
+    """Zugang aus dem zuletzt Gelesenen und der Wahl des Admins (⚙ › Zugang)."""
+    st, w = lz.abruf.data, lz.einstellungen.wert
+    info = lz.abruf.box_info
+    return zg.beschreiben(
+        st.zugang or zg.Meldung(),
+        st.zugang_art,
+        st.ersatz_aktiv,
+        w.zugang_wahl,
+        w.zugang_adresse,
+        w.zugang_ersatz,
+        info.modell if info else "",
+        st.mobil.technik if st.mobil else "",
+        s,
+    )
+
+
+def _zugang_kurz(z: zg.Internetzugang) -> dict[str, Any]:
+    return {
+        "art": z.art,
+        "quelle": z.quelle,
+        "weg": z.weg,
+        "titel": z.titel,
+        "geraet": z.geraet,
+        "weg_text": z.weg_text,
+        "ersatz": z.ersatz or None,
+        "ersatz_aktiv": z.ersatz_aktiv,
+        "ersatz_text": z.ersatz_text or None,
+        "abweichung": z.vorschlag if z.abweichung else None,
+        "adresse": z.adresse or None,  # nur bei vorgeschaltetem Gerät, nur privat (für 🔬 Diagnose)
+        "kopf": z.kopf,
+    }
+
+
+async def _verlauf(
+    hass: HomeAssistant, lz: Laufzeit, schluessel: dict[str, str], tage: int
+) -> dict[str, list[list[float]]]:
+    """Verlauf eigener Sensoren aus der Aufzeichnung (Mittel je Stunde) – wie beim Mobilfunk."""
+    jetzt = _jetzt()
+    eintrag = lz.abruf.config_entry.entry_id
+    ids = {k: ab.eigene(hass, eintrag, v) for k, v in schluessel.items()}
+    stat = await ab.statistik(
+        hass, ids.values(), _dt(jetzt - tage * TAG_S), _dt(jetzt), "hour", "mean"
+    )
+    return {
+        k: [[t_, v] for t_, v in stat.get(sid or "", []) if v is not None] for k, sid in ids.items()
+    }
+
+
+async def _dsl_daten(hass: HomeAssistant, lz: Laufzeit, s: str) -> dict[str, Any] | None:
+    st = lz.abruf.data
+    d = st.dsl
+    if d is None:
+        return None
+    b = ln.dsl_bewerten(d, st.dsl_crc_h, st.dsl_neusync, s)
+    neusync = await hass.async_add_executor_job(_journal_art, lz, "dsl_sync", _jetzt() - 7 * TAG_S)
+    w = lz.einstellungen.wert
+    verfahren = " · ".join(
+        x for x in (d.modulation, t("Profil {p}", s, p=d.profil) if d.profil else "") if x
+    )
+    return {
+        "bewertung": asdict(b),
+        "status": t(zg.DSL_STATUS.get(d.status, d.status or "–"), s),
+        "sync_down": ln.mbit(d.sync_down),
+        "sync_up": ln.mbit(d.sync_up),
+        "max_down": ln.mbit(d.max_down),
+        "max_up": ln.mbit(d.max_up),
+        "tarif_down": w.tarif_down,
+        "tarif_up": w.tarif_up,
+        "anteil_down": ln.anteil(d.sync_down, d.max_down),
+        "marge_down": ln.db(d.marge_down),
+        "marge_up": ln.db(d.marge_up),
+        "marge_gut": ln.MARGE_GUT_DB,
+        "marge_stufe": ln.marge_stufe(d) or None,
+        "daempfung_down": ln.db(d.daempfung_down),
+        "daempfung_up": ln.db(d.daempfung_up),
+        "verfahren": verfahren or None,
+        "seit": st.dsl_seit,
+        "seit_text": ln.dauer(_jetzt() - st.dsl_seit, s) if st.dsl_seit else None,
+        "crc_h": st.dsl_crc_h,
+        "fec_h": st.dsl_fec_h,
+        "neusync_7": st.dsl_neusync,
+        "neusync": neusync,
+        "gegenstelle": None,
+        "fehlt": t(FEHLT, s),
+        "verlauf": await _verlauf(hass, lz, {"sync": "dsl_sync_down", "marge": "dsl_snr_down"}, 7),
+    }
+
+
+async def _faser_daten(hass: HomeAssistant, lz: Laufzeit, s: str) -> dict[str, Any] | None:
+    st = lz.abruf.data
+    f = st.faser
+    if f is None:
+        return None
+    rx_b, tx_b = ln.licht_bereich(f), ln.sende_bereich(f)
+    z = st.zugang
+    return {
+        "bewertung": asdict(ln.faser_bewerten(f, s)),
+        "rx": ln.dbm(f.rx),
+        "tx": ln.dbm(f.tx),
+        "rx_bereich": list(rx_b) if rx_b else None,
+        "tx_bereich": list(tx_b) if tx_b else None,
+        "modus": f.modus or None,
+        "down_mbit": round(z.down_bit / 1e6) if z and z.down_bit else None,
+        "up_mbit": round(z.up_bit / 1e6) if z and z.up_bit else None,
+        "seit_text": ln.dauer(f.minuten * 60, s) if f.minuten else None,
+        "fehler_h": st.faser_fehler_h,
+        "resyncs": f.resyncs,
+        "fehlt": t(FEHLT, s),
+        "verlauf": await _verlauf(hass, lz, {"rx": "glasfaser_rx"}, 7),
+    }
+
+
+def _kabel_daten(lz: Laufzeit, s: str) -> dict[str, Any]:
+    z = lz.abruf.data.zugang
+    return {
+        "down_mbit": round(z.down_bit / 1e6) if z and z.down_bit else None,
+        "up_mbit": round(z.up_bit / 1e6) if z and z.up_bit else None,
+        "verbunden": z.link == "Up" if z and z.link else None,
+        "fehlt": t(FEHLT, s),
+    }
+
+
+async def _ersatz_daten(
+    hass: HomeAssistant, lz: Laufzeit, z: zg.Internetzugang, s: str
+) -> dict[str, Any] | None:
+    if not z.ersatz:
+        return None
+    jetzt = _jetzt()
+    ab_ = jetzt - 30 * TAG_S
+    an = await hass.async_add_executor_job(_journal_art, lz, "ersatz_an", ab_ - 30 * TAG_S)
+    aus = await hass.async_add_executor_job(_journal_art, lz, "ersatz_aus", ab_ - 30 * TAG_S)
+    n, sek, letzte = zg.ersatz_zeiten(
+        [x["t"] for x in an], [x["t"] for x in aus], ab_, jetzt, z.ersatz_aktiv
+    )
+    m = lz.abruf.data.mobil
+    return {
+        "aktiv": z.ersatz_aktiv,
+        "text": z.ersatz_text,
+        "umschaltungen_30": n,
+        "dauer_30": ln.dauer(sek, s) if sek else None,
+        "letzte": letzte,
+        "rsrp": m.haupt.rsrp if m and m.haupt else None,
+        "technik": m.technik if m else None,
+    }
+
+
+async def internet(hass: HomeAssistant, lz: Laufzeit, tage: int) -> dict[str, Any]:
+    """Reiter „Internet“: Herkunft des Zugangs und die Werte der gewählten Zugangsart."""
+    s = sprache(hass)
+    z = zugang_jetzt(lz, s)
+    return {
+        "zugang": _zugang_kurz(z),
+        # die Ansicht Ersatz braucht nur Signal und Technik (in „ersatz“) – nicht die ganze Mobilfunk-Ansicht
+        "mobilfunk": await mobilfunk(hass, lz, tage) if z.art == "mobilfunk" else None,
+        "dsl": await _dsl_daten(hass, lz, s) if z.art == "dsl" else None,
+        "glasfaser": await _faser_daten(hass, lz, s) if z.art == "glasfaser" else None,
+        "kabel": _kabel_daten(lz, s) if z.art == "kabel" else None,
+        "ersatz": await _ersatz_daten(hass, lz, z, s),
+    }
+
+
+def zugang(hass: HomeAssistant, lz: Laufzeit) -> dict[str, Any]:
+    """⚙ › Zugang: Vorschlag mit Belegen, Wahl, Adresse; vom Kennwort nur, ob eines hinterlegt ist."""
+    s = sprache(hass)
+    z = zugang_jetzt(lz, s)
+    w = lz.einstellungen.wert
+    return {
+        **_zugang_kurz(z),
+        "vorschlag": z.vorschlag,
+        "vorschlag_art": z.vorschlag_art or None,
+        "belege": list(z.belege),
+        "wahl": w.zugang_wahl,
+        "wahlen": list(zg.WAHLEN),
+        "ersatz_wahl": w.zugang_ersatz,
+        "adresse": w.zugang_adresse,
+        "adresse_jetzt": z.adresse or None,
+        "adressen": list(z.adressen),
+        "kennwort": bool(lz.abruf.config_entry.options.get(CONF_MODEM_KENNWORT)),
+        "gelesen": lz.abruf.data.zugang is not None,
+    }
+
+
 # ── WLAN ──
 async def wlan(hass: HomeAssistant, lz: Laufzeit) -> dict[str, Any]:
     """Bänder, Geräte im WLAN (schwächstes zuerst), Befunde und Kanalwechsel der letzten 7 Tage."""
@@ -798,6 +987,7 @@ async def uebersicht(hass: HomeAssistant, lz: Laufzeit) -> dict[str, Any]:
         ],
         "pruefungen": pruefungen,
         "internet": {"ok": s.pi.internet, "technik": m.technik if m else None},
+        "zugang": _zugang_kurz(zugang_jetzt(lz, sp_)),
         "geraete": {
             "online": s.online,
             "bekannt": len(s.geraete),

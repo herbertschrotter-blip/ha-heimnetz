@@ -18,6 +18,7 @@ from custom_components.heimnetz.logik import messplan as mp
 from custom_components.heimnetz.logik import mobil as mb
 from custom_components.heimnetz.logik import protokoll as pr
 from custom_components.heimnetz.logik import wlan as wl
+from custom_components.heimnetz.logik import zugang as zg
 from tests.logik.daten import GERAETELOG, HOSTLISTE, WLANLISTE, ZELLEN
 
 pytest_plugins = ["pytest_homeassistant_custom_component"]
@@ -84,6 +85,15 @@ def box_daten(**kw) -> BoxDaten:
         "wlan_baender": (wl.Band("2,4", True, 6, True, "ax"), wl.Band("5", True, 44, True, "ax")),
         "wlan_gast": False,
         "wlan_geraete": wl.geraete_aus(WLANLISTE),
+        # WU-0009: Mobilfunk über das eingebaute Modem wie bei der FRITZ!Box 6860 5G
+        "zugang": zg.Meldung(
+            zugangsart="X_AVM-DE_LTE",
+            link="Up",
+            down_bit=1_000_000_000,
+            up_bit=150_000_000,
+            mobil_dienst=True,
+            mobil_an=True,
+        ),
     }
     werte.update(kw)
     return BoxDaten(**werte)

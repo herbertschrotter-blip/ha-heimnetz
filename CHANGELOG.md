@@ -1,5 +1,42 @@
 # CHANGELOG
 
+## [0.26.0]
+
+- WU-0009 Stufe 1 (Mockup abgenommen 27.10.2026): Der Reiter **Funk** heißt **Internet**. Oben steht, woher das
+  Internet kommt („Internet über Mobilfunk / DSL / Glasfaser / Kabel / ein vorgeschaltetes Gerät“) mit Gerät, Weg und
+  Abzeichen „automatisch erkannt“ oder „festgelegt“; „ändern ›“ öffnet ⚙ → 🌐 Zugang. Darunter die Werte der
+  Zugangsart: Mobilfunk wie bisher; **DSL** mit Bewertung (Störabstandsmarge gut ab 6 dB, Fehler je Stunde,
+  Neusynchronisierungen in 7 Tagen – z. B. „Reserve knapp“), Synchronrate mit möglicher Rate und Tarif, Dämpfung,
+  Verfahren/Profil, CRC/FEC je Stunde, Verlauf 7 Tage; **Glasfaser** mit empfangener und gesendeter Lichtleistung im
+  guten Bereich laut Box, Verbindung, Verlauf; **Kabel** mit der Geschwindigkeit der Verbindung. Was die Schnittstelle
+  der Box (TR-064) nicht liefert – Gegenstelle und Vectoring bei DSL, Status O1–O7 und Temperatur bei Glasfaser, Kanäle,
+  Pegel, MER und Fehler bei Kabel –, steht als „–“ mit dem Hinweis „liefert die Schnittstelle der Box nicht“; die
+  Weboberfläche der Box wird nicht ausgelesen. **Ersatzzugang** (Mobilfunk-Stick an einer DSL-/Glasfaser-/Kabel-Box)
+  als eigener Umschalter mit Umschaltungen und Dauer der letzten 30 Tage. Bei einem vorgeschalteten Modem der Hinweis
+  „Werte vom vorgeschalteten Gerät folgen“ und der Sprung zu 🔬 Diagnose. Die Kopfzeile der Seite zeigt Box und Zugang.
+- WU-0009: **WLAN** steht jetzt im Reiter **Geräte** (Umschalter „Geräte | WLAN“); die Kachel „Empfang“ der Übersicht
+  springt in den Reiter Internet.
+- WU-0009: Zugang erkennen in der Fachlogik `logik/zugang.py` (mit Tests) – aus TR-064 `GetCommonLinkProperties`
+  (Zugangsart, Verbindung, Rate), `X_AVM-DE_GetAddonInfos` (Betriebsart, z. B. IP-Client; neuere FRITZ!OS), Mobilfunk
+  `GetInfo`, DSL- und Glasfaser-Status und der Art der WAN-Adresse (privat / Netz des Anbieters / öffentlich – die
+  Adresse selbst verlässt `box.py` nicht). Meldet eine DSL-Box plötzlich Mobilfunk, gilt das als Ersatz, nicht als
+  Wechsel (nach 14 Tagen als neuer Zugang). Werte der Leitung und Bewertungen in `logik/leitung.py` (mit Tests).
+  Gelesen wird nur im gemeinsamen Abruf im 10-Minuten-Takt, keine zweite Verbindung; ein Box-Abruf läuft nie doppelt.
+  Journal: Zugang gewechselt, Ersatz springt ein / wieder aus, DSL neu synchronisiert.
+- WU-0009: Neuer Reiter **⚙ → 🌐 Zugang** (vor „Einrichtung“, nur Admins): Vorschlag mit Belegen, Auswahl Automatisch /
+  Mobilfunk über die Box / vorgeschaltetes Modem / DSL / Glasfaser / Kabel, Ersatzzugang automatisch/keiner; bei
+  vorgeschaltetem Modem Adresse (Vorschläge: Adresse vor der Box und 192.168.0.1, 192.168.1.1, 192.168.8.1 – nur private
+  Adressen, kein Absuchen) und Kennwort der Weboberfläche. Das Kennwort wird in den Optionen der Einrichtung gespeichert,
+  nie an die Seite zurückgegeben („hinterlegt“), nie protokolliert und in der Diagnose geschwärzt; „Kennwort entfernen“.
+  „↻ Erneut suchen“ liest den Zugang im nächsten gemeinsamen Abruf sofort (höchstens alle 30 s); „🔬 Rohdaten
+  abfragen ›“ springt in die Diagnose und übernimmt die Adresse. Bleibt das Kennwortfeld der Diagnose leer, nimmt die
+  Abfrage das hinterlegte Kennwort, wenn die Adresse die unter 🌐 Zugang gespeicherte ist. Neue WebSocket-Befehle `heimnetz/internet` (lesen) sowie `heimnetz/zugang`,
+  `heimnetz/zugang/setzen` und `heimnetz/zugang/suchen` (nur Admins).
+- WU-0009: Neue Entitäten **Internetzugang** (immer) und – nur wenn das Internet über diesen Anschluss kommt – DSL
+  Synchronrate, Störabstandsmarge und Dämpfung je Richtung, DSL Fehler je Stunde, Glasfaser empfangene und gesendete
+  Lichtleistung (Verlauf über den Recorder).
+- Die Optionen von Heimnetz (OpenCellID-Schlüssel) behalten beim Speichern die übrigen Optionen.
+
 ## [0.25.1]
 
 - Fix (WU-0008): Im Reiter **🔬 Diagnose** sprang eine eingetippte Adresse auf 192.168.0.1 zurück, sobald Home Assistant

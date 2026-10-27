@@ -66,6 +66,20 @@
    "ok": true,
    "technik": "5G-NSA"
   },
+  "zugang": {
+   "art": "mobilfunk",
+   "quelle": "automatisch",
+   "weg": "eingebaut",
+   "titel": "Internet über Mobilfunk",
+   "geraet": "FRITZ!Box",
+   "weg_text": "eingebautes Modem",
+   "ersatz": null,
+   "ersatz_aktiv": false,
+   "ersatz_text": null,
+   "abweichung": null,
+   "adresse": null,
+   "kopf": "FRITZ!Box · Mobilfunk 5G-NSA"
+  },
   "geraete": {
    "online": 5,
    "bekannt": 5,
@@ -2159,6 +2173,9 @@
   "tarif_up": 30.0,
   "ab": null,
   "wlan_schwach": 40,
+  "zugang_wahl": "auto",
+  "zugang_adresse": null,
+  "zugang_ersatz": "auto",
   "messplan": {
    "an": true,
    "takt_h": 4,
@@ -2836,5 +2853,282 @@
     ]
    }
   ]
+ },
+ "internet": {
+  "zugang": {
+   "art": "mobilfunk",
+   "quelle": "automatisch",
+   "weg": "eingebaut",
+   "titel": "Internet über Mobilfunk",
+   "geraet": "FRITZ!Box",
+   "weg_text": "eingebautes Modem",
+   "ersatz": null,
+   "ersatz_aktiv": false,
+   "ersatz_text": null,
+   "abweichung": null,
+   "adresse": null,
+   "kopf": "FRITZ!Box · Mobilfunk 5G-NSA"
+  },
+  "mobilfunk": {
+   "verfuegbar": true,
+   "technik": "5G-NSA",
+   "befund": {
+    "lage": 0.5,
+    "titel": "Empfang mittelmäßig – Standort der Box lohnt einen Versuch",
+    "text": "Signalstärke -100 dBm (4G-Anker) und -94 dBm (5G). Der Download der letzten 7 Tage liegt typisch bei 114,5 Mbit/s = 76 % vom Tarif. Bei mittlerem Empfang kann beides bremsen: die Funkstrecke und eine volle Zelle. Test: die Box an ein anderes Fenster oder höher stellen – steigt die Signalstärke um etwa 10 dBm und der Download nicht, liegt es an der Zelle (Anbieter)."
+   },
+   "verlauf": {
+    "anker": [],
+    "nr": []
+   },
+   "schwach_unter": -105,
+   "laufzeit_s": 3720,
+   "laufzeit": "1 h 2 min",
+   "abbrueche_7": 0,
+   "letzter_abbruch": null,
+   "baender": "LTE 1, 3 · 5G n78",
+   "strecke": {
+    "rsrp": -100,
+    "lage": 0.5,
+    "wort": "mittel",
+    "entfernung": "1,4 km",
+    "anbieter": "3 AT",
+    "masten": [
+     "5G",
+     "4G"
+    ]
+   },
+   "zellen": [
+    {
+     "art": "5G",
+     "rolle": "bündelt dazu",
+     "rolle_art": "dazu",
+     "anker": false,
+     "kennung": "PCI 121",
+     "rsrp": -94,
+     "rsrq": -10,
+     "stufen": 3,
+     "lage": 0.65,
+     "tac": null,
+     "plmn": null,
+     "fund": null,
+     "such": "nur PCI – nicht nachschlagbar"
+    },
+    {
+     "art": "LTE",
+     "rolle": "Anker",
+     "rolle_art": "anker",
+     "anker": true,
+     "kennung": "abcde-0b",
+     "rsrp": -100,
+     "rsrq": -11,
+     "stufen": 2,
+     "lage": 0.5,
+     "tac": "c0fc",
+     "plmn": "232 05",
+     "fund": null,
+     "such": "nicht gefunden"
+    }
+   ],
+   "karte": {
+    "stand": "ohne_schluessel",
+    "gefunden": 0,
+    "zellen": 2,
+    "rahmen": [
+     32.85939803206811,
+     -117.24405391711507,
+     32.88732196793189,
+     -117.21080608288493
+    ],
+    "wohnung": [
+     32.87336,
+     -117.22743
+    ],
+    "ring_m": 1350,
+    "ring": "1,4 km",
+    "masten": [],
+    "punkte": [],
+    "osm": []
+   }
+  },
+  "dsl": null,
+  "glasfaser": null,
+  "kabel": null,
+  "ersatz": null
+ },
+ "zugang": {
+  "art": "mobilfunk",
+  "quelle": "automatisch",
+  "weg": "eingebaut",
+  "titel": "Internet über Mobilfunk",
+  "geraet": "FRITZ!Box",
+  "weg_text": "eingebautes Modem",
+  "ersatz": null,
+  "ersatz_aktiv": false,
+  "ersatz_text": null,
+  "abweichung": null,
+  "adresse": null,
+  "kopf": "FRITZ!Box · Mobilfunk 5G-NSA",
+  "vorschlag": "Mobilfunk über FRITZ!Box",
+  "vorschlag_art": "mobilfunk",
+  "belege": [
+   "FRITZ!Box meldet: Internet über Mobilfunk (LTE/5G), verbunden",
+   "Mobilfunk-Modem der Box: 5G-NSA"
+  ],
+  "wahl": "auto",
+  "wahlen": [
+   "auto",
+   "box_mobil",
+   "extern",
+   "dsl",
+   "glasfaser",
+   "kabel"
+  ],
+  "ersatz_wahl": "auto",
+  "adresse_jetzt": null,
+  "adressen": [
+   "192.168.0.1",
+   "192.168.1.1",
+   "192.168.8.1"
+  ],
+  "kennwort": false,
+  "gelesen": true
+ },
+ "internet_dsl": {
+  "zugang": {
+   "art": "dsl",
+   "quelle": "automatisch",
+   "weg": "eingebaut",
+   "titel": "Internet über DSL",
+   "geraet": "FRITZ!Box 7590 AX",
+   "weg_text": "eingebautes DSL-Modem",
+   "ersatz": "mobilfunk",
+   "ersatz_aktiv": false,
+   "ersatz_text": "Mobilfunk an der FRITZ!Box, springt bei Ausfall ein",
+   "abweichung": null,
+   "adresse": null,
+   "kopf": "FRITZ!Box 7590 AX · DSL"
+  },
+  "mobilfunk": null,
+  "dsl": {
+   "bewertung": {
+    "stufe": "knapp",
+    "titel": "Leitung stabil, aber wenig Reserve",
+    "text": "Die Störabstandsmarge im Download liegt bei 5,2 dB (gut ab 6 dB). Die Leitung läuft mit 87 % der möglichen Geschwindigkeit. 0 Neusynchronisierungen in 7 Tagen. Häufige Ursache: Verkabelung im Haus (Telefondose, Verlängerung).",
+    "abzeichen": "Reserve knapp"
+   },
+   "status": "synchron",
+   "sync_down": 108.4,
+   "sync_up": 38.2,
+   "max_down": 124.6,
+   "max_up": 41.0,
+   "tarif_down": 150.0,
+   "tarif_up": 30.0,
+   "anteil_down": 87,
+   "marge_down": 5.2,
+   "marge_up": 7.9,
+   "marge_gut": 6.0,
+   "marge_stufe": "knapp",
+   "daempfung_down": 14.0,
+   "daempfung_up": 9.0,
+   "verfahren": "VDSL · Profil 35b",
+   "seit": null,
+   "seit_text": null,
+   "crc_h": null,
+   "fec_h": null,
+   "neusync_7": 0,
+   "neusync": [],
+   "gegenstelle": null,
+   "fehlt": "liefert die Schnittstelle der Box nicht",
+   "verlauf": {
+    "sync": [],
+    "marge": []
+   }
+  },
+  "glasfaser": null,
+  "kabel": null,
+  "ersatz": {
+   "aktiv": false,
+   "text": "Mobilfunk an der FRITZ!Box, springt bei Ausfall ein",
+   "umschaltungen_30": 0,
+   "dauer_30": null,
+   "letzte": null,
+   "rsrp": -100,
+   "technik": "5G-NSA"
+  }
+ },
+ "internet_glasfaser": {
+  "zugang": {
+   "art": "glasfaser",
+   "quelle": "automatisch",
+   "weg": "eingebaut",
+   "titel": "Internet über Glasfaser",
+   "geraet": "FRITZ!Box 5590 Fiber",
+   "weg_text": "eingebautes Glasfaser-Modem (GPON)",
+   "ersatz": null,
+   "ersatz_aktiv": false,
+   "ersatz_text": null,
+   "abweichung": null,
+   "adresse": null,
+   "kopf": "FRITZ!Box 5590 Fiber · Glasfaser"
+  },
+  "mobilfunk": null,
+  "dsl": null,
+  "glasfaser": {
+   "bewertung": {
+    "stufe": "gut",
+    "titel": "Glasfaser in Ordnung",
+    "text": "Das Licht kommt mit -19,4 dBm an (gut zwischen -8,0 und -28,0 dBm laut Box). Seit 21 Tage 0 h ohne Unterbrechung.",
+    "abzeichen": "gut"
+   },
+   "rx": -19.4,
+   "tx": 2.1,
+   "rx_bereich": [
+    -28.0,
+    -8.0
+   ],
+   "tx_bereich": [
+    0.5,
+    5.0
+   ],
+   "modus": "GPON",
+   "down_mbit": 1000,
+   "up_mbit": 500,
+   "seit_text": "21 Tage 0 h",
+   "fehler_h": null,
+   "resyncs": 1,
+   "fehlt": "liefert die Schnittstelle der Box nicht",
+   "verlauf": {
+    "rx": []
+   }
+  },
+  "kabel": null,
+  "ersatz": null
+ },
+ "internet_kabel": {
+  "zugang": {
+   "art": "kabel",
+   "quelle": "automatisch",
+   "weg": "eingebaut",
+   "titel": "Internet über Kabel",
+   "geraet": "FRITZ!Box 6690 Cable",
+   "weg_text": "eingebautes Kabelmodem",
+   "ersatz": null,
+   "ersatz_aktiv": false,
+   "ersatz_text": null,
+   "abweichung": null,
+   "adresse": null,
+   "kopf": "FRITZ!Box 6690 Cable · Kabel"
+  },
+  "mobilfunk": null,
+  "dsl": null,
+  "glasfaser": null,
+  "kabel": {
+   "down_mbit": 1000,
+   "up_mbit": 50,
+   "verbunden": true,
+   "fehlt": "liefert die Schnittstelle der Box nicht"
+  },
+  "ersatz": null
  }
 }

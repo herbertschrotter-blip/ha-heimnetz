@@ -16,6 +16,9 @@ def test_gueltig_und_leer():
         "tarif_up": 30.0,
         "ab": "2026-09-21",
         "wlan_schwach": 40,
+        "zugang_wahl": "auto",
+        "zugang_adresse": None,
+        "zugang_ersatz": "auto",
     }
     assert es.pruefen({"wlan_schwach": "50"}, HEUTE).wlan_schwach == 50
     assert es.pruefen({"tarif_down": 0, "ab": ""}, HEUTE) == es.Einstellungen()
@@ -35,6 +38,11 @@ def test_gueltig_und_leer():
         {"wlan_schwach": "wenig"},
         {"wlan_schwach": 0},
         {"wlan_schwach": 40.5},
+        {"zugang_wahl": "satellit"},
+        {"zugang_ersatz": "immer"},
+        {"zugang_adresse": "8.8.8.8"},  # WU-0009: nur private Adressen
+        {"zugang_adresse": "modem.local"},
+        {"zugang_adresse": "127.0.0.1"},
     ],
 )
 def test_ungueltig(daten):
@@ -44,3 +52,14 @@ def test_ungueltig(daten):
 
 def test_null_heisst_kein_tarif():
     assert es.pruefen({"tarif_up": "0.0"}, HEUTE).tarif_up is None
+
+
+def test_zugang_wahl_und_adresse():
+    """WU-0009: Wahl des Zugangs, Adresse eines vorgeschalteten Geräts (nur private) und Ersatz."""
+    e = es.pruefen(
+        {"zugang_wahl": "extern", "zugang_adresse": " 192.168.8.1 ", "zugang_ersatz": "kein"}, HEUTE
+    )
+    assert (e.zugang_wahl, e.zugang_adresse, e.zugang_ersatz) == ("extern", "192.168.8.1", "kein")
+    assert es.pruefen(e.als_dict(), HEUTE) == e
+    assert es.pruefen({"zugang_adresse": ""}, HEUTE).zugang_adresse is None
+    assert es.pruefen({}, HEUTE).zugang_wahl == "auto"

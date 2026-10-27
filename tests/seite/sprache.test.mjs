@@ -111,13 +111,15 @@ test('englische Seite: Reiter, Kopf und alle Ansichten ohne deutsche Texte der S
   const w = el.shadowRoot;
   assert.equal(w.querySelector('.wurzel').getAttribute('lang'), 'en');
   const namen = [...w.querySelectorAll('nav button')].map((b) => b.textContent.trim());
-  assert.deepEqual(namen, ['Overview', 'Speedtest', 'Devices', 'Wireless', 'Usage', 'Log']);
+  assert.deepEqual(namen, ['Overview', 'Speedtest', 'Devices', 'Internet', 'Usage', 'Log']);
   const funde = [];
   for (const [k] of REITER) {
     await klick(el, [...w.querySelectorAll('nav button')][REITER.findIndex(([x]) => x === k)]);
-    if (k === 'funk') {
-      funde.push(...durchsuchen('Funk · WLAN', text(el)));
-      await klick(el, [...w.querySelectorAll('.leiste .seg button')].find((b) => b.textContent === 'Mobile'));
+    if (k === 'geraete') {
+      // WU-0009: WLAN als Umschalter unter Geräte
+      await klick(el, [...w.querySelectorAll('.leiste .seg button')].find((b) => b.textContent === 'Wi-Fi'));
+      funde.push(...durchsuchen('Geräte · WLAN', text(el)));
+      await klick(el, [...w.querySelectorAll('.leiste .seg button')].find((b) => b.textContent === 'Devices'));
     }
     const t0 = text(el);
     assert.ok(!/undefined|NaN|\[object Object\]|\{\w+\}/.test(t0), `${k}: ${t0.slice(0, 300)}`);
@@ -214,8 +216,7 @@ test('englische Karte: Beschriftung und Quellenangabe', async () => {
   const hass = machHass({ sprache: 'en' });
   const el = await seite(hass);
   const w = el.shadowRoot;
-  await klick(el, w.querySelectorAll('nav button')[3]);
-  await klick(el, [...w.querySelectorAll('.leiste .seg button')].find((b) => b.textContent === 'Mobile'));
+  await klick(el, w.querySelectorAll('nav button')[3]); // Internet über Mobilfunk: gleich die Mobilfunk-Werte
   const karte = w.querySelector('heimnetz-karte');
   assert.ok(karte, 'Karte da');
   await karte.updateComplete;
@@ -224,4 +225,32 @@ test('englische Karte: Beschriftung und Quellenangabe', async () => {
   assert.match(k.querySelector('select.k-lage').textContent, /Automatic/);
   assert.ok(DATEN.mobilfunk.karte, 'Vorlage mit Karte');
   assert.match(text(el), /Where is the mast\?/);
+});
+
+test('englische Seite: Internet über DSL, Glasfaser, Kabel und Ersatz ohne deutsche Texte der Seite (WU-0009)', async () => {
+  const alt = DATEN.internet;
+  try {
+    for (const art of ['internet_dsl', 'internet_glasfaser', 'internet_kabel']) {
+      DATEN.internet = DATEN[art];
+      const el = await seite(machHass({ sprache: 'en' }));
+      const w = el.shadowRoot;
+      await klick(el, w.querySelectorAll('nav button')[3]);
+      const t0 = text(el);
+      assert.ok(!/undefined|NaN|\[object Object\]|\{\w+\}/.test(t0), `${art}: ${t0.slice(0, 300)}`);
+      // Texte der Integration kommen in der Vorlage deutsch – was auch dort steht, zählt nicht
+      const daten = JSON.stringify(DATEN[art]);
+      const nurSeite = (liste) => liste.filter((x) => !daten.includes(x.split(': ').slice(1).join(': ')));
+      assert.deepEqual(nurSeite(durchsuchen(art, t0)), []);
+      assert.match(t0, /detected automatically/);
+      const ersatz = [...w.querySelectorAll('.leiste .seg button')].find((b) => b.textContent.includes('Backup'));
+      if (ersatz) {
+        await klick(el, ersatz);
+        assert.match(text(el), /Mobile backup access/);
+        assert.deepEqual(nurSeite(durchsuchen(`${art} · Ersatz`, text(el))), []);
+      }
+      el.remove();
+    }
+  } finally {
+    DATEN.internet = alt;
+  }
 });

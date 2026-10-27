@@ -212,6 +212,43 @@
       },
       "pci_5g": {
         "name": "5G cell (PCI)"
+      },
+      "zugang": {
+        "name": "Internet access",
+        "state": {
+          "mobilfunk": "Mobile",
+          "dsl": "DSL",
+          "glasfaser": "Fibre",
+          "kabel": "Cable",
+          "extern": "Upstream device"
+        }
+      },
+      "dsl_sync_down": {
+        "name": "DSL sync rate download"
+      },
+      "dsl_sync_up": {
+        "name": "DSL sync rate upload"
+      },
+      "dsl_snr_down": {
+        "name": "DSL noise margin download"
+      },
+      "dsl_snr_up": {
+        "name": "DSL noise margin upload"
+      },
+      "dsl_daempfung_down": {
+        "name": "DSL attenuation download"
+      },
+      "dsl_daempfung_up": {
+        "name": "DSL attenuation upload"
+      },
+      "dsl_crc_stunde": {
+        "name": "DSL errors per hour"
+      },
+      "glasfaser_rx": {
+        "name": "Fibre received optical power"
+      },
+      "glasfaser_tx": {
+        "name": "Fibre transmitted optical power"
       }
     },
     "binary_sensor": {

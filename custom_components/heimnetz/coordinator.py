@@ -49,6 +49,7 @@ AUSSTEHEND_HOECHSTENS = (
 SCHREIBFEHLER = (sqlite3.Error, OSError, RuntimeError)
 
 LOGGER = logging.getLogger(__package__)
+ZUGANG_SUCHEN_S = 30  # „Erneut suchen“ höchstens so oft (WU-0009)
 SERIE_TAKT_S = 5  # so oft schaut die Serie nach dem Ergebnis eines Durchlaufs
 
 
@@ -112,6 +113,8 @@ class Abruf(DataUpdateCoordinator[sm.Stand]):
             None  # Grund des letzten Auslösens („von Hand“ oder der des Messplans)
         )
         self.box_info: BoxInfo | None = None  # Modell/Firmware/Laufzeit, langsam gelesen (WU-0005)
+        self.zugang_neu = False  # WU-0009: „Erneut suchen“ – Zugang im nächsten Abruf mitlesen
+        self._zugang_gesucht = -ZUGANG_SUCHEN_S
         # WU-0005: Momentaufnahme zu einer neuen Messung (gesetzt in __init__, braucht die Laufzeit)
         self.kontext_holen: Callable[[Messung], Awaitable[dict[str, Any]]] | None = None
         self.plan_status: mp.Entscheidung | None = None
@@ -153,6 +156,9 @@ class Abruf(DataUpdateCoordinator[sm.Stand]):
             wlan_gast=daten.wlan_gast,
             wlan_geraete=daten.wlan_geraete,
             mesh=daten.mesh,
+            zugang=daten.zugang,
+            dsl=daten.dsl,
+            faser=daten.faser,
             sprache=sprache,
         )
         stand = sm.auswerten(g, roh)
@@ -188,6 +194,17 @@ class Abruf(DataUpdateCoordinator[sm.Stand]):
         except Exception:
             LOGGER.exception("Heimnetz: Messplan fehlgeschlagen")
             self.plan_status = None
+
+    async def zugang_suchen(self) -> bool:
+        """WU-0009: „Erneut suchen“ – den Zugang gleich im gemeinsamen Abruf lesen (keine eigene Verbindung). Öfter
+        als alle ZUGANG_SUCHEN_S fragt das die Box nicht (mehrfaches Tippen)."""
+        jetzt = time.monotonic()
+        if jetzt - self._zugang_gesucht < ZUGANG_SUCHEN_S:
+            return False
+        self._zugang_gesucht = jetzt
+        self.zugang_neu = True
+        await self.async_refresh()
+        return True
 
     async def messen(self, grund: str, jetzt: float | None = None) -> bool:
         """Messung bei Ookla starten (Messplan oder „Jetzt messen“); als ausgelöst gilt sie ab jetzt."""
@@ -325,9 +342,16 @@ class Abruf(DataUpdateCoordinator[sm.Stand]):
         if zugang != self.box.zugang:
             await self.hass.async_add_executor_job(self.box.neuer_zugang, zugang)
         mobil_fragen = self.gedaechtnis.mobil_dienst is not False
+        zugang_fragen, self.zugang_neu = self.zugang_neu, False
         try:
             daten: BoxDaten = await self.hass.async_add_executor_job(
-                self.box.holen, langsam, mobil_fragen, router, sprache
+                self.box.holen,
+                langsam,
+                mobil_fragen,
+                router,
+                sprache,
+                zugang_fragen,
+                self.gedaechtnis.zugang_haupt,
             )
         except AnmeldungAbgelehnt:
             await self.hass.async_add_executor_job(self.box.trennen)

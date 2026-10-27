@@ -7,8 +7,8 @@ import { phase, zeit } from './format.js';
 import { merke, sprache, t, waehle } from './sprache.js';
 import { uebersicht } from './ansichten/uebersicht.js';
 import { speedtest, kachelPopup, messungBlatt } from './ansichten/speedtest.js';
-import { geraete, geraetBlatt } from './ansichten/geraete.js';
-import { funk } from './ansichten/funk.js';
+import { geraeteReiter, geraetBlatt } from './ansichten/geraete.js';
+import { internet } from './ansichten/internet.js';
 import { einstellungenBlatt } from './ansichten/einstellungen.js';
 import { verbrauch } from './ansichten/verbrauch.js';
 import { protokoll } from './ansichten/protokoll.js';
@@ -19,11 +19,11 @@ export const REITER = [
   ['uebersicht', merke('Übersicht')],
   ['speedtest', merke('Speedtest')],
   ['geraete', merke('Geräte')],
-  ['funk', merke('Funk')],
+  ['internet', merke('Internet')], // WU-0009: vorher „Funk“; WLAN steht jetzt unter Geräte
   ['verbrauch', merke('Verbrauch')],
   ['protokoll', merke('Protokoll')],
 ]; // Namen deutsch (Schlüssel der Übersetzung), angezeigt über t()
-const ANSICHT = { uebersicht, speedtest, geraete, funk, verbrauch, protokoll };
+const ANSICHT = { uebersicht, speedtest, geraete: geraeteReiter, internet, verbrauch, protokoll };
 const NEU_LADEN_MS = 60_000;
 const KACHEL_WARTEN_MS = 150; // Überfahren einer Stundenkachel: so lange stehen bleiben, bis das Popup abfragt
 const ENTWURF = 'heimnetz-melden-entwurf'; // FE-0001: Entwurf überlebt ein Neuladen der Seite (z. B. nach der Galerie)
@@ -61,6 +61,7 @@ export class HeimnetzPanel extends LitElement {
     _hinweisPlan: { state: true },
     _hinweisEinr: { state: true },
     _diag: { state: true },
+    _hinweisZugang: { state: true },
     _toast: { state: true },
     _kachel: { state: true },
   };
@@ -76,6 +77,7 @@ export class HeimnetzPanel extends LitElement {
     this._hinweisPlan = '';
     this._hinweisEinr = '';
     this._diag = { adresse: '192.168.0.1', laeuft: false, antwort: null, fehler: '' }; // WU-0008; Kennwort nie im Zustand
+    this._hinweisZugang = ''; // WU-0009: Fehler beim Festlegen des Zugangs
     this._blatt = null;
     this._toast = '';
     this._bilder = new Map(); // Bilder der Tickets für die Liste (id:nr → Data-URL)
@@ -84,8 +86,8 @@ export class HeimnetzPanel extends LitElement {
     if (entwurf) this._blatt = { art: 'melden', form: { ...entwurf, version: VERSION }, vorher: null };
     this._opt = {
       speedtest: { tage: 84, groesse: 'down', grundlast: 'aus', server: '', tag: null, datum: null, stunde: null },
-      geraete: { filter: 'alle', suche: '' },
-      funk: { teil: 'wlan' },
+      geraete: { filter: 'alle', suche: '', teil: 'geraete' },
+      internet: { sicht: 'haupt' }, // haupt = Zugangsart, ersatz = Ersatzzugang
       mobilfunk: { tage: 1 },
       verbrauch: { tage: 30 },
       protokoll: { art: 'journal', nur_warnungen: false, suche: '' },
@@ -176,9 +178,9 @@ export class HeimnetzPanel extends LitElement {
     }
   }
 
-  /** Welche Daten der gewählte Reiter braucht; „Funk“ lädt nur den gewählten Teil (WLAN oder Mobilfunk). */
+  /** Welche Daten der gewählte Reiter braucht; „Geräte“ lädt nur den gewählten Teil (Geräte oder WLAN). */
   get _datenReiter() {
-    return this._reiter === 'funk' ? this._opt.funk.teil : this._reiter;
+    return this._reiter === 'geraete' && this._opt.geraete.teil === 'wlan' ? 'wlan' : this._reiter;
   }
 
   _parameter(reiter) {
@@ -189,6 +191,8 @@ export class HeimnetzPanel extends LitElement {
           tage: o.tage, groesse: o.groesse, grundlast: o.grundlast, ...(o.server ? { server: o.server } : {}),
           ...(o.datum ? { datum: o.datum } : o.tag != null ? { tag: o.tag } : {}),
         };
+      case 'internet':
+        return { tage: this._opt.mobilfunk.tage }; // Zeitraum des Mobilfunk-Verlaufs
       case 'mobilfunk':
       case 'verbrauch':
         return { tage: o.tage };
@@ -308,12 +312,58 @@ export class HeimnetzPanel extends LitElement {
     }
   }
 
-  /** Fenster „Einstellungen“ (⚙ im Kopf). */
-  einstellungenOeffnen() {
-    this._blatt = { art: 'einstellungen' };
+  /** Fenster „Einstellungen“ (⚙ im Kopf); `teil` öffnet gleich einen Reiter (z. B. „zugang“ aus dem Reiter Internet). */
+  einstellungenOeffnen(teil) {
+    this._blatt = { art: 'einstellungen', ...(teil ? { teil } : {}) };
+    const z = (this._daten.internet && this._daten.internet.zugang) || this._daten.zugang;
+    if (teil === 'diag' && z && z.adresse) this._diag = { ...this._diag, adresse: z.adresse };
     this.laden();
     this.meldungenLaden();
     this.einrichtungLaden(); // WU-0007: für den Punkt am Reiter „Einrichtung“
+    if (teil === 'zugang') this.zugangLaden();
+  }
+
+  /* ---- WU-0009: ⚙ › 🌐 Zugang (nur Admins; erkennen und prüfen macht die Integration) ---- */
+  async zugangLaden() {
+    if (!this.istAdmin) return;
+    try {
+      this._daten = { ...this._daten, zugang: await this.ws('zugang') };
+      this._hinweisZugang = '';
+    } catch (err) {
+      this._hinweisZugang = t('Zugang nicht abrufbar: {fehler}', { fehler: (err && err.message) || err });
+    }
+  }
+
+  /** Wahl, Adresse, Ersatz oder Kennwort speichern. Das Kennwort geht nur mit diesem Befehl mit, wird nie im
+   *  Zustand behalten und danach im Feld gelöscht; zurück kommt nur „hinterlegt ja/nein“. */
+  async zugangSetzen(werte, feld = null) {
+    try {
+      this._daten = { ...this._daten, zugang: await this.ws('zugang/setzen', werte) };
+      this._hinweisZugang = '';
+      if (feld) feld.value = ''; // gespeichert: Kennwort im Feld löschen (abgelehnt: zum Korrigieren stehen lassen)
+      this.laden();
+    } catch (err) {
+      this._hinweisZugang = (err && err.message) || String(err);
+      this.requestUpdate(); // Auswahl zurück auf den gespeicherten Stand (live-Bindung)
+    }
+  }
+
+  async zugangSuchen() {
+    try {
+      const { gesucht, ...zugang } = await this.ws('zugang/suchen');
+      this._daten = { ...this._daten, zugang };
+      this._hinweisZugang = '';
+      this.toast(gesucht ? t('Gesucht: FRITZ!Box neu gefragt') : t('Eben erst gesucht – in einer halben Minute wieder'));
+      this.laden();
+    } catch (err) {
+      this._hinweisZugang = (err && err.message) || String(err);
+    }
+  }
+
+  /** „🔬 Rohdaten abfragen ›“: in den Reiter Diagnose, die Adresse des vorgeschalteten Geräts übernehmen. */
+  zuDiagnose(adresse) {
+    if (adresse) this._diag = { ...this._diag, adresse };
+    this._blatt = { ...this._blatt, teil: 'diag' };
   }
 
   /** WU-0007: was eingerichtet ist und was fehlt – geprüft beim Öffnen (nur Admins; die Integration erkennt). */
@@ -385,11 +435,25 @@ export class HeimnetzPanel extends LitElement {
 
   meldenAuf() {
     const reiter = t((REITER.find(([k]) => k === this._reiter) || [, this._reiter])[1]);
-    const kontext = [reiter, this._reiter === 'funk' ? t(this._opt.funk.teil === 'wlan' ? 'WLAN' : 'Mobilfunk') : '',
+    const kontext = [reiter, this._teilText(),
       this._blatt ? t('Dialog „{art}“', { art: this._blatt.art }) : ''].filter(Boolean).join(' · ');
     const form = { art: 'fehler', text: '', kontext, version: VERSION, geraet: this.narrow ? t('Handy') : 'Desktop', stand: true, zelle: false, bilder: [] };
     this._blatt = { art: 'melden', form, vorher: this._blatt };
     this.entwurfMerken();
+  }
+
+  /** Gewählter Teil des Reiters in Worten (für den Kontext einer Meldung). */
+  _teilText() {
+    if (this._reiter === 'geraete' && this._opt.geraete.teil === 'wlan') return t('WLAN');
+    if (this._reiter !== 'internet') return '';
+    if (this._opt.internet.sicht === 'ersatz') return t('Ersatz');
+    const z = this._daten.internet && this._daten.internet.zugang;
+    return z ? z.titel : '';
+  }
+
+  /** Teil des Reiters als Kennung (Stand der Seite einer Meldung). */
+  get _teil() {
+    return this._reiter === 'geraete' ? this._opt.geraete.teil : this._reiter === 'internet' ? this._opt.internet.sicht : null;
   }
 
   meldenZu() {
@@ -469,7 +533,7 @@ export class HeimnetzPanel extends LitElement {
     const vorschau = github ? b.vorschau : null;
     if (github && !vorschau) return;
     if (vorschau) window.open(vorschau.url, '_blank', 'noopener');
-    const seite = f.stand ? { reiter: this._reiter, funk: this._opt.funk.teil, dialog: melden.vorher ? melden.vorher.art : null } : null;
+    const seite = f.stand ? { reiter: this._reiter, teil: this._teil, dialog: melden.vorher ? melden.vorher.art : null } : null;
     f.sendet = true; f.fehler = ''; this.requestUpdate();
     let neu;
     try {
@@ -674,7 +738,7 @@ export class HeimnetzPanel extends LitElement {
     const warnung = befunde.filter((b) => b.stufe === 'warnung').length;
     const unter = !u.box_erreichbar
       ? t('Die Box antwortet nicht · Home Assistant versucht es jede Minute')
-      : [u.internet && u.internet.technik, u.internet && u.internet.ok ? t('Internet erreichbar') : t('kein Internet')]
+      : [u.zugang ? u.zugang.kopf : u.internet && u.internet.technik, u.internet && u.internet.ok ? t('Internet erreichbar') : t('kein Internet')]
         .filter(Boolean).join(' · ');
     return html`
       <div class="glas-panel glas-kopf">
@@ -721,7 +785,7 @@ export class HeimnetzPanel extends LitElement {
           <div class="scroll" @scroll=${() => this.kachelWeg(true)}><div class="seite ${this._laedt ? 'laden' : ''}">
             ${this._kopf(u)}
             ${this._fehler ? html`<div class="glas-panel fehler-band">${t('Daten nicht abrufbar: {fehler}', { fehler: this._fehler })}</div>` : nothing}
-            ${daten || this._reiter === 'funk' ? ansicht(this, daten) : html`<div class="glas-panel block"><div class="leer">${t('lädt …')}</div></div>`}
+            ${daten || this._reiter === 'geraete' ? ansicht(this, daten) : html`<div class="glas-panel block"><div class="leer">${t('lädt …')}</div></div>`}
             <div class="leise" style="text-align:center;padding:8px">Heimnetz ${VERSION}</div>
           </div></div>
           <div class="schleier ${this._blatt ? 'an' : ''}" @click=${() => this.zu()}></div>
