@@ -12,7 +12,7 @@ from homeassistant.components.websocket_api import messages
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import config_validation as cv
 
-from . import ansichten, einrichtung
+from . import ansichten, einrichtung, modem
 from .const import DOMAIN, SEITEN_SPRACHE
 from .logik import auswertung as aw
 from .logik.einstellungen import Ungueltig
@@ -328,6 +328,26 @@ async def _einrichtung(
     connection.send_result(msg["id"], await einrichtung.bewertung(hass))
 
 
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): f"{DOMAIN}/modem",
+        vol.Required("adresse"): vol.All(str, vol.Length(max=60)),
+        vol.Optional("kennwort"): vol.Any(None, str),
+    }
+)
+@websocket_api.require_admin
+@websocket_api.async_response
+async def _modem(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
+) -> None:
+    """WU-0008: Rohdaten eines vorgeschalteten Modems abfragen (nur Admins; nur lesen). Das Kennwort wird nur für
+    diese Abfrage verwendet, nie gespeichert und steht in keiner Antwort; die Rohdaten kommen geschwärzt zurück."""
+    antwort = await modem.abfragen(
+        hass, msg["adresse"], msg.get("kennwort"), ansichten.sprache(hass)
+    )
+    connection.send_result(msg["id"], antwort)
+
+
 BEFEHLE = (
     _uebersicht,
     _speedtest,
@@ -345,6 +365,7 @@ BEFEHLE = (
     _messen,
     _serie,
     _einrichtung,
+    _modem,
 )
 
 

@@ -3,6 +3,9 @@
 // darunter nur die gewählte Gruppe in einer Karte. Werte und Zustand kommen von der Integration. WU-0007: fünfter
 // Reiter „Einrichtung“ (Mockup netzwerk.html · Einrichtung, 27.10.2026) – was eingerichtet ist, erkennt die Integration
 // (heimnetz/einrichtung), die Seite zeigt nur an und öffnet Home Assistant oder HACS an der richtigen Stelle.
+// WU-0008: sechster Reiter „Diagnose“ (Mockup netzwerk.html · Diagnose, 27.10.2026) – fragt auf Knopfdruck die
+// Rohdaten eines vorgeschalteten Modems ab (heimnetz/modem); Abfragen und Schwärzen macht die Integration, die Seite
+// zeigt nur an und speichert/kopiert die geschwärzte Antwort.
 import { html, nothing } from 'lit';
 import { live } from 'lit/directives/live.js';
 import { uhr, zahl, zeit } from '../format.js';
@@ -17,7 +20,7 @@ const SERIE = [[2, '2'], [3, '3'], [4, '4'], [5, '5']];
 const SCHWACH = [[30, '30 %'], [40, '40 %'], [50, '50 %']];
 
 export const TEILE = [['speed', '📈 Speedtest'], ['plan', merke('⏱️ Messplan')], ['wlan', merke('📶 WLAN')], ['meld', merke('💬 Meldungen')],
-  ['einr', merke('🧩 Einrichtung')]];
+  ['einr', merke('🧩 Einrichtung')], ['diag', merke('🔬 Diagnose')]];
 const STUFEN = { muss: merke('Muss'), soll: merke('Soll – empfohlen'), kann: merke('Kann – optional') };
 const ZEICHEN = { ok: '✓', fehlt: '!', muss: '✕', aus: '–' };
 
@@ -28,6 +31,7 @@ export function einstellungenBlatt(p) {
     <h3>${t('Einstellungen')}</h3><div class="leise">${p.istAdmin ? t('gelten für die ganze Seite') : t('nur Admins ändern')}</div>
     <div class="seg e-reiter">${TEILE.map(([k, name]) => html`<button class=${k === teil ? 'on' : ''} @click=${() => { p._blatt = { ...p._blatt, teil: k }; if (k === 'einr') p.einrichtungLaden(); }}>${t(name)}${k === 'einr' ? punkt(p) : nothing}</button>`)}</div>`;
   if (teil === 'einr') return html`${kopf}<div class="ek"><div class="ek-inhalt">${einrichtung(p)}</div></div>`;
+  if (teil === 'diag') return html`${kopf}<div class="ek"><div class="ek-inhalt">${diagnose(p)}</div></div>`;
   if (!e) return html`${kopf}<div class="leer">${t('lädt …')}</div>`;
   const inhalt = { speed: auswertung, plan: messplan, wlan, meld: (q) => meldungenZeile(q) }[teil](p, e);
   return html`${kopf}<div class="ek"><div class="ek-inhalt">${inhalt}</div></div>`;
@@ -131,4 +135,53 @@ function einrichtung(p) {
       ${s.teile.map((x) => html`<div class="vs" data-teil=${x.schluessel}><span class="vs-st ${x.status}">${ZEICHEN[x.status] || ''}</span><span>${x.name}<small>${x.wofuer}</small></span>
         <span class="vs-r">${x.stand ? html`<span class="leise">${x.stand}</span>` : nothing}${x.hinweis ? html`<span class="leise">${x.hinweis}</span>` : nothing}${x.aktionen.map((a) => html`<button class=${a.blau ? 'blau' : ''} @click=${() => p.einrichtungAktion(a)}>${a.text}</button>`)}</span></div>`)}`)}
     <p class="hinweis" style="margin-top:8px">${t('Heimnetz installiert nichts selbst: die Knöpfe öffnen Home Assistant oder HACS an der richtigen Stelle. Nach einem Download aus HACS Home Assistant neu starten, dann einrichten. Geprüft wird beim Öffnen dieses Reiters.')}</p>`;
+}
+
+/** WU-0008: Diagnose – Rohdaten eines vorgeschalteten Modems. Nur Admins; Abfragen und Schwärzen macht die Integration. */
+const ROH = '⟨geschwärzt⟩';
+const BEFUND = {
+  adresse_nicht_erlaubt: ['amber', merke('Adresse nicht erlaubt'), merke('Die Adresse liegt nicht im eigenen Heimnetz. Abgefragt werden nur private Adressen (192.168.x.x, 10.x.x.x, 172.16–31.x.x).')],
+  nicht_erreichbar: ['rot', merke('Modem nicht erreichbar'), merke('Unter dieser Adresse antwortet nichts. Adresse prüfen – sie steht in den Einstellungen des Modems oder auf einem Aufkleber.')],
+  kein_zte: ['amber', merke('Kein ZTE-Modem erkannt'), merke('Unter dieser Adresse antwortet etwas, aber kein ZTE-Modem. Diese Version unterstützt vorerst nur ZTE-Modems.')],
+  anmeldung_abgelehnt: ['rot', merke('Anmeldung abgelehnt'), merke('Das Modem lehnt das Kennwort ab. Ohne Anmeldung fehlen die Signalwerte. Kennwort prüfen und noch einmal abfragen.')],
+};
+
+function diagnose(p) {
+  if (!p.istAdmin) return html`<p class="hinweis" style="padding-top:8px">${t('Diese Abfrage können nur Admins starten.')}</p>`;
+  const d = p._diag;
+  const kopf = html`
+    <p class="hinweis" style="margin:4px 0 6px">${t('Kommt das Internet über ein eigenes 5G/LTE-Modem vor der FRITZ!Box (z. B. ZTE), kennt die Box das Funknetz nicht – Funk › Mobilfunk bleibt leer. Hier liest Heimnetz die Rohdaten des Modems aus, damit der Entwickler es unterstützen kann.')} <span class="neu">BETA</span></p>
+    <label class="dg-feld">${t('Adresse des Modems')}<input name="adresse" inputmode="decimal" .value=${live(d.adresse)} ?disabled=${d.laeuft} @change=${(ev) => { p._diag = { ...p._diag, adresse: ev.target.value }; }}></label>
+    <label class="dg-feld">${t('Kennwort der Weboberfläche (optional)')}<input name="kennwort" type="password" autocomplete="off" placeholder=${t('wie beim Anmelden im Browser')} ?disabled=${d.laeuft}><small>${t('wird nur für diese Abfrage verwendet und nicht gespeichert')}</small></label>
+    <div class="dg-knoepfe"><button class="amber" ?disabled=${d.laeuft} @click=${() => p.modemAbfragen()}>${d.laeuft ? t('⏳ fragt ab …') : t('▶ Abfragen')}</button></div>
+    ${d.fehler ? html`<p class="fein">${d.fehler}</p>` : nothing}`;
+  if (!d.antwort) return html`${kopf}<p class="hinweis" style="margin-top:8px">${t('Nur Adressen im eigenen Heimnetz (z. B. 192.168.x.x). Heimnetz liest nur und ändert am Modem nichts.')}</p>`;
+  return html`${kopf}${ergebnis(p, d.antwort)}`;
+}
+
+function befundBlock(befund) {
+  const b = BEFUND[befund];
+  if (!b) return nothing;
+  return html`<div class="befund" style="margin-top:8px"><span class="punkt ${b[0]}"></span><div><b>${t(b[1])}</b><p>${t(b[2])}</p></div></div>`;
+}
+
+function rohAnzeige(daten) {
+  const text = JSON.stringify(daten, null, 2);
+  return text.split(ROH).flatMap((s, i) => (i === 0 ? [s] : [html`<i>${ROH}</i>`, s]));
+}
+
+function ergebnis(p, a) {
+  if (!a.abfragen.length) {
+    return html`${befundBlock(a.befund)}${a.befund === 'anmeldung_abgelehnt'
+      ? html`<div class="dg-knoepfe"><button @click=${() => p.modemSpeichern()}>${t('⬇ Trotzdem als Datei speichern')}</button></div>`
+      : nothing}`;
+  }
+  const s = a.summen;
+  return html`${befundBlock(a.befund)}
+    <div class="vs-stufe" style="margin-top:6px"><span>${t('Ergebnis')}</span><span>${t('{ok} von {gesamt} Abfragen · {werte} Werte · {geschwaerzt} geschwärzt', { ok: s.ok, gesamt: s.gesamt, werte: s.werte, geschwaerzt: s.geschwaerzt })}</span></div>
+    ${a.abfragen.map((ab) => html`<div class="dg-ab"><span class="vs-st ${ab.status === 'ok' ? 'ok' : 'aus'}" style="width:18px;height:18px;font-size:10px">${ab.status === 'ok' ? '✓' : '–'}</span><span>${ab.name}</span><code>${ab.angabe}</code></div>`)}
+    <div class="dg-roh">${rohAnzeige(a.daten)}</div>
+    <div class="gh-warn"><b>${t('Geschwärzt:')}</b> ${t('IMEI, IMSI, ICCID, Rufnummer, Seriennummer, MAC- und öffentliche IP-Adressen, WLAN-Namen und -Kennwörter. Die Zellkennung bleibt drin – daraus lässt sich ungefähr bestimmen, wo das Modem steht.')}</div>
+    <div class="dg-knoepfe"><button class="amber" @click=${() => p.modemSpeichern()}>${t('⬇ Als Datei speichern')}</button><button @click=${() => p.modemKopieren()}>${t('⧉ Kopieren')}</button></div>
+    <p class="hinweis" style="margin-top:8px">${t('Datei an den Entwickler schicken – per Mail oder als Anhang an ein GitHub-Issue. Heimnetz sendet selbst nichts.')}</p>`;
 }

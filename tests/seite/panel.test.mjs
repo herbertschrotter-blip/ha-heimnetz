@@ -903,7 +903,7 @@ test('AN-0002: Einstellungen mit Reitern, je eine Gruppe, Schalter statt Checkbo
   await warten(10);
   await el.updateComplete;
   const reiter = [...blatt(el).querySelectorAll('.e-reiter button')].map((b) => b.textContent.trim());
-  assert.deepEqual(reiter, ['📈 Speedtest', '⏱️ Messplan', '📶 WLAN', '💬 Meldungen', '🧩 Einrichtung']);
+  assert.deepEqual(reiter, ['📈 Speedtest', '⏱️ Messplan', '📶 WLAN', '💬 Meldungen', '🧩 Einrichtung', '🔬 Diagnose']);
   assert.ok(blatt(el).querySelector('[name=tarif_down]'), 'Speedtest zuerst');
   assert.ok(!blatt(el).querySelector('input[type=time]'), 'Messplan nicht gleichzeitig');
   const vorher = hass.aufrufe.length;
@@ -1041,4 +1041,55 @@ test('WU-0007: Reiter auf Englisch', async () => {
   await el.updateComplete;
   assert.match(text(el), /Should – recommended/);
   assert.match(text(el), /Heimnetz installs nothing itself/);
+});
+
+test('WU-0008: Diagnose – Abfrage sendet Adresse und Kennwort, Ergebnis geschwärzt, Kennwort nicht behalten', async () => {
+  const hass = machHass();
+  const el = await seite(hass);
+  await einstellungen(el);
+  await einTab(el, 'Diagnose');
+  await el.updateComplete;
+  const b = blatt(el);
+  assert.match(text(el), /BETA/);
+  b.querySelector('input[name=adresse]').value = '192.168.0.1';
+  b.querySelector('input[name=kennwort]').value = 'geheim';
+  knoepfe(b).find((x) => x.textContent.includes('Abfragen')).click();
+  await warten(10);
+  await el.updateComplete;
+  const ruf = hass.aufrufe.find((a) => a.type === 'heimnetz/modem');
+  assert.ok(ruf && ruf.adresse === '192.168.0.1' && ruf.kennwort === 'geheim');
+  const t = text(el);
+  assert.match(t, /4 von 5 Abfragen · 198 Werte · 11 geschwärzt/);
+  assert.match(t, /ZTE G5TC/);
+  assert.match(t, /⟨geschwärzt⟩/);
+  assert.ok(!/undefined|NaN|\[object Object\]/.test(t), t);
+  // Kennwort nach der Abfrage gelöscht und nie im Zustand
+  assert.equal(blatt(el).querySelector('input[name=kennwort]').value, '');
+  assert.ok(!JSON.stringify(el._diag).includes('geheim'));
+  assert.ok(knoepfe(blatt(el)).some((x) => x.textContent.includes('Als Datei speichern')));
+  assert.ok(knoepfe(blatt(el)).some((x) => x.textContent.includes('Kopieren')));
+});
+
+test('WU-0008: Adresse außerhalb des Heimnetzes → Befund „Adresse nicht erlaubt“', async () => {
+  const hass = machHass();
+  const el = await seite(hass);
+  await einstellungen(el);
+  await einTab(el, 'Diagnose');
+  await el.updateComplete;
+  const b = blatt(el);
+  b.querySelector('input[name=adresse]').value = '8.8.8.8';
+  knoepfe(b).find((x) => x.textContent.includes('Abfragen')).click();
+  await warten(10);
+  await el.updateComplete;
+  assert.match(text(el), /Adresse nicht erlaubt/);
+});
+
+test('WU-0008: ohne Admin kein Diagnose-Formular', async () => {
+  const hass = machHass({ admin: false });
+  const el = await seite(hass);
+  await einstellungen(el);
+  await einTab(el, 'Diagnose');
+  await el.updateComplete;
+  assert.match(text(el), /nur Admins/);
+  assert.ok(!blatt(el).querySelector('input[name=adresse]'));
 });

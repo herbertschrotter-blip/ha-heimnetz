@@ -264,4 +264,16 @@ EN: dict[str, str] = {
     "Langzeitarchiv": "Long-term archive",
     "InfluxDB aktiv": "InfluxDB active",
     "Scribe eingerichtet": "Scribe set up",
+    # Vorgeschaltetes Modem (WU-0008, modem.py)
+    "Startseite": "Home page",
+    "Werte ohne Anmeldung": "Values without login",
+    "Anmeldung": "Login",
+    "Werte nach Anmeldung": "Values after login",
+    "zweite Schnittstelle (ubus)": "second interface (ubus)",
+    "{modell} erkannt": "{modell} detected",
+    "ZTE erkannt": "ZTE detected",
+    "kein ZTE-Modem": "not a ZTE modem",
+    "{n} Werte": "{n} values",
+    "abgelehnt": "rejected",
+    "nicht vorhanden": "not present",
 }

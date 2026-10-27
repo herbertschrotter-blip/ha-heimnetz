@@ -60,6 +60,7 @@ export class HeimnetzPanel extends LitElement {
     _hinweis: { state: true },
     _hinweisPlan: { state: true },
     _hinweisEinr: { state: true },
+    _diag: { state: true },
     _toast: { state: true },
     _kachel: { state: true },
   };
@@ -74,6 +75,7 @@ export class HeimnetzPanel extends LitElement {
     this._hinweis = '';
     this._hinweisPlan = '';
     this._hinweisEinr = '';
+    this._diag = { adresse: '192.168.0.1', laeuft: false, antwort: null, fehler: '' }; // WU-0008; Kennwort nie im Zustand
     this._blatt = null;
     this._toast = '';
     this._bilder = new Map(); // Bilder der Tickets für die Liste (id:nr → Data-URL)
@@ -331,6 +333,47 @@ export class HeimnetzPanel extends LitElement {
     if (a.extern) { window.open(a.ziel, '_blank', 'noopener'); return; }
     this.zu();
     this.oeffne(a.ziel);
+  }
+
+  /** WU-0008: Rohdaten eines vorgeschalteten Modems abfragen (nur Admins). Das Kennwort geht nur mit dieser Abfrage
+      mit, wird nie im Zustand behalten und nach der Abfrage im Feld gelöscht. */
+  async modemAbfragen() {
+    const blatt = this.shadowRoot.querySelector('.sheet');
+    const feld = blatt && blatt.querySelector('input[name=kennwort]');
+    const adresse = ((blatt && blatt.querySelector('input[name=adresse]').value) || '').trim();
+    const kennwort = (feld && feld.value) || null;
+    this._diag = { ...this._diag, adresse, laeuft: true, fehler: '' };
+    try {
+      const antwort = await this.ws('modem', { adresse, kennwort });
+      this._diag = { ...this._diag, adresse, laeuft: false, antwort, fehler: '' };
+    } catch (err) {
+      this._diag = { ...this._diag, laeuft: false, fehler: t('Abfrage nicht möglich: {fehler}', { fehler: (err && err.message) || err }) };
+    } finally {
+      if (feld) feld.value = ''; // Kennwort im Feld löschen, nicht behalten
+    }
+  }
+
+  /** WU-0008: geschwärzte Antwort als Datei – Inhalt = Antwort des WS-Befehls plus Heimnetz-Version und Zeitpunkt. */
+  _modemDatei() {
+    return JSON.stringify({ heimnetz: VERSION, zeit: new Date().toISOString(), antwort: this._diag.antwort }, null, 2);
+  }
+
+  modemSpeichern() {
+    if (!this._diag.antwort) return;
+    const name = `heimnetz-modem-${new Date().toISOString().slice(0, 10)}.json`;
+    const blob = new Blob([this._modemDatei()], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    this.toast(t('Gespeichert: {name}', { name }));
+  }
+
+  modemKopieren() {
+    if (!this._diag.antwort) return;
+    if (navigator.clipboard) navigator.clipboard.writeText(this._modemDatei()).catch(() => {});
+    this.toast(t('Kopiert – {n} Werte', { n: this._diag.antwort.summen.werte }));
   }
 
   /* ---- Melden (Tickets) ---- */

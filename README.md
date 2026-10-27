@@ -138,6 +138,13 @@ Heimnetz arbeitet lokal. Nach außen geht nur:
 | DNS-Server des eigenen Netzes | Auflösung von `avm.de` (Prüfung „Namensauflösung“) | jede Minute |
 | basemap.at oder OpenStreetMap | Kartenkacheln – lädt der **Browser**, nicht die Integration | beim Ansehen der Karte |
 | GitHub | vorausgefülltes Issue – öffnet der **Browser**, abgeschickt mit dem eigenen Konto | nur, wenn man selbst „öffentlich auf GitHub“ meldet |
+| Vorgeschaltetes Modem im eigenen Heimnetz | auf Knopfdruck die Weboberfläche abfragen – nur lesend, nur private Adressen (Diagnose, Beta) | nur, wenn man selbst unter ⚙ → Diagnose „Abfragen“ drückt |
+
+Die **Diagnose** (⚙ → 🔬 Diagnose, Beta) ist für den Fall, dass das Internet über ein eigenes 5G/LTE-Modem vor der
+FRITZ!Box kommt (z. B. ein ZTE): Dann kennt die Box das Funknetz nicht und „Funk → Mobilfunk“ bleibt leer. Heimnetz
+fragt dann auf Knopfdruck die Rohdaten des Modems ab und zeigt sie geschwärzt an (die Zellkennung bleibt, IMEI, Kennwort,
+Rufnummer und Adressen nicht), damit man sie dem Entwickler schicken kann. Heimnetz wertet nichts aus und sendet selbst
+nichts; das Kennwort (falls nötig) wird nur für die Abfrage verwendet und nicht gespeichert.
 
 **Nie** gehen hinaus: der Standort von Home Assistant, Kennwörter, Gerätenamen, Hardware- (MAC) und IP-Adressen. Der
 Zugang zur Box bleibt in FRITZ!Box Tools und wird von Heimnetz nicht gespeichert. Die **Diagnose** (Geräte & Dienste →
@@ -377,6 +384,13 @@ Heimnetz works locally. Only this leaves your network:
 | DNS server of your network | lookup of `avm.de` (check “Name resolution”) | every minute |
 | basemap.at or OpenStreetMap | map tiles – loaded by the **browser**, not the integration | when viewing the map |
 | GitHub | prefilled issue – opened by the **browser**, submitted with your own account | only when you report "publicly on GitHub" yourself |
+| Upstream modem in your own home network | query its web interface at the push of a button – read-only, private addresses only (Diagnostics, beta) | only when you press "Query" under ⚙ → Diagnostics yourself |
+
+The **Diagnostics** tab (⚙ → 🔬 Diagnostics, beta) is for the case where the internet comes through a separate 5G/LTE
+modem in front of the FRITZ!Box (e.g. a ZTE): the box then does not know the mobile network and "Wireless → Mobile"
+stays empty. At the push of a button Heimnetz reads the modem's raw data and shows it redacted (the cell ID stays; IMEI,
+password, phone number and addresses do not), so you can send it to the developer. Heimnetz evaluates nothing and sends
+nothing itself; the password (if needed) is used only for the query and not stored.
 
 **Never** sent: the Home Assistant location, passwords, device names, hardware (MAC) and IP addresses. Box credentials
 stay in FRITZ!Box Tools and are not stored by Heimnetz. The **diagnostics** (Devices & services → Heimnetz → ⋮ →

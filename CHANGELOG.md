@@ -1,5 +1,22 @@
 # CHANGELOG
 
+## [0.25.0]
+
+- WU-0008 (Mockup abgenommen 27.10.2026): In den Einstellungen (⚙) fragt der neue Reiter **🔬 Diagnose** (Beta) auf
+  Knopfdruck die Rohdaten eines vorgeschalteten Mobilfunk-Modems im eigenen Heimnetz ab (z. B. ein ZTE von Drei
+  Österreich). Kommt das Internet über ein solches Modem vor der FRITZ!Box, kennt die Box das Funknetz nicht und
+  „Funk › Mobilfunk“ bleibt leer; diese Version liefert nur das Abfrage- und Export-Werkzeug, damit der Entwickler die
+  Unterstützung bauen kann – keine Auswertung. Felder Adresse (Vorgabe 192.168.0.1) und Kennwort (optional); das
+  Kennwort wird nur für diese Abfrage verwendet, nie gespeichert, nie protokolliert und steht in keiner Antwort.
+- WU-0008: Neuer WebSocket-Befehl `heimnetz/modem` (nur Admins, nur lesen) und die Fachlogik `logik/modem.py`. Abgefragt
+  werden Startseite (Modell), ZTE-`goform` ohne und – mit dem eingegebenen Kennwort – mit Anmeldung sowie eine zweite
+  lesende Schnittstelle (ubus), jede Stufe als eigener Eintrag. Nur private Adressen im eigenen Heimnetz (keine
+  Hostnamen), keine Weiterleitungen, Zeit- und Größenlimit je Anfrage; `goform_set_cmd_process` nur mit `LOGIN`/`LOGOUT`,
+  sonst nie ein set-Befehl. Die Rohdaten kommen geschwärzt zurück (IMEI, IMSI, ICCID, Rufnummer, Seriennummer, MAC- und
+  öffentliche IP-Adressen, WLAN-Namen und -Kennwörter – die Zellkennung bleibt); „⬇ Als Datei speichern“
+  (`heimnetz-modem-JJJJ-MM-TT.json`) und „⧉ Kopieren“ geben die geschwärzte Antwort mit Heimnetz-Version und Zeitpunkt.
+  Heimnetz sendet selbst nichts nach außen.
+
 ## [0.24.0]
 
 - WU-0007 (Mockup abgenommen 27.10.2026): In den Einstellungen (⚙) zeigt der neue Reiter **🧩 Einrichtung**, welche

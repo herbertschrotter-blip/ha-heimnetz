@@ -3517,6 +3517,16 @@ select.ga-wahl { font: inherit; font-size: 13px; color: var(--ink); background: 
 .vs-r button.blau { background: color-mix(in srgb, var(--blau) 22%, transparent); }
 .vs-kopf { border-radius: 12px; padding: 8px 12px; font-size: 13px; line-height: 1.4; background: rgba(127,127,127,.1); margin: 6px 0 2px; }
 @container (max-width: 520px) { .vs { grid-template-columns: 22px minmax(0, 1fr); } .vs-r { grid-column: 2; justify-content: flex-start; } }
+/* WU-0008: Diagnose – Rohdaten eines vorgeschalteten Modems (Mockup netzwerk.html · Diagnose). Reiterleiste am Handy schiebbar. */
+@container (max-width: 520px) { .e-reiter { overflow-x: auto; scrollbar-width: none; } .e-reiter.seg button { flex: none; padding: 7px 8px; } }
+.dg-feld { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--ink2); padding: 6px 0; }
+.dg-feld input { font: inherit; font-size: 14px; color: var(--ink); background: rgba(120,120,128,.14); border: 1px solid var(--gridc); border-radius: 12px; padding: 8px 10px; }
+.dg-ab { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 6px 0; font-size: 13px; }
+.dg-ab + .dg-ab { border-top: 1px solid var(--gridc); } .dg-ab code { font-size: 12px; color: var(--ink2); }
+.dg-roh { font: 11.5px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; word-break: break-all; border: 1px solid var(--gridc); border-radius: 12px; padding: 10px 12px; max-height: 260px; overflow: auto; color: var(--ink); margin: 6px 0; }
+.dg-roh i { font-style: normal; color: var(--amber); }
+.dg-knoepfe { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; } .dg-knoepfe button { flex: 1 1 140px; padding: 10px; border-radius: 14px; font-size: 14px; font-weight: 600; background: rgba(120,120,128,.2); }
+.dg-knoepfe button.amber { background: var(--amber); color: #1c1c1e; } .dg-knoepfe button[disabled] { opacity: .5; cursor: not-allowed; }
 /* Melden (Tickets wie im Baustrommanager; Mockup netzwerk.html · Melden, 13.10.2026) */
 .melden-knopf { position: absolute; right: 16px; bottom: 96px; z-index: 6; width: 40px; height: 40px; border-radius: 50% !important; display: grid; place-items: center; color: var(--ink2); opacity: .85; }
 .melden-knopf:hover { opacity: 1; color: var(--ink); }
@@ -3808,6 +3818,36 @@ var EN = {
   "Alles Nötige ist eingerichtet.": "Everything needed is set up.",
   "Heimnetz installiert nichts selbst: die Knöpfe öffnen Home Assistant oder HACS an der richtigen Stelle. Nach einem Download aus HACS Home Assistant neu starten, dann einrichten. Geprüft wird beim Öffnen dieses Reiters.": "Heimnetz installs nothing itself: the buttons open Home Assistant or HACS at the right place. After a download from HACS, restart Home Assistant, then set it up. Checked whenever this tab is opened.",
   "Einrichtung nicht abrufbar: {fehler}": "Setup status not available: {fehler}",
+  // Diagnose: vorgeschaltetes Modem (WU-0008)
+  "🔬 Diagnose": "🔬 Diagnostics",
+  "Diese Abfrage können nur Admins starten.": "Only admins can run this query.",
+  "Kommt das Internet über ein eigenes 5G/LTE-Modem vor der FRITZ!Box (z. B. ZTE), kennt die Box das Funknetz nicht – Funk › Mobilfunk bleibt leer. Hier liest Heimnetz die Rohdaten des Modems aus, damit der Entwickler es unterstützen kann.": "If the internet comes through a separate 5G/LTE modem in front of the FRITZ!Box (e.g. a ZTE), the box does not know the mobile network – Wireless › Mobile stays empty. Here Heimnetz reads the modem's raw data so the developer can add support for it.",
+  "Adresse des Modems": "Modem address",
+  "Kennwort der Weboberfläche (optional)": "Web interface password (optional)",
+  "wie beim Anmelden im Browser": "as when logging in via the browser",
+  "wird nur für diese Abfrage verwendet und nicht gespeichert": "used only for this query and not stored",
+  "⏳ fragt ab …": "⏳ querying …",
+  "▶ Abfragen": "▶ Query",
+  "Nur Adressen im eigenen Heimnetz (z. B. 192.168.x.x). Heimnetz liest nur und ändert am Modem nichts.": "Only addresses inside your home network (e.g. 192.168.x.x). Heimnetz only reads and changes nothing on the modem.",
+  "Adresse nicht erlaubt": "Address not allowed",
+  "Die Adresse liegt nicht im eigenen Heimnetz. Abgefragt werden nur private Adressen (192.168.x.x, 10.x.x.x, 172.16–31.x.x).": "The address is not inside your home network. Only private addresses are queried (192.168.x.x, 10.x.x.x, 172.16–31.x.x).",
+  "Modem nicht erreichbar": "Modem not reachable",
+  "Unter dieser Adresse antwortet nichts. Adresse prüfen – sie steht in den Einstellungen des Modems oder auf einem Aufkleber.": "Nothing answers at this address. Check the address – it is in the modem settings or on a sticker.",
+  "Kein ZTE-Modem erkannt": "No ZTE modem detected",
+  "Unter dieser Adresse antwortet etwas, aber kein ZTE-Modem. Diese Version unterstützt vorerst nur ZTE-Modems.": "Something answers at this address, but not a ZTE modem. For now this version only supports ZTE modems.",
+  "Anmeldung abgelehnt": "Login rejected",
+  "Das Modem lehnt das Kennwort ab. Ohne Anmeldung fehlen die Signalwerte. Kennwort prüfen und noch einmal abfragen.": "The modem rejects the password. Without login the signal values are missing. Check the password and query again.",
+  "Ergebnis": "Result",
+  "{ok} von {gesamt} Abfragen · {werte} Werte · {geschwaerzt} geschwärzt": "{ok} of {gesamt} queries · {werte} values · {geschwaerzt} redacted",
+  "Geschwärzt:": "Redacted:",
+  "IMEI, IMSI, ICCID, Rufnummer, Seriennummer, MAC- und öffentliche IP-Adressen, WLAN-Namen und -Kennwörter. Die Zellkennung bleibt drin – daraus lässt sich ungefähr bestimmen, wo das Modem steht.": "IMEI, IMSI, ICCID, phone number, serial number, MAC and public IP addresses, Wi-Fi names and passwords. The cell ID stays – it can roughly reveal where the modem is located.",
+  "⬇ Als Datei speichern": "⬇ Save as file",
+  "⬇ Trotzdem als Datei speichern": "⬇ Save as file anyway",
+  "⧉ Kopieren": "⧉ Copy",
+  "Datei an den Entwickler schicken – per Mail oder als Anhang an ein GitHub-Issue. Heimnetz sendet selbst nichts.": "Send the file to the developer – by email or attached to a GitHub issue. Heimnetz sends nothing itself.",
+  "Abfrage nicht möglich: {fehler}": "Query not possible: {fehler}",
+  "Gespeichert: {name}": "Saved: {name}",
+  "Kopiert – {n} Werte": "Copied – {n} values",
   "gelten für die ganze Seite": "apply to the whole page",
   "nur Admins ändern": "only admins can change",
   "Tarif Download": "Plan download",
@@ -5880,7 +5920,8 @@ var TEILE2 = [
   ["plan", merke("⏱️ Messplan")],
   ["wlan", merke("📶 WLAN")],
   ["meld", merke("💬 Meldungen")],
-  ["einr", merke("🧩 Einrichtung")]
+  ["einr", merke("🧩 Einrichtung")],
+  ["diag", merke("🔬 Diagnose")]
 ];
 var STUFEN = { muss: merke("Muss"), soll: merke("Soll – empfohlen"), kann: merke("Kann – optional") };
 var ZEICHEN = { ok: "✓", fehlt: "!", muss: "✕", aus: "–" };
@@ -5894,6 +5935,7 @@ function einstellungenBlatt(p4) {
     if (k2 === "einr") p4.einrichtungLaden();
   }}>${t3(name)}${k2 === "einr" ? punkt2(p4) : A}</button>`)}</div>`;
   if (teil === "einr") return b2`${kopf}<div class="ek"><div class="ek-inhalt">${einrichtung(p4)}</div></div>`;
+  if (teil === "diag") return b2`${kopf}<div class="ek"><div class="ek-inhalt">${diagnose(p4)}</div></div>`;
   if (!e6) return b2`${kopf}<div class="leer">${t3("lädt …")}</div>`;
   const inhalt = { speed: auswertung, plan: messplan, wlan: wlan2, meld: (q) => meldungenZeile(q) }[teil](p4, e6);
   return b2`${kopf}<div class="ek"><div class="ek-inhalt">${inhalt}</div></div>`;
@@ -5978,6 +6020,49 @@ function einrichtung(p4) {
         <span class="vs-r">${x2.stand ? b2`<span class="leise">${x2.stand}</span>` : A}${x2.hinweis ? b2`<span class="leise">${x2.hinweis}</span>` : A}${x2.aktionen.map((a3) => b2`<button class=${a3.blau ? "blau" : ""} @click=${() => p4.einrichtungAktion(a3)}>${a3.text}</button>`)}</span></div>`)}`)}
     <p class="hinweis" style="margin-top:8px">${t3("Heimnetz installiert nichts selbst: die Knöpfe öffnen Home Assistant oder HACS an der richtigen Stelle. Nach einem Download aus HACS Home Assistant neu starten, dann einrichten. Geprüft wird beim Öffnen dieses Reiters.")}</p>`;
 }
+var ROH = "⟨geschwärzt⟩";
+var BEFUND = {
+  adresse_nicht_erlaubt: ["amber", merke("Adresse nicht erlaubt"), merke("Die Adresse liegt nicht im eigenen Heimnetz. Abgefragt werden nur private Adressen (192.168.x.x, 10.x.x.x, 172.16–31.x.x).")],
+  nicht_erreichbar: ["rot", merke("Modem nicht erreichbar"), merke("Unter dieser Adresse antwortet nichts. Adresse prüfen – sie steht in den Einstellungen des Modems oder auf einem Aufkleber.")],
+  kein_zte: ["amber", merke("Kein ZTE-Modem erkannt"), merke("Unter dieser Adresse antwortet etwas, aber kein ZTE-Modem. Diese Version unterstützt vorerst nur ZTE-Modems.")],
+  anmeldung_abgelehnt: ["rot", merke("Anmeldung abgelehnt"), merke("Das Modem lehnt das Kennwort ab. Ohne Anmeldung fehlen die Signalwerte. Kennwort prüfen und noch einmal abfragen.")]
+};
+function diagnose(p4) {
+  if (!p4.istAdmin) return b2`<p class="hinweis" style="padding-top:8px">${t3("Diese Abfrage können nur Admins starten.")}</p>`;
+  const d3 = p4._diag;
+  const kopf = b2`
+    <p class="hinweis" style="margin:4px 0 6px">${t3("Kommt das Internet über ein eigenes 5G/LTE-Modem vor der FRITZ!Box (z. B. ZTE), kennt die Box das Funknetz nicht – Funk › Mobilfunk bleibt leer. Hier liest Heimnetz die Rohdaten des Modems aus, damit der Entwickler es unterstützen kann.")} <span class="neu">BETA</span></p>
+    <label class="dg-feld">${t3("Adresse des Modems")}<input name="adresse" inputmode="decimal" .value=${l3(d3.adresse)} ?disabled=${d3.laeuft} @change=${(ev) => {
+    p4._diag = { ...p4._diag, adresse: ev.target.value };
+  }}></label>
+    <label class="dg-feld">${t3("Kennwort der Weboberfläche (optional)")}<input name="kennwort" type="password" autocomplete="off" placeholder=${t3("wie beim Anmelden im Browser")} ?disabled=${d3.laeuft}><small>${t3("wird nur für diese Abfrage verwendet und nicht gespeichert")}</small></label>
+    <div class="dg-knoepfe"><button class="amber" ?disabled=${d3.laeuft} @click=${() => p4.modemAbfragen()}>${d3.laeuft ? t3("⏳ fragt ab …") : t3("▶ Abfragen")}</button></div>
+    ${d3.fehler ? b2`<p class="fein">${d3.fehler}</p>` : A}`;
+  if (!d3.antwort) return b2`${kopf}<p class="hinweis" style="margin-top:8px">${t3("Nur Adressen im eigenen Heimnetz (z. B. 192.168.x.x). Heimnetz liest nur und ändert am Modem nichts.")}</p>`;
+  return b2`${kopf}${ergebnis(p4, d3.antwort)}`;
+}
+function befundBlock(befund) {
+  const b3 = BEFUND[befund];
+  if (!b3) return A;
+  return b2`<div class="befund" style="margin-top:8px"><span class="punkt ${b3[0]}"></span><div><b>${t3(b3[1])}</b><p>${t3(b3[2])}</p></div></div>`;
+}
+function rohAnzeige(daten) {
+  const text = JSON.stringify(daten, null, 2);
+  return text.split(ROH).flatMap((s4, i6) => i6 === 0 ? [s4] : [b2`<i>${ROH}</i>`, s4]);
+}
+function ergebnis(p4, a3) {
+  if (!a3.abfragen.length) {
+    return b2`${befundBlock(a3.befund)}${a3.befund === "anmeldung_abgelehnt" ? b2`<div class="dg-knoepfe"><button @click=${() => p4.modemSpeichern()}>${t3("⬇ Trotzdem als Datei speichern")}</button></div>` : A}`;
+  }
+  const s4 = a3.summen;
+  return b2`${befundBlock(a3.befund)}
+    <div class="vs-stufe" style="margin-top:6px"><span>${t3("Ergebnis")}</span><span>${t3("{ok} von {gesamt} Abfragen · {werte} Werte · {geschwaerzt} geschwärzt", { ok: s4.ok, gesamt: s4.gesamt, werte: s4.werte, geschwaerzt: s4.geschwaerzt })}</span></div>
+    ${a3.abfragen.map((ab) => b2`<div class="dg-ab"><span class="vs-st ${ab.status === "ok" ? "ok" : "aus"}" style="width:18px;height:18px;font-size:10px">${ab.status === "ok" ? "✓" : "–"}</span><span>${ab.name}</span><code>${ab.angabe}</code></div>`)}
+    <div class="dg-roh">${rohAnzeige(a3.daten)}</div>
+    <div class="gh-warn"><b>${t3("Geschwärzt:")}</b> ${t3("IMEI, IMSI, ICCID, Rufnummer, Seriennummer, MAC- und öffentliche IP-Adressen, WLAN-Namen und -Kennwörter. Die Zellkennung bleibt drin – daraus lässt sich ungefähr bestimmen, wo das Modem steht.")}</div>
+    <div class="dg-knoepfe"><button class="amber" @click=${() => p4.modemSpeichern()}>${t3("⬇ Als Datei speichern")}</button><button @click=${() => p4.modemKopieren()}>${t3("⧉ Kopieren")}</button></div>
+    <p class="hinweis" style="margin-top:8px">${t3("Datei an den Entwickler schicken – per Mail oder als Anhang an ein GitHub-Issue. Heimnetz sendet selbst nichts.")}</p>`;
+}
 
 // src/ansichten/verbrauch.js
 var W2 = 600;
@@ -6046,7 +6131,7 @@ function protokoll(p4, d3) {
 }
 
 // src/heimnetz-panel.js
-var VERSION = true ? "0.24.0" : "entwicklung";
+var VERSION = true ? "0.25.0" : "entwicklung";
 var REITER = [
   ["uebersicht", merke("Übersicht")],
   ["speedtest", merke("Speedtest")],
@@ -6085,6 +6170,7 @@ var HeimnetzPanel = class extends i4 {
     _hinweis: { state: true },
     _hinweisPlan: { state: true },
     _hinweisEinr: { state: true },
+    _diag: { state: true },
     _toast: { state: true },
     _kachel: { state: true }
   };
@@ -6097,6 +6183,7 @@ var HeimnetzPanel = class extends i4 {
     this._hinweis = "";
     this._hinweisPlan = "";
     this._hinweisEinr = "";
+    this._diag = { adresse: "192.168.0.1", laeuft: false, antwort: null, fehler: "" };
     this._blatt = null;
     this._toast = "";
     this._bilder = /* @__PURE__ */ new Map();
@@ -6256,16 +6343,16 @@ var HeimnetzPanel = class extends i4 {
     const gemerkt2 = !neu && this._kachelSpeicher.get(schluessel);
     if (!neu) this._kachel = { tag: tag2, stunde, fest, daten: gemerkt2 || null };
     if (gemerkt2) return;
-    let ergebnis;
+    let ergebnis2;
     try {
       const daten = await this.ws("speedtest/kachel", parameter);
       this._kachelSpeicher.set(schluessel, daten);
-      ergebnis = { daten };
+      ergebnis2 = { daten };
     } catch (err) {
-      ergebnis = { fehler: err && err.message || String(err) };
+      ergebnis2 = { fehler: err && err.message || String(err) };
     }
     const k2 = this._kachel;
-    if (k2 && k2.tag === tag2 && k2.stunde === stunde) this._kachel = { tag: tag2, stunde, fest: k2.fest, daten: null, ...ergebnis };
+    if (k2 && k2.tag === tag2 && k2.stunde === stunde) this._kachel = { tag: tag2, stunde, fest: k2.fest, daten: null, ...ergebnis2 };
   }
   /** WU-0005: alle Werte einer Messung (Zeile in „Letzte Messungen“). */
   messungOeffnen(m3) {
@@ -6343,6 +6430,45 @@ var HeimnetzPanel = class extends i4 {
     }
     this.zu();
     this.oeffne(a3.ziel);
+  }
+  /** WU-0008: Rohdaten eines vorgeschalteten Modems abfragen (nur Admins). Das Kennwort geht nur mit dieser Abfrage
+      mit, wird nie im Zustand behalten und nach der Abfrage im Feld gelöscht. */
+  async modemAbfragen() {
+    const blatt = this.shadowRoot.querySelector(".sheet");
+    const feld2 = blatt && blatt.querySelector("input[name=kennwort]");
+    const adresse = (blatt && blatt.querySelector("input[name=adresse]").value || "").trim();
+    const kennwort = feld2 && feld2.value || null;
+    this._diag = { ...this._diag, adresse, laeuft: true, fehler: "" };
+    try {
+      const antwort = await this.ws("modem", { adresse, kennwort });
+      this._diag = { ...this._diag, adresse, laeuft: false, antwort, fehler: "" };
+    } catch (err) {
+      this._diag = { ...this._diag, laeuft: false, fehler: t3("Abfrage nicht möglich: {fehler}", { fehler: err && err.message || err }) };
+    } finally {
+      if (feld2) feld2.value = "";
+    }
+  }
+  /** WU-0008: geschwärzte Antwort als Datei – Inhalt = Antwort des WS-Befehls plus Heimnetz-Version und Zeitpunkt. */
+  _modemDatei() {
+    return JSON.stringify({ heimnetz: VERSION, zeit: (/* @__PURE__ */ new Date()).toISOString(), antwort: this._diag.antwort }, null, 2);
+  }
+  modemSpeichern() {
+    if (!this._diag.antwort) return;
+    const name = `heimnetz-modem-${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}.json`;
+    const blob = new Blob([this._modemDatei()], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a3 = document.createElement("a");
+    a3.href = url;
+    a3.download = name;
+    a3.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1e3);
+    this.toast(t3("Gespeichert: {name}", { name }));
+  }
+  modemKopieren() {
+    if (!this._diag.antwort) return;
+    if (navigator.clipboard) navigator.clipboard.writeText(this._modemDatei()).catch(() => {
+    });
+    this.toast(t3("Kopiert – {n} Werte", { n: this._diag.antwort.summen.werte }));
   }
   /* ---- Melden (Tickets) ---- */
   toast(text) {

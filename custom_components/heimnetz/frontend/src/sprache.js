@@ -279,6 +279,44 @@ export const EN = {
   'Heimnetz installiert nichts selbst: die Knöpfe öffnen Home Assistant oder HACS an der richtigen Stelle. Nach einem Download aus HACS Home Assistant neu starten, dann einrichten. Geprüft wird beim Öffnen dieses Reiters.':
     'Heimnetz installs nothing itself: the buttons open Home Assistant or HACS at the right place. After a download from HACS, restart Home Assistant, then set it up. Checked whenever this tab is opened.',
   'Einrichtung nicht abrufbar: {fehler}': 'Setup status not available: {fehler}',
+  // Diagnose: vorgeschaltetes Modem (WU-0008)
+  '🔬 Diagnose': '🔬 Diagnostics',
+  'Diese Abfrage können nur Admins starten.': 'Only admins can run this query.',
+  'Kommt das Internet über ein eigenes 5G/LTE-Modem vor der FRITZ!Box (z. B. ZTE), kennt die Box das Funknetz nicht – Funk › Mobilfunk bleibt leer. Hier liest Heimnetz die Rohdaten des Modems aus, damit der Entwickler es unterstützen kann.':
+    'If the internet comes through a separate 5G/LTE modem in front of the FRITZ!Box (e.g. a ZTE), the box does not know the mobile network – Wireless › Mobile stays empty. Here Heimnetz reads the modem\'s raw data so the developer can add support for it.',
+  'Adresse des Modems': 'Modem address',
+  'Kennwort der Weboberfläche (optional)': 'Web interface password (optional)',
+  'wie beim Anmelden im Browser': 'as when logging in via the browser',
+  'wird nur für diese Abfrage verwendet und nicht gespeichert': 'used only for this query and not stored',
+  '⏳ fragt ab …': '⏳ querying …',
+  '▶ Abfragen': '▶ Query',
+  'Nur Adressen im eigenen Heimnetz (z. B. 192.168.x.x). Heimnetz liest nur und ändert am Modem nichts.':
+    'Only addresses inside your home network (e.g. 192.168.x.x). Heimnetz only reads and changes nothing on the modem.',
+  'Adresse nicht erlaubt': 'Address not allowed',
+  'Die Adresse liegt nicht im eigenen Heimnetz. Abgefragt werden nur private Adressen (192.168.x.x, 10.x.x.x, 172.16–31.x.x).':
+    'The address is not inside your home network. Only private addresses are queried (192.168.x.x, 10.x.x.x, 172.16–31.x.x).',
+  'Modem nicht erreichbar': 'Modem not reachable',
+  'Unter dieser Adresse antwortet nichts. Adresse prüfen – sie steht in den Einstellungen des Modems oder auf einem Aufkleber.':
+    'Nothing answers at this address. Check the address – it is in the modem settings or on a sticker.',
+  'Kein ZTE-Modem erkannt': 'No ZTE modem detected',
+  'Unter dieser Adresse antwortet etwas, aber kein ZTE-Modem. Diese Version unterstützt vorerst nur ZTE-Modems.':
+    'Something answers at this address, but not a ZTE modem. For now this version only supports ZTE modems.',
+  'Anmeldung abgelehnt': 'Login rejected',
+  'Das Modem lehnt das Kennwort ab. Ohne Anmeldung fehlen die Signalwerte. Kennwort prüfen und noch einmal abfragen.':
+    'The modem rejects the password. Without login the signal values are missing. Check the password and query again.',
+  'Ergebnis': 'Result',
+  '{ok} von {gesamt} Abfragen · {werte} Werte · {geschwaerzt} geschwärzt': '{ok} of {gesamt} queries · {werte} values · {geschwaerzt} redacted',
+  'Geschwärzt:': 'Redacted:',
+  'IMEI, IMSI, ICCID, Rufnummer, Seriennummer, MAC- und öffentliche IP-Adressen, WLAN-Namen und -Kennwörter. Die Zellkennung bleibt drin – daraus lässt sich ungefähr bestimmen, wo das Modem steht.':
+    'IMEI, IMSI, ICCID, phone number, serial number, MAC and public IP addresses, Wi-Fi names and passwords. The cell ID stays – it can roughly reveal where the modem is located.',
+  '⬇ Als Datei speichern': '⬇ Save as file',
+  '⬇ Trotzdem als Datei speichern': '⬇ Save as file anyway',
+  '⧉ Kopieren': '⧉ Copy',
+  'Datei an den Entwickler schicken – per Mail oder als Anhang an ein GitHub-Issue. Heimnetz sendet selbst nichts.':
+    'Send the file to the developer – by email or attached to a GitHub issue. Heimnetz sends nothing itself.',
+  'Abfrage nicht möglich: {fehler}': 'Query not possible: {fehler}',
+  'Gespeichert: {name}': 'Saved: {name}',
+  'Kopiert – {n} Werte': 'Copied – {n} values',
   'gelten für die ganze Seite': 'apply to the whole page',
   'nur Admins ändern': 'only admins can change',
   'Tarif Download': 'Plan download',

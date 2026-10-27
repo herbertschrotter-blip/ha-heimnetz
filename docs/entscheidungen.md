@@ -308,6 +308,36 @@ nachgetragen.
 - Fehlt der Recorder, gibt es zusätzlich einen Reparatur-Hinweis (Warnung, Heimnetz startet trotzdem); für FRITZ!Box
   Tools gab es ihn schon.
 
+## Vorgeschaltetes Modem – Rohdaten-Werkzeug (Herbert, 27.10.2026, WU-0008)
+
+- Anlass: Ein Nutzer hat das Mobilfunk-Modem nicht in der FRITZ!Box, sondern ein vorgeschaltetes ZTE-5G-Modem
+  (vermutlich ZTE G5TC von Drei Österreich oder G5TS). Die FRITZ!Box kennt dann keine Funkdaten, „Funk › Mobilfunk“
+  bleibt leer. Um das später zu unterstützen, braucht der Entwickler Rohdaten. Diese Version (Mockup `netzwerk.html` ·
+  Diagnose, abgenommen 27.10.2026) liefert nur das Abfrage- und Export-Werkzeug, keine Auswertung.
+- Reiter „🔬 Diagnose“ (Beta) im Fenster ⚙ Einstellungen: Adresse (Vorgabe 192.168.0.1) und Kennwort (optional). Abfragen
+  und Schwärzen macht die Integration (`logik/modem.py` rein ohne HA, `modem.py` dünn über das Netz; WebSocket-Befehl
+  `heimnetz/modem`, nur Admins), die Seite zeigt nur an und speichert/kopiert die geschwärzte Antwort.
+- Dritte Ausnahme von „die Integration liest nur“ nach außen: auf Knopfdruck die Weboberfläche eines vorgeschalteten
+  Modems im eigenen Heimnetz. Sicherheit (mit Tests): nur private IPv4/IPv6-Adressen, die nicht
+  Loopback/Link-Local/unspezifiziert sind, keine Hostnamen; keine Weiterleitungen; Zeitlimit je Anfrage (~8 s),
+  Gesamtzeit und Antwortgröße begrenzt (512 KB); http zuerst, https ohne Zertifikatsprüfung nur, wenn http nicht
+  antwortet, und nur zu genau dieser privaten Adresse. Nur lesende Abfragen plus Anmeldung/Abmeldung; der ZTE-Befehl
+  `goform_set_cmd_process` wird ausschließlich mit `goformId=LOGIN`/`LOGOUT` aufgerufen, nie mit einem anderen
+  set-Befehl. Eigene kurzlebige aiohttp-Session mit Cookie-Jar für die Anmeldung.
+- Anmeldung nur mit dem Kennwort, das der Besitzer selbst eingibt, über das normale Web-Login des Geräts (LD-Wert holen,
+  SHA-256-Hash bilden – öffentlich dokumentiert, z. B. `teixeluis/zte-lte-modem`); kein Raten, höchstens ein Versuch je
+  Klick. Klappt es nicht → Befund `anmeldung_abgelehnt`, die Daten ohne Anmeldung bleiben im Ergebnis. Das Kennwort wird
+  nie gespeichert, nie protokolliert, steht in keiner Antwort und wird nach der Abfrage im Frontend-Feld gelöscht.
+- Abfrageablauf, jede Stufe als eigener Eintrag (auch wenn sie scheitert, Rohantwort gekürzt + geschwärzt): Startseite
+  (Modell), goform ohne Anmeldung, Anmeldung, goform nach Anmeldung, zweite lesende Schnittstelle (ubus, höchstens eine
+  Abfrage, sonst „nicht vorhanden“). Geschwärzt wird nach Schlüssel und nach Wert (IMEI, IMSI, ICCID, Rufnummer,
+  Seriennummer, MAC- und öffentliche IP-Adressen, WLAN-Name/-Kennwort, Zugang, Sitzung, Koordinaten); Zellkennung,
+  Signal, Band, Technik, Modell und Firmware bleiben, weil der Entwickler sie braucht. Export als Datei
+  (`heimnetz-modem-JJJJ-MM-TT.json`) oder in die Zwischenablage, Inhalt = die geschwärzte Antwort plus Heimnetz-Version
+  und Zeitpunkt. Heimnetz sendet selbst nichts an GitHub oder sonst nach außen; die Datei schickt der Nutzer selbst.
+- Bewusst weggelassen: Versand an GitHub, Speichern des Kennworts, Auswerten der Werte (kommt mit der Unterstützung des
+  Modems).
+
 ## Offene Entscheidungen
 
 - Keine.

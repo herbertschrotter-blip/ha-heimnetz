@@ -46,9 +46,37 @@ export function machHass({ admin = true, dunkel = true, sprache = 'de' } = {}) {
       if (befehl === 'meldung/bild_zeigen') return { url: 'data:image/jpeg;base64,AAAA' };
       if (befehl === 'meldung/status') return { ...MELDUNGEN[0], status: msg.status, offen: msg.status !== 'geschlossen' };
       if (befehl === 'meldung/loeschen') return { ok: true };
+      if (befehl === 'modem') return MODEM_ANTWORT(msg);
       if (!(befehl in DATEN)) throw new Error(`unbekannt: ${msg.type}`);
       return DATEN[befehl];
     },
+  };
+}
+
+/** Antwort von heimnetz/modem (WU-0008; tests/integration/test_modem.py prüft dieselbe Form). */
+export function MODEM_ANTWORT(msg) {
+  if (!/^(192\.168|10\.|172\.(1[6-9]|2\d|3[01]))/.test((msg.adresse || '').trim())) {
+    return { modell: '', abfragen: [], summen: { ok: 0, gesamt: 0, werte: 0, geschwaerzt: 0 }, befund: 'adresse_nicht_erlaubt', daten: {} };
+  }
+  if (msg.kennwort === 'falsch') {
+    return {
+      modell: 'ZTE G5TC',
+      abfragen: [{ name: 'Startseite', status: 'ok', angabe: 'ZTE G5TC erkannt' }, { name: 'Werte ohne Anmeldung', status: 'ok', angabe: '12 Werte' }, { name: 'Anmeldung', status: 'fehler', angabe: 'abgelehnt' }],
+      summen: { ok: 2, gesamt: 3, werte: 12, geschwaerzt: 2 }, befund: 'anmeldung_abgelehnt',
+      daten: { ohne_anmeldung: { modem_model: 'ZTE G5TC', imei: '⟨geschwärzt⟩' } },
+    };
+  }
+  return {
+    modell: 'ZTE G5TC',
+    abfragen: [
+      { name: 'Startseite', status: 'ok', angabe: 'ZTE G5TC erkannt' },
+      { name: 'Werte ohne Anmeldung', status: 'ok', angabe: '12 Werte' },
+      { name: 'Anmeldung', status: 'ok', angabe: 'angenommen' },
+      { name: 'Werte nach Anmeldung', status: 'ok', angabe: '186 Werte' },
+      { name: 'zweite Schnittstelle (ubus)', status: 'aus', angabe: 'nicht vorhanden' },
+    ],
+    summen: { ok: 4, gesamt: 5, werte: 198, geschwaerzt: 11 }, befund: null,
+    daten: { nach_anmeldung: { modem_model: 'ZTE G5TC', cell_id: '1A2B3C4', lte_pci: '301', imei: '⟨geschwärzt⟩', iccid: '⟨geschwärzt⟩' } },
   };
 }
 

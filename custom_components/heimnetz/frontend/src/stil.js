@@ -223,6 +223,16 @@ select.ga-wahl { font: inherit; font-size: 13px; color: var(--ink); background: 
 .vs-r button.blau { background: color-mix(in srgb, var(--blau) 22%, transparent); }
 .vs-kopf { border-radius: 12px; padding: 8px 12px; font-size: 13px; line-height: 1.4; background: rgba(127,127,127,.1); margin: 6px 0 2px; }
 @container (max-width: 520px) { .vs { grid-template-columns: 22px minmax(0, 1fr); } .vs-r { grid-column: 2; justify-content: flex-start; } }
+/* WU-0008: Diagnose – Rohdaten eines vorgeschalteten Modems (Mockup netzwerk.html · Diagnose). Reiterleiste am Handy schiebbar. */
+@container (max-width: 520px) { .e-reiter { overflow-x: auto; scrollbar-width: none; } .e-reiter.seg button { flex: none; padding: 7px 8px; } }
+.dg-feld { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--ink2); padding: 6px 0; }
+.dg-feld input { font: inherit; font-size: 14px; color: var(--ink); background: rgba(120,120,128,.14); border: 1px solid var(--gridc); border-radius: 12px; padding: 8px 10px; }
+.dg-ab { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 6px 0; font-size: 13px; }
+.dg-ab + .dg-ab { border-top: 1px solid var(--gridc); } .dg-ab code { font-size: 12px; color: var(--ink2); }
+.dg-roh { font: 11.5px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; word-break: break-all; border: 1px solid var(--gridc); border-radius: 12px; padding: 10px 12px; max-height: 260px; overflow: auto; color: var(--ink); margin: 6px 0; }
+.dg-roh i { font-style: normal; color: var(--amber); }
+.dg-knoepfe { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; } .dg-knoepfe button { flex: 1 1 140px; padding: 10px; border-radius: 14px; font-size: 14px; font-weight: 600; background: rgba(120,120,128,.2); }
+.dg-knoepfe button.amber { background: var(--amber); color: #1c1c1e; } .dg-knoepfe button[disabled] { opacity: .5; cursor: not-allowed; }
 /* Melden (Tickets wie im Baustrommanager; Mockup netzwerk.html · Melden, 13.10.2026) */
 .melden-knopf { position: absolute; right: 16px; bottom: 96px; z-index: 6; width: 40px; height: 40px; border-radius: 50% !important; display: grid; place-items: center; color: var(--ink2); opacity: .85; }
 .melden-knopf:hover { opacity: 1; color: var(--ink); }
