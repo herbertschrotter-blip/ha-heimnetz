@@ -2,6 +2,8 @@
 
 ## [0.27.0]
 
+- Fix (FE-0006): „Öffentlich auf GitHub melden“ schwärzt Zellkennungen jetzt bis 16 Stellen (ECI/NCI dezimal, auch mit
+  0x) – längere Kennungen blieben bisher im Issue stehen. Wörter wie „PCI face“ bleiben dafür stehen.
 - WU-0009 Stufe 2 (Mockup netzwerk.html · Internet und Zugang, abgenommen 27.10.2026): Ein **vorgeschaltetes Gerät**
   vor der FRITZ!Box wird automatisch erkannt und liefert laufend Werte in den Reiter **Internet** – wie die Box selbst.
   Oben „Werte vom vorgeschalteten Modem (Beta)“, darunter die Mobilfunk-Ansicht mit Herkunft „vom vorgeschalteten

@@ -3,6 +3,7 @@ Wunsch, Kürzen auf die Länge eines Links. Alle Adressen, Namen und Kennungen h
 
 from urllib.parse import parse_qs, urlsplit
 
+import pytest
 from logik import github as gh
 from logik import mobil as mb
 from logik import tickets as tk
@@ -211,3 +212,22 @@ def test_geraet_nur_bekannte_werte():
     u = gh.Umgebung(heimnetz="0.23.0", ha="2026.10.2", kontext="Übersicht", geraet="Tablet-Küche")
     i = gh.issue(BASIS, "fehler", "x", u)
     assert "Tablet" not in i.text and "- Reiter: Übersicht\n" in i.text + "\n"
+
+
+@pytest.mark.parametrize(
+    "roh",
+    ["cell id: 123456789", "ECI 268435455", "NCI=68719476735", "eNB 0x1dad8", "Cell-ID: 1A2B3C4D5"],
+)
+def test_lange_zellkennungen_geschwaerzt(roh):
+    """FE-0006: Kennungen mit mehr als 8 Stellen (ECI/NCI dezimal) blieben im öffentlichen Issue stehen."""
+    aus = gh.schwaerzen(roh)
+    assert "[entfernt]" in aus
+    assert not any(
+        z in aus for z in ("123456789", "268435455", "68719476735", "1dad8", "1A2B3C4D5")
+    )
+
+
+@pytest.mark.parametrize("roh", ["PCI face", "die tac bad", "cid cafe"])
+def test_woerter_nach_tac_pci_bleiben(roh):
+    """FE-0006: Wörter aus a–f nach TAC/PCI/CID sind keine Kennung."""
+    assert gh.schwaerzen(roh) == roh

@@ -39,10 +39,11 @@ _ORT = re.compile(
 # Koordinaten als einzelne Werte mit Schlüssel, etwa in Kartenlinks („?mlat=47.07071&mlon=15.43952“, „lat: 47.0707“)
 _ORT_WERT = re.compile(r"(?i)\b(m?lat|m?lon|lng|latitude|longitude)(\s*[=:]\s*)-?\d{1,3}\.\d{3,}")
 # Zellkennung, wie die Box sie zeigt: Sendeanlage (eNodeB, hex) und Sektor („4f2a1-17“); dazu Werte hinter TAC, PCI,
-# ECI, eNB, Cell-ID – daraus lässt sich der Wohnort eingrenzen, auch wenn der Nutzer sie selbst in den Text schreibt
+# ECI, NCI, eNB, Cell-ID – daraus lässt sich der Wohnort eingrenzen, auch wenn der Nutzer sie selbst in den Text schreibt.
+# Bis 16 Stellen (ECI/NCI dezimal sind 9–11 Stellen, FE-0006); mindestens eine Ziffer, damit „PCI face“ stehen bleibt
 _ZELLE = re.compile(r"(?<![0-9A-Za-z])[0-9A-Fa-f]{5,6}-[0-9A-Fa-f]{2}(?![0-9A-Za-z])")
 _ZELL_WERT = re.compile(
-    r"(?i)\b(tac|pci|eci|enb|enodeb|gnb|cell[-_ ]?id|cid)(\s*[:=]?\s*)[0-9a-f]{1,8}(?![0-9A-Za-z])"
+    r"(?i)\b(tac|pci|eci|nci|enb|enodeb|gnb|cell[-_ ]?id|cid)(\s*[:=]?\s*)(?:0x)?(?=[0-9a-f]*\d)[0-9a-f]{1,16}(?![0-9A-Za-z])"
 )
 # Gerät zur Meldung: nur die Werte, die die eigene Seite schickt (Handy/Phone, Desktop) – alles andere fällt weg
 GERAETE = ("Handy", "Phone", "Desktop")
