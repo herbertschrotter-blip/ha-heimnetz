@@ -7,11 +7,19 @@ Heimnetz schon ausgelastet war.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass, field
+from datetime import datetime, tzinfo
 from typing import Any
 
+from . import sprache as sp
+from .ereignis import INFO, Ereignis
 from .verkehr import Zaehlerstand, grundlast
 from .werte import kurz
+
+# AN-0007: Kennung einer Messung ist ihr Zeitpunkt (Primärschlüssel der Tabelle, so wie die Seite ihn bekommt).
+# Zwei Messungen liegen nie weniger als eine Sekunde auseinander; die Spanne fängt Rundung auf dem Weg ab.
+GLEICH_S = 0.5
 
 
 @dataclass(frozen=True)
@@ -51,3 +59,28 @@ def eintragen(
         last_down=last.down if last else None,
         last_up=last.up if last else None,
     )
+
+
+def gleich(t: float, kennung: float) -> bool:
+    """AN-0007: Zeitpunkt `t` gehört zur Messung mit der Kennung `kennung`."""
+    return abs(t - kennung) < GLEICH_S
+
+
+def ist_geloescht(t: float, geloescht: Iterable[float]) -> bool:
+    """AN-0007: gelöschte Messung – sie darf nicht wieder eingetragen werden (Ookla zeigt sie weiter als letzten
+    Test, und nach einem Neustart liest die Integration den noch einmal)."""
+    return any(gleich(t, g) for g in geloescht)
+
+
+def ohne_geloeschte(messungen: Iterable[Messung], geloescht: Iterable[float]) -> list[Messung]:
+    """AN-0007: Messungen ohne die gelöschten (Merkliste der Zeitpunkte)."""
+    liste = list(geloescht)
+    return [m for m in messungen if not ist_geloescht(m.t, liste)]
+
+
+def geloescht_ereignis(t: float, tz: tzinfo, sprache: str = sp.DE) -> Ereignis:
+    """AN-0007: Journalzeile „Messung <Zeit> gelöscht“ – nur der Zeitpunkt, keine Person und kein Gerät."""
+    zeit = datetime.fromtimestamp(t, tz).strftime(
+        "%d.%m.%Y %H:%M" if sprache == sp.DE else "%Y-%m-%d %H:%M"
+    )
+    return Ereignis("messung_geloescht", INFO, sp.t("Messung {zeit} gelöscht", sprache, zeit=zeit))

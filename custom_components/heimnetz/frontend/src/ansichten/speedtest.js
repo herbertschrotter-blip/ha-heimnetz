@@ -177,7 +177,23 @@ export function messungBlatt(p) {
     <div class="gruppe"><span class="gr-ic">🌦️</span>${t('Umgebung')}</div>
     ${z(t('Wetter'), k.wetter ? [WETTER[k.wetter] ? t(WETTER[k.wetter]) : k.wetter, k.temperatur != null && `${zahl(k.temperatur, 1)} °C`, k.feuchte != null && t('{n} % Feuchte', { n: zahl(k.feuchte) }), k.wolken != null && t('{n} % Wolken', { n: zahl(k.wolken) })].filter(Boolean).join(' · ') : null)}
     ${z(t('Tag'), TAGESART[k.tagesart] && t(TAGESART[k.tagesart]))}
-    <p class="hinweis" style="margin-top:10px">${k.mobil_quelle === 'modem' ? t('Funkwerte vom vorgeschalteten Modem – was es nicht liefert, fehlt.') : t('Nicht verfügbar über die Schnittstelle der Box: genutztes Band, SINR, Bandbreite, MIMO, Carrier Aggregation.')}</p>`;
+    <p class="hinweis" style="margin-top:10px">${k.mobil_quelle === 'modem' ? t('Funkwerte vom vorgeschalteten Modem – was es nicht liefert, fehlt.') : t('Nicht verfügbar über die Schnittstelle der Box: genutztes Band, SINR, Bandbreite, MIMO, Carrier Aggregation.')}</p>
+    ${loeschenTeil(p, m)}`;
+}
+
+/** AN-0007 (Mockup netzwerk.html · Messung löschen): Knopf unten im Fenster, nur für Admins; Tippen zeigt an derselben
+ *  Stelle die Rückfrage. Gelöscht wird in der Integration (heimnetz/messung/loeschen). */
+function loeschenTeil(p, m) {
+  const hinweis = html`<p class="hinweis" style="margin-top:6px">${t('Löschen dürfen nur Admins.')}</p>`;
+  if (!p.istAdmin) return hinweis;
+  const b = p._blatt;
+  const teil = b.frage
+    ? html`<div class="mg-frage"><b>${t('Messung {zeit} löschen?', { zeit: zeit(m.t) })}</b><br>${t('Sie verschwindet aus Raster, Tagesverlauf, Auswertung und dieser Liste. Der Verlauf der Ookla-Entitäten in Home Assistant bleibt. Das lässt sich nicht rückgängig machen.')}
+      ${b.fehler ? html`<p class="fein">${t('Nicht gelöscht: {fehler}', { fehler: b.fehler })}</p>` : nothing}
+      <div class="dg-knoepfe" style="margin-top:10px"><button class="rot" ?disabled=${b.loescht} @click=${() => p.messungLoeschen()}>${b.loescht ? t('löscht …') : t('Löschen')}</button>
+        <button ?disabled=${b.loescht} @click=${() => p.messungFrage(false)}>${t('Abbrechen')}</button></div></div>`
+    : html`<button class="mg-loeschen" @click=${() => p.messungFrage(true)}>🗑 ${t('Messung löschen')}</button>`;
+  return html`${teil}${hinweis}`;
 }
 
 const BELASTET_KURZ = { aus: merke('zählt nicht'), halb: merke('zählt ¼'), mit: merke('belastet') };

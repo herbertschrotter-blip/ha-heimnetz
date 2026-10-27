@@ -37,6 +37,7 @@ EN: dict[str, str] = {
     "der Adresse der Box": "the box’s address",
     "Befund: {titel} – {text}": "Finding: {titel} – {text}",
     "Befund erledigt: {titel}": "Finding resolved: {titel}",
+    "Messung {zeit} gelöscht": "Measurement {zeit} deleted",
     "noch nicht gelaufen": "not run yet",
     "nicht möglich": "not possible",
     "kein Server antwortet": "no server answers",
@@ -212,6 +213,8 @@ EN: dict[str, str] = {
     # Fehler der WebSocket-Befehle (websocket.py, tickets.py)
     "Die Integration Heimnetz ist nicht geladen.": "The Heimnetz integration is not loaded.",
     "Gerät nicht gefunden": "Device not found",
+    "Messung nicht gefunden": "Measurement not found",
+    "Gerade läuft eine Sicherung – bitte gleich noch einmal.": "A backup is running – please try again in a moment.",
     "Die Ookla-Integration ist nicht eingerichtet.": "The Ookla integration is not set up.",
     "Es läuft schon eine Serie oder Ookla fehlt.": "A series is already running or Ookla is missing.",
     "Meldung nicht gefunden": "Report not found",

@@ -254,6 +254,11 @@ async def test_antworten_haben_die_form_der_vorlage(
     assert antworten["internet_dsl"]["ersatz"]["text"]
     assert antworten["internet_glasfaser"]["glasfaser"]["rx"] == -19.4
     assert antworten["internet_kabel"]["kabel"]["down_mbit"] == 1000
+    # AN-0007: Messung löschen (Kennung = Zeitpunkt aus heimnetz/speedtest) – zuletzt, damit oben alles gezählt ist
+    await client.send_json_auto_id(
+        {"type": "heimnetz/messung/loeschen", "t": antworten["speedtest"]["messungen"][-1]["t"]}
+    )
+    antworten["messung/loeschen"] = (await client.receive_json())["result"]
     if os.environ.get("HEIMNETZ_VORLAGE"):
         VORLAGE.write_text(
             json.dumps(antworten, ensure_ascii=False, indent=1) + "\n", encoding="utf-8"

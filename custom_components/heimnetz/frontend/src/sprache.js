@@ -185,6 +185,13 @@ export const EN = {
   'nachgetragen aus Verlauf und Journal – Box, Heimnetz und Teile des Mobilfunks nicht bekannt':
     'filled in from history and journal – box, home network and parts of the mobile data unknown',
   'Momentaufnahme im Moment der Messung': 'snapshot at the moment of the measurement',
+  'Messung löschen': 'Delete measurement',
+  'Messung {zeit} löschen?': 'Delete measurement {zeit}?',
+  'Sie verschwindet aus Raster, Tagesverlauf, Auswertung und dieser Liste. Der Verlauf der Ookla-Entitäten in Home Assistant bleibt. Das lässt sich nicht rückgängig machen.':
+    'It disappears from the grid, daily profile, analysis and this list. The history of the Ookla entities in Home Assistant stays. This cannot be undone.',
+  'löscht …': 'deleting …',
+  'Löschen dürfen nur Admins.': 'Only admins may delete.',
+  'Messung {zeit} gelöscht': 'Measurement {zeit} deleted',
   'Messung': 'Measurement',
   'Jitter (gesamt · ↓ · ↑)': 'Jitter (total · ↓ · ↑)',
   'Note {note}': 'grade {note}',

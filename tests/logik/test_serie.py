@@ -30,3 +30,18 @@ def test_messplan_serie():
     for falsch in (1, 6, "x"):
         with pytest.raises(es.Ungueltig, match="Serie"):
             mp.pruefen({"serie": falsch})
+
+
+def test_an0007_geloeschter_durchlauf_faellt_aus_der_serie():
+    laeufe = [
+        sr.Lauf(100.0, "Wien", 118.0, 41.0, 23.0),
+        sr.Lauf(160.0, "Wien", 60.0, 39.0, 27.0),
+        sr.Lauf(220.0, "Graz", 121.0, None, 22.0),
+    ]
+    gemerkt = sr.ergebnis(laeufe, 150.0, 3)
+    rest = sr.ohne_lauf(gemerkt, lambda t: abs(t - 160.0) < 0.5, 150.0)
+    assert rest is not None and [x["t"] for x in rest["laeufe"]] == [100.0, 220.0]
+    assert rest["down"] == {"median": 119.5, "min": 118.0, "max": 121.0} and rest["geplant"] == 3
+    assert sr.ohne_lauf(gemerkt, lambda t: t == 999.0, 150.0) is None  # nicht betroffen
+    leer = sr.ohne_lauf(sr.ergebnis(laeufe[:1], None, 1), lambda t: True, None)
+    assert leer == {}  # kein Durchlauf mehr: keine Serie zeigen

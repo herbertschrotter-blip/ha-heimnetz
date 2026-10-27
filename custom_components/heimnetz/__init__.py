@@ -142,9 +142,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: EintragMitLaufzeit) -> b
             hass, entry, Box(zugang), entry.data[CONF_FRITZ_EINTRAG], datenbank, gedaechtnis, letzte
         )
         if letzte:
-            abruf.letzte = (await hass.async_add_executor_job(datenbank.messungen_lesen, letzte))[
-                -1
-            ]
+            abruf.letzte = await hass.async_add_executor_job(datenbank.letzte_lesen)
         # WU-0006: Vorgabe-Messplan nur für eine neue Installation, nicht beim Umstieg von der alten Integration
         einstellungen = Einstellungsdienst(
             hass, entry.entry_id, neu=not entry.data.get(CONF_ALT_EINTRAG)

@@ -130,6 +130,10 @@ Jede Messung kostet Datenvolumen – etwa (Download + Upload in Mbit/s) × 12 s 
 einige hundert MB, z. B. 150/30 Mbit/s ≈ 270 MB je Messung, 4-mal am Tag rund 32 GB im Monat. **Bei Mobilfunk mit
 Datenlimit lieber selten messen.** Die Einstellungen zeigen die Schätzung für den eigenen Plan.
 
+Eine einzelne Messung (z. B. eine Fehlmessung) löschen Admins im Fenster der Messung (Tipp auf eine Zeile in „Letzte
+Messungen“ → „🗑 Messung löschen“). Sie verschwindet aus Raster, Tagesverlauf, Auswertung und dem Sensor „Letzte
+Messung“; gelöscht wird nur in Heimnetz, der Verlauf der Ookla-Entitäten in Home Assistant bleibt.
+
 ## Datenschutz
 
 Heimnetz arbeitet lokal. Nach außen geht nur:
@@ -422,6 +426,10 @@ load).
 Each test uses data – roughly (download + upload in Mbit/s) × 12 s / 8. On fast lines that is a few hundred MB, e.g.
 150/30 Mbit/s ≈ 270 MB per test, 4 times a day about 32 GB a month. **On mobile plans with a data cap, test rarely.**
 The settings show the estimate for your schedule.
+
+Admins delete a single test (e.g. a failed one) in the test's window (tap a row in "Recent measurements" → "🗑 Delete
+measurement"). It disappears from the grid, daily profile, analysis and the "Last measurement" sensor; it is deleted in
+Heimnetz only, the history of the Ookla entities in Home Assistant stays.
 
 ### Privacy
 

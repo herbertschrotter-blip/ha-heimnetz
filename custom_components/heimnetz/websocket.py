@@ -19,6 +19,7 @@ from .logik import vorgeschaltet as ve
 from .logik import zugang as zg
 from .logik.einstellungen import Ungueltig
 from .logik.sprache import t
+from .speicher import Angehalten
 
 
 def _tr(hass: HomeAssistant, text: str) -> str:
@@ -105,6 +106,36 @@ async def _speedtest_kachel(
             msg["stunde"],
         )
         connection.send_result(msg["id"], daten)
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): f"{DOMAIN}/messung/loeschen",
+        vol.Required("t"): vol.Coerce(float),  # Kennung = Zeitpunkt, wie in heimnetz/speedtest
+    }
+)
+@websocket_api.require_admin
+@websocket_api.async_response
+async def _messung_loeschen(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
+) -> None:
+    """AN-0007: eine Messung in Heimnetz löschen (nur Admins); der Verlauf der Ookla-Entitäten bleibt."""
+    if lz := _laufzeit(hass, connection, msg):
+        try:
+            t = await lz.abruf.messung_loeschen(msg["t"])
+        except Angehalten:
+            connection.send_error(
+                msg["id"],
+                "sicherung",
+                _tr(hass, "Gerade läuft eine Sicherung – bitte gleich noch einmal."),
+            )
+            return
+        if t is None:
+            connection.send_error(
+                msg["id"], websocket_api.ERR_NOT_FOUND, _tr(hass, "Messung nicht gefunden")
+            )
+        else:
+            connection.send_result(msg["id"], {"t": t})
 
 
 @websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/geraete"})
@@ -464,6 +495,7 @@ BEFEHLE = (
     _uebersicht,
     _speedtest,
     _speedtest_kachel,
+    _messung_loeschen,
     _geraete,
     _geraet,
     _geraet_art,

@@ -123,6 +123,81 @@ async def test_speedtest(hass, geladen, hass_ws_client):
         ]
 
 
+async def test_an0007_messung_loeschen(hass, geladen, hass_ws_client, hass_read_only_access_token):
+    """AN-0007: nur Admins; unbekannte Kennung → Fehler; danach weg aus Speedtest, Kachel, Serie und Sensor."""
+    lz = geladen.runtime_data
+    jetzt = dt_util.utcnow()
+    messungen = [
+        Messung((jetzt - timedelta(hours=h)).timestamp(), 100.0 + h, 30.0, 20.0, "Wien", 1.0, 0.1)
+        for h in (2, 1, 0)
+    ]
+    await hass.async_add_executor_job(lz.datenbank.messungen_schreiben, messungen)
+    neueste = messungen[-1]
+    lz.abruf.letzte = neueste
+    await lz.einstellungen.async_serie_merken(
+        {
+            "laeufe": [
+                {"t": m.t, "server": "Wien", "down": m.down, "up": m.up, "ping": m.ping}
+                for m in messungen
+            ],
+            "geplant": 3,
+        }
+    )
+    d = (
+        await _frage(
+            hass_ws_client, hass, type="heimnetz/speedtest", tage=7, groesse="down", grundlast="aus"
+        )
+    )["result"]
+    t = d["messungen"][0]["t"]  # Kennung, wie die Seite sie kennt
+    assert t == neueste.t and d["gesamt"] == 3
+
+    gast = await hass_ws_client(hass, hass_read_only_access_token)
+    await gast.send_json_auto_id({"type": "heimnetz/messung/loeschen", "t": t})
+    assert (await gast.receive_json())["error"]["code"] == "unauthorized"
+    weg = await _frage(hass_ws_client, hass, type="heimnetz/messung/loeschen", t=t + 30)
+    assert weg["error"]["code"] == "not_found"
+    assert len(await hass.async_add_executor_job(lz.datenbank.messungen_lesen)) == 3
+
+    await hass.async_add_executor_job(lz.datenbank.anhalten)  # während einer Sicherung abgelehnt
+    sicherung = await _frage(hass_ws_client, hass, type="heimnetz/messung/loeschen", t=t)
+    await hass.async_add_executor_job(lz.datenbank.fortsetzen)
+    assert sicherung["error"]["code"] == "sicherung"
+    ok = await _frage(hass_ws_client, hass, type="heimnetz/messung/loeschen", t=t)
+    assert ok["success"] and ok["result"] == {"t": t}
+    d = (
+        await _frage(
+            hass_ws_client, hass, type="heimnetz/speedtest", tage=7, groesse="down", grundlast="aus"
+        )
+    )["result"]
+    assert d["gesamt"] == 2 and t not in [m["t"] for m in d["messungen"]] and d["letzte"]["t"] != t
+    ort = dt_util.as_local(dt_util.utc_from_timestamp(t))
+    k = (
+        await _frage(
+            hass_ws_client,
+            hass,
+            type="heimnetz/speedtest/kachel",
+            tage=7,
+            tag=ort.weekday(),
+            stunde=ort.hour,
+        )
+    )["result"]
+    assert t not in [m["t"] for m in k["messungen"]]
+    assert lz.abruf.letzte.t == messungen[1].t  # Sensor „Letzte Messung“ zeigt die davor
+    assert [x["t"] for x in lz.einstellungen.letzte_serie["laeufe"]] == [m.t for m in messungen[:2]]
+    j = (
+        await _frage(
+            hass_ws_client, hass, type="heimnetz/protokoll", art="journal", suche="gelöscht"
+        )
+    )["result"]
+    assert [z["art"] for z in j["eintraege"]] == ["messung_geloescht"]
+    assert j["eintraege"][0]["text"].startswith("Messung ") and j["eintraege"][0]["text"].endswith(
+        " gelöscht"
+    )
+    assert (await _frage(hass_ws_client, hass, type="heimnetz/messung/loeschen", t=t))["error"][
+        "code"
+    ] == "not_found"
+
+
 async def test_geraete_und_geraet(hass, geladen, hass_ws_client):
     d = (await _frage(hass_ws_client, hass, type="heimnetz/geraete"))["result"]
     assert d["online"] == 5 and all(len(g["streifen"]) == 48 for g in d["geraete"])

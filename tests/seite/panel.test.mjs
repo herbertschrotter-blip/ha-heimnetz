@@ -223,6 +223,65 @@ test('Speedtest: Zusatzdaten je Messung – Spalten und alle Werte per Tipp (WU-
   assert.match(w.querySelector('.sheet.an').textContent, /nachgetragen aus Verlauf und Journal/);
 });
 
+test('AN-0007: Messung löschen – nur Admins, Rückfrage an derselben Stelle, Aufruf mit Kennung', async () => {
+  const hass = machHass();
+  const el = await seite(hass);
+  await reiter(el, 'Speedtest');
+  const w = el.shadowRoot;
+  const m = DATEN.speedtest.messungen[0];
+  w.querySelectorAll('tr.klick')[0].click();
+  await el.updateComplete;
+  let s = w.querySelector('.sheet.an');
+  assert.match(s.textContent, /Löschen dürfen nur Admins/);
+  assert.ok(!s.querySelector('.mg-frage'), 'Rückfrage erst nach Tippen');
+  s.querySelector('.mg-loeschen').click();
+  await el.updateComplete;
+  const frage = s.querySelector('.mg-frage');
+  assert.ok(frage && !s.querySelector('.mg-loeschen'), 'Rückfrage statt Knopf');
+  assert.match(frage.textContent, /Messung .* löschen\?.*Ookla-Entitäten in Home Assistant bleibt/s);
+  knoepfe(frage).find((b) => b.textContent.trim() === 'Abbrechen').click();
+  await el.updateComplete;
+  assert.ok(s.querySelector('.mg-loeschen') && !s.querySelector('.mg-frage'), 'Abbrechen: wieder der Knopf');
+  assert.ok(!hass.aufrufe.some((x) => x.type === 'heimnetz/messung/loeschen'), 'nichts gelöscht');
+  s.querySelector('.mg-loeschen').click();
+  await el.updateComplete;
+  const vorher = hass.aufrufe.filter((x) => x.type === 'heimnetz/speedtest').length;
+  const rot = s.querySelector('.mg-frage button.rot');
+  assert.equal(rot.textContent.trim(), 'Löschen');
+  rot.click();
+  await warten(10);
+  await el.updateComplete;
+  assert.deepEqual(hass.aufrufe.find((x) => x.type === 'heimnetz/messung/loeschen'), { type: 'heimnetz/messung/loeschen', t: m.t, sprache: 'de' });
+  assert.ok(!w.querySelector('.sheet.an'), 'Fenster zu');
+  assert.match(w.querySelector('.toast').textContent, /Messung .* gelöscht/);
+  assert.ok(hass.aufrufe.filter((x) => x.type === 'heimnetz/speedtest').length > vorher, 'Ansicht neu geladen');
+
+  // Fehler der Integration bleibt in der Rückfrage stehen
+  const echt = hass.callWS;
+  hass.callWS = async (msg) => { if (msg.type === 'heimnetz/messung/loeschen') throw new Error('Messung nicht gefunden'); return echt(msg); };
+  w.querySelectorAll('tr.klick')[0].click();
+  await el.updateComplete;
+  s = w.querySelector('.sheet.an');
+  s.querySelector('.mg-loeschen').click();
+  await el.updateComplete;
+  s.querySelector('.mg-frage button.rot').click();
+  await warten(10);
+  await el.updateComplete;
+  assert.ok(w.querySelector('.sheet.an'), 'Fenster bleibt offen');
+  assert.match(w.querySelector('.mg-frage').textContent, /Nicht gelöscht: Messung nicht gefunden/);
+});
+
+test('AN-0007: ohne Admin kein Knopf zum Löschen, nur der Hinweis', async () => {
+  const hass = machHass({ admin: false });
+  const el = await seite(hass);
+  await reiter(el, 'Speedtest');
+  el.shadowRoot.querySelectorAll('tr.klick')[0].click();
+  await el.updateComplete;
+  const s = el.shadowRoot.querySelector('.sheet.an');
+  assert.ok(!s.querySelector('.mg-loeschen') && !s.querySelector('.mg-frage'));
+  assert.match(s.textContent, /Löschen dürfen nur Admins/);
+});
+
 test('Einstellungen: Admin speichert, andere sehen nur', async () => {
   const hass = machHass({ admin: true });
   const el = await seite(hass);

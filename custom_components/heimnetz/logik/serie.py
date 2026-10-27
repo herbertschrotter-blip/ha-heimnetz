@@ -6,7 +6,7 @@ nicht verzieht. Die Durchläufe startet und liest die Integration (Ookla); hier 
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import asdict, dataclass
 from statistics import median
 from typing import Any
@@ -47,3 +47,17 @@ def ergebnis(laeufe: Sequence[Lauf], tarif_down: float | None, gewuenscht: int) 
         "anteil": round(down["median"] / tarif_down * 100) if down and tarif_down else None,
         **werte,
     }
+
+
+def ohne_lauf(
+    gemerkt: dict[str, Any], weg: Callable[[float], bool], tarif_down: float | None
+) -> dict[str, Any] | None:
+    """AN-0007: gemerktes Ergebnis einer Serie ohne die Durchläufe, für die `weg(t)` gilt (gelöschte Messung), neu
+    gerechnet. None = nichts davon betroffen; {} = kein Durchlauf mehr (keine Serie zeigen)."""
+    laeufe = [Lauf(**x) for x in gemerkt.get("laeufe") or []]
+    rest = [x for x in laeufe if not weg(x.t)]
+    if len(rest) == len(laeufe):
+        return None
+    if not rest:
+        return {}
+    return ergebnis(rest, tarif_down, int(gemerkt.get("geplant") or len(laeufe)))

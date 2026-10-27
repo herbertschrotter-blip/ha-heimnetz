@@ -3530,6 +3530,10 @@ select.ga-wahl { font: inherit; font-size: 13px; color: var(--ink); background: 
 .dg-roh i { font-style: normal; color: var(--amber); }
 .dg-knoepfe { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; } .dg-knoepfe button { flex: 1 1 140px; padding: 10px; border-radius: 14px; font-size: 14px; font-weight: 600; background: rgba(120,120,128,.2); }
 .dg-knoepfe button.amber { background: var(--amber); color: #1c1c1e; } .dg-knoepfe button[disabled] { opacity: .5; cursor: not-allowed; }
+/* AN-0007: Messung löschen – Knopf unten im Fenster einer Messung, Rückfrage an derselben Stelle (Mockup netzwerk.html) */
+.mg-loeschen { margin-top: 14px; width: 100%; padding: 11px; border-radius: 14px; font-size: 14px; color: var(--rot); background: color-mix(in srgb, var(--rot) 12%, transparent); }
+.mg-frage { margin-top: 14px; border-radius: 14px; padding: 12px; background: color-mix(in srgb, var(--rot) 12%, transparent); font-size: 13px; line-height: 1.45; }
+.mg-frage .dg-knoepfe button.rot { background: var(--rot); color: #fff; }
 /* WU-0009: Internet – Herkunft des Zugangs, ⚙ › Zugang (Mockup netzwerk.html · Internet und Zugang) */
 .iq { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 14px; }
 .iq-ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: rgba(127,127,127,.18); font-size: 17px; }
@@ -3746,6 +3750,12 @@ var EN = {
   "ohne Momentaufnahme (älter als der Verlauf von Home Assistant)": "without snapshot (older than the Home Assistant history)",
   "nachgetragen aus Verlauf und Journal – Box, Heimnetz und Teile des Mobilfunks nicht bekannt": "filled in from history and journal – box, home network and parts of the mobile data unknown",
   "Momentaufnahme im Moment der Messung": "snapshot at the moment of the measurement",
+  "Messung löschen": "Delete measurement",
+  "Messung {zeit} löschen?": "Delete measurement {zeit}?",
+  "Sie verschwindet aus Raster, Tagesverlauf, Auswertung und dieser Liste. Der Verlauf der Ookla-Entitäten in Home Assistant bleibt. Das lässt sich nicht rückgängig machen.": "It disappears from the grid, daily profile, analysis and this list. The history of the Ookla entities in Home Assistant stays. This cannot be undone.",
+  "löscht …": "deleting …",
+  "Löschen dürfen nur Admins.": "Only admins may delete.",
+  "Messung {zeit} gelöscht": "Measurement {zeit} deleted",
   "Messung": "Measurement",
   "Jitter (gesamt · ↓ · ↑)": "Jitter (total · ↓ · ↑)",
   "Note {note}": "grade {note}",
@@ -4541,7 +4551,18 @@ function messungBlatt(p4) {
     <div class="gruppe"><span class="gr-ic">🌦️</span>${t3("Umgebung")}</div>
     ${z2(t3("Wetter"), k2.wetter ? [WETTER[k2.wetter] ? t3(WETTER[k2.wetter]) : k2.wetter, k2.temperatur != null && `${zahl(k2.temperatur, 1)} °C`, k2.feuchte != null && t3("{n} % Feuchte", { n: zahl(k2.feuchte) }), k2.wolken != null && t3("{n} % Wolken", { n: zahl(k2.wolken) })].filter(Boolean).join(" · ") : null)}
     ${z2(t3("Tag"), TAGESART[k2.tagesart] && t3(TAGESART[k2.tagesart]))}
-    <p class="hinweis" style="margin-top:10px">${k2.mobil_quelle === "modem" ? t3("Funkwerte vom vorgeschalteten Modem – was es nicht liefert, fehlt.") : t3("Nicht verfügbar über die Schnittstelle der Box: genutztes Band, SINR, Bandbreite, MIMO, Carrier Aggregation.")}</p>`;
+    <p class="hinweis" style="margin-top:10px">${k2.mobil_quelle === "modem" ? t3("Funkwerte vom vorgeschalteten Modem – was es nicht liefert, fehlt.") : t3("Nicht verfügbar über die Schnittstelle der Box: genutztes Band, SINR, Bandbreite, MIMO, Carrier Aggregation.")}</p>
+    ${loeschenTeil(p4, m3)}`;
+}
+function loeschenTeil(p4, m3) {
+  const hinweis = b2`<p class="hinweis" style="margin-top:6px">${t3("Löschen dürfen nur Admins.")}</p>`;
+  if (!p4.istAdmin) return hinweis;
+  const b3 = p4._blatt;
+  const teil = b3.frage ? b2`<div class="mg-frage"><b>${t3("Messung {zeit} löschen?", { zeit: zeit(m3.t) })}</b><br>${t3("Sie verschwindet aus Raster, Tagesverlauf, Auswertung und dieser Liste. Der Verlauf der Ookla-Entitäten in Home Assistant bleibt. Das lässt sich nicht rückgängig machen.")}
+      ${b3.fehler ? b2`<p class="fein">${t3("Nicht gelöscht: {fehler}", { fehler: b3.fehler })}</p>` : A}
+      <div class="dg-knoepfe" style="margin-top:10px"><button class="rot" ?disabled=${b3.loescht} @click=${() => p4.messungLoeschen()}>${b3.loescht ? t3("löscht …") : t3("Löschen")}</button>
+        <button ?disabled=${b3.loescht} @click=${() => p4.messungFrage(false)}>${t3("Abbrechen")}</button></div></div>` : b2`<button class="mg-loeschen" @click=${() => p4.messungFrage(true)}>🗑 ${t3("Messung löschen")}</button>`;
+  return b2`${teil}${hinweis}`;
 }
 var BELASTET_KURZ = { aus: merke("zählt nicht"), halb: merke("zählt ¼"), mit: merke("belastet") };
 function kachelPopup(p4) {
@@ -6693,6 +6714,28 @@ var HeimnetzPanel = class extends i4 {
   messungOeffnen(m3) {
     this.kachelWeg(true);
     this._blatt = { art: "messung", m: m3 };
+  }
+  /** AN-0007: Rückfrage im Fenster einer Messung zeigen oder zurücknehmen. */
+  messungFrage(an) {
+    const b3 = this._blatt;
+    if (b3 && b3.art === "messung") this._blatt = { art: "messung", m: b3.m, frage: an };
+  }
+  /** AN-0007: Messung löschen (nur Admins; Kennung = Zeitpunkt wie in heimnetz/speedtest). Danach Fenster zu, Meldung,
+   *  Ansicht neu laden; ein Fehler bleibt in der Rückfrage stehen. */
+  async messungLoeschen() {
+    const b3 = this._blatt;
+    if (!b3 || b3.art !== "messung" || !this.istAdmin) return;
+    const laufend = { ...b3, loescht: true, fehler: "" };
+    this._blatt = laufend;
+    try {
+      await this.ws("messung/loeschen", { t: b3.m.t });
+    } catch (err) {
+      if (this._blatt === laufend) this._blatt = { ...laufend, loescht: false, fehler: err && err.message || String(err) };
+      return;
+    }
+    if (this._blatt === laufend) this._blatt = null;
+    this.toast(t3("Messung {zeit} gelöscht", { zeit: zeit(b3.m.t) }));
+    this.laden();
   }
   kachelWeg(fest) {
     clearTimeout(this._kachelTakt);

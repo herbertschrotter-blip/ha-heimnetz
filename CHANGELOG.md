@@ -2,6 +2,11 @@
 
 ## [0.27.0]
 
+- AN-0007 (Mockup abgenommen 28.10.2026): **Einzelne Messung löschen** – im Fenster einer Messung „🗑 Messung löschen“
+  mit Rückfrage, nur Admins (Befehl `heimnetz/messung/loeschen`, Kennung = Zeitpunkt). Gelöscht werden Messung und
+  Momentaufnahme in der eigenen Datenbank, dazu der Durchlauf in der gemerkten Serie; der Sensor „Letzte Messung“ springt
+  auf die davor, das Journal erhält „Messung <Zeit> gelöscht“. Eine Merkliste gelöschter Zeitpunkte verhindert, dass
+  die Messung wieder eingetragen wird (Ookla zeigt sie weiter als letzten Test). Der Recorder-Verlauf bleibt.
 - AN-0006 (Mockup abgenommen 28.10.2026, Variante B): Gruppenüberschriften der ganzen Seite deutlicher – fett in normaler
   Schreibweise, blauer Strich links, Trennlinie; im Fenster einer Messung dazu Symbole (📈 📶 📦 🏠 🌦️).
 - Fix (FE-0006): „Öffentlich auf GitHub melden“ schwärzt Zellkennungen jetzt bis 16 Stellen (ECI/NCI dezimal, auch mit

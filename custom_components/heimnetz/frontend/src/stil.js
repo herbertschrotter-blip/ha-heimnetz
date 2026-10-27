@@ -236,6 +236,10 @@ select.ga-wahl { font: inherit; font-size: 13px; color: var(--ink); background: 
 .dg-roh i { font-style: normal; color: var(--amber); }
 .dg-knoepfe { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; } .dg-knoepfe button { flex: 1 1 140px; padding: 10px; border-radius: 14px; font-size: 14px; font-weight: 600; background: rgba(120,120,128,.2); }
 .dg-knoepfe button.amber { background: var(--amber); color: #1c1c1e; } .dg-knoepfe button[disabled] { opacity: .5; cursor: not-allowed; }
+/* AN-0007: Messung löschen – Knopf unten im Fenster einer Messung, Rückfrage an derselben Stelle (Mockup netzwerk.html) */
+.mg-loeschen { margin-top: 14px; width: 100%; padding: 11px; border-radius: 14px; font-size: 14px; color: var(--rot); background: color-mix(in srgb, var(--rot) 12%, transparent); }
+.mg-frage { margin-top: 14px; border-radius: 14px; padding: 12px; background: color-mix(in srgb, var(--rot) 12%, transparent); font-size: 13px; line-height: 1.45; }
+.mg-frage .dg-knoepfe button.rot { background: var(--rot); color: #fff; }
 /* WU-0009: Internet – Herkunft des Zugangs, ⚙ › Zugang (Mockup netzwerk.html · Internet und Zugang) */
 .iq { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 14px; }
 .iq-ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: rgba(127,127,127,.18); font-size: 17px; }

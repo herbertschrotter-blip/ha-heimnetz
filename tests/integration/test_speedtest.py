@@ -125,3 +125,38 @@ async def test_entladen_wartet_auf_schreiben(hass: HomeAssistant, eintrag, box, 
         eintrag.entry_id
     )  # kein „Datenbank nicht geöffnet“
     await hass.async_block_till_done()
+
+
+async def test_an0007_geloeschte_messung_kommt_nicht_wieder(
+    hass: HomeAssistant, eintrag, box, pi
+) -> None:
+    """Ookla zeigt die gelöschte Messung weiter als letzten Test: weder sofort noch nach einem Neustart wieder herein."""
+    ids = _ookla(hass)
+    jetzt = dt_util.utcnow()
+    _messen(hass, ids, jetzt - timedelta(hours=2))
+    assert await hass.config_entries.async_setup(eintrag.entry_id)
+    await hass.async_block_till_done()
+    _messen(hass, ids, jetzt)
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=WARTEN_S + 1))
+    await hass.async_block_till_done()
+    db = eintrag.runtime_data.datenbank
+    assert len(await hass.async_add_executor_job(db.messungen_lesen)) == 2
+
+    abruf = eintrag.runtime_data.abruf
+    assert await abruf.messung_loeschen(jetzt.timestamp()) == jetzt.timestamp()
+    assert abruf.letzte is not None and abruf.letzte.t == (jetzt - timedelta(hours=2)).timestamp()
+    await abruf.async_refresh()  # nächster Abruf liest Ookla wieder
+    await hass.async_block_till_done()
+    assert [m.t for m in await hass.async_add_executor_job(db.messungen_lesen)] == [abruf.letzte.t]
+
+    assert await hass.config_entries.async_reload(
+        eintrag.entry_id
+    )  # Neustart: letzte in der Datenbank ist älter
+    await hass.async_block_till_done()
+    db, abruf = eintrag.runtime_data.datenbank, eintrag.runtime_data.abruf
+    assert len(await hass.async_add_executor_job(db.messungen_lesen)) == 1
+    assert abruf.letzte is not None and abruf.letzte.t < jetzt.timestamp()
+    _messen(hass, ids, jetzt + timedelta(minutes=5))  # die nächste echte Messung zählt wieder
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=WARTEN_S + 1))
+    await hass.async_block_till_done()
+    assert len(await hass.async_add_executor_job(db.messungen_lesen)) == 2

@@ -262,6 +262,30 @@ export class HeimnetzPanel extends LitElement {
     this._blatt = { art: 'messung', m };
   }
 
+  /** AN-0007: Rückfrage im Fenster einer Messung zeigen oder zurücknehmen. */
+  messungFrage(an) {
+    const b = this._blatt;
+    if (b && b.art === 'messung') this._blatt = { art: 'messung', m: b.m, frage: an };
+  }
+
+  /** AN-0007: Messung löschen (nur Admins; Kennung = Zeitpunkt wie in heimnetz/speedtest). Danach Fenster zu, Meldung,
+   *  Ansicht neu laden; ein Fehler bleibt in der Rückfrage stehen. */
+  async messungLoeschen() {
+    const b = this._blatt;
+    if (!b || b.art !== 'messung' || !this.istAdmin) return;
+    const laufend = { ...b, loescht: true, fehler: '' };
+    this._blatt = laufend;
+    try {
+      await this.ws('messung/loeschen', { t: b.m.t });
+    } catch (err) {
+      if (this._blatt === laufend) this._blatt = { ...laufend, loescht: false, fehler: (err && err.message) || String(err) };
+      return;
+    }
+    if (this._blatt === laufend) this._blatt = null;
+    this.toast(t('Messung {zeit} gelöscht', { zeit: zeit(b.m.t) }));
+    this.laden();
+  }
+
   kachelWeg(fest) {
     clearTimeout(this._kachelTakt);
     if (!this._kachel || (this._kachel.fest && !fest)) return;

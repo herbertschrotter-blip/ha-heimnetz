@@ -84,6 +84,12 @@ nachgetragen.
 - Inhalt: Journal, Protokoll der Box, Speedtest-Messungen mit Grundlast, Momentaufnahme je Messung (eigene Tabelle,
   WU-0005), Gedächtnis des Abrufs. Verlauf je Gerät kommt
   aus dem Journal. Journal und Protokoll werden nach 400 Tagen gelöscht, Messungen bleiben.
+- Einzelne Messung löschen (Herbert, 28.10.2026, AN-0007): nur Admins, im Fenster der Messung mit Rückfrage; Kennung
+  ist der Zeitpunkt. Gelöscht wird nur in der eigenen Datenbank (Messung, Momentaufnahme, Durchlauf der gemerkten Serie);
+  der Verlauf der Ookla-Entitäten im Recorder bleibt. Der Zeitpunkt kommt auf eine Merkliste (Tabelle
+  `messung_geloescht`, ohne neue Schema-Version wie `messung_kontext`), damit die Messung nicht wieder eingetragen wird –
+  Ookla zeigt sie weiter als letzten Test. Ins Journal kommt „Messung <Zeit> gelöscht“, ohne Person und Gerät. Bewusst
+  nicht: „nicht werten“ und Rückgängig.
 - Speedtest: Die Integration findet die Sensoren der Ookla-Integration über das Entitätsregister und trägt jede neue
   Messung ein. Takt und Server stellt Herbert in der Ookla-Integration ein (ab Werk alle 24 h).
 

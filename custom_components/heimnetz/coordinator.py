@@ -35,6 +35,7 @@ from .const import sprache_system as sprache_von
 from .einstellungen import Einstellungsdienst
 from .logik import auswertung as aw
 from .logik import messplan as mp
+from .logik import messung as ms
 from .logik import sammeln as sm
 from .logik import serie as sr
 from .logik import sprache as sp
@@ -359,6 +360,17 @@ class Abruf(DataUpdateCoordinator[sm.Stand]):
                     LOGGER.warning("Heimnetz: Durchlauf %s der Serie ohne Ergebnis", i + 1)
         finally:
             self.serie_status = None
+        if laeufe:
+            # AN-0007: während der Serie gelöschte Durchläufe zählen nicht
+            try:
+                weg = [
+                    x.t
+                    for x in laeufe
+                    if await self.hass.async_add_executor_job(self.datenbank.ist_geloescht, x.t)
+                ]
+            except SCHREIBFEHLER:
+                weg = []
+            laeufe = [x for x in laeufe if not ms.ist_geloescht(x.t, weg)]
         if laeufe and self.einstellungen is not None:
             await self.einstellungen.async_serie_merken(
                 sr.ergebnis(laeufe, self.einstellungen.wert.tarif_down, n)
@@ -420,22 +432,65 @@ class Abruf(DataUpdateCoordinator[sm.Stand]):
         aufgabe.add_done_callback(self._schreibvorgaenge.discard)
 
     async def _messung_schreiben(self, messung: Messung) -> None:
+        try:
+            geloescht = await self.hass.async_add_executor_job(
+                self.datenbank.ist_geloescht, messung.t
+            )
+        except SCHREIBFEHLER as err:
+            LOGGER.warning("Heimnetz: Speedtest-Messung nicht geprüft (%s), wird nachgeholt", err)
+            return
+        if geloescht:
+            # AN-0007: gelöscht – Ookla zeigt sie weiter als letzten Test; nicht wieder eintragen, nicht mehr lesen
+            self.letzte_messung = max(self.letzte_messung, messung.t)
+            return
         if self.kontext_holen is not None:
             try:
                 messung = replace(messung, kontext=await self.kontext_holen(messung))
             except Exception:  # die Messung zählt auch ohne Momentaufnahme
                 LOGGER.exception("Heimnetz: Momentaufnahme zur Messung fehlgeschlagen")
         try:
-            await self.hass.async_add_executor_job(self.datenbank.messungen_schreiben, [messung])
+            n = await self.hass.async_add_executor_job(
+                self.datenbank.messungen_schreiben, [messung]
+            )
+            # AN-0007: inzwischen gelöscht (während der Momentaufnahme) – nicht als letzte Messung zeigen
+            weg = not n and await self.hass.async_add_executor_job(
+                self.datenbank.ist_geloescht, messung.t
+            )
         except SCHREIBFEHLER as err:
             LOGGER.warning(
                 "Heimnetz: Speedtest-Messung nicht gespeichert (%s), wird nachgeholt", err
             )
             return
         self.letzte_messung = max(self.letzte_messung, messung.t)
+        if weg:
+            return
         if self.letzte is None or messung.t >= self.letzte.t:
             self.letzte = messung
             self.async_update_listeners()
+
+    async def messung_loeschen(self, kennung: float) -> float | None:
+        """AN-0007: Messung in der eigenen Datenbank löschen (Recorder-Verlauf der Ookla-Entitäten bleibt), samt
+        Momentaufnahme, Durchlauf der gemerkten Serie und Journalzeile. Zeitpunkt der gelöschten Messung, None =
+        unbekannte Kennung. `letzte_messung` bleibt: gemessen wurde ja, der Messplan zählt ab dann weiter."""
+        tz, sprache = dt_util.get_default_time_zone(), sprache_von(self.hass)
+        t = await self.hass.async_add_executor_job(
+            self.datenbank.messung_loeschen,
+            kennung,
+            time.time(),
+            lambda x: ms.geloescht_ereignis(x, tz, sprache),
+        )
+        if t is None:
+            return None
+        e = self.einstellungen
+        if e is not None and e.letzte_serie:
+            rest = sr.ohne_lauf(e.letzte_serie, lambda x: ms.gleich(x, t), e.wert.tarif_down)
+            if rest is not None:
+                await e.async_serie_merken(rest)
+        if self.letzte is not None and ms.gleich(self.letzte.t, t):
+            # Sensor „Letzte Messung“: zurück auf die Messung davor (oder keine)
+            self.letzte = await self.hass.async_add_executor_job(self.datenbank.letzte_lesen)
+            self.async_update_listeners()
+        return t
 
     async def async_schliessen(self) -> None:
         """Beim Entladen: Speedtest lösen, laufende Schreibvorgänge abwarten – danach darf die Datenbank zu."""

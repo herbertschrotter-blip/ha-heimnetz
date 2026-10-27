@@ -13,12 +13,13 @@ import secrets
 import sqlite3
 import threading
 import time
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from .logik import messung as ms
 from .logik.ereignis import Ereignis
 from .logik.messung import Messung
 from .logik.protokoll import Protokolleintrag
@@ -45,7 +46,12 @@ SCHRITTE: dict[int, tuple[str, ...]] = {
 }
 # WU-0005: Momentaufnahme je Messung (JSON, logik.kontext) in einer eigenen Tabelle, ohne Versionssprung: eine ältere
 # Fassung der Integration (Rückweg `ausliefern.py --zurueck`) kennt die Tabelle nicht und lässt sie einfach liegen.
-ZUSATZ = ("CREATE TABLE IF NOT EXISTS messung_kontext (t REAL PRIMARY KEY, kontext TEXT NOT NULL)",)
+# AN-0007: Merkliste gelöschter Messungen (Zeitpunkt, gelöscht um) – ebenso ohne Versionssprung. Ookla zeigt eine
+# gelöschte Messung weiter als letzten Test; ohne die Liste käme sie nach einem Neustart wieder herein.
+ZUSATZ = (
+    "CREATE TABLE IF NOT EXISTS messung_kontext (t REAL PRIMARY KEY, kontext TEXT NOT NULL)",
+    "CREATE TABLE IF NOT EXISTS messung_geloescht (t REAL PRIMARY KEY, geloescht REAL NOT NULL)",
+)
 
 JOURNAL = "INSERT INTO journal (t, art, stufe, text, mac) VALUES (?, ?, ?, ?, ?)"
 PROTOKOLL = (
@@ -54,10 +60,15 @@ PROTOKOLL = (
 )
 MESSUNG = "INSERT OR IGNORE INTO messung VALUES (?, ?, ?, ?, ?, ?, ?)"
 KONTEXT = "INSERT OR IGNORE INTO messung_kontext VALUES (?, ?)"
+GELOESCHT = "INSERT OR IGNORE INTO messung_geloescht VALUES (?, ?)"
 META = "INSERT OR REPLACE INTO meta VALUES (?, ?)"
 META_WENN_NEU = "INSERT OR IGNORE INTO meta VALUES (?, ?)"
 
 type Schritt = tuple[str, list[tuple[Any, ...]]]
+
+
+class Angehalten(Exception):
+    """Während einer Sicherung: Löschen wartet nicht in der Warteschlange, sondern wird abgelehnt (AN-0007)."""
 
 
 class SchemaZuNeu(Exception):
@@ -214,8 +225,11 @@ class Datenbank:
         return self._schreiben(_protokoll(eintraege, time.time() if jetzt is None else jetzt))
 
     def messungen_schreiben(self, messungen: Iterable[Messung]) -> int:
-        """Neue Messungen samt Momentaufnahme in einer Transaktion; Anzahl der geschriebenen Zeilen."""
+        """Neue Messungen samt Momentaufnahme in einer Transaktion; Anzahl der geschriebenen Zeilen. Eine gelöschte
+        (Merkliste, AN-0007) kommt nicht wieder herein."""
         liste = list(messungen)
+        if liste:
+            liste = ms.ohne_geloeschte(liste, self._geloescht_bei([m.t for m in liste]))
         return self._schreiben(_messungen(liste), _kontexte((m.t, m.kontext) for m in liste))
 
     def abruf_schreiben(
@@ -231,6 +245,36 @@ class Datenbank:
             _protokoll(protokoll, jetzt),
             (META, [("gedaechtnis", gedaechtnis)] if gedaechtnis is not None else []),
         )
+
+    def messung_loeschen(
+        self, kennung: float, jetzt: float, ereignis: Callable[[float], Ereignis]
+    ) -> float | None:
+        """AN-0007: eine Messung samt Momentaufnahme löschen, ihren Zeitpunkt auf die Merkliste und `ereignis(t)` ins
+        Journal – in einer Transaktion. Zeitpunkt der gelöschten Messung, None = keine Messung mit dieser Kennung.
+        Während einer Sicherung `Angehalten` (sonst hieße es „gelöscht“, die Messung stünde aber noch da)."""
+        with self._sperre:
+            if self._angehalten:
+                raise Angehalten
+            db = self._verbindung
+            treffer = [
+                float(z[0])
+                for z in db.execute(
+                    "SELECT t FROM messung WHERE t > ? AND t < ?",
+                    (kennung - ms.GLEICH_S, kennung + ms.GLEICH_S),
+                )
+            ]
+            if not treffer:
+                return None
+            t = min(treffer, key=lambda x: abs(x - kennung))
+            self._ausfuehren(
+                [
+                    ("DELETE FROM messung WHERE t = ?", [(t,)]),
+                    ("DELETE FROM messung_kontext WHERE t = ?", [(t,)]),
+                    (GELOESCHT, [(t, jetzt)]),
+                    _journal([Journalzeile(jetzt, ereignis(t))]),
+                ]
+            )
+            return t
 
     def aufraeumen(self, jetzt: float) -> int | None:
         """Alte Journal- und Protokollzeilen löschen (Protokoll ohne lesbare Zeit nach der Eintragezeit).
@@ -374,8 +418,32 @@ class Datenbank:
         ]
 
     def kontext_nachtragen(self, kontexte: dict[float, dict[str, Any]]) -> int:
-        """Momentaufnahmen zu bestehenden Messungen setzen – nur, wo noch keine steht."""
-        return self._schreiben(_kontexte(kontexte.items()))
+        """Momentaufnahmen zu bestehenden Messungen setzen – nur, wo noch keine steht (und nicht zu einer inzwischen
+        gelöschten, AN-0007)."""
+        weg = self._geloescht_bei(list(kontexte)) if kontexte else []
+        return self._schreiben(
+            _kontexte((t, k) for t, k in kontexte.items() if not ms.ist_geloescht(t, weg))
+        )
+
+    def _geloescht_bei(self, zeiten: list[float]) -> list[float]:
+        """AN-0007: gelöschte Zeitpunkte in der Spanne dieser Zeiten (Merkliste über den Index, nicht ganz gelesen)."""
+        return [
+            float(z[0])
+            for z in self._lesen(
+                "SELECT t FROM messung_geloescht WHERE t > ? AND t < ?",
+                (min(zeiten) - ms.GLEICH_S, max(zeiten) + ms.GLEICH_S),
+            )
+        ]
+
+    def ist_geloescht(self, t: float) -> bool:
+        """AN-0007: steht auf der Merkliste gelöschter Messungen."""
+        return ms.ist_geloescht(t, self._geloescht_bei([t]))
+
+    def letzte_lesen(self) -> Messung | None:
+        """Neueste Messung samt Momentaufnahme (Sensor „Letzte Messung“), None ohne Messung."""
+        letzte = self.letzte_messung()
+        liste = self.messungen_lesen(letzte) if letzte else []
+        return liste[-1] if liste else None
 
     def letzte_messung(self) -> float:
         wert = self._lesen("SELECT MAX(t) FROM messung")[0][0]

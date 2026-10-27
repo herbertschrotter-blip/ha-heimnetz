@@ -93,6 +93,40 @@ def test_messung_mit_momentaufnahme_und_nachtrag(db):
     assert db.ohne_kontext(0) == [] and db.kontext_nachtragen({}) == 0
 
 
+def test_an0007_messung_loeschen_mit_merkliste_und_journal(db):
+    """AN-0007: Messung samt Momentaufnahme weg, Zeitpunkt gemerkt, eine Journalzeile; kommt nicht wieder herein."""
+    a = Messung(T, 1, 1, 1, "", None, None, {"quelle": "messung"})
+    b = Messung(T + 3600, 2, 2, 2, "", None, None, {"quelle": "messung"})
+    db.messungen_schreiben([a, b])
+
+    def text(t):
+        return Ereignis("messung_geloescht", "info", f"weg {t}")
+
+    assert db.messung_loeschen(T + 7200, T + 9000, text) is None  # unbekannte Kennung
+    assert db.messung_loeschen(T + 3600.2, T + 9000, text) == T + 3600  # Rundung zählt nicht
+    assert db.messungen_lesen() == [a] and db.letzte_messung() == T
+    assert db.ist_geloescht(T + 3600) and not db.ist_geloescht(T)
+    assert [z.ereignis.text for z in db.journal_lesen()] == [f"weg {T + 3600}"]
+    assert db.messungen_schreiben([b]) == 0 and db.messungen_lesen() == [
+        a
+    ]  # nicht wieder eintragen
+    assert db.kontext_nachtragen({T + 3600: {"quelle": "nachgetragen"}}) == 0
+    assert db.messung_loeschen(T + 3600, T + 9000, text) is None  # schon weg
+    assert (
+        int(sqlite3.connect(db.pfad).execute("SELECT COUNT(*) FROM messung_kontext").fetchone()[0])
+        == 1
+    )
+
+
+def test_an0007_loeschen_waehrend_einer_sicherung(db):
+    db.messungen_schreiben([Messung(T, 1, 1, 1, "", None, None)])
+    db.anhalten()
+    with pytest.raises(sp.Angehalten):  # abgelehnt statt still in die Warteschlange
+        db.messung_loeschen(T, T + 1, lambda t: Ereignis("messung_geloescht", "info", "x"))
+    db.fortsetzen()
+    assert len(db.messungen_lesen()) == 1 and db.anzahl()["journal"] == 0
+
+
 def test_rueckweg_bleibt_schema_1(tmp_path):
     """Die Momentaufnahme liegt in einer eigenen Tabelle: Schema bleibt 1, eine ältere Fassung öffnet die Datei weiter
     und liest ihre Messungen wie gewohnt (SELECT * über die alte Tabelle)."""
