@@ -2,6 +2,8 @@
 
 ## [0.27.0]
 
+- AN-0006 (Mockup abgenommen 28.10.2026, Variante B): Gruppenüberschriften der ganzen Seite deutlicher – fett in normaler
+  Schreibweise, blauer Strich links, Trennlinie; im Fenster einer Messung dazu Symbole (📈 📶 📦 🏠 🌦️).
 - Fix (FE-0006): „Öffentlich auf GitHub melden“ schwärzt Zellkennungen jetzt bis 16 Stellen (ECI/NCI dezimal, auch mit
   0x) – längere Kennungen blieben bisher im Issue stehen. Wörter wie „PCI face“ bleiben dafür stehen.
 - WU-0009 Stufe 2 (Mockup netzwerk.html · Internet und Zugang, abgenommen 27.10.2026): Ein **vorgeschaltetes Gerät**

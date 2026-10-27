@@ -3360,7 +3360,10 @@ var GLAS = `
 .zeile { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 16px; width: 100%; box-sizing: border-box; min-height: 44px; }
 .block .zeile { padding: 8px 0; }
 .block .zeile + .zeile { border-top: 1px solid var(--gridc); }
-.gruppe { font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--ink2); padding: 10px 0 2px; }
+/* AN-0006: Gruppenüberschriften deutlich (Variante B): fett, Farbstrich links, Trennlinie */
+.gruppe { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; letter-spacing: .2px; color: var(--ink); padding: 18px 0 6px; border-bottom: 1px solid var(--gridc); margin-bottom: 2px; }
+.gruppe::before { content: ''; width: 4px; height: 16px; border-radius: 2px; background: var(--blau); flex: none; }
+.gruppe .gr-ic { font-size: 15px; }
 .g-ic { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; background: rgba(142,142,147,.22); flex: none; }
 .seg { display: flex; padding: 3px; border-radius: 14px; background: rgba(120,120,128,.2); gap: 2px; }
 .seg button { flex: 1; text-align: center; padding: 7px 6px; border-radius: 11px; font-size: 13px; color: var(--ink2); transition: background .2s, color .2s; white-space: nowrap; }
@@ -4509,7 +4512,7 @@ function messungBlatt(p4) {
   return b2`<div class="griff"></div><button class="zu" @click=${() => p4.zu()}>✕</button>
     <h3>${t3("Messung {zeit}", { zeit: zeit(m3.t) })}</h3>
     <div class="leise">${leer ? t3("ohne Momentaufnahme (älter als der Verlauf von Home Assistant)") : nach ? t3("nachgetragen aus Verlauf und Journal – Box, Heimnetz und Teile des Mobilfunks nicht bekannt") : t3("Momentaufnahme im Moment der Messung")}</div>
-    <div class="gruppe">${t3("Messung")}</div>
+    <div class="gruppe"><span class="gr-ic">📈</span>${t3("Messung")}</div>
     ${z2("Download · Upload · Ping", `${zahl(m3.down)} · ${zahl(m3.up)} Mbit/s · ${zahl(m3.ping)} ms`)}
     ${z2(t3("Jitter (gesamt · ↓ · ↑)"), k2.jitter != null ? `${[k2.jitter, k2.jitter_down, k2.jitter_up].map((x2) => x2 == null ? "–" : zahl(x2, 1)).join(" · ")} ms` : null)}
     ${z2("Bufferbloat", k2.bufferbloat ? t3("Note {note}", { note: k2.bufferbloat }) : null)}
@@ -4517,7 +4520,7 @@ function messungBlatt(p4) {
     ${z2(t3("Ergebnis bei Ookla"), k2.ergebnis_url && /^https:\/\//.test(k2.ergebnis_url) ? b2`<a class="blau" href=${k2.ergebnis_url} target="_blank" rel="noopener noreferrer">${t3("öffnen ›")}</a>` : null)}
     ${z2(t3("Auslöser"), k2.ausloeser ? `${AUSLOESER[k2.ausloeser] ? t3(AUSLOESER[k2.ausloeser]) : k2.ausloeser}${k2.serie_n ? `, ${t3("Durchlauf {lauf} von {n}", { lauf: k2.serie_lauf, n: k2.serie_n })}` : ""}` : null)}
     ${z2(t3("Grundlast"), m3.last != null ? `${zahl(m3.last, 1)} Mbit/s${m3.belastet ? ` · ${t3("belastet")}` : ""}` : null)}
-    <div class="gruppe">${t3("Mobilfunk")}</div>
+    <div class="gruppe"><span class="gr-ic">📶</span>${t3("Mobilfunk")}</div>
     ${k2.mobil_quelle === "modem" ? z2(t3("Werte von"), k2.modem_modell || t3("vorgeschaltetes Modem")) : A}
     ${z2(t3("Netz"), k2.netz ? b2`<span class="badge ${k2.netz.startsWith("5G") ? "blau-b" : ""}">${k2.netz}</span>` : null)}
     ${z2(t3("Ankerzelle · Sendeanlage"), k2.zelle ? [k2.zelle, k2.anlage && t3("Anlage {anlage}", { anlage: k2.anlage })].filter(Boolean).join(" · ") : null)}
@@ -4529,13 +4532,13 @@ function messungBlatt(p4) {
     ${z2(t3("Netz · Gebiet"), mit(k2.plmn, k2.tac && `TAC ${k2.tac}`))}
     ${z2(t3("Verbunden seit"), dauer(k2.verbunden_s))}
     ${z2(t3("Geschätzter Mast"), k2.mast_m ? `${zahl(k2.mast_m / 1e3, 1)} km ${k2.mast_richtung || ""}`.trim() : null)}
-    <div class="gruppe">Box</div>
+    <div class="gruppe"><span class="gr-ic">📦</span>Box</div>
     ${z2(t3("Modell · Firmware"), k2.box_modell ? [k2.box_modell, k2.box_firmware].filter(Boolean).join(" · ") : null)}
     ${z2(t3("Läuft seit"), dauer(k2.box_laufzeit_s))}
     ${z2(t3("Eingeschaltete Bänder"), k2.baender)}
-    <div class="gruppe">Heimnetz</div>
+    <div class="gruppe"><span class="gr-ic">🏠</span>Heimnetz</div>
     ${z2(t3("Geräte online · davon WLAN"), k2.online != null ? `${k2.online}${k2.online_wlan != null ? ` · ${k2.online_wlan}` : ""}` : null)}
-    <div class="gruppe">${t3("Umgebung")}</div>
+    <div class="gruppe"><span class="gr-ic">🌦️</span>${t3("Umgebung")}</div>
     ${z2(t3("Wetter"), k2.wetter ? [WETTER[k2.wetter] ? t3(WETTER[k2.wetter]) : k2.wetter, k2.temperatur != null && `${zahl(k2.temperatur, 1)} °C`, k2.feuchte != null && t3("{n} % Feuchte", { n: zahl(k2.feuchte) }), k2.wolken != null && t3("{n} % Wolken", { n: zahl(k2.wolken) })].filter(Boolean).join(" · ") : null)}
     ${z2(t3("Tag"), TAGESART[k2.tagesart] && t3(TAGESART[k2.tagesart]))}
     <p class="hinweis" style="margin-top:10px">${k2.mobil_quelle === "modem" ? t3("Funkwerte vom vorgeschalteten Modem – was es nicht liefert, fehlt.") : t3("Nicht verfügbar über die Schnittstelle der Box: genutztes Band, SINR, Bandbreite, MIMO, Carrier Aggregation.")}</p>`;

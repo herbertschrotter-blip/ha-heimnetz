@@ -213,6 +213,8 @@ test('Speedtest: Zusatzdaten je Messung – Spalten und alle Werte per Tipp (WU-
     assert.match(t, muster);
   }
   assert.ok(s.querySelector('a[href^="https://"][rel~="noopener"]'), 'Link zu Ookla');
+  // AN-0006: Gruppen im Fenster einer Messung mit Symbol, damit man sie zwischen den Zeilen erkennt
+  assert.deepEqual([...s.querySelectorAll('.gruppe .gr-ic')].map((x) => x.textContent), ['📈', '📶', '📦', '🏠', '🌦️']);
   assert.ok(!/undefined|NaN|null/.test(t), t);
   s.querySelector('.zu').click();
   await el.updateComplete;

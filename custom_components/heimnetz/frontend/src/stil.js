@@ -66,7 +66,10 @@ const GLAS = `
 .zeile { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 16px; width: 100%; box-sizing: border-box; min-height: 44px; }
 .block .zeile { padding: 8px 0; }
 .block .zeile + .zeile { border-top: 1px solid var(--gridc); }
-.gruppe { font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--ink2); padding: 10px 0 2px; }
+/* AN-0006: Gruppenüberschriften deutlich (Variante B): fett, Farbstrich links, Trennlinie */
+.gruppe { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; letter-spacing: .2px; color: var(--ink); padding: 18px 0 6px; border-bottom: 1px solid var(--gridc); margin-bottom: 2px; }
+.gruppe::before { content: ''; width: 4px; height: 16px; border-radius: 2px; background: var(--blau); flex: none; }
+.gruppe .gr-ic { font-size: 15px; }
 .g-ic { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; background: rgba(142,142,147,.22); flex: none; }
 .seg { display: flex; padding: 3px; border-radius: 14px; background: rgba(120,120,128,.2); gap: 2px; }
 .seg button { flex: 1; text-align: center; padding: 7px 6px; border-radius: 11px; font-size: 13px; color: var(--ink2); transition: background .2s, color .2s; white-space: nowrap; }

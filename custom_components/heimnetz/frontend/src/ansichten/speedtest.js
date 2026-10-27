@@ -148,7 +148,7 @@ export function messungBlatt(p) {
   return html`<div class="griff"></div><button class="zu" @click=${() => p.zu()}>✕</button>
     <h3>${t('Messung {zeit}', { zeit: zeit(m.t) })}</h3>
     <div class="leise">${leer ? t('ohne Momentaufnahme (älter als der Verlauf von Home Assistant)') : nach ? t('nachgetragen aus Verlauf und Journal – Box, Heimnetz und Teile des Mobilfunks nicht bekannt') : t('Momentaufnahme im Moment der Messung')}</div>
-    <div class="gruppe">${t('Messung')}</div>
+    <div class="gruppe"><span class="gr-ic">📈</span>${t('Messung')}</div>
     ${z('Download · Upload · Ping', `${zahl(m.down)} · ${zahl(m.up)} Mbit/s · ${zahl(m.ping)} ms`)}
     ${z(t('Jitter (gesamt · ↓ · ↑)'), k.jitter != null ? `${[k.jitter, k.jitter_down, k.jitter_up].map((x) => (x == null ? '–' : zahl(x, 1))).join(' · ')} ms` : null)}
     ${z('Bufferbloat', k.bufferbloat ? t('Note {note}', { note: k.bufferbloat }) : null)}
@@ -156,7 +156,7 @@ export function messungBlatt(p) {
     ${z(t('Ergebnis bei Ookla'), k.ergebnis_url && /^https:\/\//.test(k.ergebnis_url) ? html`<a class="blau" href=${k.ergebnis_url} target="_blank" rel="noopener noreferrer">${t('öffnen ›')}</a>` : null)}
     ${z(t('Auslöser'), k.ausloeser ? `${AUSLOESER[k.ausloeser] ? t(AUSLOESER[k.ausloeser]) : k.ausloeser}${k.serie_n ? `, ${t('Durchlauf {lauf} von {n}', { lauf: k.serie_lauf, n: k.serie_n })}` : ''}` : null)}
     ${z(t('Grundlast'), m.last != null ? `${zahl(m.last, 1)} Mbit/s${m.belastet ? ` · ${t('belastet')}` : ''}` : null)}
-    <div class="gruppe">${t('Mobilfunk')}</div>
+    <div class="gruppe"><span class="gr-ic">📶</span>${t('Mobilfunk')}</div>
     ${k.mobil_quelle === 'modem' ? z(t('Werte von'), k.modem_modell || t('vorgeschaltetes Modem')) : nothing}
     ${z(t('Netz'), k.netz ? html`<span class="badge ${k.netz.startsWith('5G') ? 'blau-b' : ''}">${k.netz}</span>` : null)}
     ${z(t('Ankerzelle · Sendeanlage'), k.zelle ? [k.zelle, k.anlage && t('Anlage {anlage}', { anlage: k.anlage })].filter(Boolean).join(' · ') : null)}
@@ -168,13 +168,13 @@ export function messungBlatt(p) {
     ${z(t('Netz · Gebiet'), mit(k.plmn, k.tac && `TAC ${k.tac}`))}
     ${z(t('Verbunden seit'), dauer(k.verbunden_s))}
     ${z(t('Geschätzter Mast'), k.mast_m ? `${zahl(k.mast_m / 1000, 1)} km ${k.mast_richtung || ''}`.trim() : null)}
-    <div class="gruppe">Box</div>
+    <div class="gruppe"><span class="gr-ic">📦</span>Box</div>
     ${z(t('Modell · Firmware'), k.box_modell ? [k.box_modell, k.box_firmware].filter(Boolean).join(' · ') : null)}
     ${z(t('Läuft seit'), dauer(k.box_laufzeit_s))}
     ${z(t('Eingeschaltete Bänder'), k.baender)}
-    <div class="gruppe">Heimnetz</div>
+    <div class="gruppe"><span class="gr-ic">🏠</span>Heimnetz</div>
     ${z(t('Geräte online · davon WLAN'), k.online != null ? `${k.online}${k.online_wlan != null ? ` · ${k.online_wlan}` : ''}` : null)}
-    <div class="gruppe">${t('Umgebung')}</div>
+    <div class="gruppe"><span class="gr-ic">🌦️</span>${t('Umgebung')}</div>
     ${z(t('Wetter'), k.wetter ? [WETTER[k.wetter] ? t(WETTER[k.wetter]) : k.wetter, k.temperatur != null && `${zahl(k.temperatur, 1)} °C`, k.feuchte != null && t('{n} % Feuchte', { n: zahl(k.feuchte) }), k.wolken != null && t('{n} % Wolken', { n: zahl(k.wolken) })].filter(Boolean).join(' · ') : null)}
     ${z(t('Tag'), TAGESART[k.tagesart] && t(TAGESART[k.tagesart]))}
     <p class="hinweis" style="margin-top:10px">${k.mobil_quelle === 'modem' ? t('Funkwerte vom vorgeschalteten Modem – was es nicht liefert, fehlt.') : t('Nicht verfügbar über die Schnittstelle der Box: genutztes Band, SINR, Bandbreite, MIMO, Carrier Aggregation.')}</p>`;
