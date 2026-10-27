@@ -11,7 +11,7 @@ from logik import zugang as zg
 from logik.sprache import ENG
 
 MOBIL_6860 = zg.Meldung(
-    zugangsart="X_AVM-DE_LTE",
+    zugangsart="X_AVM-DE_Mobile",  # so meldet sie die echte FRITZ!Box 6860 5G (27.10.2026), nicht X_AVM-DE_LTE
     link="Up",
     down_bit=1_000_000_000,
     up_bit=150_000_000,
@@ -234,3 +234,25 @@ def test_ersatz_vergessen_schliesst_im_journal():
     e = zg.abgleich("dsl", "mobilfunk", True, False)
     assert [x.art for x in e] == ["zugang", "ersatz_aus"]
     assert e[1].text == "Ersatz beendet – Mobilfunk gilt jetzt als Zugang"
+
+
+def test_6860_wie_gemessen_mobilfunk_mit_beleg():
+    """Fehler in 0.26.0: X_AVM-DE_Mobile fehlte in der Tabelle → „Zugang nicht erkannt“, Mobilfunk-Ansicht leer."""
+    assert zg.art_erkennen(MOBIL_6860) == ("mobilfunk", False)
+
+
+@pytest.mark.parametrize("art", ["", "X_AVM-DE_Irgendwas"])
+def test_unbekannte_zugangsart_mit_modem_an_ist_mobilfunk(art):
+    m = zg.Meldung(zugangsart=art, mobil_dienst=True, mobil_an=True)
+    assert zg.art_erkennen(m) == ("mobilfunk", False)
+
+
+def test_unbekannte_zugangsart_mit_dsl_synchron_bleibt_unbekannt():
+    m = zg.Meldung(
+        zugangsart="X_AVM-DE_Irgendwas",
+        mobil_dienst=True,
+        mobil_an=True,
+        dsl_dienst=True,
+        dsl_status="Up",
+    )
+    assert zg.art_erkennen(m) == ("", False)

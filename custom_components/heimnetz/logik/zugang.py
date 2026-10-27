@@ -45,6 +45,7 @@ _ZUGANGSART = {
     "X_AVM-DE_Cable": "kabel",
     "X_AVM-DE_LTE": "mobilfunk",
     "X_AVM-DE_UMTS": "mobilfunk",
+    "X_AVM-DE_Mobile": "mobilfunk",  # so meldet sich die FRITZ!Box 6860 5G (FRITZ!OS 8), nicht in der Doku
     "Ethernet": "extern",
 }
 # NewX_AVM-DE_WANAccessType (X_AVM-DE_GetAddonInfos) → Art
@@ -62,6 +63,7 @@ _WAS = {
     "X_AVM-DE_Cable": merke("Kabel"),
     "X_AVM-DE_LTE": merke("Mobilfunk (LTE/5G)"),
     "X_AVM-DE_UMTS": merke("Mobilfunk (UMTS)"),
+    "X_AVM-DE_Mobile": merke("Mobilfunk (LTE/5G)"),
     "Ethernet": merke("LAN 1 (externes Modem oder Router)"),
 }
 _LINK = {
@@ -124,10 +126,17 @@ def wan_netz(adresse: str) -> tuple[str, str]:
     return "oeffentlich", ""
 
 
+def _fest_aktiv(m: Meldung) -> bool:
+    """Ein fester Anschluss der Box ist in Betrieb (DSL synchron oder Glasfaser-Modus gesetzt)."""
+    return (m.dsl_dienst and m.dsl_status == "Up") or (m.faser_dienst and bool(m.faser_modus))
+
+
 def art_erkennen(m: Meldung, haupt_vorher: str = "") -> tuple[str, bool]:
     """Zugangsart und ob gerade der Ersatz trägt. Meldet die Box Mobilfunk, war vorher aber ein fester Zugang (DSL,
     Glasfaser, Kabel) erkannt und ist dessen Anschluss noch da, ist das der Ersatz bei Ausfall – nicht der Wechsel."""
     art = _ZUGANGSART.get(m.zugangsart) or _ART_AVM.get(m.art_avm, "")
+    if not art and m.mobil_an and not _fest_aktiv(m):
+        art = "mobilfunk"  # unbekannte Zugangsart, aber nur das Mobilfunk-Modem ist an – lieber das als „unbekannt“
     if m.art_avm == "IP-Client":
         art = (
             "extern"  # Box hinter einem anderen Router, auch wenn die Zugangsart etwas anderes sagt
