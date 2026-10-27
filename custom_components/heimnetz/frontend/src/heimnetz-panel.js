@@ -59,6 +59,7 @@ export class HeimnetzPanel extends LitElement {
     _blatt: { state: true },
     _hinweis: { state: true },
     _hinweisPlan: { state: true },
+    _hinweisEinr: { state: true },
     _toast: { state: true },
     _kachel: { state: true },
   };
@@ -72,6 +73,7 @@ export class HeimnetzPanel extends LitElement {
     this._fehler = '';
     this._hinweis = '';
     this._hinweisPlan = '';
+    this._hinweisEinr = '';
     this._blatt = null;
     this._toast = '';
     this._bilder = new Map(); // Bilder der Tickets für die Liste (id:nr → Data-URL)
@@ -309,6 +311,26 @@ export class HeimnetzPanel extends LitElement {
     this._blatt = { art: 'einstellungen' };
     this.laden();
     this.meldungenLaden();
+    this.einrichtungLaden(); // WU-0007: für den Punkt am Reiter „Einrichtung“
+  }
+
+  /** WU-0007: was eingerichtet ist und was fehlt – geprüft beim Öffnen (nur Admins; die Integration erkennt). */
+  async einrichtungLaden() {
+    if (!this.istAdmin) return;
+    try {
+      const d = await this.ws('einrichtung');
+      this._daten = { ...this._daten, einrichtung: d };
+      this._hinweisEinr = '';
+    } catch (err) {
+      this._hinweisEinr = t('Einrichtung nicht abrufbar: {fehler}', { fehler: (err && err.message) || err });
+    }
+  }
+
+  /** WU-0007: Knopf einer Voraussetzung – extern im neuen Fenster, sonst Home Assistant an der Stelle öffnen. */
+  einrichtungAktion(a) {
+    if (a.extern) { window.open(a.ziel, '_blank', 'noopener'); return; }
+    this.zu();
+    this.oeffne(a.ziel);
   }
 
   /* ---- Melden (Tickets) ---- */

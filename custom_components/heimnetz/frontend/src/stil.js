@@ -204,6 +204,25 @@ select.ga-wahl { font: inherit; font-size: 13px; color: var(--ink); background: 
 .ein input { width: 64px; border: 0; background: none; color: var(--ink); font: inherit; text-align: right; padding: 0; }
 .ein input[type=time], .ein input[type=date] { width: auto; text-align: left; color-scheme: dark; } .hell .ein input { color-scheme: light; }
 .ein small { color: var(--ink2); } .sw[disabled] { opacity: .5; cursor: not-allowed; }
+/* WU-0007: Einrichtung – was eingerichtet ist und was fehlt (Mockup netzwerk.html · Einrichtung) */
+.amber-t { color: var(--amber); }
+.e-punkt { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--amber); margin-left: 4px; vertical-align: 2px; }
+.e-punkt.rot { background: var(--rot); }
+.vs-stufe { font-size: 11px; letter-spacing: .8px; text-transform: uppercase; color: var(--ink2); padding: 10px 0 2px; display: flex; justify-content: space-between; }
+.vs { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 9px 0; min-height: 40px; font-size: 14px; }
+.vs + .vs { border-top: 1px solid var(--gridc); }
+.vs-st { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; }
+.vs-st.ok { background: color-mix(in srgb, #30d158 22%, transparent); color: #30d158; }
+.vs-st.fehlt { background: color-mix(in srgb, var(--amber) 22%, transparent); color: var(--amber); }
+.vs-st.muss { background: color-mix(in srgb, var(--rot) 22%, transparent); color: var(--rot); }
+.vs-st.aus { background: rgba(127,127,127,.18); color: var(--ink2); }
+.vs > span:nth-child(2) { min-width: 0; } .vs small { display: block; color: var(--ink2); font-size: 11px; }
+.vs-r { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; align-items: center; font-size: 13px; }
+.vs-r .leise { font-size: 12px; }
+.vs-r button { font-size: 13px; padding: 5px 10px; border-radius: 12px; background: rgba(120,120,128,.2); white-space: nowrap; }
+.vs-r button.blau { background: color-mix(in srgb, var(--blau) 22%, transparent); }
+.vs-kopf { border-radius: 12px; padding: 8px 12px; font-size: 13px; line-height: 1.4; background: rgba(127,127,127,.1); margin: 6px 0 2px; }
+@container (max-width: 520px) { .vs { grid-template-columns: 22px minmax(0, 1fr); } .vs-r { grid-column: 2; justify-content: flex-start; } }
 /* Melden (Tickets wie im Baustrommanager; Mockup netzwerk.html · Melden, 13.10.2026) */
 .melden-knopf { position: absolute; right: 16px; bottom: 96px; z-index: 6; width: 40px; height: 40px; border-radius: 50% !important; display: grid; place-items: center; color: var(--ink2); opacity: .85; }
 .melden-knopf:hover { opacity: 1; color: var(--ink); }

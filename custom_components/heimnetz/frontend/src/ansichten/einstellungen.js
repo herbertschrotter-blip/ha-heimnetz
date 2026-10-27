@@ -1,6 +1,8 @@
 // Fenster „Einstellungen“ (⚙ im Kopf): alles Einstellbare an einem Ort – Speedtest-Auswertung, Messplan, WLAN,
 // Meldungen. Seit AN-0002 (Mockup netzwerk.html · Einstellungen gruppiert, Variante B, 13.10.2026) mit Reitern oben,
-// darunter nur die gewählte Gruppe in einer Karte. Werte und Zustand kommen von der Integration.
+// darunter nur die gewählte Gruppe in einer Karte. Werte und Zustand kommen von der Integration. WU-0007: fünfter
+// Reiter „Einrichtung“ (Mockup netzwerk.html · Einrichtung, 27.10.2026) – was eingerichtet ist, erkennt die Integration
+// (heimnetz/einrichtung), die Seite zeigt nur an und öffnet Home Assistant oder HACS an der richtigen Stelle.
 import { html, nothing } from 'lit';
 import { live } from 'lit/directives/live.js';
 import { uhr, zahl, zeit } from '../format.js';
@@ -14,14 +16,18 @@ const VERKEHR = [['warten', merke('verschieben')], ['messen', merke('messen')]];
 const SERIE = [[2, '2'], [3, '3'], [4, '4'], [5, '5']];
 const SCHWACH = [[30, '30 %'], [40, '40 %'], [50, '50 %']];
 
-export const TEILE = [['speed', '📈 Speedtest'], ['plan', merke('⏱️ Messplan')], ['wlan', merke('📶 WLAN')], ['meld', merke('💬 Meldungen')]];
+export const TEILE = [['speed', '📈 Speedtest'], ['plan', merke('⏱️ Messplan')], ['wlan', merke('📶 WLAN')], ['meld', merke('💬 Meldungen')],
+  ['einr', merke('🧩 Einrichtung')]];
+const STUFEN = { muss: merke('Muss'), soll: merke('Soll – empfohlen'), kann: merke('Kann – optional') };
+const ZEICHEN = { ok: '✓', fehlt: '!', muss: '✕', aus: '–' };
 
 export function einstellungenBlatt(p) {
   const e = p._daten.einstellungen;
   const teil = p._blatt.teil || 'speed';
   const kopf = html`<div class="griff"></div><button class="zu" @click=${() => p.zu()}>✕</button>
     <h3>${t('Einstellungen')}</h3><div class="leise">${p.istAdmin ? t('gelten für die ganze Seite') : t('nur Admins ändern')}</div>
-    <div class="seg e-reiter">${TEILE.map(([k, name]) => html`<button class=${k === teil ? 'on' : ''} @click=${() => { p._blatt = { ...p._blatt, teil: k }; }}>${t(name)}</button>`)}</div>`;
+    <div class="seg e-reiter">${TEILE.map(([k, name]) => html`<button class=${k === teil ? 'on' : ''} @click=${() => { p._blatt = { ...p._blatt, teil: k }; if (k === 'einr') p.einrichtungLaden(); }}>${t(name)}${k === 'einr' ? punkt(p) : nothing}</button>`)}</div>`;
+  if (teil === 'einr') return html`${kopf}<div class="ek"><div class="ek-inhalt">${einrichtung(p)}</div></div>`;
   if (!e) return html`${kopf}<div class="leer">${t('lädt …')}</div>`;
   const inhalt = { speed: auswertung, plan: messplan, wlan, meld: (q) => meldungenZeile(q) }[teil](p, e);
   return html`${kopf}<div class="ek"><div class="ek-inhalt">${inhalt}</div></div>`;
@@ -100,4 +106,29 @@ function wlan(p, e) {
       ? seg(SCHWACH, e.wlan_schwach, (v) => p.einstellungenSpeichern({ wlan_schwach: v }))
       : html`<span class="leise">${e.wlan_schwach} %</span>`}</div>
     <p class="hinweis">${t('Kanal, Gast-WLAN und Bänder stellst du in der FRITZ!Box ein – die Seite ändert dort nichts.')}</p>`;
+}
+
+/** WU-0007: Punkt am Reiter – rot, wenn Nötiges fehlt, orange, wenn Empfohlenes fehlt (Farbe von der Integration). */
+function punkt(p) {
+  const d = p.istAdmin && p._daten.einrichtung;
+  if (!d || !d.punkt) return nothing;
+  return html`<span class="e-punkt ${d.punkt === 'rot' ? 'rot' : ''}"></span>`;
+}
+
+/** WU-0007: Voraussetzungen in den Stufen Muss / Soll / Kann wie im README. */
+function einrichtung(p) {
+  if (!p.istAdmin) return html`<p class="hinweis" style="padding-top:8px">${t('Was eingerichtet ist, sehen nur Admins.')}</p>`;
+  const d = p._daten.einrichtung;
+  if (p._hinweisEinr) return html`<p class="fein">${p._hinweisEinr}</p>`;
+  if (!d) return html`<div class="leer">${t('lädt …')}</div>`;
+  const kopf = d.muss_fehlt
+    ? html`<div class="vs-kopf"><b class="rot-t">${t(d.muss_fehlt === 1 ? '{n} Voraussetzung fehlt' : '{n} Voraussetzungen fehlen', { n: d.muss_fehlt })}</b> – ${t('was dann fehlt, steht in der Zeile. Fehlen FRITZ!Box Tools oder Recorder, auch unter Einstellungen › System › Reparaturen.')}</div>`
+    : d.soll_fehlt
+      ? html`<div class="vs-kopf"><b class="amber-t">${t('{n} empfohlen', { n: d.soll_fehlt })}</b> – ${t(d.soll_fehlt === 1 ? 'Heimnetz läuft, mit diesem Teil zeigt es mehr.' : 'Heimnetz läuft, mit diesen Teilen zeigt es mehr.')}</div>`
+      : html`<div class="vs-kopf"><b class="ok">${t('Alles Nötige ist eingerichtet.')}</b></div>`;
+  return html`${kopf}
+    ${d.stufen.map((s) => html`<div class="vs-stufe"><span>${t(STUFEN[s.stufe] || s.stufe)}</span><span>${t('{ok} von {von}', { ok: s.ok, von: s.von })}</span></div>
+      ${s.teile.map((x) => html`<div class="vs" data-teil=${x.schluessel}><span class="vs-st ${x.status}">${ZEICHEN[x.status] || ''}</span><span>${x.name}<small>${x.wofuer}</small></span>
+        <span class="vs-r">${x.stand ? html`<span class="leise">${x.stand}</span>` : nothing}${x.hinweis ? html`<span class="leise">${x.hinweis}</span>` : nothing}${x.aktionen.map((a) => html`<button class=${a.blau ? 'blau' : ''} @click=${() => p.einrichtungAktion(a)}>${a.text}</button>`)}</span></div>`)}`)}
+    <p class="hinweis" style="margin-top:8px">${t('Heimnetz installiert nichts selbst: die Knöpfe öffnen Home Assistant oder HACS an der richtigen Stelle. Nach einem Download aus HACS Home Assistant neu starten, dann einrichten. Geprüft wird beim Öffnen dieses Reiters.')}</p>`;
 }

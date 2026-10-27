@@ -12,7 +12,7 @@ from homeassistant.components.websocket_api import messages
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import config_validation as cv
 
-from . import ansichten
+from . import ansichten, einrichtung
 from .const import DOMAIN, SEITEN_SPRACHE
 from .logik import auswertung as aw
 from .logik.einstellungen import Ungueltig
@@ -318,6 +318,16 @@ async def _serie(
         connection.send_result(msg["id"], ansichten.einstellungen(hass, lz))
 
 
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/einrichtung"})
+@websocket_api.require_admin
+@websocket_api.async_response
+async def _einrichtung(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
+) -> None:
+    """WU-0007: was eingerichtet ist und was fehlt (nur Admins; nur lesen, auch ohne geladene Einrichtung)."""
+    connection.send_result(msg["id"], await einrichtung.bewertung(hass))
+
+
 BEFEHLE = (
     _uebersicht,
     _speedtest,
@@ -334,6 +344,7 @@ BEFEHLE = (
     _messplan_setzen,
     _messen,
     _serie,
+    _einrichtung,
 )
 
 

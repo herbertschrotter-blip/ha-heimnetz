@@ -25,6 +25,7 @@ BEFEHLE = {
     "verbrauch": {"tage": 30},
     "protokoll": {"art": "journal"},
     "einstellungen": {},
+    "einrichtung": {},
 }
 
 

@@ -252,6 +252,10 @@
     "alt_aktiv": {
       "title": "Heimnetz: alte Integration „Netzwerk“ noch aktiv",
       "description": "Heimnetz löst die Integration „Netzwerk“ ab und startet erst, wenn deren Einrichtung deaktiviert ist (Einstellungen → Geräte & Dienste → Netzwerk → ⋮ → Deaktivieren). Danach Heimnetz neu laden; Messungen, Journal, Einstellungen und Tickets werden übernommen."
+    },
+    "recorder_fehlt": {
+      "title": "Heimnetz: Recorder nicht geladen",
+      "description": "Ohne den Recorder von Home Assistant fehlen in Heimnetz der Verlauf, der Verbrauch je Tag und die Momentaufnahme zur Messung aus dem Verlauf. Der Recorder ist Standard (`default_config:` oder `recorder:` in `configuration.yaml`). Danach Home Assistant neu starten; der Hinweis verschwindet beim nächsten Laden von Heimnetz von selbst."
     }
   },
   "options": {

@@ -14,10 +14,13 @@ if TYPE_CHECKING:
 DOMAIN = "heimnetz"
 FRITZ = "fritz"  # Domäne von FRITZ!Box Tools: daher kommt der Zugang zur Box
 CONF_FRITZ_EINTRAG = "fritz_eintrag"
+# Mindestversion von Home Assistant, wie in hacs.json (ein Test hält beide gleich)
+HA_MINDEST = "2026.10.1"
 INTERVALL = timedelta(seconds=60)
 DATENBANK = "heimnetz/heimnetz.db"  # relativ zur HA-Konfiguration
 ISSUE_FRITZ_FEHLT = "fritz_fehlt"
 ISSUE_ANMELDUNG = "anmeldung"
+ISSUE_RECORDER_FEHLT = "recorder_fehlt"  # WU-0007: Recorder nicht geladen (kein Verlauf)
 CONF_OPENCELLID = "opencellid_schluessel"  # Optionen: Schlüssel für OpenCellID (Standort des Masts)
 # WU-0006: Umstieg von der alten Integration „netzwerk“ (Daten übernehmen, nie beide zugleich an der Box)
 ALT_DOMAIN = "netzwerk"

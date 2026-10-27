@@ -903,7 +903,7 @@ test('AN-0002: Einstellungen mit Reitern, je eine Gruppe, Schalter statt Checkbo
   await warten(10);
   await el.updateComplete;
   const reiter = [...blatt(el).querySelectorAll('.e-reiter button')].map((b) => b.textContent.trim());
-  assert.deepEqual(reiter, ['📈 Speedtest', '⏱️ Messplan', '📶 WLAN', '💬 Meldungen']);
+  assert.deepEqual(reiter, ['📈 Speedtest', '⏱️ Messplan', '📶 WLAN', '💬 Meldungen', '🧩 Einrichtung']);
   assert.ok(blatt(el).querySelector('[name=tarif_down]'), 'Speedtest zuerst');
   assert.ok(!blatt(el).querySelector('input[type=time]'), 'Messplan nicht gleichzeitig');
   const vorher = hass.aufrufe.length;
@@ -950,4 +950,95 @@ test('WU-0001: Anzahl der Serie im Messplan wählbar', async () => {
   [...blatt(el).querySelectorAll('.seg button')].find((b) => b.textContent === '5').click();
   await warten(10);
   assert.equal(hass.aufrufe.find((a) => a.type === 'heimnetz/messplan/setzen').serie, 5);
+});
+
+test('WU-0007: Reiter Einrichtung – Stufen, Punkt, Knöpfe; geprüft beim Öffnen', async () => {
+  const hass = machHass();
+  const el = await seite(hass);
+  await einstellungen(el);
+  await warten(10);
+  await el.updateComplete;
+  const fragen = () => hass.aufrufe.filter((a) => a.type === 'heimnetz/einrichtung').length;
+  assert.equal(fragen(), 1, 'beim Öffnen von ⚙ geprüft (Punkt am Reiter)');
+  const tab = [...blatt(el).querySelectorAll('.e-reiter button')].find((b) => b.textContent.includes('Einrichtung'));
+  assert.ok(tab.querySelector('.e-punkt') && !tab.querySelector('.e-punkt.rot'), 'oranger Punkt: Empfohlenes fehlt');
+  await einTab(el, 'Einrichtung');
+  await warten(10);
+  await el.updateComplete;
+  assert.equal(fragen(), 2, 'beim Öffnen des Reiters neu geprüft');
+  const t = text(el);
+  assert.match(t, /2 empfohlen/);
+  assert.match(t, /Muss/); assert.match(t, /4 von 4/); assert.match(t, /Soll – empfohlen/); assert.match(t, /Kann – optional/);
+  assert.match(t, /eingerichtet · FRITZ!Box 6860 5G/);
+  assert.match(t, /Heimnetz installiert nichts selbst/);
+  assert.ok(!/undefined|NaN|\[object Object\]/.test(t), t);
+  assert.equal(blatt(el).querySelectorAll('.vs').length, 9);
+  const zeile = (k) => blatt(el).querySelector(`.vs[data-teil=${k}]`);
+  assert.ok(zeile('ookla').querySelector('.vs-st.fehlt'));
+  assert.match(zeile('ookla').textContent, /heruntergeladen – nach einem Neustart einrichten/);
+  assert.ok(zeile('opencellid').querySelector('.vs-st.aus'));
+  // Knöpfe: in Home Assistant navigieren bzw. extern im neuen Fenster
+  const ziele = [];
+  el.oeffne = (z) => ziele.push(z);
+  knoepfe(zeile('ookla')).find((b) => b.textContent.includes('Einrichten')).click();
+  await el.updateComplete;
+  assert.deepEqual(ziele, ['/_my_redirect/config_flow_start?domain=ookla_speedtest']);
+  assert.ok(!el.shadowRoot.querySelector('.sheet.an'), 'Fenster zu vor dem Wechsel');
+  await einstellungen(el);
+  await einTab(el, 'Einrichtung');
+  await warten(10);
+  await el.updateComplete;
+  const geoeffnet = [];
+  const echt = window.open;
+  window.open = (...a) => { geoeffnet.push(a); return null; };
+  try {
+    knoepfe(zeile('opencellid')).find((b) => b.textContent.includes('Schlüssel holen')).click();
+    knoepfe(zeile('archiv')).find((b) => b.textContent.includes('In HACS öffnen')).click();
+  } finally {
+    window.open = echt;
+  }
+  assert.deepEqual(geoeffnet, [['https://opencellid.org', '_blank', 'noopener']]);
+  assert.equal(ziele[1], '/_my_redirect/hacs_repository?owner=jonathan-gtd&repository=scribe&category=integration');
+});
+
+test('WU-0007: roter Punkt, wenn Nötiges fehlt', async () => {
+  const hass = machHass();
+  const e = DATEN.einrichtung;
+  const muss = { ...e, muss_fehlt: 1, punkt: 'rot', stufen: e.stufen.map((s) => s.stufe !== 'muss' ? s : { ...s, ok: 3,
+    teile: s.teile.map((x) => x.schluessel !== 'hacs' ? x : { ...x, status: 'muss', stand: null, wofuer: 'ohne HACS kommen keine Updates',
+      aktionen: [{ text: 'Anleitung ↗', ziel: 'https://hacs.xyz/docs/use/', extern: true, blau: true }] }) }) };
+  const alt = hass.callWS.bind(hass);
+  hass.callWS = async (msg) => (msg.type === 'heimnetz/einrichtung' ? muss : alt(msg));
+  const el = await seite(hass);
+  await einstellungen(el);
+  await einTab(el, 'Einrichtung');
+  await warten(10);
+  await el.updateComplete;
+  assert.ok(blatt(el).querySelector('.e-reiter .e-punkt.rot'));
+  assert.match(text(el), /1 Voraussetzung fehlt/);
+  assert.match(text(el), /3 von 4/);
+  assert.ok(blatt(el).querySelector('.vs[data-teil=hacs] .vs-st.muss'));
+});
+
+test('WU-0007: ohne Admin keine Prüfung und kein Punkt', async () => {
+  const hass = machHass({ admin: false });
+  const el = await seite(hass);
+  await einstellungen(el);
+  await einTab(el, 'Einrichtung');
+  await warten(10);
+  await el.updateComplete;
+  assert.ok(!hass.aufrufe.some((a) => a.type === 'heimnetz/einrichtung'));
+  assert.ok(!blatt(el).querySelector('.e-punkt'));
+  assert.match(text(el), /sehen nur Admins/);
+});
+
+test('WU-0007: Reiter auf Englisch', async () => {
+  const hass = machHass({ sprache: 'en' });
+  const el = await seite(hass);
+  await einstellungen(el);
+  await einTab(el, 'Setup');
+  await warten(10);
+  await el.updateComplete;
+  assert.match(text(el), /Should – recommended/);
+  assert.match(text(el), /Heimnetz installs nothing itself/);
 });

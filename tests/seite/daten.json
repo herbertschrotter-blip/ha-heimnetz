@@ -2684,5 +2684,157 @@
   "einheit": "Mbit/s",
   "groesse": "down",
   "tage": 84
+ },
+ "einrichtung": {
+  "muss_fehlt": 0,
+  "soll_fehlt": 2,
+  "punkt": "orange",
+  "stufen": [
+   {
+    "stufe": "muss",
+    "ok": 4,
+    "von": 4,
+    "teile": [
+     {
+      "schluessel": "homeassistant",
+      "stufe": "muss",
+      "status": "ok",
+      "name": "Home Assistant",
+      "wofuer": "ab 2026.10.1",
+      "stand": "2026.10.2",
+      "hinweis": null,
+      "aktionen": []
+     },
+     {
+      "schluessel": "fritz",
+      "stufe": "muss",
+      "status": "ok",
+      "name": "FRITZ!Box Tools",
+      "wofuer": "Zugang zur Box",
+      "stand": "eingerichtet · FRITZ!Box 6860 5G",
+      "hinweis": null,
+      "aktionen": []
+     },
+     {
+      "schluessel": "recorder",
+      "stufe": "muss",
+      "status": "ok",
+      "name": "Recorder",
+      "wofuer": "Verlauf, Verbrauch je Tag",
+      "stand": "aktiv · 10 Tage",
+      "hinweis": null,
+      "aktionen": []
+     },
+     {
+      "schluessel": "hacs",
+      "stufe": "muss",
+      "status": "ok",
+      "name": "HACS",
+      "wofuer": "installieren und aktualisieren",
+      "stand": "installiert",
+      "hinweis": null,
+      "aktionen": []
+     }
+    ]
+   },
+   {
+    "stufe": "soll",
+    "ok": 1,
+    "von": 3,
+    "teile": [
+     {
+      "schluessel": "ookla",
+      "stufe": "soll",
+      "status": "fehlt",
+      "name": "Ookla Speedtest",
+      "wofuer": "misst die Geschwindigkeit (aus HACS)",
+      "stand": null,
+      "hinweis": "heruntergeladen – nach einem Neustart einrichten",
+      "aktionen": [
+       {
+        "text": "Einrichten ›",
+        "ziel": "/_my_redirect/config_flow_start?domain=ookla_speedtest",
+        "extern": false,
+        "blau": true
+       }
+      ]
+     },
+     {
+      "schluessel": "met",
+      "stufe": "soll",
+      "status": "ok",
+      "name": "Met.no",
+      "wofuer": "Wetter zur Messung",
+      "stand": "eingerichtet",
+      "hinweis": null,
+      "aktionen": []
+     },
+     {
+      "schluessel": "holiday",
+      "stufe": "soll",
+      "status": "fehlt",
+      "name": "Holiday",
+      "wofuer": "Feiertage zur Messung",
+      "stand": null,
+      "hinweis": null,
+      "aktionen": [
+       {
+        "text": "Einrichten ›",
+        "ziel": "/_my_redirect/config_flow_start?domain=holiday",
+        "extern": false,
+        "blau": true
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "stufe": "kann",
+    "ok": 0,
+    "von": 2,
+    "teile": [
+     {
+      "schluessel": "opencellid",
+      "stufe": "kann",
+      "status": "aus",
+      "name": "OpenCellID-Schlüssel",
+      "wofuer": "genauere Karte zum Mast",
+      "stand": null,
+      "hinweis": null,
+      "aktionen": [
+       {
+        "text": "Schlüssel holen ↗",
+        "ziel": "https://opencellid.org",
+        "extern": true,
+        "blau": false
+       },
+       {
+        "text": "Eintragen ›",
+        "ziel": "/config/integrations/integration/heimnetz",
+        "extern": false,
+        "blau": true
+       }
+      ]
+     },
+     {
+      "schluessel": "archiv",
+      "stufe": "kann",
+      "status": "aus",
+      "name": "Langzeitarchiv",
+      "wofuer": "Werte über Jahre (Scribe, InfluxDB)",
+      "stand": null,
+      "hinweis": null,
+      "aktionen": [
+       {
+        "text": "In HACS öffnen ↗",
+        "ziel": "/_my_redirect/hacs_repository?owner=jonathan-gtd&repository=scribe&category=integration",
+        "extern": false,
+        "blau": true
+       }
+      ]
+     }
+    ]
+   }
+  ]
  }
 }

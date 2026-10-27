@@ -290,6 +290,24 @@ nachgetragen.
   nur als Ausblick. Entitäts-IDs in beiden Sprachen, weil sie beim Einrichten aus dem Namen in der Systemsprache
   entstehen. Das Einspielen per `ausliefern.py` steht nur noch unter „Entwickeln“.
 
+## Einrichtung anzeigen (Herbert, 27.10.2026, WU-0007)
+
+- Mockup `netzwerk.html` · Einrichtung abgenommen: fünfter Reiter „🧩 Einrichtung“ im Fenster ⚙ mit den
+  Voraussetzungen aus dem README (Muss / Soll / Kann). Erkennen und Bewerten macht die Integration
+  (`logik/einrichtung.py`, ohne HA; dünner Teil `einrichtung.py`, Befehl `heimnetz/einrichtung`, nur Admins), die Seite
+  zeigt nur an. Gelesen werden geladene Integrationen (`hass.config.components`), Config-Einträge mit Zustand,
+  heruntergeladene Custom Components (`loader.async_get_custom_components`), die Aufbewahrung des Recorders und aus den
+  eigenen Optionen nur, ob ein OpenCellID-Schlüssel eingetragen ist. Von der Box nur das Modell, keine Gerätenamen
+  oder Adressen. FRITZ!Box Tools zählt als eingerichtet, wenn der Eintrag da ist, aus dem Heimnetz den Zugang holt
+  (geladen muss er dafür nicht sein).
+- Heimnetz installiert, lädt und startet nichts: die Knöpfe navigieren in Home Assistant (`/_my_redirect/
+  config_flow_start`, `/_my_redirect/hacs_repository`, Seite der Integration) oder öffnen hacs.xyz und opencellid.org
+  im neuen Fenster. HACS-Repositories: Ookla `soulripper13/hass-speedtest-ookla`, Scribe `jonathan-gtd/scribe`
+  (geprüft 27.10.2026). Langzeitarchiv gilt als eingerichtet mit geladenem Scribe-Eintrag oder geladener Integration
+  `influxdb`. Die Mindestversion von Home Assistant steht in `const.HA_MINDEST` und muss zu `hacs.json` passen (Test).
+- Fehlt der Recorder, gibt es zusätzlich einen Reparatur-Hinweis (Warnung, Heimnetz startet trotzdem); für FRITZ!Box
+  Tools gab es ihn schon.
+
 ## Offene Entscheidungen
 
 - Keine.

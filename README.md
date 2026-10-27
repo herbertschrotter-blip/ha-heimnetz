@@ -13,6 +13,31 @@ Seite in der Seitenleiste und als Entitäten für Automationen und Dashboards.
 > Hobbyprojekt, **ohne Gewähr**. Die Integration liest nur: Sie ändert keine Einstellungen der FRITZ!Box und steuert
 > keine Geräte. Einzige Ausnahme: Sie startet Speedtest-Messungen über die Ookla-Integration.
 
+## Schnelleinrichtung
+
+**Muss** = ohne das läuft Heimnetz nicht · **Soll** = empfohlen · **Kann** = optional. Einzelheiten stehen unter
+[Voraussetzungen](#voraussetzungen), [Installation](#installation) und [Einrichtung](#einrichtung).
+
+1. **Muss:** Home Assistant ab 2026.10.1 und [HACS](https://hacs.xyz) ([Anleitung](https://hacs.xyz/docs/use/)).
+2. **Muss:** FRITZ!Box Tools einrichten – mit einem Box-Benutzer, der über TR-064 zugreifen darf (in der Box
+   „Zugriff für Anwendungen zulassen“ an).
+   [![FRITZ!Box Tools einrichten](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=fritz)
+3. **Muss:** Heimnetz über HACS herunterladen (benutzerdefiniertes Repository, Kategorie Integration), danach Home
+   Assistant neu starten.
+   [![In HACS öffnen](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=herbertschrotter-blip&repository=ha-heimnetz&category=integration)
+4. **Muss:** Integration hinzufügen → Heimnetz → FRITZ!Box wählen.
+   [![Heimnetz einrichten](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=heimnetz)
+5. **Soll:** [Ookla Speedtest](https://my.home-assistant.io/redirect/hacs_repository/?owner=soulripper13&repository=hass-speedtest-ookla&category=integration)
+   aus HACS (herunterladen, neu starten, [einrichten](https://my.home-assistant.io/redirect/config_flow_start/?domain=ookla_speedtest)),
+   [Met.no](https://my.home-assistant.io/redirect/config_flow_start/?domain=met) und
+   [Holiday](https://my.home-assistant.io/redirect/config_flow_start/?domain=holiday) einrichten.
+6. **Kann:** OpenCellID-Schlüssel ([opencellid.org](https://opencellid.org)) in den Optionen von Heimnetz eintragen;
+   Langzeitarchiv mit [Scribe](https://my.home-assistant.io/redirect/hacs_repository/?owner=jonathan-gtd&repository=scribe&category=integration)
+   (HACS) oder InfluxDB.
+
+Danach zeigt **⚙ → 🧩 Einrichtung** auf der Seite Heimnetz, was eingerichtet ist und was noch fehlt – mit Knöpfen, die
+Home Assistant oder HACS an der richtigen Stelle öffnen.
+
 ## Was Heimnetz kann
 
 | Reiter | Inhalt |
@@ -37,7 +62,7 @@ private Daten, Deutsch und Englisch.
 | **[HACS](https://hacs.xyz)** | Installieren und Aktualisieren | nur manuell installierbar (Ordner `custom_components/heimnetz` kopieren) |
 | **FRITZ!Box** im Heimnetz, mit Mobilfunk für die Mobilfunk-Teile | Quelle aller Netzdaten | – |
 | **Integration „FRITZ!Box Tools“** (in Home Assistant enthalten) eingerichtet – mit einem Box-Benutzer, der über TR-064 zugreifen darf (Recht „FRITZ!Box Einstellungen“; in der Box „Heimnetz → Netzwerk → Netzwerkeinstellungen → Zugriff für Anwendungen zulassen“ eingeschaltet) | Heimnetz benutzt deren Zugang mit und fragt nicht noch einmal nach dem Kennwort | Einrichtung bricht ab („Zuerst die Integration FRITZ!Box Tools einrichten“); Reparatur-Hinweis, wenn sie später fehlt oder die Anmeldung abgelehnt wird |
-| **Recorder** aktiv (Standard in Home Assistant) | Verlauf, Verbrauch je Tag, Mobilfunk-Verlauf, Momentaufnahme zur Messung | Reiter Verbrauch und die Verläufe zeigen „keine Daten“ |
+| **Recorder** aktiv (Standard in Home Assistant) | Verlauf, Verbrauch je Tag, Mobilfunk-Verlauf, Momentaufnahme zur Messung | Reiter Verbrauch und die Verläufe zeigen „keine Daten“; Reparatur-Hinweis |
 
 ### Soll – empfohlen
 
@@ -52,7 +77,7 @@ private Daten, Deutsch und Englisch.
 | Was | Wofür | Ohne |
 |-----|-------|------|
 | **OpenCellID-Schlüssel** (kostenlos auf [opencellid.org](https://opencellid.org)), unter Geräte & Dienste → Heimnetz → Konfigurieren | genauere Karte zum Mast; einmal im Monat der Zell-Abzug für Österreich | Standort der Zellen nur aus BeaconDB und OpenStreetMap |
-| **Scribe** (HACS) mit **TimescaleDB** oder ein anderes Langzeitarchiv (z. B. InfluxDB) | Werte der Entitäten über Jahre aufheben | der Recorder hält den Verlauf nur so lange, wie er eingestellt ist (Standard 10 Tage); Messungen und Journal in Heimnetz bleiben trotzdem |
+| **[Scribe](https://github.com/jonathan-gtd/scribe)** (HACS) mit **TimescaleDB** oder ein anderes Langzeitarchiv (z. B. InfluxDB) | Werte der Entitäten über Jahre aufheben | der Recorder hält den Verlauf nur so lange, wie er eingestellt ist (Standard 10 Tage); Messungen und Journal in Heimnetz bleiben trotzdem |
 
 ## Installation
 
@@ -68,7 +93,8 @@ Einstellungen → Geräte & Dienste → **Integration hinzufügen** → „Heimn
 FRITZ!Box Tools). Danach erscheint „Heimnetz“ in der Seitenleiste. Eine Einrichtung je Haushalt.
 
 - **Einstellungen der Seite** (⚙, nur Administratoren): Tarif Download/Upload, Auswerten ab, Grenze für schwachen
-  WLAN-Empfang, Messplan.
+  WLAN-Empfang, Messplan. Der Reiter **🧩 Einrichtung** zeigt, welche Voraussetzungen eingerichtet sind und was fehlt
+  (Punkt am Reiter: orange = Empfohlenes fehlt, rot = Nötiges fehlt); Heimnetz installiert dabei nichts selbst.
 - **Optionen der Einrichtung** (Geräte & Dienste → Heimnetz → Konfigurieren): OpenCellID-Schlüssel.
 
 ## Aktualisieren
@@ -227,6 +253,30 @@ the sidebar and as entities for automations and dashboards.
 > Hobby project, **no warranty**. The integration only reads: it never changes FRITZ!Box settings and controls no
 > devices. The one exception: it starts speed tests through the Ookla integration.
 
+### Quick start
+
+**Must** = Heimnetz does not run without · **Should** = recommended · **Can** = optional. Details are under
+[Requirements](#requirements), [Installation](#installation-1) and [Setup](#setup).
+
+1. **Must:** Home Assistant 2026.10.1 or newer and [HACS](https://hacs.xyz) ([guide](https://hacs.xyz/docs/use/)).
+2. **Must:** set up FRITZ!Box Tools – with a box user allowed to use TR-064 ("Allow access for applications" switched
+   on in the box).
+   [![Set up FRITZ!Box Tools](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=fritz)
+3. **Must:** download Heimnetz through HACS (custom repository, category Integration), then restart Home Assistant.
+   [![Open in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=herbertschrotter-blip&repository=ha-heimnetz&category=integration)
+4. **Must:** Add integration → Heimnetz → pick the FRITZ!Box.
+   [![Set up Heimnetz](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=heimnetz)
+5. **Should:** [Ookla Speedtest](https://my.home-assistant.io/redirect/hacs_repository/?owner=soulripper13&repository=hass-speedtest-ookla&category=integration)
+   from HACS (download, restart, [set up](https://my.home-assistant.io/redirect/config_flow_start/?domain=ookla_speedtest)), set up
+   [Met.no](https://my.home-assistant.io/redirect/config_flow_start/?domain=met) and
+   [Holiday](https://my.home-assistant.io/redirect/config_flow_start/?domain=holiday).
+6. **Can:** enter an OpenCellID key ([opencellid.org](https://opencellid.org)) in the Heimnetz options; long-term
+   archive with [Scribe](https://my.home-assistant.io/redirect/hacs_repository/?owner=jonathan-gtd&repository=scribe&category=integration)
+   (HACS) or InfluxDB.
+
+Then **⚙ → 🧩 Setup** on the Heimnetz page shows what is set up and what is still missing – with buttons that open
+Home Assistant or HACS at the right place.
+
 ### Features
 
 | Tab | Content |
@@ -251,7 +301,7 @@ without private data, German and English.
 | **[HACS](https://hacs.xyz)** | install and update | manual install only (copy `custom_components/heimnetz`) |
 | **FRITZ!Box** in your network, with mobile broadband for the mobile parts | source of all network data | – |
 | **"FRITZ!Box Tools" integration** (built into Home Assistant) set up – with a box user allowed to use TR-064 (right "FRITZ!Box settings"; in the box "Home Network → Network → Network Settings → Allow access for applications" switched on) | Heimnetz reuses its credentials and never asks for the password again | setup aborts ("Set up the FRITZ!Box Tools integration first"); repair issue if it disappears later or the login is refused |
-| **Recorder** active (Home Assistant default) | history, usage per day, mobile history, snapshot per measurement | Usage tab and histories show "no data" |
+| **Recorder** active (Home Assistant default) | history, usage per day, mobile history, snapshot per measurement | Usage tab and histories show "no data"; repair issue |
 
 #### Should – recommended
 
@@ -266,7 +316,7 @@ without private data, German and English.
 | What | Why | Without |
 |------|-----|---------|
 | **OpenCellID key** (free at [opencellid.org](https://opencellid.org)), under Devices & services → Heimnetz → Configure | more accurate map to the mast; monthly cell export for Austria | cell locations from BeaconDB and OpenStreetMap only |
-| **Scribe** (HACS) with **TimescaleDB**, or another long-term store (e.g. InfluxDB) | keep entity values for years | the recorder keeps history only as long as configured (default 10 days); measurements and journal in Heimnetz are kept anyway |
+| **[Scribe](https://github.com/jonathan-gtd/scribe)** (HACS) with **TimescaleDB**, or another long-term store (e.g. InfluxDB) | keep entity values for years | the recorder keeps history only as long as configured (default 10 days); measurements and journal in Heimnetz are kept anyway |
 
 ### Installation
 
@@ -282,7 +332,8 @@ Settings → Devices & services → **Add integration** → "Heimnetz" → pick 
 "Heimnetz" then appears in the sidebar. One setup per household.
 
 - **Page settings** (⚙, administrators only): plan download/upload, evaluate from, weak Wi-Fi threshold, test
-  schedule.
+  schedule. The **🧩 Setup** tab shows which requirements are set up and what is missing (dot on the tab: orange =
+  something recommended is missing, red = something required is missing); Heimnetz installs nothing itself.
 - **Integration options** (Devices & services → Heimnetz → Configure): OpenCellID key.
 
 ### Updating

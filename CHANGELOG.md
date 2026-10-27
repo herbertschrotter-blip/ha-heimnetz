@@ -1,5 +1,22 @@
 # CHANGELOG
 
+## [0.24.0]
+
+- WU-0007 (Mockup abgenommen 27.10.2026): In den Einstellungen (⚙) zeigt der neue Reiter **🧩 Einrichtung**, welche
+  Voraussetzungen eingerichtet sind und was fehlt – in den Stufen Muss (Home Assistant mit Version, FRITZ!Box Tools
+  mit Box-Modell, Recorder mit Aufbewahrung, HACS), Soll (Ookla Speedtest, Met.no, Holiday) und Kann
+  (OpenCellID-Schlüssel, Langzeitarchiv Scribe oder InfluxDB), je Stufe „x von y“. Knöpfe öffnen Home Assistant oder
+  HACS an der richtigen Stelle: „Einrichten ›“ (Einrichtungsdialog), „In HACS öffnen ↗“ (Repository), „Anleitung ↗“
+  (hacs.xyz, ohne HACS), „Schlüssel holen ↗“ und „Eintragen ›“ (OpenCellID). Aus HACS heruntergeladen, aber noch
+  nicht eingerichtet: „heruntergeladen – nach einem Neustart einrichten“; ohne HACS bei HACS-Teilen „erst HACS installieren“.
+  Punkt am Reiter orange, wenn Empfohlenes fehlt, rot, wenn Nötiges fehlt. Erkannt wird in der Integration (neuer
+  Befehl `heimnetz/einrichtung`, nur Admins; Fachlogik `logik/einrichtung.py`) beim Öffnen von ⚙ und des Reiters.
+  Heimnetz installiert, lädt und startet dabei nichts.
+- WU-0007: Neuer Reparatur-Hinweis „Recorder nicht geladen“ (Warnung) – ohne Recorder fehlen Verlauf und Verbrauch je
+  Tag; Heimnetz läuft trotzdem.
+- WU-0007: README mit „Schnelleinrichtung“ / „Quick start“ ganz oben (nummerierte Schritte, Muss/Soll/Kann, Links und
+  My-Home-Assistant-Knöpfe); Scribe verlinkt (`jonathan-gtd/scribe`).
+
 ## [0.23.1]
 
 - Fix (WU-0006): `fritzconnection` steht in `manifest.json` als Mindestversion (`>=1.15.1`) statt fest gepinnt –

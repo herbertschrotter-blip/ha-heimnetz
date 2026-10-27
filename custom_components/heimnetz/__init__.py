@@ -28,6 +28,7 @@ from .const import (
     DOMAIN,
     ISSUE_ALT_AKTIV,
     ISSUE_FRITZ_FEHLT,
+    ISSUE_RECORDER_FEHLT,
 )
 from .coordinator import Abruf, zugang_aus_fritz
 from .einstellungen import Einstellungsdienst
@@ -120,6 +121,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: EintragMitLaufzeit) -> b
         )
         raise ConfigEntryError(translation_domain=DOMAIN, translation_key=ISSUE_FRITZ_FEHLT)
     ir.async_delete_issue(hass, DOMAIN, ISSUE_FRITZ_FEHLT)
+    _recorder_pruefen(hass)
 
     datenbank = Datenbank(Path(hass.config.path(DATENBANK)))
     try:
@@ -177,6 +179,22 @@ async def async_setup_entry(hass: HomeAssistant, entry: EintragMitLaufzeit) -> b
         async_dispatcher_connect(hass, SIGNAL_CONFIG_ENTRY_CHANGED, _alt_geaendert)
     )
     return True
+
+
+@callback
+def _recorder_pruefen(hass: HomeAssistant) -> None:
+    """WU-0007: ohne Recorder fehlen Verlauf und Verbrauch je Tag – Hinweis unter Reparaturen, Heimnetz läuft trotzdem."""
+    if "recorder" in hass.config.components:
+        ir.async_delete_issue(hass, DOMAIN, ISSUE_RECORDER_FEHLT)
+        return
+    ir.async_create_issue(
+        hass,
+        DOMAIN,
+        ISSUE_RECORDER_FEHLT,
+        is_fixable=False,
+        severity=ir.IssueSeverity.WARNING,
+        translation_key=ISSUE_RECORDER_FEHLT,
+    )
 
 
 async def _nachtragen(hass: HomeAssistant, lz: Laufzeit) -> None:

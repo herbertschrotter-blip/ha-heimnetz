@@ -252,6 +252,10 @@
     "alt_aktiv": {
       "title": "Heimnetz: old integration “Netzwerk” still active",
       "description": "Heimnetz replaces the integration “Netzwerk” and only starts once its entry is disabled (Settings → Devices & services → Netzwerk → ⋮ → Disable). Then reload Heimnetz; measurements, journal, settings and tickets are taken over."
+    },
+    "recorder_fehlt": {
+      "title": "Heimnetz: recorder not loaded",
+      "description": "Without the Home Assistant recorder, Heimnetz lacks history, usage per day and the snapshot per measurement taken from history. The recorder is the default (`default_config:` or `recorder:` in `configuration.yaml`). Then restart Home Assistant; this notice goes away by itself the next time Heimnetz loads."
     }
   },
   "options": {

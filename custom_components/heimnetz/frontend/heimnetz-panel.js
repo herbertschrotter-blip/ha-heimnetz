@@ -3498,6 +3498,25 @@ select.ga-wahl { font: inherit; font-size: 13px; color: var(--ink); background: 
 .ein input { width: 64px; border: 0; background: none; color: var(--ink); font: inherit; text-align: right; padding: 0; }
 .ein input[type=time], .ein input[type=date] { width: auto; text-align: left; color-scheme: dark; } .hell .ein input { color-scheme: light; }
 .ein small { color: var(--ink2); } .sw[disabled] { opacity: .5; cursor: not-allowed; }
+/* WU-0007: Einrichtung – was eingerichtet ist und was fehlt (Mockup netzwerk.html · Einrichtung) */
+.amber-t { color: var(--amber); }
+.e-punkt { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--amber); margin-left: 4px; vertical-align: 2px; }
+.e-punkt.rot { background: var(--rot); }
+.vs-stufe { font-size: 11px; letter-spacing: .8px; text-transform: uppercase; color: var(--ink2); padding: 10px 0 2px; display: flex; justify-content: space-between; }
+.vs { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 9px 0; min-height: 40px; font-size: 14px; }
+.vs + .vs { border-top: 1px solid var(--gridc); }
+.vs-st { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; }
+.vs-st.ok { background: color-mix(in srgb, #30d158 22%, transparent); color: #30d158; }
+.vs-st.fehlt { background: color-mix(in srgb, var(--amber) 22%, transparent); color: var(--amber); }
+.vs-st.muss { background: color-mix(in srgb, var(--rot) 22%, transparent); color: var(--rot); }
+.vs-st.aus { background: rgba(127,127,127,.18); color: var(--ink2); }
+.vs > span:nth-child(2) { min-width: 0; } .vs small { display: block; color: var(--ink2); font-size: 11px; }
+.vs-r { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; align-items: center; font-size: 13px; }
+.vs-r .leise { font-size: 12px; }
+.vs-r button { font-size: 13px; padding: 5px 10px; border-radius: 12px; background: rgba(120,120,128,.2); white-space: nowrap; }
+.vs-r button.blau { background: color-mix(in srgb, var(--blau) 22%, transparent); }
+.vs-kopf { border-radius: 12px; padding: 8px 12px; font-size: 13px; line-height: 1.4; background: rgba(127,127,127,.1); margin: 6px 0 2px; }
+@container (max-width: 520px) { .vs { grid-template-columns: 22px minmax(0, 1fr); } .vs-r { grid-column: 2; justify-content: flex-start; } }
 /* Melden (Tickets wie im Baustrommanager; Mockup netzwerk.html · Melden, 13.10.2026) */
 .melden-knopf { position: absolute; right: 16px; bottom: 96px; z-index: 6; width: 40px; height: 40px; border-radius: 50% !important; display: grid; place-items: center; color: var(--ink2); opacity: .85; }
 .melden-knopf:hover { opacity: 1; color: var(--ink); }
@@ -3773,6 +3792,22 @@ var EN = {
   "messen": "measure",
   "⏱️ Messplan": "⏱️ Schedule",
   "💬 Meldungen": "💬 Reports",
+  // Einrichtung (WU-0007)
+  "🧩 Einrichtung": "🧩 Setup",
+  "Muss": "Must",
+  "Soll – empfohlen": "Should – recommended",
+  "Kann – optional": "Can – optional",
+  "{ok} von {von}": "{ok} of {von}",
+  "Was eingerichtet ist, sehen nur Admins.": "Only admins can see what is set up.",
+  "{n} Voraussetzung fehlt": "{n} requirement missing",
+  "{n} Voraussetzungen fehlen": "{n} requirements missing",
+  "was dann fehlt, steht in der Zeile. Fehlen FRITZ!Box Tools oder Recorder, auch unter Einstellungen › System › Reparaturen.": "the row says what is then missing. If FRITZ!Box Tools or the recorder are missing, also see Settings › System › Repairs.",
+  "{n} empfohlen": "{n} recommended",
+  "Heimnetz läuft, mit diesem Teil zeigt es mehr.": "Heimnetz runs; with this part it shows more.",
+  "Heimnetz läuft, mit diesen Teilen zeigt es mehr.": "Heimnetz runs; with these parts it shows more.",
+  "Alles Nötige ist eingerichtet.": "Everything needed is set up.",
+  "Heimnetz installiert nichts selbst: die Knöpfe öffnen Home Assistant oder HACS an der richtigen Stelle. Nach einem Download aus HACS Home Assistant neu starten, dann einrichten. Geprüft wird beim Öffnen dieses Reiters.": "Heimnetz installs nothing itself: the buttons open Home Assistant or HACS at the right place. After a download from HACS, restart Home Assistant, then set it up. Checked whenever this tab is opened.",
+  "Einrichtung nicht abrufbar: {fehler}": "Setup status not available: {fehler}",
   "gelten für die ganze Seite": "apply to the whole page",
   "nur Admins ändern": "only admins can change",
   "Tarif Download": "Plan download",
@@ -5840,7 +5875,15 @@ var TAKTE = [[1, "1 h"], [2, "2 h"], [4, "4 h"], [6, "6 h"], [12, "12 h"], [24, 
 var VERKEHR = [["warten", merke("verschieben")], ["messen", merke("messen")]];
 var SERIE = [[2, "2"], [3, "3"], [4, "4"], [5, "5"]];
 var SCHWACH = [[30, "30 %"], [40, "40 %"], [50, "50 %"]];
-var TEILE2 = [["speed", "📈 Speedtest"], ["plan", merke("⏱️ Messplan")], ["wlan", merke("📶 WLAN")], ["meld", merke("💬 Meldungen")]];
+var TEILE2 = [
+  ["speed", "📈 Speedtest"],
+  ["plan", merke("⏱️ Messplan")],
+  ["wlan", merke("📶 WLAN")],
+  ["meld", merke("💬 Meldungen")],
+  ["einr", merke("🧩 Einrichtung")]
+];
+var STUFEN = { muss: merke("Muss"), soll: merke("Soll – empfohlen"), kann: merke("Kann – optional") };
+var ZEICHEN = { ok: "✓", fehlt: "!", muss: "✕", aus: "–" };
 function einstellungenBlatt(p4) {
   const e6 = p4._daten.einstellungen;
   const teil = p4._blatt.teil || "speed";
@@ -5848,7 +5891,9 @@ function einstellungenBlatt(p4) {
     <h3>${t3("Einstellungen")}</h3><div class="leise">${p4.istAdmin ? t3("gelten für die ganze Seite") : t3("nur Admins ändern")}</div>
     <div class="seg e-reiter">${TEILE2.map(([k2, name]) => b2`<button class=${k2 === teil ? "on" : ""} @click=${() => {
     p4._blatt = { ...p4._blatt, teil: k2 };
-  }}>${t3(name)}</button>`)}</div>`;
+    if (k2 === "einr") p4.einrichtungLaden();
+  }}>${t3(name)}${k2 === "einr" ? punkt2(p4) : A}</button>`)}</div>`;
+  if (teil === "einr") return b2`${kopf}<div class="ek"><div class="ek-inhalt">${einrichtung(p4)}</div></div>`;
   if (!e6) return b2`${kopf}<div class="leer">${t3("lädt …")}</div>`;
   const inhalt = { speed: auswertung, plan: messplan, wlan: wlan2, meld: (q) => meldungenZeile(q) }[teil](p4, e6);
   return b2`${kopf}<div class="ek"><div class="ek-inhalt">${inhalt}</div></div>`;
@@ -5915,6 +5960,23 @@ function wlan2(p4, e6) {
   return b2`
     <div class="ez"><span>${t3("Schwacher Empfang unter")}<small>${t3("so meldet die Box den Empfang je Gerät")}</small></span>${admin ? seg(SCHWACH, e6.wlan_schwach, (v2) => p4.einstellungenSpeichern({ wlan_schwach: v2 })) : b2`<span class="leise">${e6.wlan_schwach} %</span>`}</div>
     <p class="hinweis">${t3("Kanal, Gast-WLAN und Bänder stellst du in der FRITZ!Box ein – die Seite ändert dort nichts.")}</p>`;
+}
+function punkt2(p4) {
+  const d3 = p4.istAdmin && p4._daten.einrichtung;
+  if (!d3 || !d3.punkt) return A;
+  return b2`<span class="e-punkt ${d3.punkt === "rot" ? "rot" : ""}"></span>`;
+}
+function einrichtung(p4) {
+  if (!p4.istAdmin) return b2`<p class="hinweis" style="padding-top:8px">${t3("Was eingerichtet ist, sehen nur Admins.")}</p>`;
+  const d3 = p4._daten.einrichtung;
+  if (p4._hinweisEinr) return b2`<p class="fein">${p4._hinweisEinr}</p>`;
+  if (!d3) return b2`<div class="leer">${t3("lädt …")}</div>`;
+  const kopf = d3.muss_fehlt ? b2`<div class="vs-kopf"><b class="rot-t">${t3(d3.muss_fehlt === 1 ? "{n} Voraussetzung fehlt" : "{n} Voraussetzungen fehlen", { n: d3.muss_fehlt })}</b> – ${t3("was dann fehlt, steht in der Zeile. Fehlen FRITZ!Box Tools oder Recorder, auch unter Einstellungen › System › Reparaturen.")}</div>` : d3.soll_fehlt ? b2`<div class="vs-kopf"><b class="amber-t">${t3("{n} empfohlen", { n: d3.soll_fehlt })}</b> – ${t3(d3.soll_fehlt === 1 ? "Heimnetz läuft, mit diesem Teil zeigt es mehr." : "Heimnetz läuft, mit diesen Teilen zeigt es mehr.")}</div>` : b2`<div class="vs-kopf"><b class="ok">${t3("Alles Nötige ist eingerichtet.")}</b></div>`;
+  return b2`${kopf}
+    ${d3.stufen.map((s4) => b2`<div class="vs-stufe"><span>${t3(STUFEN[s4.stufe] || s4.stufe)}</span><span>${t3("{ok} von {von}", { ok: s4.ok, von: s4.von })}</span></div>
+      ${s4.teile.map((x2) => b2`<div class="vs" data-teil=${x2.schluessel}><span class="vs-st ${x2.status}">${ZEICHEN[x2.status] || ""}</span><span>${x2.name}<small>${x2.wofuer}</small></span>
+        <span class="vs-r">${x2.stand ? b2`<span class="leise">${x2.stand}</span>` : A}${x2.hinweis ? b2`<span class="leise">${x2.hinweis}</span>` : A}${x2.aktionen.map((a3) => b2`<button class=${a3.blau ? "blau" : ""} @click=${() => p4.einrichtungAktion(a3)}>${a3.text}</button>`)}</span></div>`)}`)}
+    <p class="hinweis" style="margin-top:8px">${t3("Heimnetz installiert nichts selbst: die Knöpfe öffnen Home Assistant oder HACS an der richtigen Stelle. Nach einem Download aus HACS Home Assistant neu starten, dann einrichten. Geprüft wird beim Öffnen dieses Reiters.")}</p>`;
 }
 
 // src/ansichten/verbrauch.js
@@ -5984,7 +6046,7 @@ function protokoll(p4, d3) {
 }
 
 // src/heimnetz-panel.js
-var VERSION = true ? "0.23.1" : "entwicklung";
+var VERSION = true ? "0.24.0" : "entwicklung";
 var REITER = [
   ["uebersicht", merke("Übersicht")],
   ["speedtest", merke("Speedtest")],
@@ -6022,6 +6084,7 @@ var HeimnetzPanel = class extends i4 {
     _blatt: { state: true },
     _hinweis: { state: true },
     _hinweisPlan: { state: true },
+    _hinweisEinr: { state: true },
     _toast: { state: true },
     _kachel: { state: true }
   };
@@ -6033,6 +6096,7 @@ var HeimnetzPanel = class extends i4 {
     this._fehler = "";
     this._hinweis = "";
     this._hinweisPlan = "";
+    this._hinweisEinr = "";
     this._blatt = null;
     this._toast = "";
     this._bilder = /* @__PURE__ */ new Map();
@@ -6258,6 +6322,27 @@ var HeimnetzPanel = class extends i4 {
     this._blatt = { art: "einstellungen" };
     this.laden();
     this.meldungenLaden();
+    this.einrichtungLaden();
+  }
+  /** WU-0007: was eingerichtet ist und was fehlt – geprüft beim Öffnen (nur Admins; die Integration erkennt). */
+  async einrichtungLaden() {
+    if (!this.istAdmin) return;
+    try {
+      const d3 = await this.ws("einrichtung");
+      this._daten = { ...this._daten, einrichtung: d3 };
+      this._hinweisEinr = "";
+    } catch (err) {
+      this._hinweisEinr = t3("Einrichtung nicht abrufbar: {fehler}", { fehler: err && err.message || err });
+    }
+  }
+  /** WU-0007: Knopf einer Voraussetzung – extern im neuen Fenster, sonst Home Assistant an der Stelle öffnen. */
+  einrichtungAktion(a3) {
+    if (a3.extern) {
+      window.open(a3.ziel, "_blank", "noopener");
+      return;
+    }
+    this.zu();
+    this.oeffne(a3.ziel);
   }
   /* ---- Melden (Tickets) ---- */
   toast(text) {
