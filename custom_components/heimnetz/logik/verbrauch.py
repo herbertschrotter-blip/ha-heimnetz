@@ -54,7 +54,12 @@ def tage(
         tag = datetime.fromtimestamp(p.t, tz).date()
         if tag in werte:
             werte[tag][2] += volumen_mb(p) / 1000
-    return [Tag(t, round(d, 3), round(u, 3), round(s, 3)) for t, (d, u, s) in sorted(werte.items())]
+    # „davon Speedtests“ ist eine Schätzung aus den Ookla-Ergebnissen und kann größer sein als die Zähler des Tages
+    # (Zähler fehlen am Tag der Einrichtung oder waren kurz nicht verfügbar) – höchstens die Tagesmenge (GitHub #1)
+    return [
+        Tag(t, round(d, 3), round(u, 3), round(min(s, d + u), 3))
+        for t, (d, u, s) in sorted(werte.items())
+    ]
 
 
 def kacheln(alle: Sequence[Tag], gezeigt: int) -> Kacheln | None:

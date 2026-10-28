@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [0.28.1]
+
+- Fix (GitHub #1): Im Reiter **Verbrauch** ragte der Balken „davon Speedtests“ über das Diagramm hinaus, wenn an einem
+  Tag Zählerwerte der FRITZ!Box fehlten (z. B. am Tag der Einrichtung). Der geschätzte Speedtest-Anteil ist jetzt höchstens
+  die Tagesmenge.
+
 ## [0.28.0]
 
 - WU-0010 (Mockups netzwerk.html · Warnungen und · Eigene Arten, abgenommen 28.10.2026): **Warnungen** unter ⚙ → 🔔

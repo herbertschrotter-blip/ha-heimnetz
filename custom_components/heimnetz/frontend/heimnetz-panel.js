@@ -6576,7 +6576,7 @@ function verbrauch(p4, d3) {
   const max = Math.max(0.1, ...tage.map((x2) => x2.down + x2.up)) * 1.1;
   const bw = W2 / Math.max(1, tage.length);
   const balken = tage.map((x2, i6) => {
-    const h1 = x2.down / max * H3, h22 = x2.up / max * H3, h3 = x2.speedtest / max * H3;
+    const h1 = x2.down / max * H3, h22 = x2.up / max * H3, h3 = Math.min(x2.speedtest, x2.down + x2.up) / max * H3;
     const d0 = /* @__PURE__ */ new Date(`${x2.tag}T12:00`);
     return w`<g><title>${datum(d0)}: ↓ ${zahl(x2.down, 1)} GB, ↑ ${zahl(x2.up, 1)} GB, ${t3("davon Speedtests {gb} GB", { gb: zahl(x2.speedtest, 2) })}</title>
       <rect x=${i6 * bw + 1} y=${H3 - h1} width=${Math.max(1, bw - 2)} height=${h1} rx="2" fill="var(--s1)"></rect>
@@ -6630,7 +6630,7 @@ function protokoll(p4, d3) {
 }
 
 // src/heimnetz-panel.js
-var VERSION = true ? "0.28.0" : "entwicklung";
+var VERSION = true ? "0.28.1" : "entwicklung";
 var REITER = [
   ["uebersicht", merke("Übersicht")],
   ["speedtest", merke("Speedtest")],

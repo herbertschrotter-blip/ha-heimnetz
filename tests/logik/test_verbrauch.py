@@ -33,3 +33,13 @@ def test_kacheln():
         1.0,
     )  # 12.10.2026 ist Montag
     assert vb.kacheln([], 7) is None
+
+
+def test_speedtest_hoechstens_tagesmenge():
+    """GitHub #1: ohne Zählerwerte am Tag (Einrichtung, Zähler kurz weg) war „davon Speedtests“ größer als der Tag –
+    der Balken ragte über das Diagramm hinaus."""
+    punkte = [aw.Punkt(ts(11) + 3600, 128, 40, 20, None, None, "p")]
+    ohne = vb.tage([], [], punkte, ts(11) + 7200, 1, TZ)
+    assert ohne[0].speedtest == 0
+    wenig = vb.tage([(ts(11), 0.1)], [], punkte, ts(11) + 7200, 1, TZ)
+    assert wenig[0].speedtest == 0.1
