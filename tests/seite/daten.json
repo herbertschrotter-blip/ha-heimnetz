@@ -2652,8 +2652,16 @@
    {
     "name": "unbekannt",
     "text": "❓ Unbekannt"
+   },
+   {
+    "name": "eigen:1",
+    "text": "🏗️ Baustelle"
    }
-  ]
+  ],
+  "warnen": {
+   "wert": "immer",
+   "gruppe": false
+  }
  },
  "speedtest/kachel": {
   "tag": 3,
@@ -3327,5 +3335,174 @@
  },
  "messung/loeschen": {
   "t": 1791989456.913667
+ },
+ "arten": {
+  "eigene": [
+   {
+    "name": "eigen:1",
+    "symbol": "🏗️",
+    "titel": "Baustelle",
+    "text": "🏗️ Baustelle",
+    "geraete": 1
+   }
+  ],
+  "feste": [
+   {
+    "name": "netz",
+    "text": "🛜 Netzwerk",
+    "geraete": 1
+   },
+   {
+    "name": "smart",
+    "text": "🔌 Smart Home",
+    "geraete": 0
+   },
+   {
+    "name": "haushalt",
+    "text": "🤖 Haushalt & Roboter",
+    "geraete": 0
+   },
+   {
+    "name": "computer",
+    "text": "💻 Computer",
+    "geraete": 0
+   },
+   {
+    "name": "drucker",
+    "text": "🖨️ Drucker",
+    "geraete": 0
+   },
+   {
+    "name": "mobil",
+    "text": "📱 Handy & Tablet",
+    "geraete": 1
+   },
+   {
+    "name": "medien",
+    "text": "📺 Fernseher & Musik",
+    "geraete": 0
+   },
+   {
+    "name": "kamera",
+    "text": "📷 Kameras",
+    "geraete": 0
+   },
+   {
+    "name": "unbekannt",
+    "text": "❓ Unbekannt",
+    "geraete": 2
+   }
+  ],
+  "hoechstens": 30
+ },
+ "warnungen": {
+  "ziel": "keine",
+  "ziele": [
+   {
+    "name": "mobile_app_handy",
+    "text": "Companion App · Handy"
+   },
+   {
+    "name": "alle",
+    "text": "alle Companion Apps (1)"
+   },
+   {
+    "name": "keine",
+    "text": "keine Nachricht – nur Ereignis"
+   }
+  ],
+  "ziel_fehlt": false,
+  "verzoegerung": 5,
+  "verzoegerungen": [
+   2,
+   5,
+   15,
+   60
+  ],
+  "arten": [
+   {
+    "name": "netz",
+    "text": "🛜 Netzwerk",
+    "an": true,
+    "geraete": 1,
+    "hinweis": null
+   },
+   {
+    "name": "smart",
+    "text": "🔌 Smart Home",
+    "an": true,
+    "geraete": 0,
+    "hinweis": null
+   },
+   {
+    "name": "haushalt",
+    "text": "🤖 Haushalt & Roboter",
+    "an": true,
+    "geraete": 0,
+    "hinweis": null
+   },
+   {
+    "name": "computer",
+    "text": "💻 Computer",
+    "an": false,
+    "geraete": 0,
+    "hinweis": null
+   },
+   {
+    "name": "drucker",
+    "text": "🖨️ Drucker",
+    "an": false,
+    "geraete": 0,
+    "hinweis": null
+   },
+   {
+    "name": "mobil",
+    "text": "📱 Handy & Tablet",
+    "an": false,
+    "geraete": 1,
+    "hinweis": "ausgenommen – gehen unterwegs dauernd offline"
+   },
+   {
+    "name": "medien",
+    "text": "📺 Fernseher & Musik",
+    "an": false,
+    "geraete": 0,
+    "hinweis": null
+   },
+   {
+    "name": "kamera",
+    "text": "📷 Kameras",
+    "an": true,
+    "geraete": 0,
+    "hinweis": null
+   },
+   {
+    "name": "unbekannt",
+    "text": "❓ Unbekannt",
+    "an": false,
+    "geraete": 2,
+    "hinweis": null
+   },
+   {
+    "name": "eigen:1",
+    "text": "🏗️ Baustelle",
+    "an": false,
+    "geraete": 1,
+    "hinweis": null
+   }
+  ],
+  "ueberwacht": 2,
+  "gesamt": 5,
+  "ausnahmen": [
+   {
+    "id": "1f377c28cf7cfef5",
+    "name": "Pi",
+    "wert": "immer"
+   }
+  ],
+  "wieder": true,
+  "neu": true,
+  "internet": true,
+  "beispiel": "Pi ist seit 5 min offline (zuletzt 00:16, LAN)"
  }
 }

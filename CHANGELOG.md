@@ -1,5 +1,27 @@
 # CHANGELOG
 
+## [0.28.0]
+
+- WU-0010 (Mockups netzwerk.html · Warnungen und · Eigene Arten, abgenommen 28.10.2026): **Warnungen** unter ⚙ → 🔔
+  Warnungen (nur Admins) – Nachricht über einen notify-Dienst von Home Assistant (eine Companion App, alle Companion
+  Apps oder keine – nur Ereignis; ab Werk keine), „Offline melden nach“ 2/5/15/60 min (Vorgabe 5), Schalter je Art
+  (ab Werk an: Netzwerk, Smart Home, Haushalt & Roboter, Kameras; Handy & Tablet aus), Ausnahmen je Gerät (immer/nie,
+  im Fenster des Geräts „🔔 Bei offline warnen“), außerdem „wieder online“ mit Dauer, neues unbekanntes Gerät (einmal
+  je Gerät) und „Internet oder FRITZ!Box weg“ (zugestellt, sobald es wieder geht). „🔔 Testnachricht senden“.
+- WU-0010: Offline genau einmal nach der Verzögerung, kein Flattern; nach einem Neustart kein Schwall (Grundzustand
+  aus dem ersten vollständigen Abruf); Box nicht erreichbar → keine Gerätemeldungen, stattdessen die Meldung zum
+  Ausfall mit Dauer; eine leere oder stark geschrumpfte Gerätetabelle gilt wie „Box weg“, danach eine Schonfrist von
+  einer Verzögerung. „Neues Gerät“ prüft gegen alle je gesehenen Geräte (Gedächtnis und Journal), mit Hinweis bei
+  zufälliger WLAN-Adresse. Jede Meldung feuert das Ereignis **`heimnetz_warnung`** (art, geraet, ip, verbindung, dauer,
+  nachricht) und steht im Journal; ein Fehler beim Versand kommt ins Protokoll und Journal. Texte in der Sprache der
+  Seite (Deutsch/Englisch).
+- WU-0010: **Eigene Arten** (⚙ → 🏷️ Arten und „＋ eigene Art …“ im Fenster eines Geräts): Symbol und Name anlegen,
+  umbenennen, löschen (Geräte bekommen wieder die erkannte Art, ihre Warnungen fallen weg); sie gelten wie die festen
+  unter Geräte › nach Art und bei den Warnungen. Gespeichert im Einstellungsspeicher ohne neue Version, Namen in der
+  Diagnose geschwärzt.
+- Zweite Ausnahme von „die Integration liest nur“: Nachrichten über notify-Dienste (README Datenschutz: Push über
+  Google/Apple enthält den Gerätenamen).
+
 ## [0.27.0]
 
 - AN-0007 (Mockup abgenommen 28.10.2026): **Einzelne Messung löschen** – im Fenster einer Messung „🗑 Messung löschen“

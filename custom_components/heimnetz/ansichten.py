@@ -193,7 +193,7 @@ async def speedtest_kachel(
 
 
 # ── Geräte ──
-def _ha_geraete(hass: HomeAssistant) -> dict[str, tuple[str, str]]:
+def ha_geraete(hass: HomeAssistant) -> dict[str, tuple[str, str]]:
     """Hersteller/Modell der Geräte in Home Assistant je Hardware-Adresse (AN-0001). Die Einträge, die FRITZ!Box Tools
     für jedes Gerät im Heimnetz anlegt („Tracked device“), sagen über die Art nichts und bleiben weg."""
     out: dict[str, tuple[str, str]] = {}
@@ -211,7 +211,7 @@ def _ha_geraete(hass: HomeAssistant) -> dict[str, tuple[str, str]]:
     return out
 
 
-def _art(
+def art_von(
     lz: Laufzeit, g: gr.Geraet, kennung: str, ha: dict[str, tuple[str, str]], sprache_: str
 ) -> ar.Art:
     """Blockierend (Herstellerliste wird beim ersten Mal gelesen)."""
@@ -222,10 +222,11 @@ def _art(
         ha=ha.get(g.mac.upper()),
         mesh=lz.abruf.data.mesh.get(g.mac.upper()),
         sprache=sprache_,
+        eigene=lz.einstellungen.eigene,
     )
 
 
-def _geraete_daten(
+def geraete_daten(
     lz: Laufzeit, jetzt: float, ha: dict[str, tuple[str, str]], sprache_: str
 ) -> dict[str, Any]:
     """Blockierend: Geräte mit Ereignissen der letzten 24 h, Streifen und Einstufung."""
@@ -250,7 +251,7 @@ def _geraete_daten(
         )
         abbrueche = sum(1 for _, a in arten if a == "offline")
         kennung = vl.geraete_id(mac, lz.salz)
-        art = _art(lz, g, kennung, ha, sprache_)
+        art = art_von(lz, g, kennung, ha, sprache_)
         liste.append(
             {
                 "id": kennung,
@@ -278,13 +279,15 @@ def _geraete_daten(
         "box_erreichbar": stand.box_erreichbar,
         "geraete": liste,
         "gruppen": gr.gruppen([(x["verbindung"], x["aktiv"]) for x in liste], sprache_),
-        "gruppen_art": ar.gruppen(((x["kat"], x["aktiv"]) for x in liste), sprache_),
+        "gruppen_art": ar.gruppen(
+            ((x["kat"], x["aktiv"]) for x in liste), sprache_, lz.einstellungen.eigene
+        ),
     }
 
 
 async def geraete(hass: HomeAssistant, lz: Laufzeit) -> dict[str, Any]:
     return await hass.async_add_executor_job(
-        _geraete_daten, lz, _jetzt(), _ha_geraete(hass), sprache(hass)
+        geraete_daten, lz, _jetzt(), ha_geraete(hass), sprache(hass)
     )
 
 
@@ -350,18 +353,47 @@ async def geraet(
     if g is None:
         return None
     grenzen = [(_mitternacht(i), _mitternacht(i - 1)) for i in range(tage - 1, -1, -1)]
-    ha, s = _ha_geraete(hass), sprache(hass)
+    ha, s = ha_geraete(hass), sprache(hass)
 
     def blockierend() -> tuple[dict[str, Any], ar.Art]:
-        return _geraet_daten(lz, g, kennung, grenzen, _jetzt(), s), _art(lz, g, kennung, ha, s)
+        return _geraet_daten(lz, g, kennung, grenzen, _jetzt(), s), art_von(lz, g, kennung, ha, s)
 
     daten, art = await hass.async_add_executor_job(blockierend)
+    w = lz.einstellungen.warnungen
     return {
         **daten,
         "kat": art.kat,
         "art_quelle": art.quelle,
         "art_selbst": kennung in lz.einstellungen.arten,
-        "kategorien": ar.kategorien(s),
+        "kategorien": ar.kategorien(s, lz.einstellungen.eigene),
+        # WU-0010: „🔔 Bei offline warnen“ – Ausnahme des Geräts und was seine Art sagt
+        "warnen": {"wert": w.ausnahme(kennung), "gruppe": w.art_an(art.kat)},
+    }
+
+
+# ── WU-0010: ⚙ › 🏷️ Arten ──
+async def arten(hass: HomeAssistant, lz: Laufzeit) -> dict[str, Any]:
+    """Feste und eigene Arten mit Anzahl der Geräte (Geräteliste wie unter Geräte › nach Art)."""
+    s = sprache(hass)
+    liste = (await hass.async_add_executor_job(geraete_daten, lz, _jetzt(), ha_geraete(hass), s))[
+        "geraete"
+    ]
+    zahl: dict[str, int] = {}
+    for x in liste:
+        zahl[x["kat"]] = zahl.get(x["kat"], 0) + 1
+    return {
+        "eigene": [
+            {
+                "name": k,
+                "symbol": e.symbol,
+                "titel": e.name,
+                "text": e.text,
+                "geraete": zahl.get(k, 0),
+            }
+            for k, e in lz.einstellungen.eigene.items()
+        ],
+        "feste": [{"name": k, "text": text, "geraete": zahl.get(k, 0)} for k, text in ar.alle(s)],
+        "hoechstens": ar.EIGENE_HOECHSTENS,
     }
 
 

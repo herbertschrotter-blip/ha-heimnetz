@@ -41,6 +41,7 @@ from .logik import serie as sr
 from .logik import sprache as sp
 from .logik import vorgeschaltet as ve
 from .logik import zugang as zg
+from .logik.ereignis import Ereignis
 from .logik.messung import Messung
 from .logik.protokoll import Protokolleintrag
 from .speedtest import OOKLA, Speedtest, alle_finden, async_messen, lauf, zeitpunkt
@@ -122,6 +123,8 @@ class Abruf(DataUpdateCoordinator[sm.Stand]):
         self._zugang_gesucht = -ZUGANG_SUCHEN_S
         # WU-0005: Momentaufnahme zu einer neuen Messung (gesetzt in __init__, braucht die Laufzeit)
         self.kontext_holen: Callable[[Messung], Awaitable[dict[str, Any]]] | None = None
+        # WU-0010: Warnungen nach jedem Abruf (gesetzt in __init__); zurück kommen Journalzeilen
+        self.warnen: Callable[[sm.Stand], Awaitable[list[Ereignis]]] | None = None
         self.plan_status: mp.Entscheidung | None = None
         self.serie_status: dict[str, int] | None = None  # WU-0001: laufende Serie {n, lauf}
         self._serie_aufgabe: asyncio.Task[None] | None = None
@@ -174,7 +177,7 @@ class Abruf(DataUpdateCoordinator[sm.Stand]):
             sprache=sprache,
         )
         stand = sm.auswerten(g, roh)
-        await self._speichern(stand)
+        await self._speichern(stand, await self._warnen(stand))
         self.speedtest.verbinden()
         await self._messplan(stand)
         if stand.fehler:
@@ -387,10 +390,29 @@ class Abruf(DataUpdateCoordinator[sm.Stand]):
                 return lauf(self.hass, s)
         return None
 
-    async def _speichern(self, stand: sm.Stand) -> None:
+    async def _warnen(self, stand: sm.Stand) -> list[Ereignis]:
+        """WU-0010: Warnungen – ein Fehler hier darf den Abruf der Box nicht ungültig machen."""
+        if self.warnen is None:
+            return []
+        try:
+            return await self.warnen(stand)
+        except Exception:
+            LOGGER.exception("Heimnetz: Warnungen fehlgeschlagen")
+            return []
+
+    def journal_merken(self, ereignisse: list[Ereignis]) -> None:
+        """Zeilen, die außerhalb des Abrufs entstehen (z. B. Fehler beim Versand einer Warnung); geschrieben werden
+        sie mit dem nächsten Abruf."""
+        jetzt = time.time()
+        self._ausstehend_journal += [Journalzeile(jetzt, e) for e in ereignisse]
+        del self._ausstehend_journal[:-AUSSTEHEND_HOECHSTENS]
+
+    async def _speichern(self, stand: sm.Stand, zusatz: list[Ereignis] | None = None) -> None:
         """Ergebnis in die Datenbank. Ein Fehler beim Schreiben macht den Abruf nicht ungültig (die Box wurde ja
         gelesen); die Zeilen bleiben ausstehend und gehen beim nächsten Mal mit."""
-        self._ausstehend_journal += [Journalzeile(stand.zeit, e) for e in stand.ereignisse]
+        self._ausstehend_journal += [
+            Journalzeile(stand.zeit, e) for e in (*stand.ereignisse, *(zusatz or ()))
+        ]
         self._ausstehend_protokoll += stand.protokoll
         del self._ausstehend_journal[:-AUSSTEHEND_HOECHSTENS]
         del self._ausstehend_protokoll[:-AUSSTEHEND_HOECHSTENS]

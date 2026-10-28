@@ -40,6 +40,7 @@ from .panel import abmelden, async_anmelden
 from .speicher import Datenbank, SchemaZuNeu
 from .tickets import meldungen
 from .tickets import registrieren as tickets_registrieren
+from .warnungen import Warndienst
 from .websocket import registrieren
 
 LOGGER = logging.getLogger(__package__)
@@ -58,6 +59,7 @@ class Laufzeit:
     mastsuche: Mastsuche
     osm: OsmMasten
     ocid: OcidAbzug
+    warnungen: Warndienst | None = None  # WU-0010, gesetzt gleich nach dem Anlegen
 
     def diagnose(self) -> dict[str, Any]:
         """Zahlen statt Inhalte: keine Gerätenamen, Hardware-Adressen oder Meldungstexte."""
@@ -84,6 +86,8 @@ class Laufzeit:
             }
             if (m := self.abruf.modem).gemerkt or m.stand
             else None,
+            # WU-0010: nur Zahlen und Schalter – keine Gerätenamen, keine Namen eigener Arten, kein Dienstname
+            "warnungen": self.warnungen.diagnose() if self.warnungen else None,
         }
 
 
@@ -160,6 +164,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: EintragMitLaufzeit) -> b
         )
         lz = entry.runtime_data
         abruf.kontext_holen = lambda m: kontext.momentaufnahme(hass, lz, m)  # WU-0005
+        lz.warnungen = Warndienst(hass, entry, lz)  # WU-0010
+        lz.warnungen.journal = abruf.journal_merken
+        abruf.warnen = lz.warnungen.abruf
+        await lz.warnungen.async_bekannt_laden()
         entry.async_on_unload(abruf.speedtest.trennen)
         await abruf.async_config_entry_first_refresh()
         await async_anmelden(hass)

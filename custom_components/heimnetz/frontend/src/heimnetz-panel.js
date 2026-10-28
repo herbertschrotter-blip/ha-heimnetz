@@ -62,6 +62,8 @@ export class HeimnetzPanel extends LitElement {
     _hinweisEinr: { state: true },
     _diag: { state: true },
     _hinweisZugang: { state: true },
+    _hinweisArten: { state: true },
+    _hinweisWarn: { state: true },
     _toast: { state: true },
     _kachel: { state: true },
   };
@@ -78,6 +80,8 @@ export class HeimnetzPanel extends LitElement {
     this._hinweisEinr = '';
     this._diag = { adresse: '192.168.0.1', laeuft: false, antwort: null, fehler: '' }; // WU-0008; Kennwort nie im Zustand
     this._hinweisZugang = ''; // WU-0009: Fehler beim Festlegen des Zugangs
+    this._hinweisArten = ''; // WU-0010: Fehler bei eigenen Arten
+    this._hinweisWarn = ''; // WU-0010: Fehler bei Warnungen
     this._blatt = null;
     this._toast = '';
     this._bilder = new Map(); // Bilder der Tickets für die Liste (id:nr → Data-URL)
@@ -344,7 +348,110 @@ export class HeimnetzPanel extends LitElement {
     this.laden();
     this.meldungenLaden();
     this.einrichtungLaden(); // WU-0007: für den Punkt am Reiter „Einrichtung“
-    if (teil === 'zugang') this.zugangLaden();
+    if (teil && teil !== 'einr') this.teilLaden(teil);
+  }
+
+  /** Reiter im Fenster Einstellungen gewählt: was nur dieser Reiter braucht, frisch von der Integration. */
+  teilLaden(teil) {
+    const laden = { einr: this.einrichtungLaden, zugang: this.zugangLaden, arten: this.artenLaden, warn: this.warnungenLaden }[teil];
+    if (laden) laden.call(this);
+  }
+
+  /* ---- WU-0010: eigene Arten (⚙ › 🏷️ Arten, Fenster eines Geräts; nur Admins) ---- */
+  async artenLaden() {
+    if (!this.istAdmin) return;
+    try {
+      this._daten = { ...this._daten, arten: await this.ws('arten') };
+      this._hinweisArten = '';
+    } catch (err) {
+      this._hinweisArten = t('Arten nicht abrufbar: {fehler}', { fehler: (err && err.message) || err });
+    }
+  }
+
+  /** Eigene Art anlegen; aus dem Fenster eines Geräts (`geraet`) gleich diesem zugeordnet. */
+  async artNeu(symbol, name, geraet = null) {
+    try {
+      const a = await this.ws('art/neu', { symbol, name, ...(geraet ? { geraet } : {}) });
+      this._daten = { ...this._daten, arten: a };
+      this._hinweisArten = '';
+      if (geraet) {
+        const daten = await this.ws('geraet', { geraet, tage: 7 });
+        if (this._blatt && this._blatt.kennung === geraet) this._blatt = { art: 'geraet', kennung: geraet, daten };
+      } else if (this._blatt) this._blatt = { ...this._blatt, artNeu: false };
+      this.toast(t('Art angelegt'));
+      this.laden();
+    } catch (err) {
+      const text = (err && err.message) || String(err);
+      if (geraet) this.toast(t('Art nicht angelegt: {fehler}', { fehler: text }));
+      else this._hinweisArten = text;
+    }
+  }
+
+  async artAendern(art, symbol, name) {
+    try {
+      this._daten = { ...this._daten, arten: await this.ws('art/aendern', { art, symbol, name }) };
+      this._hinweisArten = '';
+      if (this._blatt) this._blatt = { ...this._blatt, artBearb: null };
+      this.laden();
+    } catch (err) {
+      this._hinweisArten = (err && err.message) || String(err);
+    }
+  }
+
+  async artLoeschen(art) {
+    try {
+      this._daten = { ...this._daten, arten: await this.ws('art/loeschen', { art }) };
+      this._hinweisArten = '';
+      if (this._blatt) this._blatt = { ...this._blatt, artLoe: null };
+      this.toast(t('Art gelöscht'));
+      this.laden();
+    } catch (err) {
+      this._hinweisArten = (err && err.message) || String(err);
+    }
+  }
+
+  /* ---- WU-0010: Warnungen (⚙ › 🔔 Warnungen, Fenster eines Geräts; nur Admins) ---- */
+  async warnungenLaden() {
+    if (!this.istAdmin) return;
+    try {
+      this._daten = { ...this._daten, warnungen: await this.ws('warnungen') };
+      this._hinweisWarn = '';
+    } catch (err) {
+      this._hinweisWarn = t('Warnungen nicht abrufbar: {fehler}', { fehler: (err && err.message) || err });
+    }
+  }
+
+  async warnungenSetzen(werte) {
+    try {
+      this._daten = { ...this._daten, warnungen: await this.ws('warnungen/setzen', werte) };
+      this._hinweisWarn = '';
+    } catch (err) {
+      this._hinweisWarn = (err && err.message) || String(err);
+      this.requestUpdate(); // Auswahl zurück auf den gespeicherten Stand (live-Bindung)
+    }
+  }
+
+  /** Ausnahme eines Geräts: immer, nie oder wie seine Gruppe (Fenster des Geräts und ⚙ › Warnungen). */
+  async warnungGeraet(kennung, wert) {
+    try {
+      const daten = await this.ws('warnungen/geraet', { geraet: kennung, wert });
+      if (daten && this._blatt && this._blatt.art === 'geraet' && this._blatt.kennung === kennung) this._blatt = { art: 'geraet', kennung, daten };
+      if (this._blatt && this._blatt.art === 'einstellungen') this.warnungenLaden();
+    } catch (err) {
+      this.toast(t('Nicht gespeichert: {fehler}', { fehler: (err && err.message) || err }));
+    }
+  }
+
+  async testnachricht() {
+    try {
+      const { dienste } = await this.ws('warnungen/test');
+      const w = this._daten.warnungen;
+      const ziel = w && (w.ziele.find((z) => z.name === w.ziel) || {}).text;
+      this.toast(dienste.length ? t('Testnachricht an {ziel} geschickt', { ziel: ziel || dienste.join(', ') }) : t('Keine Nachricht eingestellt – nur das Ereignis „heimnetz_warnung“ ausgelöst'));
+      this._hinweisWarn = '';
+    } catch (err) {
+      this._hinweisWarn = (err && err.message) || String(err);
+    }
   }
 
   /* ---- WU-0009: ⚙ › 🌐 Zugang (nur Admins; erkennen und prüfen macht die Integration) ---- */

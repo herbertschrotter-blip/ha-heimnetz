@@ -11,7 +11,7 @@ from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from homeassistant.util import dt as dt_util
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant_custom_component.common import MockConfigEntry, async_mock_service
 
 from custom_components.heimnetz.box import BoxInfo
 from custom_components.heimnetz.logik import leitung as ln
@@ -35,6 +35,8 @@ BEFEHLE = {
     "einrichtung": {},
     "internet": {"tage": 1},
     "zugang": {},
+    "arten": {},  # WU-0010
+    "warnungen": {},  # WU-0010
 }
 # WU-0009: Reiter „Internet“ je Zugangsart – DSL, Glasfaser und Kabel mit erfundenen Werten in der Form der FRITZ!-Doku
 ANDERE_ZUGAENGE = {
@@ -150,6 +152,12 @@ async def test_antworten_haben_die_form_der_vorlage(
             for h in range(12)
         ],
     )
+    # WU-0010: eine Companion App, eine eigene Art mit Gerät, eine Ausnahme (erfundene Namen)
+    async_mock_service(hass, "notify", "mobile_app_handy")
+    lz = eintrag.runtime_data
+    eigen = await lz.einstellungen.async_eigene_neu("🏗️", "Baustelle")
+    await lz.einstellungen.async_art_setzen(geraete_id("00:11:22:33:44:02", lz.salz), eigen)
+    await lz.einstellungen.async_warnung_geraet(geraete_id("00:11:22:33:44:01", lz.salz), "immer")
     client = await hass_ws_client(hass)
     await client.send_json_auto_id({"type": "heimnetz/messplan/setzen", "an": True, "takt_h": 4})
     assert (await client.receive_json())["success"]

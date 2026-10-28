@@ -13,7 +13,8 @@ nachgetragen.
   `netzdiagnose/fritz_diag.py`, `dashboards/netzwerk.yaml`, `www/netzwerk-cards.js`), damit er danach vollständig
   abgelöst werden kann. Funktionen werden dabei überarbeitet, wo nötig.
 - Ausdrücklich nicht: eigene Speedtest-Messung (das macht die Ookla-Integration, siehe unten); Geräte steuern oder
-  Einstellungen der FRITZ!Box ändern – die Integration liest nur.
+  Einstellungen der FRITZ!Box ändern – die Integration liest nur. Ausnahmen: Ookla-Messungen auslösen (Messplan) und – seit
+  WU-0010 – Warnungen über notify-Dienste von Home Assistant schicken (siehe „Warnungen und eigene Arten“).
 
 ## Ablösung des Altbestands (Herbert, 12.10.2026)
 
@@ -446,6 +447,62 @@ nachgetragen.
   (CurrentConnectTime) nach der Einheit der Entität in Sekunden.
 - Ungetestet am Gerät: alle Bausteine sind nach öffentlicher Doku und erfundenen Antworten gebaut; echte Rohdaten
   über 🔬 Diagnose bessern sie nach.
+
+## Warnungen und eigene Arten (Herbert, 28.10.2026, WU-0010)
+
+- Mockups `netzwerk.html` · Warnungen und · Eigene Arten abgenommen 28.10.2026: Fenster ⚙ mit zwei neuen Reitern
+  „🏷️ Arten“ und „🔔 Warnungen“ nach WLAN (beide nur Admins); im Fenster eines Geräts die Auswahl „Art“ mit den eigenen
+  Arten und „＋ eigene Art …“ sowie die Zeile „🔔 Bei offline warnen“ (wie Gruppe · immer · nie).
+- **Zweite Ausnahme von „die Integration liest nur“** (Herbert, 28.10.2026): Nachrichten über notify-Dienste von Home
+  Assistant. Ziel ist ein notify-Dienst (Companion App), „alle Companion Apps“ (alle `notify.mobile_app_*`) oder
+  „keine“ (nur Ereignis); ab Werk „keine“ – nach außen geht erst etwas, wenn der Admin ein Ziel wählt. Die Companion
+  App stellt über den Push-Dienst von Google bzw. Apple zu, der Text enthält Gerätename, IP und Verbindung – das
+  steht im README und im Reiter. Zusätzlich feuert jede Meldung immer das Ereignis `heimnetz_warnung` (art
+  offline/online/neu/internet/test, geraet, ip, verbindung, dauer in s, nachricht) und schreibt eine Journalzeile.
+  Versand im Hintergrund (`notify.<dienst>` mit `title: Heimnetz`, höchstens 30 s je Nachricht); ein Fehler kommt ins
+  Protokoll und ins Journal („Warnung nicht zugestellt …“), der Abruf läuft weiter.
+- Wer überwacht wird, entscheidet die Integration (`logik/warnungen.py`, ohne HA): Ausnahme des Geräts (immer/nie) vor
+  dem Schalter seiner Art. Vorgabe je Art: an für Netzwerk, Smart Home, Haushalt & Roboter, Kameras; aus für Computer,
+  Drucker, Fernseher & Musik, Unbekannt, **Handy & Tablet** (Hinweis „ausgenommen – gehen unterwegs dauernd offline“)
+  und neue eigene Arten. Gespeichert werden nur Abweichungen von der Vorgabe.
+- Zustand je Gerät (nur im Speicher): online → weg seit t → nach der Verzögerung (2/5/15/60 min, Vorgabe 5) genau
+  einmal „offline gemeldet“ → bei Rückkehr „wieder online“ mit Dauer, nur wenn vorher gemeldet. Zurück vor Ablauf =
+  keine Meldung (kein Flattern). Ein nicht überwachtes Gerät geht beim Verschwinden still auf „aus“; wird es später
+  überwacht, meldet es sich erst nach einmal online – Einschalten einer Art löst keine Welle aus.
+- Neustart: kein Zustand wird gespeichert; den Grundzustand übernimmt der erste Abruf mit Gerätetabelle der Box,
+  offline gilt dann als „aus“ – keine Massenmeldung. Box nicht erreichbar: keine Gerätemeldungen (alle wären weg), der
+  Zustand bleibt stehen. Box oder Internet (Prüfung vom Pi) weg zählt als Ausfall; gemeldet wird er erst, wenn beides
+  wieder geht (Push braucht Internet), mit Dauer und nur, wenn er mindestens so lang war wie die Verzögerung („FRITZ!Box
+  war … nicht erreichbar“, sonst „Internet war … weg“). Gerätemeldungen während eines Internet-Ausfalls: Ereignis und
+  Journal sofort, die Nachricht danach (höchstens 20 zurückgehalten; beim Kürzen fällt ein „offline“ mit seinem
+  „wieder online“ weg). Zurückgehaltene Nachrichten liegen nur im Speicher – startet Home Assistant während des
+  Ausfalls neu, gehen sie verloren (Ereignis und Journal sind schon da).
+- Lücken der Gerätetabelle: Ist sie bei erreichbarer Box leer oder kleiner als die Hälfte des letzten vollen Abrufs,
+  gilt sie für die Warnungen wie „Box nicht erreichbar“. Ein Gerät, das fehlt, wird erst nach drei vollen Abrufen
+  vergessen. Nach einer Lücke oder einem Ausfall der Box zählt die Verzögerung für „weg“ frühestens ab der Rückkehr
+  (Schonfrist – nach einem Neustart der Box melden sich Geräte nach und nach).
+- Neues unbekanntes Gerät = nicht unter den je gesehenen Geräten. Diese Menge (Hardware-Adressen) liegt im Gedächtnis
+  des Abrufs (Schlüssel `bekannt`, ohne neue Version, höchstens 5000, nie aufgeräumt) und wird beim Start mit den
+  Geräten des Gedächtnisses (auch aus der Übernahme) und allen mit Verlauf im Journal ergänzt; eine neue Installation
+  übernimmt die Geräte des ersten Abrufs ohne Meldung. Höchstens eine Meldung je Gerät. Bei zufälliger privater
+  WLAN-Adresse steht in der Nachricht „zufällige Adresse – vermutlich ein bekanntes Handy/Tablet“.
+- Der Wächter läuft nur im Event-Loop und nacheinander (Sperre; ein älterer Abruf zählt nicht); im Executor wird nur
+  die Art der Geräte bestimmt. Ändernde Aufrufe des Einstellungsdienstes laufen nacheinander (Sperre).
+- Texte der Nachrichten in der Sprache der Seite, mit der die Warnungen zuletzt gespeichert wurden (`sprache` in den
+  Warn-Einstellungen); Journal in der Sprache von Home Assistant.
+- **Eigene Arten**: Symbol (ein Zeichen/Emoji, ab Werk 🏷️) und Name (höchstens 30 Zeichen, eindeutig), höchstens 30;
+  Kennung `eigen:<n>` zählt hoch und hängt nicht am Namen (umbenennen). Sie werden nie erkannt, nur selbst zugeordnet,
+  und gelten wie die festen (Geräte › nach Art nach den festen, Warnungen). Löschen: Geräte bekommen wieder die
+  erkannte Art, der Schalter dieser Art unter Warnungen fällt weg.
+- Speicher: eigene Arten (`eigene_arten`) und Warnungen (`warnungen`: Ziel, Verzögerung, Schalter je Art, Ausnahmen je
+  Geräte-Kennung, Schalter, Sprache) als weitere Schlüssel im Einstellungsdienst – ohne neue Version, damit der Rückweg
+  (`ausliefern.py --zurueck`) weiter lädt; die ältere Fassung lässt Zuordnungen zu eigenen Arten beim Laden fallen und
+  verliert beides, sobald sie speichert. Namen eigener Arten sind Daten des Nutzers: nie im Repo oder unter /local, in
+  der Diagnose geschwärzt; die Diagnose nennt vom Ziel nur die Art (keine/alle/Companion App/Dienst), nie den
+  Dienstnamen (er enthält den Gerätenamen).
+- WebSocket-Befehle nur für Admins: `heimnetz/arten`, `art/neu` (auf Wunsch gleich einem Gerät zugeordnet),
+  `art/aendern`, `art/loeschen`, `warnungen`, `warnungen/setzen`, `warnungen/geraet`, `warnungen/test`. Zählungen,
+  Auswahl der Ziele und das Beispiel liefert die Integration; die Seite zeigt nur an.
 
 ## Offene Entscheidungen
 

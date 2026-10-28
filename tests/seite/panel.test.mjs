@@ -966,7 +966,7 @@ test('AN-0002: Einstellungen mit Reitern, je eine Gruppe, Schalter statt Checkbo
   await warten(10);
   await el.updateComplete;
   const reiter = [...blatt(el).querySelectorAll('.e-reiter button')].map((b) => b.textContent.trim());
-  assert.deepEqual(reiter, ['📈 Speedtest', '⏱️ Messplan', '📶 WLAN', '💬 Meldungen', '🌐 Zugang', '🧩 Einrichtung', '🔬 Diagnose']);
+  assert.deepEqual(reiter, ['📈 Speedtest', '⏱️ Messplan', '📶 WLAN', '🏷️ Arten', '🔔 Warnungen', '💬 Meldungen', '🌐 Zugang', '🧩 Einrichtung', '🔬 Diagnose']);
   assert.ok(blatt(el).querySelector('[name=tarif_down]'), 'Speedtest zuerst');
   assert.ok(!blatt(el).querySelector('input[type=time]'), 'Messplan nicht gleichzeitig');
   const vorher = hass.aufrufe.length;
@@ -1369,4 +1369,195 @@ test('WU-0009: ⚙ › 🌐 Zugang nur für Admins', async () => {
   await einTab(el, 'Zugang');
   assert.match(blatt(el).textContent, /Den Zugang legen nur Admins fest/);
   assert.ok(!hass.aufrufe.some((a) => a.type.startsWith('heimnetz/zugang')));
+});
+
+// ── WU-0010: Warnungen und eigene Arten ──
+test('WU-0010: ⚙ › 🔔 Warnungen – Ziel, Verzögerung, Schalter je Art, Ausnahme, Testnachricht', async () => {
+  const hass = machHass();
+  const el = await seite(hass);
+  await einstellungen(el);
+  await einTab(el, 'Warnungen');
+  await warten(10);
+  await el.updateComplete;
+  const w = DATEN.warnungen;
+  assert.ok(hass.aufrufe.some((a) => a.type === 'heimnetz/warnungen'), 'beim Öffnen des Reiters geladen');
+  let b = blatt(el);
+  const t = b.textContent.replace(/\s+/g, ' ');
+  assert.match(t, new RegExp(`Überwachen nach Art\\s*${w.ueberwacht} von ${w.gesamt} Geräten`));
+  assert.deepEqual([...b.querySelectorAll('select.w-ziel option')].map((o) => o.value), w.ziele.map((z) => z.name));
+  assert.equal(b.querySelectorAll('[data-art]').length, w.arten.length);
+  assert.match(b.querySelector('[data-art=mobil]').textContent, /ausgenommen – gehen unterwegs dauernd offline/);
+  assert.ok(b.querySelector('[data-art=netz] .sw.on') && !b.querySelector('[data-art=mobil] .sw.on'));
+  assert.ok(t.includes(w.beispiel), 'Beispiel von der Integration');
+  assert.match(t, /Push-Dienst von Google bzw\. Apple/);
+  assert.match(t, /heimnetz_warnung/);
+  assert.ok(!/undefined|NaN|\[object Object\]/.test(t), t);
+  // Ziel, Verzögerung, Art, Außerdem
+  const wahl = b.querySelector('select.w-ziel');
+  wahl.value = 'mobile_app_handy';
+  wahl.dispatchEvent(new Event('change'));
+  await warten(10);
+  knoepfe(blatt(el)).find((x) => x.textContent === '15').click();
+  await warten(10);
+  blatt(el).querySelector('[data-art=mobil] .sw').click();
+  await warten(10);
+  blatt(el).querySelector('[data-schalter=wieder] .sw').click();
+  await warten(10);
+  const setzen = hass.aufrufe.filter((a) => a.type === 'heimnetz/warnungen/setzen');
+  assert.deepEqual(setzen.map(({ type, sprache, ...r }) => r), [{ ziel: 'mobile_app_handy' }, { verzoegerung: 15 }, { art: 'mobil', an: true }, { wieder: false }]);
+  await el.updateComplete;
+  b = blatt(el);
+  assert.ok(b.querySelector('[data-art=mobil] .sw.on'), 'Antwort der Integration gezeigt');
+  // Ausnahme zurücksetzen, Testnachricht
+  const ausnahme = w.ausnahmen[0];
+  b.querySelector(`[data-ausnahme="${ausnahme.id}"] button`).click();
+  await warten(10);
+  assert.deepEqual(hass.aufrufe.find((a) => a.type === 'heimnetz/warnungen/geraet'), { type: 'heimnetz/warnungen/geraet', geraet: ausnahme.id, wert: 'gruppe', sprache: 'de' });
+  knoepfe(blatt(el)).find((x) => x.textContent.includes('Testnachricht senden')).click();
+  await warten(10);
+  await el.updateComplete;
+  assert.ok(hass.aufrufe.some((a) => a.type === 'heimnetz/warnungen/test'));
+  assert.match(el._toast, /Testnachricht an Companion App · Handy geschickt/);
+});
+
+test('WU-0010: Warnungen – abgelehnter Wert zeigt den Grund, „keine“ meldet nur das Ereignis', async () => {
+  const hass = machHass();
+  const el = await seite(hass);
+  await einstellungen(el);
+  await einTab(el, 'Warnungen');
+  await warten(10);
+  await el.warnungenSetzen({ verzoegerung: 3 });
+  await el.updateComplete;
+  assert.match(blatt(el).textContent, /Offline melden nach: 2, 5, 15, 60 Minuten/);
+  await el.testnachricht();
+  assert.match(el._toast, /nur das Ereignis „heimnetz_warnung“/);
+});
+
+test('WU-0010: ⚙ › 🏷️ Arten – anlegen, ändern, löschen mit Rückfrage, feste zur Übersicht', async () => {
+  const hass = machHass();
+  const el = await seite(hass);
+  await einstellungen(el);
+  await einTab(el, 'Arten');
+  await warten(10);
+  await el.updateComplete;
+  const a = DATEN.arten;
+  let b = blatt(el);
+  assert.ok(hass.aufrufe.some((x) => x.type === 'heimnetz/arten'));
+  assert.match(b.textContent, /Eigene Arten\s*1/);
+  assert.match(b.textContent.replace(/\s+/g, ' '), /🏗️ Baustelle\s*eigene · 1 Gerät/);
+  assert.match(b.textContent, new RegExp(`Feste Arten\\s*${a.feste.length}`));
+  assert.ok(b.textContent.includes('automatisch erkannt'));
+  // anlegen
+  knoepfe(b).find((x) => x.textContent.includes('Neue Art')).click();
+  await el.updateComplete;
+  b = blatt(el);
+  b.querySelector('[name=art-ic]').value = '🔧';
+  b.querySelector('[name=art-name]').value = 'Werkstatt';
+  knoepfe(b).find((x) => x.textContent === 'Anlegen').click();
+  await warten(10);
+  await el.updateComplete;
+  assert.deepEqual(hass.aufrufe.find((x) => x.type === 'heimnetz/art/neu'), { type: 'heimnetz/art/neu', symbol: '🔧', name: 'Werkstatt', sprache: 'de' });
+  b = blatt(el);
+  assert.match(b.textContent, /🔧 Werkstatt/);
+  assert.ok(!b.querySelector('[name=art-name]'), 'Formular zu');
+  // ändern
+  b.querySelector('[data-art="eigen:1"] button.blau').click();
+  await el.updateComplete;
+  b = blatt(el);
+  assert.equal(b.querySelector('[name=art-name]').value, 'Baustelle');
+  b.querySelector('[name=art-name]').value = 'Baustelle Nord';
+  knoepfe(b).find((x) => x.textContent === 'Speichern').click();
+  await warten(10);
+  await el.updateComplete;
+  assert.equal(hass.aufrufe.find((x) => x.type === 'heimnetz/art/aendern').name, 'Baustelle Nord');
+  // löschen: erst die Rückfrage, dann der Befehl
+  blatt(el).querySelector('[data-art="eigen:1"] button.rot-t').click();
+  await el.updateComplete;
+  b = blatt(el);
+  assert.match(b.querySelector('.mg-frage').textContent, /„🏗️ Baustelle Nord“ löschen\?.*1 Gerät bekommt wieder die automatisch erkannte Art; Warnungen für diese Art fallen weg/s);
+  assert.ok(!hass.aufrufe.some((x) => x.type === 'heimnetz/art/loeschen'), 'erst nach der Rückfrage');
+  knoepfe(b.querySelector('.mg-frage')).find((x) => x.textContent === 'Löschen').click();
+  await warten(10);
+  await el.updateComplete;
+  assert.deepEqual(hass.aufrufe.find((x) => x.type === 'heimnetz/art/loeschen'), { type: 'heimnetz/art/loeschen', art: 'eigen:1', sprache: 'de' });
+  assert.ok(!blatt(el).textContent.includes('Baustelle Nord') && el._toast === 'Art gelöscht');
+});
+
+test('WU-0010: Gerätefenster – eigene Arten in der Auswahl, „＋ eigene Art …“ legt an und ordnet zu, Zeile Warnen', async () => {
+  const hass = machHass();
+  const el = await seite(hass);
+  await el.geraetOeffnen(DATEN.geraet.id);
+  await el.updateComplete;
+  let b = blatt(el);
+  const optionen = [...b.querySelectorAll('select.ga-wahl option')].map((o) => o.value);
+  assert.equal(optionen.at(-2), 'eigen:1', 'eigene Arten nach den festen');
+  assert.equal(optionen.at(-1), 'neu');
+  assert.match(b.textContent.replace(/\s+/g, ' '), /🔔 Bei offline warnen · eigene Einstellung/);
+  assert.ok(b.querySelector('.ga-warnen .seg button.on').textContent === 'immer');
+  const wahl = b.querySelector('select.ga-wahl');
+  wahl.value = 'neu';
+  wahl.dispatchEvent(new Event('change'));
+  await el.updateComplete;
+  b = blatt(el);
+  assert.ok(!hass.aufrufe.some((x) => x.type === 'heimnetz/geraet/art'), '„＋ eigene Art …“ ist keine Art');
+  assert.match(b.textContent, /umbenennen und löschen unter ⚙ › 🏷️ Arten/);
+  b.querySelector('[name=art-name]').value = 'Garten';
+  knoepfe(b).find((x) => x.textContent === 'Anlegen').click();
+  await warten(10);
+  await el.updateComplete;
+  assert.deepEqual(hass.aufrufe.find((x) => x.type === 'heimnetz/art/neu'), { type: 'heimnetz/art/neu', symbol: '🏷️', name: 'Garten', geraet: DATEN.geraet.id, sprache: 'de' });
+  assert.ok(hass.aufrufe.filter((x) => x.type === 'heimnetz/geraet').length >= 2, 'Fenster neu geladen');
+  assert.ok(!blatt(el).querySelector('[name=art-name]'));
+  // Warnen: nie
+  knoepfe(blatt(el).querySelector('.ga-warnen')).find((x) => x.textContent === 'nie').click();
+  await warten(10);
+  await el.updateComplete;
+  assert.deepEqual(hass.aufrufe.find((x) => x.type === 'heimnetz/warnungen/geraet'), { type: 'heimnetz/warnungen/geraet', geraet: DATEN.geraet.id, wert: 'nie', sprache: 'de' });
+  assert.equal(blatt(el).querySelector('.ga-warnen .seg button.on').textContent, 'nie');
+});
+
+test('WU-0010: Geräte › nach Art zeigt eine eigene Art als Gruppe', async () => {
+  const hass = machHass();
+  const alt = hass.callWS;
+  const g0 = DATEN.geraete.geraete[0];
+  hass.callWS = async (msg) => (msg.type === 'heimnetz/geraete'
+    ? { ...DATEN.geraete, geraete: DATEN.geraete.geraete.map((g) => (g === g0 ? { ...g, kat: 'eigen:1' } : g)),
+      gruppen_art: [...DATEN.geraete.gruppen_art, { name: 'eigen:1', text: '🏗️ Baustelle', online: 1, gesamt: 1 }] }
+    : alt(msg));
+  const el = await seite(hass);
+  await reiter(el, 'Geräte');
+  knoepfe(el.shadowRoot).find((b) => b.textContent === 'nach Art').click();
+  await el.updateComplete;
+  const kopf = [...el.shadowRoot.querySelectorAll('.ggr summary span:first-child')].map((s) => s.textContent);
+  assert.equal(kopf.at(-1), '🏗️ Baustelle');
+  assert.ok(text(el).includes(g0.name));
+});
+
+test('WU-0010: ohne Admin keine Arten, keine Warnungen, keine Auswahl im Gerätefenster', async () => {
+  const hass = machHass({ admin: false });
+  const el = await seite(hass);
+  await einstellungen(el);
+  await einTab(el, 'Arten');
+  assert.match(blatt(el).textContent, /Eigene Arten legen nur Admins an/);
+  await einTab(el, 'Warnungen');
+  assert.match(blatt(el).textContent, /Warnungen stellen nur Admins ein/);
+  assert.ok(!hass.aufrufe.some((a) => /heimnetz\/(arten|warnungen)/.test(a.type)));
+  await el.geraetOeffnen(DATEN.geraet.id);
+  await el.updateComplete;
+  const b = blatt(el);
+  assert.ok(!b.querySelector('.ga-warnen .seg') && !b.querySelector('select.ga-wahl'));
+  assert.match(b.querySelector('.ga-warnen').textContent, /immer/);
+});
+
+test('WU-0010: Reiter Warnungen auf Englisch', async () => {
+  const hass = machHass({ sprache: 'en' });
+  const el = await seite(hass);
+  await el.einstellungenOeffnen('warn');
+  await warten(10);
+  await el.updateComplete;
+  const t = blatt(el).textContent.replace(/\s+/g, ' ');
+  assert.match(t, /🔔 Alerts/);
+  assert.match(t, /Report offline after/);
+  assert.match(t, /Watch by type/);
+  assert.match(t, /push service of Google or Apple/);
 });

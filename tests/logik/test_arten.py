@@ -1,7 +1,9 @@
 """Art eines Geräts (AN-0001): Reihenfolge der Quellen, Hersteller, Mesh, Name, Gruppen."""
 
+import pytest
 from daten import MESH
 from logik import arten as ar
+from logik.sprache import Ungueltig
 
 TABELLE = {"00040E": "AVM", "C8C9A3": "Espressif", "B827EB": "Raspberry Pi", "F0D5BF": "Apple"}
 
@@ -82,3 +84,67 @@ def test_drucker_eigene_art():
     assert ar.bestimmen("x", "AA:BB:CC:00:00:01", selbst="drucker").quelle == "selbst gewählt"
     gruppen = ar.gruppen([("drucker", True), ("computer", False)])
     assert [g["name"] for g in gruppen] == ["computer", "drucker"]
+
+
+# ── WU-0010: eigene Arten ──
+def test_eigene_anlegen_aendern_pruefen():
+    eigene, k1 = ar.eigene_neu({}, "🏗️", "  Baustelle ")
+    assert k1 == "eigen:1" and eigene[k1] == ar.EigeneArt("🏗️", "Baustelle")
+    assert eigene[k1].text == "🏗️ Baustelle"
+    eigene, k2 = ar.eigene_neu(eigene, "", "Werkstatt")
+    assert k2 == "eigen:2" and eigene[k2].symbol == ar.SYMBOL_VORGABE  # ohne Symbol: 🏷️
+    for symbol, name in (
+        ("x", "baustelle"),
+        ("x", ""),
+        ("x", "a" * 31),
+        ("ab cd", "Neu"),
+        ("x", "a\x07b"),
+        ("\u202e🏗", "Rtl"),
+    ):
+        with pytest.raises(Ungueltig):
+            ar.eigene_neu(eigene, symbol, name)
+    umbenannt = ar.eigene_aendern(eigene, k1, "🚧", "Baustelle Nord")
+    assert umbenannt[k1].text == "🚧 Baustelle Nord" and umbenannt[k2] == eigene[k2]
+    assert (
+        ar.eigene_aendern(eigene, k1, "🏗️", "BAUSTELLE")[k1].name == "BAUSTELLE"
+    )  # eigener Name zählt nicht
+    with pytest.raises(Ungueltig):
+        ar.eigene_aendern(eigene, "eigen:9", "x", "y")
+    # Kennung hängt nicht am Namen und zählt weiter hoch, auch nach dem Löschen der höchsten nicht doppelt belegt
+    _, k3 = ar.eigene_neu({k2: eigene[k2]}, "x", "Garten")
+    assert k3 == "eigen:3"
+    voll = {f"eigen:{i}": ar.EigeneArt("x", f"A{i}") for i in range(ar.EIGENE_HOECHSTENS)}
+    with pytest.raises(Ungueltig):
+        ar.eigene_neu(voll, "x", "Zu viel")
+
+
+def test_eigene_laden_verwirft_unlesbares():
+    roh = {
+        "eigen:1": {"symbol": "🏗️", "name": "Baustelle"},
+        "eigen:2": {"symbol": "x", "name": ""},
+        "netz": {"symbol": "x", "name": "fest"},
+        "eigen:3": "kaputt",
+    }
+    assert ar.eigene_aus(roh) == {"eigen:1": ar.EigeneArt("🏗️", "Baustelle")}
+    assert ar.eigene_aus(None) == {}
+
+
+def test_eigene_gelten_wie_feste():
+    eigene = {"eigen:1": ar.EigeneArt("🏗️", "Baustelle")}
+    mac = "C8:C9:A3:00:00:01"
+    assert ar.bestimmen("x", mac, selbst="eigen:1", tabelle=TABELLE, eigene=eigene) == ar.Art(
+        "eigen:1", "selbst gewählt"
+    )
+    # gelöscht (nicht mehr unter den eigenen): wieder erkannt
+    assert ar.bestimmen("x", mac, selbst="eigen:1", tabelle=TABELLE).kat == "smart"
+    namen = [k["name"] for k in ar.kategorien("de", eigene)]
+    assert namen[-1] == "eigen:1" and namen[: len(ar.KATEGORIEN)] == [k for k, _ in ar.KATEGORIEN]
+    g = ar.gruppen([("eigen:1", True), ("netz", False), ("eigen:1", False)], "de", eigene)
+    assert [(x["name"], x["text"], x["online"], x["gesamt"]) for x in g] == [
+        ("netz", "🛜 Netzwerk", 0, 1),
+        ("eigen:1", "🏗️ Baustelle", 1, 2),
+    ]
+    assert (
+        ar.alle("en", eigene)[0] == ("netz", "🛜 Network")
+        and ar.alle("en", eigene)[-1][1] == "🏗️ Baustelle"
+    )

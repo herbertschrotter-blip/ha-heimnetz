@@ -240,6 +240,11 @@ select.ga-wahl { font: inherit; font-size: 13px; color: var(--ink); background: 
 .mg-loeschen { margin-top: 14px; width: 100%; padding: 11px; border-radius: 14px; font-size: 14px; color: var(--rot); background: color-mix(in srgb, var(--rot) 12%, transparent); }
 .mg-frage { margin-top: 14px; border-radius: 14px; padding: 12px; background: color-mix(in srgb, var(--rot) 12%, transparent); font-size: 13px; line-height: 1.45; }
 .mg-frage .dg-knoepfe button.rot { background: var(--rot); color: #fff; }
+/* WU-0010: eigene Arten (Symbol + Name) und Warnungen */
+.art-form { gap: 8px; } .art-form .art-ic { width: 46px; flex: none; text-align: center; padding: 7px 4px; } .art-form .art-name { flex: 1; min-width: 0; }
+.art-form .knopf { flex: none; padding: 7px 12px; } .art-k { display: flex; gap: 10px; flex: none; } .art-k button, .ez > button.leise { font-size: 13px; padding: 4px 2px; }
+select.w-ziel { max-width: 58%; } .ga-warnen .seg { flex: none; }
+@container (max-width: 520px) { .ga-warnen { flex-wrap: wrap; } .ga-warnen .seg { width: 100%; } }
 /* WU-0009: Internet – Herkunft des Zugangs, ⚙ › Zugang (Mockup netzwerk.html · Internet und Zugang) */
 .iq { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 14px; }
 .iq-ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: rgba(127,127,127,.18); font-size: 17px; }

@@ -3534,6 +3534,11 @@ select.ga-wahl { font: inherit; font-size: 13px; color: var(--ink); background: 
 .mg-loeschen { margin-top: 14px; width: 100%; padding: 11px; border-radius: 14px; font-size: 14px; color: var(--rot); background: color-mix(in srgb, var(--rot) 12%, transparent); }
 .mg-frage { margin-top: 14px; border-radius: 14px; padding: 12px; background: color-mix(in srgb, var(--rot) 12%, transparent); font-size: 13px; line-height: 1.45; }
 .mg-frage .dg-knoepfe button.rot { background: var(--rot); color: #fff; }
+/* WU-0010: eigene Arten (Symbol + Name) und Warnungen */
+.art-form { gap: 8px; } .art-form .art-ic { width: 46px; flex: none; text-align: center; padding: 7px 4px; } .art-form .art-name { flex: 1; min-width: 0; }
+.art-form .knopf { flex: none; padding: 7px 12px; } .art-k { display: flex; gap: 10px; flex: none; } .art-k button, .ez > button.leise { font-size: 13px; padding: 4px 2px; }
+select.w-ziel { max-width: 58%; } .ga-warnen .seg { flex: none; }
+@container (max-width: 520px) { .ga-warnen { flex-wrap: wrap; } .ga-warnen .seg { width: 100%; } }
 /* WU-0009: Internet – Herkunft des Zugangs, ⚙ › Zugang (Mockup netzwerk.html · Internet und Zugang) */
 .iq { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 14px; }
 .iq-ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: rgba(127,127,127,.18); font-size: 17px; }
@@ -4246,7 +4251,69 @@ var EN = {
   "vorgeschaltetes Modem": "upstream modem",
   "Band · SINR": "Band · SINR",
   "Funkwerte vom vorgeschalteten Modem – was es nicht liefert, fehlt.": "Radio values from the upstream modem – whatever it does not provide is missing.",
-  "Gesucht: FRITZ!Box und vorgeschaltetes Gerät neu gefragt": "Searched: FRITZ!Box and upstream device asked again"
+  "Gesucht: FRITZ!Box und vorgeschaltetes Gerät neu gefragt": "Searched: FRITZ!Box and upstream device asked again",
+  // Eigene Arten und Warnungen (WU-0010)
+  "🏷️ Arten": "🏷️ Types",
+  "🔔 Warnungen": "🔔 Alerts",
+  "wie Gruppe": "as group",
+  "immer": "always",
+  "nie": "never",
+  "＋ eigene Art …": "＋ custom type …",
+  "Name der Art, z. B. Baustelle": "Name of the type, e.g. building site",
+  "Anlegen": "Create",
+  "Eigene Arten erscheinen unter Geräte › nach Art und in ⚙ › Warnungen; umbenennen und löschen unter ⚙ › 🏷️ Arten.": "Custom types show up under Devices › by type and in ⚙ › Alerts; rename and delete them under ⚙ › 🏷️ Types.",
+  "eigene Einstellung": "own setting",
+  "wie Gruppe (an)": "as group (on)",
+  "wie Gruppe (aus)": "as group (off)",
+  "🔔 Bei offline warnen": "🔔 Alert when offline",
+  "Symbol": "Symbol",
+  "Eigene Arten legen nur Admins an.": "Only admins create custom types.",
+  "eigene · {anzahl}": "custom · {anzahl}",
+  "✎ ändern": "✎ edit",
+  "löschen": "delete",
+  "„{text}“ löschen?": "Delete “{text}”?",
+  "Name, z. B. Werkstatt": "Name, e.g. workshop",
+  "＋ Neue Art": "＋ New type",
+  "Eigene Arten": "Custom types",
+  "noch keine": "none yet",
+  "Zuordnen im Fenster eines Geräts (Reiter Geräte → Gerät antippen → Art). Eigene Arten gelten wie die festen: unter Geräte › nach Art und in ⚙ › 🔔 Warnungen.": "Assign them in the window of a device (Devices tab → tap a device → Type). Custom types work like the built-in ones: under Devices › by type and in ⚙ › 🔔 Alerts.",
+  "Feste Arten": "Built-in types",
+  "fest · {anzahl}": "built-in · {anzahl}",
+  "Warnungen stellen nur Admins ein.": "Only admins set up alerts.",
+  "Nachricht an": "Message to",
+  "notify-Dienst von Home Assistant": "notify service of Home Assistant",
+  "Dienst fehlt": "Service missing",
+  "Den gewählten notify-Dienst gibt es gerade nicht – Warnungen kommen nur als Ereignis und ins Journal.": "The chosen notify service does not exist right now – alerts only arrive as an event and in the journal.",
+  "Offline melden nach": "Report offline after",
+  "so lange muss ein Gerät weg sein": "how long a device has to be gone",
+  "🔔 Testnachricht senden": "🔔 Send test message",
+  "Überwachen nach Art": "Watch by type",
+  "{n} von {gesamt} Geräten": "{n} of {gesamt} devices",
+  "Einzeln abweichend": "Individual exceptions",
+  "wird immer gemeldet – abweichend von der Gruppe": "always reported – differs from its group",
+  "wird nie gemeldet – abweichend von der Gruppe": "never reported – differs from its group",
+  "zurücksetzen": "reset",
+  "keine": "none",
+  "Einzelne Geräte stellst du im Fenster des Geräts um (Reiter Geräte → Gerät antippen).": "Change single devices in the window of the device (Devices tab → tap a device).",
+  "Außerdem melden": "Also report",
+  "Wieder online": "Back online",
+  "mit Dauer, nur wenn vorher gemeldet": "with duration, only if reported before",
+  "Neues unbekanntes Gerät": "New unknown device",
+  "sobald sich ein noch nie gesehenes Gerät verbindet": "as soon as a never-seen device connects",
+  "Internet oder FRITZ!Box weg": "Internet or FRITZ!Box down",
+  "kommt an, sobald es wieder geht – mit Dauer des Ausfalls": "arrives as soon as it works again – with the duration of the outage",
+  "Beispiel": "Example",
+  "Nachrichten an die Companion App laufen über den Push-Dienst von Google bzw. Apple – der Gerätename verlässt dabei das Heimnetz. Für jede Meldung gibt es zusätzlich das Ereignis „heimnetz_warnung“ für eigene Automationen.": "Messages to the companion app go through the push service of Google or Apple – the device name leaves the home network. Every alert also fires the event “heimnetz_warnung” for your own automations.",
+  "{n} Gerät bekommt wieder die automatisch erkannte Art; Warnungen für diese Art fallen weg.": "{n} device gets its automatically detected type back; alerts for this type are dropped.",
+  "{n} Geräte bekommen wieder die automatisch erkannte Art; Warnungen für diese Art fallen weg.": "{n} devices get their automatically detected type back; alerts for this type are dropped.",
+  "Arten nicht abrufbar: {fehler}": "Types not available: {fehler}",
+  "Art angelegt": "Type created",
+  "Art nicht angelegt: {fehler}": "Type not created: {fehler}",
+  "Art gelöscht": "Type deleted",
+  "Warnungen nicht abrufbar: {fehler}": "Alerts not available: {fehler}",
+  "Nicht gespeichert: {fehler}": "Not saved: {fehler}",
+  "Testnachricht an {ziel} geschickt": "Test message sent to {ziel}",
+  "Keine Nachricht eingestellt – nur das Ereignis „heimnetz_warnung“ ausgelöst": "No message set up – only the event “heimnetz_warnung” was fired"
 };
 
 // src/format.js
@@ -4650,8 +4717,8 @@ function tagesverlauf(p4, d3) {
   if (lauf.length > 1) glatt.push(lauf);
   const linien = stuecke(() => true).filter((st2) => st2.length > 1).map((st2) => w`<polyline class="med" points=${st2.map((h3) => `${x2(h3)},${y4(s4[h3].median)}`).join(" ")}></polyline>`);
   const st = o7.stunde, gew = st != null ? s4[st] : null;
-  const anzahl = (n4) => t3(n4 === 1 ? "{n} Messung" : "{n} Messungen", { n: n4 });
-  const info = st != null ? gew.anzahl ? b2`<b>${stunden(st)}:</b> Median <b>${zahl(gew.median)} ${ein}</b>${gew.anzahl > 1 ? ` · ${t3("niedrigste {min} · höchste {max}", { min: zahl(gew.min), max: zahl(gew.max) })}` : ""} · ${anzahl(gew.anzahl)}${gew.glatt != null ? ` · ${t3("geglättet {wert}", { wert: zahl(gew.glatt) })}` : ""}` : b2`<b>${stunden(st)}:</b> ${t3("keine Messung")}` : b2`<span class="leise">${v2.beste != null ? `${t3("Beste Stunde {stunde} ({wert})", { stunde: stunden(v2.beste), wert: `${zahl(s4[v2.beste].median)} ${ein}` })} · ${t3("schwächste {stunde} ({wert})", { stunde: stunden(v2.schwaechste), wert: `${zahl(s4[v2.schwaechste].median)} ${ein}` })} · ` : ""}${t3("Tipp auf eine Stunde zeigt die Werte")}</span>`;
+  const anzahl2 = (n4) => t3(n4 === 1 ? "{n} Messung" : "{n} Messungen", { n: n4 });
+  const info = st != null ? gew.anzahl ? b2`<b>${stunden(st)}:</b> Median <b>${zahl(gew.median)} ${ein}</b>${gew.anzahl > 1 ? ` · ${t3("niedrigste {min} · höchste {max}", { min: zahl(gew.min), max: zahl(gew.max) })}` : ""} · ${anzahl2(gew.anzahl)}${gew.glatt != null ? ` · ${t3("geglättet {wert}", { wert: zahl(gew.glatt) })}` : ""}` : b2`<b>${stunden(st)}:</b> ${t3("keine Messung")}` : b2`<span class="leise">${v2.beste != null ? `${t3("Beste Stunde {stunde} ({wert})", { stunde: stunden(v2.beste), wert: `${zahl(s4[v2.beste].median)} ${ein}` })} · ${t3("schwächste {stunde} ({wert})", { stunde: stunden(v2.schwaechste), wert: `${zahl(s4[v2.schwaechste].median)} ${ein}` })} · ` : ""}${t3("Tipp auf eine Stunde zeigt die Werte")}</span>`;
   return b2`<div class="tv">${kopf}${wahl}
     <svg viewBox="0 0 ${W3} ${H4}" role="img" aria-label=${`${t3("Tagesverlauf")} ${GROESSE_NAME[d3.groesse]}`}>
       ${[0, 0.25, 0.5, 0.75, 1].map((f3) => w`<line class="gitter" x1=${L4} x2=${W3 - R2} y1=${y4(ymax * f3)} y2=${y4(ymax * f3)}></line><text x=${L4 - 6} y=${y4(ymax * f3) + 4} text-anchor="end">${zahl(ymax * f3)}</text>`)}
@@ -4664,7 +4731,7 @@ function tagesverlauf(p4, d3) {
       ${mit.map(([h3, w2]) => w`<circle class="pkt" cx=${x2(h3)} cy=${y4(w2.median)} r=${st === h3 ? 5 : 3}></circle>`)}
       ${[0, 3, 6, 9, 12, 15, 18, 21].map((h3) => w`<text x=${L4 + h3 * sw} y=${H4 - 8} text-anchor="middle">${h3}</text>`)}
       ${w`<text x=${W3 - R2} y=${H4 - 8} text-anchor="end">${t3("{n} Uhr", { n: 24 })}</text>`}
-      ${s4.map((w2, h3) => w`<rect class="h" x=${L4 + h3 * sw} y=${O} width=${sw} height=${HH} @click=${() => p4.setze("speedtest", { stunde: st === h3 ? null : h3 }, false)}><title>${stunden(h3)}: ${w2.anzahl ? `Median ${zahl(w2.median)} ${ein} · ${zahl(w2.min)}–${zahl(w2.max)} · ${anzahl(w2.anzahl)}` : t3("keine Messung")}</title></rect>`)}
+      ${s4.map((w2, h3) => w`<rect class="h" x=${L4 + h3 * sw} y=${O} width=${sw} height=${HH} @click=${() => p4.setze("speedtest", { stunde: st === h3 ? null : h3 }, false)}><title>${stunden(h3)}: ${w2.anzahl ? `Median ${zahl(w2.median)} ${ein} · ${zahl(w2.min)}–${zahl(w2.max)} · ${anzahl2(w2.anzahl)}` : t3("keine Messung")}</title></rect>`)}
     </svg>
     <div class="info">${info}</div>
     <div class="legende"><span><i class="l-med"></i>${t3("Median je Stunde")}</span><span><i class="l-glatt"></i>${t3("Mittelwert geglättet (3 h)")}</span><span><i class="l-band"></i>${t3("niedrigste bis höchste Messung")}</span><span><i class="l-luecke"></i>${t3("Stunden ohne Messung überbrückt")}</span>${tarif ? b2`<span><i class="l-tarif"></i>${t3("Tarif")}</span>` : A}<span>${ein}</span></div>
@@ -4769,6 +4836,66 @@ function standard(s4) {
   return { be: "7", ax: "6", ac: "5", n: "4" }[s4] ?? s4;
 }
 
+// src/ansichten/warnungen.js
+var anzahl = (n4) => t3(n4 === 1 ? "{n} Gerät" : "{n} Geräte", { n: n4 });
+var schalter = (an, klick) => b2`<button class="sw ${an ? "on" : ""}" role="switch" aria-checked=${an ? "true" : "false"} @click=${klick}><i></i></button>`;
+var nurAdmin = (text) => b2`<p class="hinweis" style="padding-top:8px">${text}</p>`;
+function artFormular({ symbol = "🏷️", name = "", platz, knopf, los, weg }) {
+  const werte = (ev) => {
+    const z2 = ev.target.closest(".art-form");
+    return [z2.querySelector("[name=art-ic]").value, z2.querySelector("[name=art-name]").value];
+  };
+  return b2`<div class="ez art-form"><input name="art-ic" class="art-ic" maxlength="8" .value=${symbol} title=${t3("Symbol")} aria-label=${t3("Symbol")}>
+    <input name="art-name" class="art-name" maxlength="30" .value=${name} placeholder=${platz}>
+    <button class="knopf haupt" @click=${(ev) => los(...werte(ev))}>${knopf}</button><button class="leise" title=${t3("Abbrechen")} @click=${weg}>✕</button></div>`;
+}
+function artenTeil(p4) {
+  if (!p4.istAdmin) return nurAdmin(t3("Eigene Arten legen nur Admins an."));
+  const a3 = p4._daten.arten, b3 = p4._blatt;
+  if (!a3) return p4._hinweisArten ? b2`<p class="fein">${p4._hinweisArten}</p>` : b2`<div class="leer">${t3("lädt …")}</div>`;
+  const stelle = (werte) => {
+    p4._blatt = { ...p4._blatt, artBearb: null, artLoe: null, artNeu: false, ...werte };
+  };
+  const eigen = a3.eigene.map((x2) => b3.artBearb === x2.name ? artFormular({ symbol: x2.symbol, name: x2.titel, knopf: t3("Speichern"), los: (s4, n4) => p4.artAendern(x2.name, s4, n4), weg: () => stelle({}) }) : b2`<div class="ez" data-art=${x2.name}><span>${x2.text}<small>${t3("eigene · {anzahl}", { anzahl: anzahl(x2.geraete) })}</small></span>
+        <span class="art-k"><button class="leise blau" @click=${() => stelle({ artBearb: x2.name })}>${t3("✎ ändern")}</button><button class="leise rot-t" title=${t3("löschen")} @click=${() => stelle({ artLoe: x2.name })}>🗑</button></span></div>
+      ${b3.artLoe === x2.name ? b2`<div class="mg-frage" style="margin:4px 0 8px"><b>${t3("„{text}“ löschen?", { text: x2.text })}</b><br>${t3(x2.geraete === 1 ? "{n} Gerät bekommt wieder die automatisch erkannte Art; Warnungen für diese Art fallen weg." : "{n} Geräte bekommen wieder die automatisch erkannte Art; Warnungen für diese Art fallen weg.", { n: x2.geraete })}
+        <div class="dg-knoepfe" style="margin-top:8px"><button class="rot" @click=${() => p4.artLoeschen(x2.name)}>${t3("Löschen")}</button><button @click=${() => stelle({})}>${t3("Abbrechen")}</button></div></div>` : A}`);
+  const neu = b3.artNeu ? artFormular({ platz: t3("Name, z. B. Werkstatt"), knopf: t3("Anlegen"), los: (s4, n4) => p4.artNeu(s4, n4), weg: () => stelle({}) }) : b2`<div class="dg-knoepfe" style="margin-top:4px"><button class="art-neu" ?disabled=${a3.eigene.length >= a3.hoechstens} @click=${() => stelle({ artNeu: true })}>${t3("＋ Neue Art")}</button></div>`;
+  return b2`<div class="vs-stufe"><span>${t3("Eigene Arten")}</span><span>${a3.eigene.length}</span></div>
+    ${a3.eigene.length ? eigen : b2`<p class="hinweis">${t3("noch keine")}</p>`}${neu}
+    ${p4._hinweisArten ? b2`<p class="fein">${p4._hinweisArten}</p>` : A}
+    <p class="hinweis" style="margin-top:6px">${t3("Zuordnen im Fenster eines Geräts (Reiter Geräte → Gerät antippen → Art). Eigene Arten gelten wie die festen: unter Geräte › nach Art und in ⚙ › 🔔 Warnungen.")}</p>
+    <div class="vs-stufe"><span>${t3("Feste Arten")}</span><span>${a3.feste.length}</span></div>
+    ${a3.feste.map((x2) => b2`<div class="ez"><span>${x2.text}<small>${t3("fest · {anzahl}", { anzahl: anzahl(x2.geraete) })}</small></span><span class="leise">${t3("automatisch erkannt")}</span></div>`)}`;
+}
+function warnungenTeil(p4) {
+  if (!p4.istAdmin) return nurAdmin(t3("Warnungen stellen nur Admins ein."));
+  const w2 = p4._daten.warnungen;
+  if (!w2) return p4._hinweisWarn ? b2`<p class="fein">${p4._hinweisWarn}</p>` : b2`<div class="leer">${t3("lädt …")}</div>`;
+  const setzen = (werte) => p4.warnungenSetzen(werte);
+  const letzte = w2.verzoegerungen.length - 1;
+  return b2`
+    <div class="ez"><span>${t3("Nachricht an")}<small>${t3("notify-Dienst von Home Assistant")}</small></span>
+      <select class="ga-wahl w-ziel" .value=${l3(w2.ziel)} @change=${(e6) => setzen({ ziel: e6.target.value })}>
+        ${w2.ziele.map((z2) => b2`<option value=${z2.name} ?selected=${z2.name === w2.ziel}>${z2.text}</option>`)}</select></div>
+    ${w2.ziel_fehlt ? b2`<div class="befund"><span class="punkt amber"></span><div><b>${t3("Dienst fehlt")}</b><p>${t3("Den gewählten notify-Dienst gibt es gerade nicht – Warnungen kommen nur als Ereignis und ins Journal.")}</p></div></div>` : A}
+    <div class="ez"><span>${t3("Offline melden nach")}<small>${t3("so lange muss ein Gerät weg sein")}</small></span>${seg(w2.verzoegerungen.map((m3, i6) => [m3, i6 === letzte ? `${m3} min` : String(m3)]), w2.verzoegerung, (v2) => setzen({ verzoegerung: v2 }))}</div>
+    <div class="dg-knoepfe" style="margin:2px 0 4px"><button class="w-test" @click=${() => p4.testnachricht()}>${t3("🔔 Testnachricht senden")}</button></div>
+    ${p4._hinweisWarn ? b2`<p class="fein">${p4._hinweisWarn}</p>` : A}
+    <div class="vs-stufe"><span>${t3("Überwachen nach Art")}</span><span>${t3("{n} von {gesamt} Geräten", { n: w2.ueberwacht, gesamt: w2.gesamt })}</span></div>
+    ${w2.arten.map((a3) => b2`<div class="ez" data-art=${a3.name}><span>${a3.text}<small>${a3.hinweis || anzahl(a3.geraete)}</small></span>${schalter(a3.an, () => setzen({ art: a3.name, an: !a3.an }))}</div>`)}
+    <div class="vs-stufe"><span>${t3("Einzeln abweichend")}</span><span>${w2.ausnahmen.length}</span></div>
+    ${w2.ausnahmen.length ? w2.ausnahmen.map((x2) => b2`<div class="ez" data-ausnahme=${x2.id}><span>${x2.name}<small>${x2.wert === "immer" ? t3("wird immer gemeldet – abweichend von der Gruppe") : t3("wird nie gemeldet – abweichend von der Gruppe")}</small></span>
+      <button class="leise blau" title=${t3("zurücksetzen")} @click=${() => p4.warnungGeraet(x2.id, "gruppe")}>✕</button></div>`) : b2`<p class="hinweis">${t3("keine")}</p>`}
+    <p class="hinweis">${t3("Einzelne Geräte stellst du im Fenster des Geräts um (Reiter Geräte → Gerät antippen).")}</p>
+    <div class="vs-stufe"><span>${t3("Außerdem melden")}</span><span></span></div>
+    <div class="ez" data-schalter="wieder"><span>${t3("Wieder online")}<small>${t3("mit Dauer, nur wenn vorher gemeldet")}</small></span>${schalter(w2.wieder, () => setzen({ wieder: !w2.wieder }))}</div>
+    <div class="ez" data-schalter="neu"><span>${t3("Neues unbekanntes Gerät")}<small>${t3("sobald sich ein noch nie gesehenes Gerät verbindet")}</small></span>${schalter(w2.neu, () => setzen({ neu: !w2.neu }))}</div>
+    <div class="ez" data-schalter="internet"><span>${t3("Internet oder FRITZ!Box weg")}<small>${t3("kommt an, sobald es wieder geht – mit Dauer des Ausfalls")}</small></span>${schalter(w2.internet, () => setzen({ internet: !w2.internet }))}</div>
+    <div class="vs-kopf" style="margin-top:8px"><span class="leise">${t3("Beispiel")}</span><br><b>Heimnetz</b> · ${w2.beispiel}</div>
+    <p class="hinweis" style="margin-top:6px">${t3("Nachrichten an die Companion App laufen über den Push-Dienst von Google bzw. Apple – der Gerätename verlässt dabei das Heimnetz. Für jede Meldung gibt es zusätzlich das Ereignis „heimnetz_warnung“ für eigene Automationen.")}</p>`;
+}
+
 // src/ansichten/geraete.js
 var TEILE = [["geraete", merke("Geräte")], ["wlan", merke("WLAN")]];
 function geraeteReiter(p4, d3) {
@@ -4781,6 +4908,8 @@ var PUNKT = { an: ["", "online"], aus: ["grau", "offline"], neu: ["blau", merke(
 var ZU = "WLAN, nicht verbunden";
 var NACH = [["verb", merke("nach Verbindung")], ["art", merke("nach Art")]];
 var SYMBOL = { LAN: "🔌", WLAN: "📶", Powerline: "⚡" };
+var WARNEN = [["gruppe", merke("wie Gruppe")], ["immer", merke("immer")], ["nie", merke("nie")]];
+var NEU = "neu";
 function passt(g2, filter, suche) {
   if (filter === "online" && !g2.aktiv) return false;
   if (filter === "offline" && g2.aktiv) return false;
@@ -4830,9 +4959,21 @@ function geraetBlatt(p4, b3) {
   return b2`${kopf}
     <h3>${g2.name}</h3>
     <div class="leise">${g2.ip || "–"} · ${g2.art} · ${t3("Adresse {quelle}", { quelle: g2.quelle })}${g2.zufallsadresse ? ` · ${t3("Zufalls-Adresse")}` : ""}${g2.zuerst ? ` · ${t3("zuerst gesehen {tag}", { tag: tag(g2.zuerst) })}` : ""}</div>
-    ${g2.kategorien ? b2`<div class="zeile ga-zeile"><span>${t3("Art")} <span class="leise">· ${g2.art_quelle}</span></span>${p4.istAdmin ? b2`<select class="ga-wahl" .value=${l3(g2.art_selbst ? g2.kat : "auto")} @change=${(e6) => p4.geraetArt(g2.id, e6.target.value === "auto" ? null : e6.target.value)}>
+    ${g2.kategorien ? b2`<div class="zeile ga-zeile"><span>${t3("Art")} <span class="leise">· ${g2.art_quelle}</span></span>${p4.istAdmin ? b2`<select class="ga-wahl" .value=${l3(g2.art_selbst ? g2.kat : "auto")} @change=${(e6) => {
+    if (e6.target.value !== NEU) {
+      p4.geraetArt(g2.id, e6.target.value === "auto" ? null : e6.target.value);
+      return;
+    }
+    p4._blatt = { ...b3, eigenNeu: true };
+  }}>
           <option value="auto">${t3("automatisch")}</option>
-          ${g2.kategorien.map((k2) => b2`<option value=${k2.name}>${k2.text}</option>`)}</select>` : b2`<span class="leise">${(g2.kategorien.find((k2) => k2.name === g2.kat) || {}).text || g2.kat}</span>`}</div>` : A}
+          ${g2.kategorien.map((k2) => b2`<option value=${k2.name}>${k2.text}</option>`)}
+          <option value=${NEU}>${t3("＋ eigene Art …")}</option></select>` : b2`<span class="leise">${(g2.kategorien.find((k2) => k2.name === g2.kat) || {}).text || g2.kat}</span>`}</div>` : A}
+    ${b3.eigenNeu && p4.istAdmin ? b2`${artFormular({ platz: t3("Name der Art, z. B. Baustelle"), knopf: t3("Anlegen"), los: (s4, n4) => p4.artNeu(s4, n4, g2.id), weg: () => {
+    p4._blatt = { ...b3, eigenNeu: false };
+  } })}
+      <p class="hinweis">${t3("Eigene Arten erscheinen unter Geräte › nach Art und in ⚙ › Warnungen; umbenennen und löschen unter ⚙ › 🏷️ Arten.")}</p>` : A}
+    ${g2.warnen ? warnZeile(p4, g2) : A}
     <div class="glas-raster" style="grid-template-columns:repeat(3,1fr)">
       <div class="glas-panel block" style="padding:10px"><span class="glas-klein">${t3("online 7 Tage")}</span><span class="glas-wert">${g2.online_anteil == null ? "–" : zahl(g2.online_anteil * 100)}<small> %</small></span></div>
       <div class="glas-panel block" style="padding:10px"><span class="glas-klein">${t3("Abbrüche")}</span><span class="glas-wert">${g2.abbrueche}</span></div>
@@ -4843,6 +4984,12 @@ function geraetBlatt(p4, b3) {
     <div class="achse" style="padding-left:76px"><span>0</span><span>6</span><span>12</span><span>18</span><span>24</span></div>
     <div class="gruppe">${t3("Ereignisse")}</div>
     ${g2.ereignisse.length ? g2.ereignisse.map((e6) => b2`<div class="ereig"><span class="punkt ${punkt(e6.stufe)}"></span><time>${zeit(e6.t)}</time><span>${e6.text}</span></div>`) : b2`<div class="leer">${t3("Keine Ereignisse in den letzten 7 Tagen.")}</div>`}`;
+}
+function warnZeile(p4, g2) {
+  const w2 = g2.warnen;
+  const unter = w2.wert !== "gruppe" ? t3("eigene Einstellung") : w2.gruppe ? t3("wie Gruppe (an)") : t3("wie Gruppe (aus)");
+  const wort = { gruppe: w2.gruppe ? t3("wie Gruppe (an)") : t3("wie Gruppe (aus)"), immer: t3("immer"), nie: t3("nie") }[w2.wert];
+  return b2`<div class="zeile ga-zeile ga-warnen"><span>${t3("🔔 Bei offline warnen")} <span class="leise">· ${unter}</span></span>${p4.istAdmin ? seg(tl(WARNEN), w2.wert, (v2) => v2 !== w2.wert && p4.warnungGeraet(g2.id, v2)) : b2`<span class="leise">${wort}</span>`}</div>`;
 }
 
 // src/karte.js
@@ -6180,11 +6327,11 @@ function ticket(p4, m3) {
 }
 function meldungenBlatt(p4) {
   const alle = p4._daten.meldungen, f3 = p4._blatt.filter || "offen";
-  const anzahl = (k2) => !alle ? "" : k2 === "alle" ? alle.length : alle.filter((m3) => k2 === "offen" === offen(m3)).length;
+  const anzahl2 = (k2) => !alle ? "" : k2 === "alle" ? alle.length : alle.filter((m3) => k2 === "offen" === offen(m3)).length;
   const liste = (alle || []).filter((m3) => f3 === "alle" || f3 === "offen" === offen(m3));
   return b2`<div class="griff"></div><button class="zu" @click=${() => p4.zu()}>✕</button>
     <h3>${t3("Meldungen")}</h3><div class="leise">${t3("Jede Meldung ist ein Ticket: FE Fehler, WU Wunsch, AN Anregung")}</div>
-    ${seg([["offen", `${t3("offen")} ${anzahl("offen")}`], ["erledigt", `${t3("erledigt")} ${anzahl("erledigt")}`], ["alle", `${t3("alle")} ${anzahl("alle")}`]], f3, (v2) => {
+    ${seg([["offen", `${t3("offen")} ${anzahl2("offen")}`], ["erledigt", `${t3("erledigt")} ${anzahl2("erledigt")}`], ["alle", `${t3("alle")} ${anzahl2("alle")}`]], f3, (v2) => {
     p4._blatt = { ...p4._blatt, filter: v2 };
   })}
     ${!alle ? b2`<div class="leer">${t3("lädt …")}</div>` : liste.length ? liste.map((m3) => ticket(p4, m3)) : b2`<div class="leer">${t3("Keine Meldungen")}</div>`}
@@ -6215,6 +6362,8 @@ var TEILE2 = [
   ["speed", "📈 Speedtest"],
   ["plan", merke("⏱️ Messplan")],
   ["wlan", merke("📶 WLAN")],
+  ["arten", merke("🏷️ Arten")],
+  ["warn", merke("🔔 Warnungen")],
   ["meld", merke("💬 Meldungen")],
   ["zugang", merke("🌐 Zugang")],
   ["einr", merke("🧩 Einrichtung")],
@@ -6239,12 +6388,13 @@ function einstellungenBlatt(p4) {
     <h3>${t3("Einstellungen")}</h3><div class="leise">${p4.istAdmin ? t3("gelten für die ganze Seite") : t3("nur Admins ändern")}</div>
     <div class="seg e-reiter">${TEILE2.map(([k2, name]) => b2`<button class=${k2 === teil ? "on" : ""} @click=${() => {
     p4._blatt = { ...p4._blatt, teil: k2 };
-    if (k2 === "einr") p4.einrichtungLaden();
-    if (k2 === "zugang") p4.zugangLaden();
+    p4.teilLaden(k2);
   }}>${t3(name)}${k2 === "einr" ? punkt2(p4) : A}</button>`)}</div>`;
   if (teil === "einr") return b2`${kopf}<div class="ek"><div class="ek-inhalt">${einrichtung(p4)}</div></div>`;
   if (teil === "diag") return b2`${kopf}<div class="ek"><div class="ek-inhalt">${diagnose(p4)}</div></div>`;
   if (teil === "zugang") return b2`${kopf}<div class="ek"><div class="ek-inhalt">${zugang(p4)}</div></div>`;
+  if (teil === "arten") return b2`${kopf}<div class="ek"><div class="ek-inhalt">${artenTeil(p4)}</div></div>`;
+  if (teil === "warn") return b2`${kopf}<div class="ek"><div class="ek-inhalt">${warnungenTeil(p4)}</div></div>`;
   if (!e6) return b2`${kopf}<div class="leer">${t3("lädt …")}</div>`;
   const inhalt = { speed: auswertung, plan: messplan, wlan: wlan2, meld: (q) => meldungenZeile(q) }[teil](p4, e6);
   return b2`${kopf}<div class="ek"><div class="ek-inhalt">${inhalt}</div></div>`;
@@ -6480,7 +6630,7 @@ function protokoll(p4, d3) {
 }
 
 // src/heimnetz-panel.js
-var VERSION = true ? "0.27.0" : "entwicklung";
+var VERSION = true ? "0.28.0" : "entwicklung";
 var REITER = [
   ["uebersicht", merke("Übersicht")],
   ["speedtest", merke("Speedtest")],
@@ -6522,6 +6672,8 @@ var HeimnetzPanel = class extends i4 {
     _hinweisEinr: { state: true },
     _diag: { state: true },
     _hinweisZugang: { state: true },
+    _hinweisArten: { state: true },
+    _hinweisWarn: { state: true },
     _toast: { state: true },
     _kachel: { state: true }
   };
@@ -6536,6 +6688,8 @@ var HeimnetzPanel = class extends i4 {
     this._hinweisEinr = "";
     this._diag = { adresse: "192.168.0.1", laeuft: false, antwort: null, fehler: "" };
     this._hinweisZugang = "";
+    this._hinweisArten = "";
+    this._hinweisWarn = "";
     this._blatt = null;
     this._toast = "";
     this._bilder = /* @__PURE__ */ new Map();
@@ -6790,7 +6944,101 @@ var HeimnetzPanel = class extends i4 {
     this.laden();
     this.meldungenLaden();
     this.einrichtungLaden();
-    if (teil === "zugang") this.zugangLaden();
+    if (teil && teil !== "einr") this.teilLaden(teil);
+  }
+  /** Reiter im Fenster Einstellungen gewählt: was nur dieser Reiter braucht, frisch von der Integration. */
+  teilLaden(teil) {
+    const laden = { einr: this.einrichtungLaden, zugang: this.zugangLaden, arten: this.artenLaden, warn: this.warnungenLaden }[teil];
+    if (laden) laden.call(this);
+  }
+  /* ---- WU-0010: eigene Arten (⚙ › 🏷️ Arten, Fenster eines Geräts; nur Admins) ---- */
+  async artenLaden() {
+    if (!this.istAdmin) return;
+    try {
+      this._daten = { ...this._daten, arten: await this.ws("arten") };
+      this._hinweisArten = "";
+    } catch (err) {
+      this._hinweisArten = t3("Arten nicht abrufbar: {fehler}", { fehler: err && err.message || err });
+    }
+  }
+  /** Eigene Art anlegen; aus dem Fenster eines Geräts (`geraet`) gleich diesem zugeordnet. */
+  async artNeu(symbol, name, geraet = null) {
+    try {
+      const a3 = await this.ws("art/neu", { symbol, name, ...geraet ? { geraet } : {} });
+      this._daten = { ...this._daten, arten: a3 };
+      this._hinweisArten = "";
+      if (geraet) {
+        const daten = await this.ws("geraet", { geraet, tage: 7 });
+        if (this._blatt && this._blatt.kennung === geraet) this._blatt = { art: "geraet", kennung: geraet, daten };
+      } else if (this._blatt) this._blatt = { ...this._blatt, artNeu: false };
+      this.toast(t3("Art angelegt"));
+      this.laden();
+    } catch (err) {
+      const text = err && err.message || String(err);
+      if (geraet) this.toast(t3("Art nicht angelegt: {fehler}", { fehler: text }));
+      else this._hinweisArten = text;
+    }
+  }
+  async artAendern(art2, symbol, name) {
+    try {
+      this._daten = { ...this._daten, arten: await this.ws("art/aendern", { art: art2, symbol, name }) };
+      this._hinweisArten = "";
+      if (this._blatt) this._blatt = { ...this._blatt, artBearb: null };
+      this.laden();
+    } catch (err) {
+      this._hinweisArten = err && err.message || String(err);
+    }
+  }
+  async artLoeschen(art2) {
+    try {
+      this._daten = { ...this._daten, arten: await this.ws("art/loeschen", { art: art2 }) };
+      this._hinweisArten = "";
+      if (this._blatt) this._blatt = { ...this._blatt, artLoe: null };
+      this.toast(t3("Art gelöscht"));
+      this.laden();
+    } catch (err) {
+      this._hinweisArten = err && err.message || String(err);
+    }
+  }
+  /* ---- WU-0010: Warnungen (⚙ › 🔔 Warnungen, Fenster eines Geräts; nur Admins) ---- */
+  async warnungenLaden() {
+    if (!this.istAdmin) return;
+    try {
+      this._daten = { ...this._daten, warnungen: await this.ws("warnungen") };
+      this._hinweisWarn = "";
+    } catch (err) {
+      this._hinweisWarn = t3("Warnungen nicht abrufbar: {fehler}", { fehler: err && err.message || err });
+    }
+  }
+  async warnungenSetzen(werte) {
+    try {
+      this._daten = { ...this._daten, warnungen: await this.ws("warnungen/setzen", werte) };
+      this._hinweisWarn = "";
+    } catch (err) {
+      this._hinweisWarn = err && err.message || String(err);
+      this.requestUpdate();
+    }
+  }
+  /** Ausnahme eines Geräts: immer, nie oder wie seine Gruppe (Fenster des Geräts und ⚙ › Warnungen). */
+  async warnungGeraet(kennung, wert2) {
+    try {
+      const daten = await this.ws("warnungen/geraet", { geraet: kennung, wert: wert2 });
+      if (daten && this._blatt && this._blatt.art === "geraet" && this._blatt.kennung === kennung) this._blatt = { art: "geraet", kennung, daten };
+      if (this._blatt && this._blatt.art === "einstellungen") this.warnungenLaden();
+    } catch (err) {
+      this.toast(t3("Nicht gespeichert: {fehler}", { fehler: err && err.message || err }));
+    }
+  }
+  async testnachricht() {
+    try {
+      const { dienste } = await this.ws("warnungen/test");
+      const w2 = this._daten.warnungen;
+      const ziel = w2 && (w2.ziele.find((z2) => z2.name === w2.ziel) || {}).text;
+      this.toast(dienste.length ? t3("Testnachricht an {ziel} geschickt", { ziel: ziel || dienste.join(", ") }) : t3("Keine Nachricht eingestellt – nur das Ereignis „heimnetz_warnung“ ausgelöst"));
+      this._hinweisWarn = "";
+    } catch (err) {
+      this._hinweisWarn = err && err.message || String(err);
+    }
   }
   /* ---- WU-0009: ⚙ › 🌐 Zugang (nur Admins; erkennen und prüfen macht die Integration) ---- */
   async zugangLaden() {

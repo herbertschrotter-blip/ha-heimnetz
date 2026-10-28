@@ -25,6 +25,7 @@ export function machHass({ admin = true, dunkel = true, sprache = 'de' } = {}) {
   const aufrufe = [];
   let bilder = 0;
   let zugang = null; // WU-0009: zuletzt gespeicherter Zugang (wie in der Integration)
+  let arten = DATEN.arten, warnungen = DATEN.warnungen; // WU-0010: Stand nach dem letzten Speichern
   return {
     aufrufe,
     language: sprache,
@@ -57,6 +58,35 @@ export function machHass({ admin = true, dunkel = true, sprache = 'de' } = {}) {
       }
       if (befehl === 'zugang/suchen') return { ...(zugang ?? DATEN.zugang), gesucht: true };
       if (befehl === 'zugang' && zugang) return zugang;
+      // WU-0010: eigene Arten und Warnungen wie die Integration (tests/integration/test_warnungen.py)
+      if (befehl === 'arten') return arten;
+      if (befehl === 'art/neu') {
+        if (!msg.name.trim()) throw new Error('Name der Art fehlt');
+        const symbol = msg.symbol || '🏷️', name = `eigen:${arten.eigene.length + 2}`;
+        arten = { ...arten, eigene: [...arten.eigene, { name, symbol, titel: msg.name, text: `${symbol} ${msg.name}`, geraete: msg.geraet ? 1 : 0 }] };
+        return { ...arten, neu: name };
+      }
+      if (befehl === 'art/aendern') {
+        arten = { ...arten, eigene: arten.eigene.map((x) => (x.name === msg.art ? { ...x, symbol: msg.symbol, titel: msg.name, text: `${msg.symbol} ${msg.name}` } : x)) };
+        return arten;
+      }
+      if (befehl === 'art/loeschen') {
+        const weg = arten.eigene.find((x) => x.name === msg.art);
+        arten = { ...arten, eigene: arten.eigene.filter((x) => x !== weg) };
+        return { ...arten, zurueck: weg ? weg.geraete : 0 };
+      }
+      if (befehl === 'warnungen') return warnungen;
+      if (befehl === 'warnungen/setzen') {
+        if (msg.verzoegerung != null && !warnungen.verzoegerungen.includes(msg.verzoegerung)) throw new Error('Offline melden nach: 2, 5, 15, 60 Minuten');
+        const { type, id, sprache: _s, art, an, ...rest } = msg;
+        warnungen = { ...warnungen, ...rest, arten: art ? warnungen.arten.map((a) => (a.name === art ? { ...a, an } : a)) : warnungen.arten };
+        return warnungen;
+      }
+      if (befehl === 'warnungen/geraet') {
+        warnungen = { ...warnungen, ausnahmen: msg.wert === 'gruppe' ? warnungen.ausnahmen.filter((x) => x.id !== msg.geraet) : warnungen.ausnahmen };
+        return { ...DATEN.geraet, warnen: { ...DATEN.geraet.warnen, wert: msg.wert } };
+      }
+      if (befehl === 'warnungen/test') return { dienste: warnungen.ziel === 'keine' ? [] : warnungen.ziel === 'alle' ? ['mobile_app_handy'] : [warnungen.ziel] };
       if (!(befehl in DATEN)) throw new Error(`unbekannt: ${msg.type}`);
       return DATEN[befehl];
     },

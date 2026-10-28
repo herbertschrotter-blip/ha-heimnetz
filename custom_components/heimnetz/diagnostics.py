@@ -34,6 +34,8 @@ async def async_get_config_entry_diagnostics(
     namen = [g.name for g in stand.geraete.values()] if stand else []
     namen += [s.name for s in hass.states.async_all("device_tracker")]
     namen += gh.zell_kennungen(stand.mobil if stand else None)  # Zellkennungen auch in Texten
+    # WU-0010: Namen eigener Arten sind Daten des Nutzers – kommen sie in einem Text vor, geschwärzt
+    namen += [e.name for e in lz.einstellungen.eigene.values()]
     roh = {
         "version": {
             "heimnetz": str((await async_get_integration(hass, DOMAIN)).version or ""),

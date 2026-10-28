@@ -1,11 +1,14 @@
 // Reiter „Geräte“: Liste mit 24-h-Streifen, Filter und Suche (nur Anzeige); Einblendung je Gerät mit 7 Tagen.
 // WU-0009: WLAN steht hier als Umschalter „Geräte | WLAN“ (vorher unter „Funk“).
+// WU-0010: im Fenster eines Geräts eigene Arten in der Auswahl samt „＋ eigene Art …“ und die Zeile „🔔 Bei offline
+// warnen“ (wie Gruppe · immer · nie) – was die Gruppe sagt, liefert die Integration (heimnetz/geraet → warnen).
 import { html, nothing } from 'lit';
 import { live } from 'lit/directives/live.js';
 import { zahl, zeit, tag, punkt } from '../format.js';
 import { merke, t, tl } from '../sprache.js';
 import { seg, streifen } from './teile.js';
 import { wlan } from './wlan.js';
+import { artFormular } from './warnungen.js';
 
 export const TEILE = [['geraete', merke('Geräte')], ['wlan', merke('WLAN')]];
 
@@ -22,6 +25,8 @@ const PUNKT = { an: ['', 'online'], aus: ['grau', 'offline'], neu: ['blau', merk
 const ZU = 'WLAN, nicht verbunden'; // anfangs zugeklappt: feste Kennung der Gruppe (name); angezeigt wird ihr text
 const NACH = [['verb', merke('nach Verbindung')], ['art', merke('nach Art')]];
 const SYMBOL = { LAN: '🔌', WLAN: '📶', Powerline: '⚡' };
+const WARNEN = [['gruppe', merke('wie Gruppe')], ['immer', merke('immer')], ['nie', merke('nie')]];
+const NEU = 'neu'; // Wert „＋ eigene Art …“ in der Auswahl (keine Art)
 
 function passt(g, filter, suche) {
   if (filter === 'online' && !g.aktiv) return false;
@@ -79,10 +84,17 @@ export function geraetBlatt(p, b) {
     <h3>${g.name}</h3>
     <div class="leise">${g.ip || '–'} · ${g.art} · ${t('Adresse {quelle}', { quelle: g.quelle })}${g.zufallsadresse ? ` · ${t('Zufalls-Adresse')}` : ''}${g.zuerst ? ` · ${t('zuerst gesehen {tag}', { tag: tag(g.zuerst) })}` : ''}</div>
     ${g.kategorien ? html`<div class="zeile ga-zeile"><span>${t('Art')} <span class="leise">· ${g.art_quelle}</span></span>${p.istAdmin
-      ? html`<select class="ga-wahl" .value=${live(g.art_selbst ? g.kat : 'auto')} @change=${(e) => p.geraetArt(g.id, e.target.value === 'auto' ? null : e.target.value)}>
+      ? html`<select class="ga-wahl" .value=${live(g.art_selbst ? g.kat : 'auto')} @change=${(e) => {
+          if (e.target.value !== NEU) { p.geraetArt(g.id, e.target.value === 'auto' ? null : e.target.value); return; }
+          p._blatt = { ...b, eigenNeu: true }; // Auswahl springt beim Zeichnen zurück (live)
+        }}>
           <option value="auto">${t('automatisch')}</option>
-          ${g.kategorien.map((k) => html`<option value=${k.name}>${k.text}</option>`)}</select>`
+          ${g.kategorien.map((k) => html`<option value=${k.name}>${k.text}</option>`)}
+          <option value=${NEU}>${t('＋ eigene Art …')}</option></select>`
       : html`<span class="leise">${(g.kategorien.find((k) => k.name === g.kat) || {}).text || g.kat}</span>`}</div>` : nothing}
+    ${b.eigenNeu && p.istAdmin ? html`${artFormular({ platz: t('Name der Art, z. B. Baustelle'), knopf: t('Anlegen'), los: (s, n) => p.artNeu(s, n, g.id), weg: () => { p._blatt = { ...b, eigenNeu: false }; } })}
+      <p class="hinweis">${t('Eigene Arten erscheinen unter Geräte › nach Art und in ⚙ › Warnungen; umbenennen und löschen unter ⚙ › 🏷️ Arten.')}</p>` : nothing}
+    ${g.warnen ? warnZeile(p, g) : nothing}
     <div class="glas-raster" style="grid-template-columns:repeat(3,1fr)">
       <div class="glas-panel block" style="padding:10px"><span class="glas-klein">${t('online 7 Tage')}</span><span class="glas-wert">${g.online_anteil == null ? '–' : zahl(g.online_anteil * 100)}<small> %</small></span></div>
       <div class="glas-panel block" style="padding:10px"><span class="glas-klein">${t('Abbrüche')}</span><span class="glas-wert">${g.abbrueche}</span></div>
@@ -94,4 +106,14 @@ export function geraetBlatt(p, b) {
     <div class="gruppe">${t('Ereignisse')}</div>
     ${g.ereignisse.length ? g.ereignisse.map((e) => html`<div class="ereig"><span class="punkt ${punkt(e.stufe)}"></span><time>${zeit(e.t)}</time><span>${e.text}</span></div>`)
       : html`<div class="leer">${t('Keine Ereignisse in den letzten 7 Tagen.')}</div>`}`;
+}
+
+/** WU-0010: „🔔 Bei offline warnen“ – Ausnahme des Geräts; ohne Ausnahme gilt der Schalter seiner Art. */
+function warnZeile(p, g) {
+  const w = g.warnen;
+  const unter = w.wert !== 'gruppe' ? t('eigene Einstellung') : w.gruppe ? t('wie Gruppe (an)') : t('wie Gruppe (aus)');
+  const wort = { gruppe: w.gruppe ? t('wie Gruppe (an)') : t('wie Gruppe (aus)'), immer: t('immer'), nie: t('nie') }[w.wert];
+  return html`<div class="zeile ga-zeile ga-warnen"><span>${t('🔔 Bei offline warnen')} <span class="leise">· ${unter}</span></span>${p.istAdmin
+    ? seg(tl(WARNEN), w.wert, (v) => v !== w.wert && p.warnungGeraet(g.id, v))
+    : html`<span class="leise">${wort}</span>`}</div>`;
 }

@@ -381,6 +381,11 @@ class Datenbank:
         )
         return {mac: (int(n or 0), bool(neu)) for mac, n, neu in zeilen}
 
+    def journal_macs(self) -> list[str]:
+        """WU-0010: alle Geräte mit Zeilen im Journal (Geräteverlauf), älteste zuerst."""
+        zeilen = self._lesen("SELECT mac FROM journal WHERE mac != '' GROUP BY mac ORDER BY MIN(t)")
+        return [str(z[0]) for z in zeilen]
+
     def erstes(self, mac: str) -> float | None:
         wert = self._lesen("SELECT MIN(t) FROM journal WHERE mac = ?", (mac,))[0][0]
         return None if wert is None else float(wert)

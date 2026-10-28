@@ -13,9 +13,11 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import config_validation as cv
 
 from . import ansichten, einrichtung, modem
+from . import warnungen as wd
 from .const import CONF_MODEM_KENNWORT, DOMAIN, SEITEN_SPRACHE
 from .logik import auswertung as aw
 from .logik import vorgeschaltet as ve
+from .logik import warnungen as wn
 from .logik import zugang as zg
 from .logik.einstellungen import Ungueltig
 from .logik.sprache import t
@@ -486,6 +488,185 @@ async def _modem(
     connection.send_result(msg["id"], antwort)
 
 
+# ── WU-0010: eigene Arten (⚙ › 🏷️ Arten, Fenster eines Geräts) – nur Admins ──
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/arten"})
+@websocket_api.require_admin
+@websocket_api.async_response
+async def _arten(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
+) -> None:
+    if lz := _laufzeit(hass, connection, msg):
+        connection.send_result(msg["id"], await ansichten.arten(hass, lz))
+
+
+ART_FELDER = {
+    vol.Optional("symbol", default=""): vol.All(str, vol.Length(max=20)),
+    vol.Required("name"): vol.All(str, vol.Length(max=100)),
+}
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): f"{DOMAIN}/art/neu",
+        **ART_FELDER,
+        vol.Optional("geraet"): vol.All(str, vol.Length(min=1, max=40)),  # gleich zuordnen
+    }
+)
+@websocket_api.require_admin
+@websocket_api.async_response
+async def _art_neu(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
+) -> None:
+    """Eigene Art anlegen, auf Wunsch gleich einem Gerät zuordnen; Antwort wie heimnetz/arten plus `neu`."""
+    if lz := _laufzeit(hass, connection, msg):
+        geraet = msg.get("geraet")
+        if geraet is not None and not ansichten.geraet_bekannt(lz, geraet):
+            connection.send_error(
+                msg["id"], websocket_api.ERR_NOT_FOUND, _tr(hass, "Gerät nicht gefunden")
+            )
+            return
+        try:
+            kennung = await lz.einstellungen.async_eigene_neu(msg["symbol"], msg["name"])
+            if geraet is not None:
+                await lz.einstellungen.async_art_setzen(geraet, kennung)
+        except Ungueltig as err:
+            connection.send_error(msg["id"], "ungueltig", err.text(ansichten.sprache(hass)))
+            return
+        connection.send_result(msg["id"], {**await ansichten.arten(hass, lz), "neu": kennung})
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): f"{DOMAIN}/art/aendern",
+        vol.Required("art"): vol.All(str, vol.Length(min=1, max=40)),
+        **ART_FELDER,
+    }
+)
+@websocket_api.require_admin
+@websocket_api.async_response
+async def _art_aendern(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
+) -> None:
+    if lz := _laufzeit(hass, connection, msg):
+        try:
+            await lz.einstellungen.async_eigene_aendern(msg["art"], msg["symbol"], msg["name"])
+        except Ungueltig as err:
+            connection.send_error(msg["id"], "ungueltig", err.text(ansichten.sprache(hass)))
+            return
+        connection.send_result(msg["id"], await ansichten.arten(hass, lz))
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): f"{DOMAIN}/art/loeschen",
+        vol.Required("art"): vol.All(str, vol.Length(min=1, max=40)),
+    }
+)
+@websocket_api.require_admin
+@websocket_api.async_response
+async def _art_loeschen(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
+) -> None:
+    """Geräte dieser Art bekommen wieder die erkannte Art, ihr Schalter unter Warnungen fällt weg."""
+    if lz := _laufzeit(hass, connection, msg):
+        try:
+            n = await lz.einstellungen.async_eigene_loeschen(msg["art"])
+        except Ungueltig as err:
+            connection.send_error(msg["id"], "ungueltig", err.text(ansichten.sprache(hass)))
+            return
+        connection.send_result(msg["id"], {**await ansichten.arten(hass, lz), "zurueck": n})
+
+
+# ── WU-0010: Warnungen (⚙ › 🔔 Warnungen, Fenster eines Geräts) – nur Admins ──
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/warnungen"})
+@websocket_api.require_admin
+@websocket_api.async_response
+async def _warnungen(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
+) -> None:
+    if lz := _laufzeit(hass, connection, msg):
+        connection.send_result(msg["id"], await wd.ansicht(hass, lz))
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): f"{DOMAIN}/warnungen/setzen",
+        vol.Optional("ziel"): vol.All(str, vol.Length(min=1, max=100)),
+        vol.Optional("verzoegerung"): vol.Coerce(int),
+        vol.Inclusive("art", "art_schalter"): vol.All(str, vol.Length(min=1, max=40)),
+        vol.Inclusive("an", "art_schalter"): bool,
+        vol.Optional("wieder"): bool,
+        vol.Optional("neu"): bool,
+        vol.Optional("internet"): bool,
+    }
+)
+@websocket_api.require_admin
+@websocket_api.async_response
+async def _warnungen_setzen(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
+) -> None:
+    """Ziel, Verzögerung, Schalter je Art und „außerdem melden“. Die Nachrichten kommen später in der Sprache der
+    Seite, mit der zuletzt gespeichert wurde."""
+    if lz := _laufzeit(hass, connection, msg):
+        felder = ("ziel", "verzoegerung", "art", "an", "wieder", "neu", "internet")
+        daten = {k: msg[k] for k in felder if k in msg}
+        try:
+            await lz.einstellungen.async_warnungen_setzen(
+                daten, wd.dienste(hass), ansichten.sprache(hass)
+            )
+        except Ungueltig as err:
+            connection.send_error(msg["id"], "ungueltig", err.text(ansichten.sprache(hass)))
+            return
+        connection.send_result(msg["id"], await wd.ansicht(hass, lz))
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): f"{DOMAIN}/warnungen/geraet",
+        vol.Required("geraet"): vol.All(str, vol.Length(min=1, max=40)),
+        vol.Required("wert"): vol.In((wn.GRUPPE, *wn.AUSNAHMEN)),
+    }
+)
+@websocket_api.require_admin
+@websocket_api.async_response
+async def _warnungen_geraet(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
+) -> None:
+    """Ausnahme eines Geräts (immer/nie/wie Gruppe); Antwort wie heimnetz/geraet. Zurücksetzen („gruppe“) geht auch
+    für ein Gerät, das die Box gerade nicht (mehr) kennt – dann ist die Antwort None."""
+    if lz := _laufzeit(hass, connection, msg):
+        bekannt = ansichten.geraet_bekannt(lz, msg["geraet"])
+        if not bekannt and msg["wert"] != wn.GRUPPE:
+            connection.send_error(
+                msg["id"], websocket_api.ERR_NOT_FOUND, _tr(hass, "Gerät nicht gefunden")
+            )
+            return
+        await lz.einstellungen.async_warnung_geraet(msg["geraet"], msg["wert"])
+        daten = await ansichten.geraet(hass, lz, msg["geraet"], 7) if bekannt else None
+        connection.send_result(msg["id"], daten)
+
+
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/warnungen/test"})
+@websocket_api.require_admin
+@websocket_api.async_response
+async def _warnungen_test(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
+) -> None:
+    """„Testnachricht senden“: Ereignis immer, Nachricht an das eingestellte Ziel."""
+    if lz := _laufzeit(hass, connection, msg):
+        assert lz.warnungen is not None
+        try:
+            erreicht = await lz.warnungen.testen()
+        except RuntimeError as err:
+            connection.send_error(
+                msg["id"],
+                "nicht_zugestellt",
+                t("Testnachricht nicht zugestellt: {fehler}", ansichten.sprache(hass), fehler=err),
+            )
+            return
+        connection.send_result(msg["id"], {"dienste": erreicht})
+
+
 def _hinterlegt_fuer(lz: Any) -> str:
     """Adresse, für die das hinterlegte Kennwort gilt: die gespeicherte, sonst die des gefundenen Geräts."""
     return lz.einstellungen.wert.zugang_adresse or lz.abruf.modem.adresse or ""
@@ -514,6 +695,14 @@ BEFEHLE = (
     _serie,
     _einrichtung,
     _modem,
+    _arten,
+    _art_neu,
+    _art_aendern,
+    _art_loeschen,
+    _warnungen,
+    _warnungen_setzen,
+    _warnungen_geraet,
+    _warnungen_test,
 )
 
 

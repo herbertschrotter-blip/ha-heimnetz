@@ -1,12 +1,17 @@
 """Art eines Geräts im Heimnetz (AN-0001): selbst gewählt, sonst erkannt – in dieser Reihenfolge aus der Geräteliste
 von Home Assistant (Hersteller/Modell eigener Integrationen), dem Mesh der FRITZ!Box (Repeater, Powerline), dem
 Hersteller der Hardware-Adresse (offline, `hersteller.txt`) und dem Namen. Alles nur gelesen.
+
+WU-0010: Neben den festen Arten legt der Admin eigene an (Symbol + Name, Kennung `eigen:<n>`). Sie gelten wie die
+festen (Gruppe „nach Art“, Warnungen), werden aber nie erkannt – nur selbst zugeordnet. Ihre Namen sind Daten des
+Nutzers: sie liegen nur im Integrations-Speicher, nie im Repo oder unter /local.
 """
 
 from __future__ import annotations
 
 import json
 import re
+import unicodedata
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from functools import cache
@@ -14,7 +19,7 @@ from pathlib import Path
 from typing import Any
 
 from .geraete import zufallsadresse
-from .sprache import DE, merke, t
+from .sprache import DE, Ungueltig, merke, t
 
 KATEGORIEN = (
     ("netz", merke("🛜 Netzwerk")),
@@ -114,9 +119,109 @@ class Art:
         return TEXT.get(self.kat, TEXT[UNBEKANNT])
 
 
-def kategorien(sprache: str = DE) -> list[dict[str, str]]:
-    """Auswahl der Arten für die Seite: Kennung und Text in `sprache`."""
-    return [{"name": k, "text": t(text, sprache)} for k, text in KATEGORIEN]
+def kategorien(
+    sprache: str = DE, eigene: Mapping[str, EigeneArt] | None = None
+) -> list[dict[str, str]]:
+    """Auswahl der Arten für die Seite: Kennung und Text in `sprache`; eigene Arten nach den festen."""
+    return [{"name": k, "text": text} for k, text in alle(sprache, eigene)]
+
+
+def alle(sprache: str = DE, eigene: Mapping[str, EigeneArt] | None = None) -> list[tuple[str, str]]:
+    """(Kennung, Text) aller Arten in fester Reihenfolge: erst die festen, dann die eigenen (wie angelegt)."""
+    return [(k, t(text, sprache)) for k, text in KATEGORIEN] + [
+        (k, e.text) for k, e in (eigene or {}).items()
+    ]
+
+
+# ── WU-0010: eigene Arten ──
+EIGEN = "eigen:"
+EIGENE_HOECHSTENS = 30
+NAME_HOECHSTENS = 30  # Zeichen
+SYMBOL_HOECHSTENS = 8  # Codepunkte – ein Emoji kann aus mehreren bestehen (🏳️‍🌈)
+SYMBOL_VORGABE = "🏷️"
+
+
+@dataclass(frozen=True)
+class EigeneArt:
+    symbol: str
+    name: str
+
+    @property
+    def text(self) -> str:
+        return f"{self.symbol} {self.name}"
+
+    def als_dict(self) -> dict[str, str]:
+        return {"symbol": self.symbol, "name": self.name}
+
+
+def ist_eigen(kat: str) -> bool:
+    return kat.startswith(EIGEN)
+
+
+def _symbol(roh: object) -> str:
+    s = str(roh or "").strip() or SYMBOL_VORGABE
+    if len(s) > SYMBOL_HOECHSTENS or any(c.isspace() for c in s):
+        raise Ungueltig("Symbol: ein Zeichen oder Emoji")
+    # Steuerzeichen und unsichtbare Formatzeichen (z. B. Richtungswechsel) nicht – nur der Verbinder von Emojis (ZWJ)
+    if any(unicodedata.category(c) in ("Cc", "Cf") and c != "\u200d" for c in s):
+        raise Ungueltig("Symbol: ein Zeichen oder Emoji")
+    return s
+
+
+def _name(roh: object) -> str:
+    n = " ".join(str(roh or "").split())
+    if not n:
+        raise Ungueltig("Name der Art fehlt")
+    if len(n) > NAME_HOECHSTENS:
+        raise Ungueltig("Name der Art: höchstens {n} Zeichen", n=NAME_HOECHSTENS)
+    if any(unicodedata.category(c) in ("Cc", "Cf") and c != "\u200d" for c in n):
+        raise Ungueltig("Name der Art: unerlaubtes Zeichen")
+    return n
+
+
+def eigene_pruefen(
+    eigene: Mapping[str, EigeneArt], symbol: object, name: object, ausser: str | None = None
+) -> EigeneArt:
+    """Symbol und Name einer eigenen Art prüfen; derselbe Name (ohne Groß/klein) zweimal ist nicht erlaubt."""
+    art = EigeneArt(_symbol(symbol), _name(name))
+    if any(k != ausser and e.name.casefold() == art.name.casefold() for k, e in eigene.items()):
+        raise Ungueltig("Eine eigene Art „{name}“ gibt es schon", name=art.name)
+    return art
+
+
+def eigene_neu(
+    eigene: Mapping[str, EigeneArt], symbol: object, name: object
+) -> tuple[dict[str, EigeneArt], str]:
+    """Neue eigene Art → (alle eigenen, Kennung). Die Kennung zählt hoch und hängt nicht am Namen (umbenennen)."""
+    if len(eigene) >= EIGENE_HOECHSTENS:
+        raise Ungueltig("Höchstens {n} eigene Arten", n=EIGENE_HOECHSTENS)
+    art = eigene_pruefen(eigene, symbol, name)
+    nummern = [int(k[len(EIGEN) :]) for k in eigene if k[len(EIGEN) :].isdigit()]
+    kennung = f"{EIGEN}{max(nummern, default=0) + 1}"
+    return {**eigene, kennung: art}, kennung
+
+
+def eigene_aendern(
+    eigene: Mapping[str, EigeneArt], kennung: str, symbol: object, name: object
+) -> dict[str, EigeneArt]:
+    if kennung not in eigene:
+        raise Ungueltig("Diese eigene Art gibt es nicht (mehr)")
+    return {**eigene, kennung: eigene_pruefen(eigene, symbol, name, ausser=kennung)}
+
+
+def eigene_aus(roh: object) -> dict[str, EigeneArt]:
+    """Gespeicherte eigene Arten lesen; Unlesbares fällt weg (der Rest bleibt)."""
+    out: dict[str, EigeneArt] = {}
+    if not isinstance(roh, dict):
+        return out
+    for k, v in roh.items():
+        if not (isinstance(k, str) and ist_eigen(k) and isinstance(v, dict)):
+            continue
+        try:
+            out[k] = eigene_pruefen(out, v.get("symbol"), v.get("name"))
+        except Ungueltig:
+            continue
+    return out
 
 
 @cache
@@ -190,9 +295,11 @@ def bestimmen(
     mesh: str | None = None,
     tabelle: Mapping[str, str] | None = None,
     sprache: str = DE,
+    eigene: Mapping[str, EigeneArt] | None = None,
 ) -> Art:
-    """Selbst gewählt > Home Assistant > Mesh der Box > Hersteller > Name; sonst unbekannt. `quelle` in `sprache`."""
-    if selbst in TEXT:
+    """Selbst gewählt > Home Assistant > Mesh der Box > Hersteller > Name; sonst unbekannt. `quelle` in `sprache`.
+    Eine eigene Art (WU-0010) gilt nur, solange es sie gibt – gelöscht, wird wieder erkannt."""
+    if selbst is not None and (selbst in TEXT or selbst in (eigene or {})):
         return Art(selbst, t("selbst gewählt", sprache))
     if ha is not None and (kat := aus_ha(*ha)):
         return Art(kat, f"Home Assistant: {' '.join(x for x in ha if x)}".strip())
@@ -210,14 +317,21 @@ def bestimmen(
     )
 
 
-def gruppen(eintraege: Iterable[tuple[str, bool]], sprache: str = DE) -> list[dict[str, Any]]:
-    """(Art, online) je Gerät → Gruppen in fester Reihenfolge mit Text und „online von gesamt“."""
+def gruppen(
+    eintraege: Iterable[tuple[str, bool]],
+    sprache: str = DE,
+    eigene: Mapping[str, EigeneArt] | None = None,
+) -> list[dict[str, Any]]:
+    """(Art, online) je Gerät → Gruppen in fester Reihenfolge (feste, dann eigene) mit Text und „online von gesamt“."""
     liste = list(eintraege)
     out = []
-    for kat, text in KATEGORIEN:
+    for kat, text in alle(sprache, eigene):
         drin = [online for k, online in liste if k == kat]
         if drin:
-            out.append(
-                {"name": kat, "text": t(text, sprache), "online": sum(drin), "gesamt": len(drin)}
-            )
+            out.append({"name": kat, "text": text, "online": sum(drin), "gesamt": len(drin)})
     return out
+
+
+def tabelle_laden() -> None:
+    """Herstellerliste einmal lesen (blockierend, im Executor) – danach ist `bestimmen` ohne Datei-Zugriff."""
+    _tabelle()

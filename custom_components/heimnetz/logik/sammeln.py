@@ -83,6 +83,8 @@ class Gedaechtnis:
     modem_werte: list[str] = field(
         default_factory=list
     )  # schon einmal gelieferte Zusatzwerte (sinr_anker …)
+    # WU-0010: je gesehene Geräte (Hardware-Adressen, älteste zuerst) für „neues Gerät“ der Warnungen; nie aufgeräumt
+    bekannt: list[str] = field(default_factory=list)
 
     def langsam_faellig(self, jetzt: float) -> bool:
         return jetzt - self.langsam_t >= LANGSAM_S
@@ -399,6 +401,7 @@ def gedaechtnis_als_dict(g: Gedaechtnis) -> dict[str, Any]:
         "vorgeschaltet": g.vorgeschaltet,
         "modem_mobil": g.modem_mobil,
         "modem_werte": g.modem_werte,
+        "bekannt": g.bekannt,
     }
 
 
@@ -438,4 +441,5 @@ def gedaechtnis_aus_dict(d: dict[str, Any]) -> Gedaechtnis:
         g.vorgeschaltet = {k: str(v.get(k) or "") for k in ("adresse", "baustein", "modell")}
     g.modem_mobil = bool(d.get("modem_mobil"))
     g.modem_werte = [str(k) for k in d.get("modem_werte") or [] if k in ve.ZUSATZWERTE]
+    g.bekannt = [str(k) for k in d.get("bekannt") or [] if isinstance(k, str)]
     return g

@@ -8,12 +8,15 @@
 // zeigt nur an und speichert/kopiert die geschwärzte Antwort. WU-0009: Reiter „Zugang“ vor „Einrichtung“ (Mockup
 // netzwerk.html · Internet und Zugang, 27.10.2026) – Vorschlag der Integration mit Belegen, Wahl des Admins, Adresse und
 // Kennwort eines vorgeschalteten Geräts (das Kennwort speichert die Integration, die Seite bekommt nur „hinterlegt“).
+// WU-0010: Reiter „🏷️ Arten“ und „🔔 Warnungen“ nach WLAN (Mockup netzwerk.html · Warnungen, Eigene Arten, 28.10.2026),
+// gezeichnet in warnungen.js.
 import { html, nothing } from 'lit';
 import { live } from 'lit/directives/live.js';
 import { uhr, zahl, zeit } from '../format.js';
 import { merke, t, tl } from '../sprache.js';
 import { seg } from './teile.js';
 import { meldungenZeile } from './melden.js';
+import { artenTeil, warnungenTeil } from './warnungen.js';
 
 const MODI = [['aus', merke('weglassen')], ['halb', '¼'], ['mit', merke('voll')]];
 const TAKTE = [[1, '1 h'], [2, '2 h'], [4, '4 h'], [6, '6 h'], [12, '12 h'], [24, '24 h']];
@@ -21,7 +24,8 @@ const VERKEHR = [['warten', merke('verschieben')], ['messen', merke('messen')]];
 const SERIE = [[2, '2'], [3, '3'], [4, '4'], [5, '5']];
 const SCHWACH = [[30, '30 %'], [40, '40 %'], [50, '50 %']];
 
-export const TEILE = [['speed', '📈 Speedtest'], ['plan', merke('⏱️ Messplan')], ['wlan', merke('📶 WLAN')], ['meld', merke('💬 Meldungen')],
+export const TEILE = [['speed', '📈 Speedtest'], ['plan', merke('⏱️ Messplan')], ['wlan', merke('📶 WLAN')], ['arten', merke('🏷️ Arten')],
+  ['warn', merke('🔔 Warnungen')], ['meld', merke('💬 Meldungen')],
   ['zugang', merke('🌐 Zugang')], ['einr', merke('🧩 Einrichtung')], ['diag', merke('🔬 Diagnose')]];
 const WAHL = {
   auto: [merke('Automatisch (empfohlen)'), ''],
@@ -41,10 +45,12 @@ export function einstellungenBlatt(p) {
   const teil = p._blatt.teil || 'speed';
   const kopf = html`<div class="griff"></div><button class="zu" @click=${() => p.zu()}>✕</button>
     <h3>${t('Einstellungen')}</h3><div class="leise">${p.istAdmin ? t('gelten für die ganze Seite') : t('nur Admins ändern')}</div>
-    <div class="seg e-reiter">${TEILE.map(([k, name]) => html`<button class=${k === teil ? 'on' : ''} @click=${() => { p._blatt = { ...p._blatt, teil: k }; if (k === 'einr') p.einrichtungLaden(); if (k === 'zugang') p.zugangLaden(); }}>${t(name)}${k === 'einr' ? punkt(p) : nothing}</button>`)}</div>`;
+    <div class="seg e-reiter">${TEILE.map(([k, name]) => html`<button class=${k === teil ? 'on' : ''} @click=${() => { p._blatt = { ...p._blatt, teil: k }; p.teilLaden(k); }}>${t(name)}${k === 'einr' ? punkt(p) : nothing}</button>`)}</div>`;
   if (teil === 'einr') return html`${kopf}<div class="ek"><div class="ek-inhalt">${einrichtung(p)}</div></div>`;
   if (teil === 'diag') return html`${kopf}<div class="ek"><div class="ek-inhalt">${diagnose(p)}</div></div>`;
   if (teil === 'zugang') return html`${kopf}<div class="ek"><div class="ek-inhalt">${zugang(p)}</div></div>`;
+  if (teil === 'arten') return html`${kopf}<div class="ek"><div class="ek-inhalt">${artenTeil(p)}</div></div>`;
+  if (teil === 'warn') return html`${kopf}<div class="ek"><div class="ek-inhalt">${warnungenTeil(p)}</div></div>`;
   if (!e) return html`${kopf}<div class="leer">${t('lädt …')}</div>`;
   const inhalt = { speed: auswertung, plan: messplan, wlan, meld: (q) => meldungenZeile(q) }[teil](p, e);
   return html`${kopf}<div class="ek"><div class="ek-inhalt">${inhalt}</div></div>`;

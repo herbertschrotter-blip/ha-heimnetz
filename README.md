@@ -47,13 +47,37 @@ Home Assistant oder HACS an der richtigen Stelle öffnen.
 |--------|--------|
 | **Übersicht** | Gesamtstand (In Ordnung / Hinweise / Störung / FRITZ!Box nicht erreichbar), offene Befunde (z. B. doppelte IP-Adresse, zweiter DHCP-Server, kein Internet), Prüfungen vom Home-Assistant-Rechner aus (Box, Internet, Namensauflösung, DHCP-Test) |
 | **Speedtest** | Messungen der Ookla-Integration mit Grundlast im Netz, Raster nach Wochentag und Stunde, Tagesverlauf, Vergleich mit dem Tarif, Messplan und Serien-Messungen |
-| **Geräte** | Geräte im Heimnetz nach Verbindung oder Art, neu / online / offline, IP-Wechsel, Verlauf je Gerät; Umschalter **WLAN** (Bänder, Empfang je Gerät, Kanalwechsel, Hinweise) |
+| **Geräte** | Geräte im Heimnetz nach Verbindung oder Art (feste und eigene Arten), neu / online / offline, IP-Wechsel, Verlauf je Gerät; Umschalter **WLAN** (Bänder, Empfang je Gerät, Kanalwechsel, Hinweise) |
 | **Internet** | Woher das Internet kommt (erkannt oder unter ⚙ → 🌐 Zugang festgelegt) und die Werte dazu: **Mobilfunk** (Technik, Zellen, Signal, Neueinwahlen, Karte zum Mast), **DSL** (Synchronrate, Störabstandsmarge, Dämpfung, Fehler, Neusynchronisierungen), **Glasfaser** (Lichtleistung mit dem guten Bereich laut Box), **Kabel** (nur die Geschwindigkeit – Kanäle und Pegel gibt die Box über TR-064 nicht heraus), **Ersatzzugang** über einen Mobilfunk-Stick; bei einem **vorgeschalteten Modem** (ZTE, Huawei, TP-Link, Beta) dessen Funkwerte mit Herkunft „vom vorgeschalteten Modem“ |
 | **Verbrauch** | Datenmenge je Tag aus den Zählern von FRITZ!Box Tools |
 | **Protokoll** | Journal der Integration und Ereignisprotokoll der Box, mit Suche und Filter |
 
-Dazu: Melden-Knopf für Fehler und Wünsche (lokal, auf Wunsch auch öffentlich auf GitHub), Diagnose-Download ohne
-private Daten, Deutsch und Englisch.
+Dazu: **Warnungen** aufs Handy (Gerät offline, wieder online, neues Gerät, Internet oder Box weg – siehe unten),
+Melden-Knopf für Fehler und Wünsche (lokal, auf Wunsch auch öffentlich auf GitHub), Diagnose-Download ohne private
+Daten, Deutsch und Englisch.
+
+### Warnungen
+
+Unter ⚙ → 🔔 **Warnungen** (nur Admins) meldet Heimnetz, wenn ein Gerät offline geht – über einen **notify-Dienst** von
+Home Assistant (eine Companion App, „alle Companion Apps“ oder „keine Nachricht – nur Ereignis“; ab Werk: keine).
+
+- **Wer überwacht wird:** je Art ein Schalter (ab Werk an: Netzwerk, Smart Home, Haushalt & Roboter, Kameras; aus:
+  Computer, Drucker, Fernseher & Musik, Unbekannt und **Handy & Tablet** – die gehen unterwegs dauernd offline). Im
+  Fenster eines Geräts „🔔 Bei offline warnen“: wie Gruppe, immer oder nie.
+- **Wann:** nach 2, 5, 15 oder 60 Minuten weg (ab Werk 5) genau eine Meldung; kommt es früher zurück, keine. Ist es
+  wieder da, auf Wunsch „wieder online“ mit Dauer. Dazu auf Wunsch: neues, noch nie gesehenes Gerät (einmal je Gerät)
+  und „Internet oder FRITZ!Box weg“ – diese Meldung kommt, sobald es wieder geht (Push braucht Internet), mit Dauer.
+  Ist die Box nicht erreichbar, gibt es keine Gerätemeldungen; nach einem Neustart von Home Assistant keinen Schwall.
+- **Ereignis für Automationen:** jede Meldung feuert zusätzlich `heimnetz_warnung` mit `art` (`offline`, `online`,
+  `neu`, `internet`, `test`), `geraet`, `ip`, `verbindung`, `dauer` (Sekunden) und `nachricht` – auch bei „nur
+  Ereignis“. Jede Meldung steht im Journal. „🔔 Testnachricht senden“ prüft das Ziel.
+- **Eigene Arten** (⚙ → 🏷️ Arten oder im Fenster eines Geräts „＋ eigene Art …“): Symbol und Name, z. B. „🏗️
+  Baustelle“; gelten wie die festen unter Geräte › nach Art und bei den Warnungen. Löschen gibt den Geräten die
+  erkannte Art zurück. Die Namen bleiben im Speicher von Home Assistant und werden in der Diagnose geschwärzt.
+
+**Hinweis:** Nachrichten an die Companion App laufen über den Push-Dienst von **Google bzw. Apple** und enthalten den
+**Gerätenamen** (und IP und Verbindung). Wer das nicht will, wählt „keine Nachricht – nur Ereignis“ und baut sich
+seine Meldung selbst.
 
 ## Voraussetzungen
 
@@ -147,6 +171,7 @@ Heimnetz arbeitet lokal. Nach außen geht nur:
 | DNS-Server des eigenen Netzes | Auflösung von `avm.de` (Prüfung „Namensauflösung“) | jede Minute |
 | basemap.at oder OpenStreetMap | Kartenkacheln – lädt der **Browser**, nicht die Integration | beim Ansehen der Karte |
 | GitHub | vorausgefülltes Issue – öffnet der **Browser**, abgeschickt mit dem eigenen Konto | nur, wenn man selbst „öffentlich auf GitHub“ meldet |
+| notify-Dienst von Home Assistant (Companion App → Push-Dienst von Google bzw. Apple) | Text der Warnung: Gerätename, IP, Verbindung, Dauer | nur, wenn unter ⚙ → 🔔 Warnungen ein Ziel gewählt ist (ab Werk: keines) |
 | Vorgeschaltetes Gerät im eigenen Heimnetz (nur private Adressen) | Suche: Startseite an wenigen Adressen nacheinander (gespeicherte, Vorschlag der Box, 192.168.0.1, 192.168.1.1, 192.168.8.1, 192.168.18.1, 192.168.100.1) bis ein Gerät erkannt ist; danach nur lesende Abfragen und die Anmeldung mit dem hinterlegten Kennwort (höchstens ein Versuch, abgelehnt: kein weiterer) | nur bei Internet über ein vorgeschaltetes Gerät: alle 10 Minuten, beim Einrichten, bei „↻ Erneut suchen“ und unter ⚙ → Diagnose „Abfragen“ |
 
 **Vorgeschaltetes Gerät** (Beta): Kommt das Internet über ein eigenes Modem vor der FRITZ!Box, kennt die Box das
@@ -186,7 +211,8 @@ das Kennwort der Weboberfläche eintragen. **Das Kennwort wird in Home Assistant
 Heimnetz-Einrichtung, wie bei anderen Integrationen), nie an die Seite zurückgegeben (sie zeigt nur „hinterlegt“), nie
 protokolliert und in der Diagnose geschwärzt; „Kennwort entfernen“ löscht es.
 
-**Nie** gehen hinaus: der Standort von Home Assistant, Kennwörter, Gerätenamen, Hardware- (MAC) und IP-Adressen. Der
+**Nie** gehen hinaus: der Standort von Home Assistant, Kennwörter, Hardware- (MAC) und IP-Adressen und
+Gerätenamen – außer im Text einer Warnung, wenn man dafür ein Ziel gewählt hat (siehe oben). Der
 Zugang zur Box bleibt in FRITZ!Box Tools und wird von Heimnetz nicht gespeichert. Die **Diagnose** (Geräte & Dienste →
 Heimnetz → ⋮ → Diagnose herunterladen) enthält nur Zahlen und den groben Stand (Versionen, Box-Modell, FRITZ!OS,
 Netztechnik, Ookla, Messplan); Zugangsdaten, Schlüssel, Zellkennungen, TAC/PCI, Koordinaten, Gerätenamen und Adressen
@@ -344,13 +370,37 @@ Home Assistant or HACS at the right place.
 |-----|---------|
 | **Overview** | Overall state (OK / warnings / problem / FRITZ!Box unreachable), open findings (e.g. duplicate IP address, second DHCP server, no internet), checks from the Home Assistant host (box, internet, name resolution, DHCP test) |
 | **Speed test** | Ookla measurements with background load, grid by weekday and hour, daily curve, comparison with your plan, test schedule and series |
-| **Devices** | Devices by connection or type, new / online / offline, IP changes, history per device; switch **Wi-Fi** (bands, signal per device, channel changes, hints) |
+| **Devices** | Devices by connection or type (built-in and custom types), new / online / offline, IP changes, history per device; switch **Wi-Fi** (bands, signal per device, channel changes, hints) |
 | **Internet** | Where the internet comes from (detected or set under ⚙ → 🌐 Access) and its values: **mobile** (technology, cells, signal, reconnects, map to the mast), **DSL** (sync rate, noise margin, attenuation, errors, resyncs), **fibre** (optical power with the good range reported by the box), **cable** (speed only – the box does not provide channels and levels via TR-064), **backup access** via a mobile stick; with an **upstream modem** (ZTE, Huawei, TP-Link, beta) its radio values, marked “from the upstream modem” |
 | **Usage** | Data per day from the FRITZ!Box Tools counters |
 | **Log** | Journal of the integration and the box event log, with search and filter |
 
-Plus: a report button for bugs and wishes (stored locally, optionally also public on GitHub), a diagnostics download
-without private data, German and English.
+Plus: **alerts** to your phone (device offline, back online, new device, internet or box down – see below), a
+report button for bugs and wishes (stored locally, optionally also public on GitHub), a diagnostics download without
+private data, German and English.
+
+#### Alerts
+
+Under ⚙ → 🔔 **Alerts** (admins only) Heimnetz reports when a device goes offline – through a **notify service** of
+Home Assistant (one companion app, “all companion apps” or “no message – event only”; default: none).
+
+- **What is watched:** one switch per type (on by default: network, smart home, household & robots, cameras; off:
+  computers, printers, TV & music, unknown and **phones & tablets** – they go offline all the time when out and about).
+  In the window of a device “🔔 Alert when offline”: as group, always or never.
+- **When:** after 2, 5, 15 or 60 minutes away (default 5) exactly one alert; if it comes back earlier, none. Once it is
+  back, optionally “back online” with the duration. Optionally also: a new, never-seen device (once per device) and
+  “internet or FRITZ!Box down” – this one arrives as soon as things work again (push needs internet), with the
+  duration. While the box is unreachable there are no device alerts; after a Home Assistant restart no flood.
+- **Event for automations:** every alert also fires `heimnetz_warnung` with `art` (`offline`, `online`, `neu`,
+  `internet`, `test`), `geraet`, `ip`, `verbindung`, `dauer` (seconds) and `nachricht` – also with “event only”. Every
+  alert is written to the journal. “🔔 Send test message” checks the target.
+- **Custom types** (⚙ → 🏷️ Types or “＋ custom type …” in the window of a device): symbol and name, e.g. “🏗️ Building
+  site”; they work like the built-in types under Devices › by type and for alerts. Deleting gives the devices their
+  detected type back. The names stay in Home Assistant's storage and are redacted in the diagnostics.
+
+**Note:** messages to the companion app go through the push service of **Google or Apple** and contain the **device
+name** (plus IP and connection). If you do not want that, choose “no message – event only” and build your own
+notification.
 
 ### Requirements
 
@@ -444,6 +494,7 @@ Heimnetz works locally. Only this leaves your network:
 | DNS server of your network | lookup of `avm.de` (check “Name resolution”) | every minute |
 | basemap.at or OpenStreetMap | map tiles – loaded by the **browser**, not the integration | when viewing the map |
 | GitHub | prefilled issue – opened by the **browser**, submitted with your own account | only when you report "publicly on GitHub" yourself |
+| notify service of Home Assistant (companion app → push service of Google or Apple) | text of the alert: device name, IP, connection, duration | only if a target is chosen under ⚙ → 🔔 Alerts (default: none) |
 | Upstream device in your own home network (private addresses only) | search: home page at a few addresses (stored one, box suggestion, 192.168.0.1, 192.168.1.1, 192.168.8.1, 192.168.18.1, 192.168.100.1) until a device is recognised; then read-only queries and the login with the stored password (at most one attempt; rejected: no further attempt) | only with internet via an upstream device: every 10 minutes, at setup, on “↻ Search again” and under ⚙ → Diagnostics “Query” |
 
 **Upstream device** (beta): if the internet comes through an own modem in front of the FRITZ!Box, the box does not
@@ -483,7 +534,8 @@ addresses only) and the password of its web interface. **The password is stored 
 the Heimnetz entry, like other integrations), never returned to the page (it only shows "stored"), never logged and
 redacted in the diagnostics; "Remove password" deletes it.
 
-**Never** sent: the Home Assistant location, passwords, device names, hardware (MAC) and IP addresses. Box credentials
+**Never** sent: the Home Assistant location, passwords, hardware (MAC) and IP addresses and device names – except
+in the text of an alert if you chose a target for it (see above). Box credentials
 stay in FRITZ!Box Tools and are not stored by Heimnetz. The **diagnostics** (Devices & services → Heimnetz → ⋮ →
 Download diagnostics) contain only numbers and a rough state (versions, box model, FRITZ!OS, network technology,
 Ookla, schedule); credentials, keys, cell identifiers, TAC/PCI, coordinates, device names and addresses are redacted –
