@@ -81,9 +81,16 @@ def _leeren(mock):
     mock.post(OVERPASS, json={"elements": []})
 
 
-def _zte_ubus(mock, *, kennwort_ok=True, versuche=5, erreichbar=True):
-    """ZTE G5TC (ubus) unter ADRESSE; jede andere Adresse antwortet nicht."""
+def _zte_ubus(mock, *, kennwort_ok=True, versuche=5, erreichbar=True, umleiten=False):
+    """ZTE G5TC (ubus) unter ADRESSE; jede andere Adresse antwortet nicht. `umleiten`: per http nur eine leere
+    Weiterleitung auf https (GitHub #2), die Seite gibt es erst dort."""
     _leeren(mock)
+    if umleiten:
+        mock.get(
+            re.compile(rf"^http://{re.escape(ADRESSE)}/$"),
+            status=302,
+            headers={"Location": f"https://{ADRESSE}/"},
+        )
     if erreichbar:
         mock.get(re.compile(rf"//{re.escape(ADRESSE)}/$"), text=STARTSEITE)
     else:
@@ -491,6 +498,61 @@ async def test_diagnose_ont_nur_erkennen(hass, hass_ws_client, modem_netz):
     assert d["erkannt"]["baustein"] == "ont_huawei" and d["erkannt"]["werte"] is False
     assert d["befund"] == "glasfaser" and "ONT" in d["hinweis"]["text"]
     assert len(modem_netz.mock_calls) == 1, "nur die Startseite"
+
+
+async def test_diagnose_folgt_weiterleitung_auf_https_derselben_adresse(
+    hass, hass_ws_client, modem_netz
+):
+    """GitHub #2: Das ZTE leitet http auf https weiter – Startseite, Anmeldung und Werte kommen über https."""
+    from homeassistant.setup import async_setup_component
+
+    assert await async_setup_component(hass, DOMAIN, {})
+    _zte_ubus(modem_netz, umleiten=True)
+    client = await hass_ws_client(hass)
+    d = (await _frage(client, type="heimnetz/modem", adresse=ADRESSE, kennwort=KENNWORT))["result"]
+    assert d["erkannt"]["baustein"] == "zte_ubus" and d["modell"] == "ZTE G5TC"
+    assert d["befund"] is None and d["umgerechnet"]["rsrp"] == -97
+    urls = [str(c[1]) for c in modem_netz.mock_calls]
+    assert urls[0] == f"http://{ADRESSE}/" and urls[1] == f"https://{ADRESSE}/"
+    assert all(u.startswith(f"https://{ADRESSE}/") for u in urls[1:])
+
+
+async def test_weiterleitung_auf_andere_adresse_wird_nicht_gefolgt(
+    hass, hass_ws_client, modem_netz
+):
+    from homeassistant.setup import async_setup_component
+
+    assert await async_setup_component(hass, DOMAIN, {})
+    _leeren(modem_netz)
+    modem_netz.get(
+        re.compile(rf"^http://{re.escape(ADRESSE)}/$"),
+        status=302,
+        headers={"Location": "https://192.168.0.9/"},
+    )
+    modem_netz.get(re.compile(r"^https://"), text=STARTSEITE)
+    modem_netz.get(re.compile(r"goform_get_cmd_process"), status=404, text="<html>404</html>")
+    modem_netz.post(re.compile(r"/ubus/"), status=404, text="<html>404</html>")
+    client = await hass_ws_client(hass)
+    with rm.Mocker() as m:
+        m.register_uri(rm.ANY, rm.ANY, status_code=404)
+        d = (await _frage(client, type="heimnetz/modem", adresse=ADRESSE))["result"]
+    assert d["erkannt"] is None
+    assert all(r.scheme == "http" and r.hostname == ADRESSE for r in m.request_history)
+    assert all(str(c[1]).startswith(f"http://{ADRESSE}/") for c in modem_netz.mock_calls), (
+        "weder https noch eine andere Adresse"
+    )
+
+
+async def test_suche_findet_zte_hinter_weiterleitung(
+    hass: HomeAssistant, hinter_modem, modem_netz, hass_ws_client
+):
+    eintrag = hinter_modem
+    _zte_ubus(modem_netz, umleiten=True)
+    client = await hass_ws_client(hass)
+    await _modem_festlegen(hass, client, eintrag)
+    st = eintrag.runtime_data.abruf.data
+    assert st.modem.erkennung == ve.Erkennung("zte_ubus", "ZTE G5TC") and st.modem.angemeldet
+    assert st.mobil_quelle == "modem" and st.mobil.haupt.rsrp == -97
 
 
 def test_requests_nur_diese_adresse():

@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## [0.28.2]
+
+- Fix (GitHub #2): Ein vorgeschaltetes Modem, dessen Startseite per http nur auf https weiterleitet (z. B. ZTE G5TC),
+  wurde nicht erkannt – Heimnetz probierte https nur, wenn http gar nicht antwortete. Jetzt folgt es genau dieser einen
+  Weiterleitung, wenn sie auf https an **dieselbe** private Adresse zeigt; Erkennen, Anmeldung und Werte laufen dann
+  über https. Weiterleitungen auf andere Adressen bleiben gesperrt. Gilt für die Suche, den laufenden Abruf und
+  🔬 Diagnose.
+
 ## [0.28.1]
 
 - Fix (GitHub #1): Im Reiter **Verbrauch** ragte der Balken „davon Speedtests“ über das Diagramm hinaus, wenn an einem

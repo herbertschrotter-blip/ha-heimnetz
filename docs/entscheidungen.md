@@ -327,10 +327,11 @@ nachgetragen.
   `heimnetz/modem`, nur Admins), die Seite zeigt nur an und speichert/kopiert die geschwärzte Antwort.
 - Dritte Ausnahme von „die Integration liest nur“ nach außen: auf Knopfdruck die Weboberfläche eines vorgeschalteten
   Modems im eigenen Heimnetz. Sicherheit (mit Tests): nur private IPv4/IPv6-Adressen, die nicht
-  Loopback/Link-Local/unspezifiziert sind, keine Hostnamen; keine Weiterleitungen; Zeitlimit je Anfrage (~8 s),
-  Gesamtzeit und Antwortgröße begrenzt (512 KB); http zuerst, https ohne Zertifikatsprüfung nur, wenn http nicht
-  antwortet, und nur zu genau dieser privaten Adresse. Nur lesende Abfragen plus Anmeldung/Abmeldung; der ZTE-Befehl
-  `goform_set_cmd_process` wird ausschließlich mit `goformId=LOGIN`/`LOGOUT` aufgerufen, nie mit einem anderen
+  Loopback/Link-Local/unspezifiziert sind, keine Hostnamen; keine Weiterleitungen (außer der einen unten);
+  Zeitlimit je Anfrage (~8 s), Gesamtzeit und Antwortgröße begrenzt (512 KB); http zuerst, https ohne
+  Zertifikatsprüfung nur, wenn http nicht antwortet oder die Startseite per http auf https an genau diese Adresse
+  weiterleitet (ZTE G5TC, GitHub #2, 30.10.2026: dieser einen Weiterleitung wird gefolgt), und nur zu genau dieser
+  privaten Adresse. Nur lesende Abfragen plus Anmeldung/Abmeldung; der ZTE-Befehl `goform_set_cmd_process` wird ausschließlich mit `goformId=LOGIN`/`LOGOUT` aufgerufen, nie mit einem anderen
   set-Befehl. Eigene kurzlebige aiohttp-Session mit Cookie-Jar für die Anmeldung.
 - Anmeldung nur mit dem Kennwort, das der Besitzer selbst eingibt, über das normale Web-Login des Geräts (LD-Wert holen,
   SHA-256-Hash bilden – öffentlich dokumentiert, z. B. `teixeluis/zte-lte-modem`); kein Raten, höchstens ein Versuch je

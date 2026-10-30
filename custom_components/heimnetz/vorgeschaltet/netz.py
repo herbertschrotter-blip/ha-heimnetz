@@ -2,7 +2,7 @@
 
 Für alle Bausteine gleich: nur die eine private Adresse (`logik.modem.adresse_erlaubt`, keine Hostnamen), keine
 Weiterleitungen, Zeitlimit je Anfrage, Obergrenze für die Antwortgröße, Gesamtzeit; http zuerst, https ohne
-Zertifikatsprüfung nur zu genau dieser Adresse. Zwei Wege:
+Zertifikatsprüfung nur zu genau dieser Adresse (auch, wenn die Startseite per http dorthin weiterleitet). Zwei Wege:
 - `Lauf` (aiohttp, im Event-Loop) für die eigenen Bausteine (ZTE goform/ubus, Erkennen),
 - `requests_session` (requests, im Executor) für die Bibliotheken huawei-lte-api und tplinkrouterc6u: eigener
   Adapter, der jede Anfrage an eine andere Adresse ablehnt und die Größe begrenzt. Weiterleitungen gibt es dort nur
@@ -144,17 +144,39 @@ class Lauf:
             return antwort.status, roh[:GROESSE_MAX].decode("utf-8", "replace")
 
     async def startseite(self) -> str | None:
-        """Startseite: http zuerst, https (ohne Zertifikatsprüfung) nur, wenn http nicht antwortet. Setzt `basis`."""
+        """Startseite: http zuerst, https (ohne Zertifikatsprüfung) nur, wenn http nicht antwortet oder auf https an
+        genau diese Adresse weiterleitet (ZTE G5TC, GitHub #2). Setzt `basis`."""
         host = _host(self.adresse)
         for schema in ("http", "https"):
             self.basis = f"{schema}://{host}"
             try:
-                _, text = await self.lesen("/")
+                status, text = await self.lesen("/")
             except aiohttp.ClientError, TimeoutError, ValueError:
                 continue
+            if schema == "http" and (ziel := self._auf_https(status)):
+                self.basis, pfad = ziel
+                try:
+                    _, text = await self.lesen(pfad)
+                except aiohttp.ClientError, TimeoutError, ValueError:
+                    self.basis = f"http://{host}"
             return text
         self.basis = ""
         return None
+
+    def _auf_https(self, status: int) -> tuple[str, str] | None:
+        """Leitet die Antwort auf https an genau diese Adresse weiter? (Basis, Pfad) – sonst None."""
+        ziel = self.kopf.get("Location") or self.kopf.get("location") or ""
+        if not 300 <= status < 400 or not ziel.lower().startswith("https://"):
+            return None
+        teile = urlsplit(ziel)
+        if teile.username or teile.password or not gleiche_adresse(ziel, self.adresse):
+            return None
+        try:
+            port = teile.port
+        except ValueError:
+            return None
+        basis = f"https://{_host(self.adresse)}" + (f":{port}" if port else "")
+        return basis, (teile.path or "/") + (f"?{teile.query}" if teile.query else "")
 
 
 # ── requests (für die Bibliotheken, im Executor) ──
