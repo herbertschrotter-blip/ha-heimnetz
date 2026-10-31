@@ -1285,7 +1285,7 @@ test('WU-0009: vorgeschaltetes Gerät – Befund statt Werte (Anmeldung abgelehn
     assert.match(text(el), /Anmeldung abgelehnt/);
     assert.ok(el.shadowRoot.querySelector('.befund .punkt.rot'), 'rot wie von der Integration bewertet');
     assert.ok(!el.shadowRoot.querySelector('heimnetz-karte'), 'keine Funkwerte');
-    const knopf = [...el.shadowRoot.querySelectorAll('.dg-knoepfe button')].find((b) => b.textContent.includes('Rohdaten'));
+    const knopf = [...el.shadowRoot.querySelectorAll('.dg-knoepfe button')].find((b) => b.textContent.includes('Diagnose ›'));
     assert.ok(knopf, 'Sprung zur Diagnose');
   });
 });
