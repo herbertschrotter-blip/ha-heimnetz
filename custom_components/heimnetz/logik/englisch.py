@@ -276,6 +276,9 @@ EN: dict[str, str] = {
     "{n} Werte": "{n} values",
     "abgelehnt": "rejected",
     "nicht vorhanden": "not present",
+    "keine passende Antwort": "no matching answer",
+    "Schnittstelle goform": "interface goform",
+    "Schnittstelle ubus": "interface ubus",
     # Vorgeschaltetes Gerät (WU-0009 Stufe 2, logik/vorgeschaltet, vorgeschaltet/)
     "vom vorgeschalteten Modem": "from the upstream modem",
     "laut FRITZ!Box": "according to the FRITZ!Box",

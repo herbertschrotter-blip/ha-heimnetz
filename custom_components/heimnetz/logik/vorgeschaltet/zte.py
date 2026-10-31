@@ -5,7 +5,8 @@ Protokoll nach öffentlichen Quellen, nicht übernommen, sondern nachgebaut:
 - goform: `goform/goform_get_cmd_process?isTest=false&multi_data=1&cmd=…` (lesen), Anmeldung über
   `goform_set_cmd_process` mit `goformId=LOGIN` und dem Hash aus `logik.modem.anmelde_hash` (z. B. teixeluis/zte-lte-modem).
 - ubus: JSON-RPC 2.0 an `/ubus/?t=<zeit>`, `params = [sitzung, objekt, methode, argumente]`, Antwort
-  `result = [code, daten]`; Anmeldung `zwrt_web.web_login_info` (Salz `zte_web_sault`, verbleibende Versuche
+  `result = [code, daten]`; wie die Weboberfläche ein einzelnes Objekt mit den Kopfzeilen `Z-Mode: 0` und
+  `Z-Tag: <methode>` (Mitschnitt G5TS, OpenWrt-Forum; GitHub #2); Anmeldung `zwrt_web.web_login_info` (Salz `zte_web_sault`, verbleibende Versuche
   `login_fail_num`) und `zwrt_web.web_login` mit SHA-256(SHA-256(Kennwort)·groß + Salz)·groß; Werte aus
   `zte_nwinfo_api.nwinfo_get_netinfo`. Quelle: chennest/zte-cpe-go (GPL-3.0, Go) – nur das öffentliche Protokoll, kein
   Code übernommen.
@@ -74,18 +75,21 @@ def goform_angemeldet(antwort: Mapping[str, Any] | None) -> bool:
 # ── ubus ──
 def ubus_anfrage(
     sitzung: str, objekt: str, methode: str, argumente: Mapping[str, Any], nr: int
-) -> list[dict[str, Any]]:
+) -> dict[str, Any]:
     """JSON-RPC-Körper für einen ubus-Aufruf. Nur erlaubte Objekte/Methoden – sonst ValueError (nie ein set-Befehl)."""
     if (objekt, methode) not in UBUS_ERLAUBT:
         raise ValueError(f"ubus {objekt}.{methode} ist nicht erlaubt")
-    return [
-        {
-            "jsonrpc": "2.0",
-            "id": nr,
-            "method": "call",
-            "params": [sitzung, objekt, methode, dict(argumente)],
-        }
-    ]
+    return {
+        "jsonrpc": "2.0",
+        "id": nr,
+        "method": "call",
+        "params": [sitzung, objekt, methode, dict(argumente)],
+    }
+
+
+def ubus_kopf(methode: str) -> dict[str, str]:
+    """Kopfzeilen, die die Weboberfläche zu jedem ubus-Aufruf schickt."""
+    return {"Z-Mode": "0", "Z-Tag": methode}
 
 
 def ubus_ergebnis(roh: str) -> tuple[int | None, dict[str, Any]]:

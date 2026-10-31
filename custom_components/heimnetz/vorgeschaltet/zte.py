@@ -55,15 +55,30 @@ def _befund_ohne(mobil: Mobilfunk | None, kennwort: str | None) -> str | None:
 
 
 # ── goform ──
+def _probe_ablegen(
+    lauf: Lauf, schluessel: str, status: int | None, text: str, fehler: str = ""
+) -> None:
+    """Antwort einer Probe für 🔬 Diagnose (geschwärzt, gekürzt) – ohne sie bleibt ein unbekanntes Gerät ein Rätsel
+    (GitHub #2). `status`: HTTP-Status (goform) bzw. ubus-Code. Beim laufenden Abruf wird nichts abgelegt."""
+    lauf.ablegen(
+        schluessel,
+        {"status": status, "fehler": fehler}
+        if fehler
+        else {"status": status, "rohdaten": gekuerzt(text, 1200)},
+    )
+
+
 async def goform_probe(lauf: Lauf) -> str | None:
     """Antwortet goform ohne Anmeldung mit JSON? Modell ("" wenn nicht genannt) oder None."""
     try:
-        _, text = await lauf.lesen(
+        status, text = await lauf.lesen(
             "/goform/goform_get_cmd_process?isTest=false&multi_data=1&cmd=modem_model",
             referer=f"{lauf.basis}/index.html",
         )
-    except aiohttp.ClientError, TimeoutError:
+    except (aiohttp.ClientError, TimeoutError) as err:
+        _probe_ablegen(lauf, "probe_goform", None, "", type(err).__name__)
         return None
+    _probe_ablegen(lauf, "probe_goform", status, text)
     return lz.goform_modell(lz.json_objekt(text))
 
 
@@ -167,6 +182,7 @@ class _Ubus:
             methode="POST",
             json_=koerper,
             referer=f"{self.lauf.basis}/",
+            zusatz=lz.ubus_kopf(methode),
         )
         code, daten = lz.ubus_ergebnis(text)
         return code, daten, text
@@ -175,10 +191,14 @@ class _Ubus:
 async def ubus_probe(lauf: Lauf) -> bool:
     """Antwortet ubus auf `zwrt_web.web_login_info` (ohne Sitzung, liest nur)? Dann ist es ein ZTE mit ubus."""
     try:
-        code, daten, _ = await _Ubus(lauf).rufen("zwrt_web", "web_login_info", {})
-    except aiohttp.ClientError, TimeoutError:
+        code, daten, text = await _Ubus(lauf).rufen("zwrt_web", "web_login_info", {})
+    except (aiohttp.ClientError, TimeoutError) as err:
+        _probe_ablegen(lauf, "probe_ubus", None, "", type(err).__name__)
         return False
-    return code == 0 and "zte_web_sault" in daten
+    da = code == 0 and "zte_web_sault" in daten
+    # das Salz ist kein Wert für den Entwickler
+    _probe_ablegen(lauf, "probe_ubus", code, "" if da else text)
+    return da
 
 
 async def ubus_lesen(lauf: Lauf, kennwort: str | None) -> Lesung:

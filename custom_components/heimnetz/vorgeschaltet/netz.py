@@ -121,12 +121,14 @@ class Lauf:
         daten: Any = None,
         json_: Any = None,
         referer: str | None = None,
+        zusatz: dict[str, str] | None = None,
     ) -> tuple[int, str]:
-        """Eine Anfrage an `basis + pfad`; keine Weiterleitung, Zeitlimit, Antwortgröße begrenzt. (Status, Text)."""
+        """Eine Anfrage an `basis + pfad`; keine Weiterleitung, Zeitlimit, Antwortgröße begrenzt. (Status, Text).
+        `zusatz`: weitere Kopfzeilen der Anfrage."""
         url = f"{self.basis}{pfad}"
         if not gleiche_adresse(url, self.adresse):
             raise aiohttp.InvalidURL(url)
-        kopf = {"Referer": referer} if referer else None
+        kopf = {**({"Referer": referer} if referer else {}), **(zusatz or {})} or None
         async with self.session.request(
             methode,
             url,

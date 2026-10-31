@@ -33,6 +33,8 @@ VORGABE_ADRESSE = "192.168.0.1"
 _N_STARTSEITE = merke("Startseite")
 _N_UBUS = merke("zweite Schnittstelle (ubus)")
 _N_GOFORM = merke("zweite Schnittstelle (goform)")
+_N_PROBE_GOFORM = merke("Schnittstelle goform")
+_N_PROBE_UBUS = merke("Schnittstelle ubus")
 
 
 @dataclass
@@ -91,6 +93,11 @@ async def _ablauf(hass: HomeAssistant, lauf: Lauf, kennwort: str | None) -> dict
     )
     if erkennung is None:
         return _antwort(lauf, befund="nicht_erkannt")
+    if (
+        erkennung.baustein == "zte"
+    ):  # ZTE, aber keine der Schnittstellen antwortet – Antworten unter probe_*
+        for name in (_N_PROBE_GOFORM, _N_PROBE_UBUS):
+            lauf.eintrag(name, "aus", t("keine passende Antwort", lauf.sprache))
     if erkennung.b.art == "box":
         return _antwort(lauf, erkennung, befund="fritzbox")
     if erkennung.b.integration and integrationen.eingerichtet(hass, erkennung.b.integration):

@@ -98,7 +98,7 @@ def _zte_ubus(mock, *, kennwort_ok=True, versuche=5, erreichbar=True, umleiten=F
     mock.get(re.compile(r"goform_get_cmd_process"), status=404, text="<html>404</html>")
 
     async def ubus(method, url, data):
-        sitzung, _objekt, methode, _arg = data[0]["params"]
+        sitzung, _objekt, methode, _arg = data["params"]
         angemeldet = sitzung == SITZUNG
         ergebnis = {
             "web_login_info": [0, {"zte_web_sault": "C0FFEE", "login_fail_num": versuche}],
@@ -112,7 +112,7 @@ def _zte_ubus(mock, *, kennwort_ok=True, versuche=5, erreichbar=True, umleiten=F
             "web_logout": [0],
         }[methode]
         return AiohttpClientMockResponse(
-            method, url, json=[{"jsonrpc": "2.0", "id": data[0]["id"], "result": ergebnis}]
+            method, url, json=[{"jsonrpc": "2.0", "id": data["id"], "result": ergebnis}]
         )
 
     mock.post(re.compile(rf"//{re.escape(ADRESSE)}/ubus/"), side_effect=ubus)
@@ -128,7 +128,7 @@ def _eigene(caplog):
 
 
 def _ubus_aufrufe(mock):
-    return [c[2][0]["params"][2] for c in mock.mock_calls if "/ubus/" in str(c[1])]
+    return [c[2]["params"][2] for c in mock.mock_calls if "/ubus/" in str(c[1])]
 
 
 @pytest.fixture
@@ -515,6 +515,44 @@ async def test_diagnose_folgt_weiterleitung_auf_https_derselben_adresse(
     urls = [str(c[1]) for c in modem_netz.mock_calls]
     assert urls[0] == f"http://{ADRESSE}/" and urls[1] == f"https://{ADRESSE}/"
     assert all(u.startswith(f"https://{ADRESSE}/") for u in urls[1:])
+
+
+async def test_ubus_wie_die_weboberflaeche(hass, hass_ws_client, modem_netz):
+    """GitHub #2: Jeder ubus-Aufruf ist ein einzelnes JSON-RPC-Objekt mit `Z-Mode: 0` und `Z-Tag: <methode>`."""
+    from homeassistant.setup import async_setup_component
+
+    assert await async_setup_component(hass, DOMAIN, {})
+    _zte_ubus(modem_netz)
+    client = await hass_ws_client(hass)
+    await _frage(client, type="heimnetz/modem", adresse=ADRESSE, kennwort=KENNWORT)
+    ubus = [c for c in modem_netz.mock_calls if "/ubus/" in str(c[1])]
+    assert ubus and all(isinstance(c[2], dict) for c in ubus)
+    assert all(c[3]["Z-Mode"] == "0" and c[3]["Z-Tag"] == c[2]["params"][2] for c in ubus)
+
+
+async def test_diagnose_zte_ohne_schnittstelle_legt_proben_ab(hass, hass_ws_client, modem_netz):
+    """GitHub #2: Erkennt Heimnetz ein ZTE, aber weder goform noch ubus antworten passend, stehen die Antworten der
+    Proben (geschwärzt, gekürzt) in der Diagnose – sonst sieht der Entwickler nicht, woran es liegt."""
+    from homeassistant.setup import async_setup_component
+
+    assert await async_setup_component(hass, DOMAIN, {})
+    _leeren(modem_netz)
+    modem_netz.get(re.compile(rf"//{re.escape(ADRESSE)}/$"), text="<html>ZTE</html>")
+    modem_netz.get(re.compile(r"goform_get_cmd_process"), status=404, text="<html>404</html>")
+    modem_netz.post(
+        re.compile(r"/ubus/"),
+        json={"jsonrpc": "2.0", "id": 1, "error": {"code": -32002, "message": "Access denied"}},
+    )
+    client = await hass_ws_client(hass)
+    with rm.Mocker() as m:
+        m.register_uri(rm.ANY, rm.ANY, status_code=404)
+        d = (await _frage(client, type="heimnetz/modem", adresse=ADRESSE))["result"]
+    assert d["erkannt"]["baustein"] == "zte" and d["befund"] == "nicht_unterstuetzt"
+    assert d["daten"]["probe_goform"] == {"status": 404, "rohdaten": "<html>404</html>"}
+    assert d["daten"]["probe_ubus"]["status"] == -32002
+    assert "Access denied" in d["daten"]["probe_ubus"]["rohdaten"]
+    namen = [a["name"] for a in d["abfragen"]]
+    assert "Schnittstelle goform" in namen and "Schnittstelle ubus" in namen
 
 
 async def test_weiterleitung_auf_andere_adresse_wird_nicht_gefolgt(

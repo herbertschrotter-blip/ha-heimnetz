@@ -401,7 +401,10 @@ nachgetragen.
   - ZTE goform und ZTE ubus (eigener Code). ubus nach dem öffentlichen Protokoll von chennest/zte-cpe-go nachgebaut –
     das Projekt ist GPL-3.0, Heimnetz Apache-2.0, deshalb kein Code übernommen. Erlaubt sind nur
     `zwrt_web.web_login_info/web_login/web_logout`, `zte_nwinfo_api.nwinfo_get_netinfo`, `zwrt_data.get_wwaniface`;
-    `uci get` bewusst nicht (liest beliebige Einstellungen, auch WLAN-Kennwörter).
+    `uci get` bewusst nicht (liest beliebige Einstellungen, auch WLAN-Kennwörter). Jeder Aufruf wie die Weboberfläche
+    als einzelnes Objekt mit `Z-Mode: 0` und `Z-Tag: <methode>` (Mitschnitt eines G5TS im OpenWrt-Forum; GitHub #2,
+    31.10.2026). Erkennt Heimnetz ein ZTE, aber keine Schnittstelle, legt 🔬 Diagnose die Antworten beider Proben
+    geschwärzt ab (`probe_goform`, `probe_ubus`).
   - Huawei HiLink über `huawei-lte-api` (bewährt, in HA für Huawei LTE). Anforderung `>=1.11.0`, kein `==`: Home
     Assistant pinnt für Huawei LTE 1.11.0, ein eigener Pin würde sich mit dessen Anforderung beißen; die genutzten
     Aufrufe gibt es in 1.11 und 2.0. Ist Huawei LTE eingerichtet, liest Heimnetz deren Entitäten und fragt das Gerät

@@ -168,14 +168,14 @@ def test_goform_probe_und_anmeldung():
 # result [code, daten]; Anmeldung mit zte_web_sault und SHA-256(SHA-256(Kennwort)·groß + Salz)·groß
 def test_ubus_nur_erlaubte_methoden():
     k = vz.ubus_anfrage(vz.NULL_SITZUNG, "zwrt_web", "web_login_info", {}, 7)
-    assert k == [
-        {
-            "jsonrpc": "2.0",
-            "id": 7,
-            "method": "call",
-            "params": ["0" * 32, "zwrt_web", "web_login_info", {}],
-        }
-    ]
+    # ein einzelnes Objekt mit Z-Mode/Z-Tag wie die Weboberfläche (Mitschnitt G5TS, GitHub #2)
+    assert k == {
+        "jsonrpc": "2.0",
+        "id": 7,
+        "method": "call",
+        "params": ["0" * 32, "zwrt_web", "web_login_info", {}],
+    }
+    assert vz.ubus_kopf("web_login_info") == {"Z-Mode": "0", "Z-Tag": "web_login_info"}
     for objekt, methode in (
         ("zwrt_data", "set_wwaniface"),
         ("zwrt_bsp.sys", "reboot"),

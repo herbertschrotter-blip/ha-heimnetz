@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## [0.28.3]
+
+- Fix (GitHub #2): Ein ZTE G5TC wurde zwar als „ZTE“ erkannt, aber keine seiner Schnittstellen („Gerät erkannt, Werte
+  noch nicht unterstützt“). Die ubus-Aufrufe sehen jetzt aus wie die der Weboberfläche: ein einzelnes JSON-RPC-Objekt
+  mit den Kopfzeilen `Z-Mode` und `Z-Tag` (nach dem Mitschnitt eines G5TS). Ob das beim G5TC reicht, ist am Gerät
+  noch ungeprüft.
+- 🔬 Diagnose: Erkennt Heimnetz ein ZTE, aber keine Schnittstelle, stehen die Antworten der Proben für goform und ubus
+  (geschwärzt, gekürzt) in der Datei, dazu je eine Zeile in der Liste der Abfragen.
+
 ## [0.28.2]
 
 - Fix (GitHub #2): Ein vorgeschaltetes Modem, dessen Startseite per http nur auf https weiterleitet (z. B. ZTE G5TC),
