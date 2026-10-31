@@ -145,7 +145,7 @@ function extern(p, d) {
         ? t('Die FRITZ!Box hängt hinter dem {geraet} und kennt das Funknetz nicht. Die Werte kommen aus dessen Integration in Home Assistant. Was sie nicht liefert, steht als „–“.', { geraet: v.geraet ?? t('Modem') })
         : t('Die FRITZ!Box hängt hinter dem {geraet} und kennt das Funknetz nicht. Heimnetz liest Zelle und Signal direkt am Gerät (Anmeldung mit dem in ⚙ › 🌐 Zugang hinterlegten Kennwort). Was es nicht liefert, steht als „–“.', { geraet: v.geraet ?? t('Modem') })}${v.gelesen ? ` ${t('Zuletzt gelesen {zeit}.', { zeit: zeit(v.gelesen) })}` : ''}${v.naechste ? ` ${t('Nächste Abfrage {zeit}.', { zeit: zeit(v.naechste) })}` : ''}</p></div></div>`;
   const knoepfe = p.istAdmin && b
-    ? html`<div class="dg-knoepfe"><button @click=${() => p.einstellungenOeffnen('zugang')}>${t('🌐 Zugang ›')}</button><button @click=${() => p.einstellungenOeffnen('diag')}>${t('🔬 Rohdaten abfragen ›')}</button></div>`
+    ? html`<div class="dg-knoepfe"><button @click=${() => p.einstellungenOeffnen('zugang')}>${t('🌐 Zugang ›')}</button><button @click=${() => p.einstellungenOeffnen('diag')}>${t('🔬 Diagnose ›')}</button></div>`
     : nothing;
   return html`<div class="glas-panel block">${kopf}${knoepfe}</div>
     ${d.mobilfunk ? mobilfunk(p, d.mobilfunk) : nothing}`;

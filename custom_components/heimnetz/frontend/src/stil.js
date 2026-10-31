@@ -101,6 +101,7 @@ const GLAS = `
   .sheet { left: 50%; right: auto; width: 520px; bottom: auto; top: 50%; transform: translate(-50%, -40%) scale(.96); opacity: 0; pointer-events: none;
     transition: transform .25s cubic-bezier(.2,.8,.2,1), opacity .2s; }
   .sheet.an { transform: translate(-50%, -50%); opacity: 1; pointer-events: auto; }
+  .sheet.breit { width: min(760px, calc(100% - 16px)); } /* Einstellungen: alle Reiter in einer Zeile */
   .griff { display: none; }
   .raster2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
 }
@@ -198,7 +199,8 @@ svg.dia { width: 100%; height: auto; display: block; overflow: visible; } .dia t
 select.ga-wahl { font: inherit; font-size: 13px; color: var(--ink); background: rgba(120,120,128,.18); border: 1px solid var(--panel-rand); border-radius: 10px; padding: 5px 8px; }
 .ga-zeile { padding: 6px 0 !important; }
 /* Einstellungen mit Reitern (AN-0002, Mockup netzwerk.html · Einstellungen gruppiert, Variante B) */
-.e-reiter { margin: 4px 0 8px; } .e-reiter.seg button { font-size: 12px; padding: 7px 4px; }
+/* Reicht die Breite nicht (Handy, schmales Fenster): zweite Zeile statt Überlauf */
+.e-reiter { margin: 4px 0 8px; flex-wrap: wrap; } .e-reiter.seg button { font-size: 12px; padding: 7px 8px; }
 .ek { border: 1px solid var(--gridc); border-radius: 18px; background: rgba(127,127,127,.06); overflow: hidden; }
 .ek-inhalt { padding: 4px 14px 12px; display: flex; flex-direction: column; }
 .ez { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 9px 0; min-height: 40px; font-size: 14px; }
@@ -226,8 +228,6 @@ select.ga-wahl { font: inherit; font-size: 13px; color: var(--ink); background: 
 .vs-r button.blau { background: color-mix(in srgb, var(--blau) 22%, transparent); }
 .vs-kopf { border-radius: 12px; padding: 8px 12px; font-size: 13px; line-height: 1.4; background: rgba(127,127,127,.1); margin: 6px 0 2px; }
 @container (max-width: 520px) { .vs { grid-template-columns: 22px minmax(0, 1fr); } .vs-r { grid-column: 2; justify-content: flex-start; } }
-/* WU-0008: Diagnose – Rohdaten eines vorgeschalteten Modems (Mockup netzwerk.html · Diagnose). Reiterleiste am Handy schiebbar. */
-@container (max-width: 520px) { .e-reiter { overflow-x: auto; scrollbar-width: none; } .e-reiter.seg button { flex: none; padding: 7px 8px; } }
 .dg-feld { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--ink2); padding: 6px 0; }
 .dg-feld input { font: inherit; font-size: 14px; color: var(--ink); background: rgba(120,120,128,.14); border: 1px solid var(--gridc); border-radius: 12px; padding: 8px 10px; }
 .dg-ab { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 6px 0; font-size: 13px; }

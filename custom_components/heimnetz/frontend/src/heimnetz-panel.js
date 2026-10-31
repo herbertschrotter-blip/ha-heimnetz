@@ -491,7 +491,7 @@ export class HeimnetzPanel extends LitElement {
     }
   }
 
-  /** „🔬 Rohdaten abfragen ›“: in den Reiter Diagnose, die Adresse des vorgeschalteten Geräts übernehmen. */
+  /** „🔬 Diagnose ›“: in den Reiter Diagnose, die Adresse des vorgeschalteten Geräts übernehmen. */
   zuDiagnose(adresse) {
     if (adresse) this._diag = { ...this._diag, adresse };
     this._blatt = { ...this._blatt, teil: 'diag' };
@@ -920,7 +920,7 @@ export class HeimnetzPanel extends LitElement {
             <div class="leise" style="text-align:center;padding:8px">Heimnetz ${VERSION}</div>
           </div></div>
           <div class="schleier ${this._blatt ? 'an' : ''}" @click=${() => this.zu()}></div>
-          <div class="sheet glas-panel ${this._blatt ? 'an' : ''}">${this._blatt && !['melden', 'github'].includes(this._blatt.art) ? meldenKnopf(this, true) : nothing}${this._blattInhalt()}</div>
+          <div class="sheet glas-panel ${this._blatt ? 'an' : ''} ${this._blatt?.art === 'einstellungen' ? 'breit' : ''}">${this._blatt && !['melden', 'github'].includes(this._blatt.art) ? meldenKnopf(this, true) : nothing}${this._blattInhalt()}</div>
           ${this._blatt ? nothing : meldenKnopf(this)}
           <div class="toast glas-panel ${this._toast ? 'an' : ''}" role="status">${this._toast}</div>
           ${this._kachel && this._reiter === 'speedtest' ? kachelPopup(this) : nothing}

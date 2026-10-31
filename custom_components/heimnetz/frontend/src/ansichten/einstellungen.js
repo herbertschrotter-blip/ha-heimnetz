@@ -165,7 +165,7 @@ function zugang(p) {
     <div class="ez"><span>${t('Ersatz')}<small>${t('z. B. Mobilfunk-Stick an der FRITZ!Box, wenn DSL ausfällt')}</small></span>${seg(tl(ERSATZ), z.ersatz_wahl, (v) => p.zugangSetzen({ ersatz: v }))}</div>
     ${p._hinweisZugang ? html`<p class="fein">${p._hinweisZugang}</p>` : nothing}
     <div class="dg-knoepfe" style="margin-top:8px"><button @click=${() => p.zugangSuchen()}>${t('↻ Erneut suchen')}</button>
-      <button @click=${() => p.zuDiagnose(vorgeschaltet ? z.adresse || z.adresse_jetzt || z.adressen[0] : null)}>${t('🔬 Rohdaten abfragen ›')}</button></div>
+      <button @click=${() => p.zuDiagnose(vorgeschaltet ? z.adresse || z.adresse_jetzt || z.adressen[0] : null)}>${t('🔬 Diagnose ›')}</button></div>
     <p class="hinweis" style="margin-top:8px">${t('Gesucht wird nur an der gespeicherten Adresse, am Vorschlag der FRITZ!Box und an den üblichen Modem-Adressen ({liste}) – kein Absuchen des Heimnetzes. Heimnetz liest nur.', { liste: z.adressen.join(', ') })}</p>`;
 }
 

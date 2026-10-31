@@ -23,6 +23,7 @@ async function einstellungen(el) {
   await warten(10);
   await el.updateComplete;
   assert.ok(el.shadowRoot.querySelector('.sheet.an'), 'Fenster offen');
+  assert.ok(el.shadowRoot.querySelector('.sheet.breit'), 'Einstellungen im breiten Fenster');
 }
 
 const blatt = (el) => el.shadowRoot.querySelector('.sheet');
@@ -1356,8 +1357,8 @@ test('WU-0009: ⚙ › 🌐 Zugang – Belege, Wahl, Adresse und Kennwort (nie i
   knoepfe(blatt(el)).find((x) => x.textContent.includes('Erneut suchen')).click();
   await warten(10);
   assert.ok(hass.aufrufe.some((a) => a.type === 'heimnetz/zugang/suchen'));
-  // 🔬 Rohdaten abfragen › → Reiter Diagnose mit der Adresse
-  knoepfe(blatt(el)).find((x) => x.textContent.includes('Rohdaten abfragen')).click();
+  // 🔬 Diagnose › → Reiter Diagnose mit der Adresse
+  knoepfe(blatt(el)).find((x) => x.textContent.includes('Diagnose ›')).click();
   await el.updateComplete;
   assert.equal(el._blatt.teil, 'diag');
   assert.equal(blatt(el).querySelector('input[name=adresse]').value, '192.168.8.1');

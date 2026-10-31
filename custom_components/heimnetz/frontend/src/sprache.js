@@ -618,7 +618,7 @@ export const EN = {
   'Ersatz': 'Backup',
   'z. B. Mobilfunk-Stick an der FRITZ!Box, wenn DSL ausfällt': 'e.g. a mobile stick on the FRITZ!Box when DSL fails',
   '↻ Erneut suchen': '↻ Search again',
-  '🔬 Rohdaten abfragen ›': '🔬 Query raw data ›',
+  '🔬 Diagnose ›': '🔬 Diagnostics ›',
   'automatisch erkannt': 'detected automatically',
   'festgelegt': 'set manually',
   'Ersatz: {text}': 'Backup: {text}',

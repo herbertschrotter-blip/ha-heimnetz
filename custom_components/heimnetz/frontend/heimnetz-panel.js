@@ -3395,6 +3395,7 @@ var GLAS = `
   .sheet { left: 50%; right: auto; width: 520px; bottom: auto; top: 50%; transform: translate(-50%, -40%) scale(.96); opacity: 0; pointer-events: none;
     transition: transform .25s cubic-bezier(.2,.8,.2,1), opacity .2s; }
   .sheet.an { transform: translate(-50%, -50%); opacity: 1; pointer-events: auto; }
+  .sheet.breit { width: min(760px, calc(100% - 16px)); } /* Einstellungen: alle Reiter in einer Zeile */
   .griff { display: none; }
   .raster2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
 }
@@ -3492,7 +3493,8 @@ svg.dia { width: 100%; height: auto; display: block; overflow: visible; } .dia t
 select.ga-wahl { font: inherit; font-size: 13px; color: var(--ink); background: rgba(120,120,128,.18); border: 1px solid var(--panel-rand); border-radius: 10px; padding: 5px 8px; }
 .ga-zeile { padding: 6px 0 !important; }
 /* Einstellungen mit Reitern (AN-0002, Mockup netzwerk.html · Einstellungen gruppiert, Variante B) */
-.e-reiter { margin: 4px 0 8px; } .e-reiter.seg button { font-size: 12px; padding: 7px 4px; }
+/* Reicht die Breite nicht (Handy, schmales Fenster): zweite Zeile statt Überlauf */
+.e-reiter { margin: 4px 0 8px; flex-wrap: wrap; } .e-reiter.seg button { font-size: 12px; padding: 7px 8px; }
 .ek { border: 1px solid var(--gridc); border-radius: 18px; background: rgba(127,127,127,.06); overflow: hidden; }
 .ek-inhalt { padding: 4px 14px 12px; display: flex; flex-direction: column; }
 .ez { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 9px 0; min-height: 40px; font-size: 14px; }
@@ -3520,8 +3522,6 @@ select.ga-wahl { font: inherit; font-size: 13px; color: var(--ink); background: 
 .vs-r button.blau { background: color-mix(in srgb, var(--blau) 22%, transparent); }
 .vs-kopf { border-radius: 12px; padding: 8px 12px; font-size: 13px; line-height: 1.4; background: rgba(127,127,127,.1); margin: 6px 0 2px; }
 @container (max-width: 520px) { .vs { grid-template-columns: 22px minmax(0, 1fr); } .vs-r { grid-column: 2; justify-content: flex-start; } }
-/* WU-0008: Diagnose – Rohdaten eines vorgeschalteten Modems (Mockup netzwerk.html · Diagnose). Reiterleiste am Handy schiebbar. */
-@container (max-width: 520px) { .e-reiter { overflow-x: auto; scrollbar-width: none; } .e-reiter.seg button { flex: none; padding: 7px 8px; } }
 .dg-feld { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--ink2); padding: 6px 0; }
 .dg-feld input { font: inherit; font-size: 14px; color: var(--ink); background: rgba(120,120,128,.14); border: 1px solid var(--gridc); border-radius: 12px; padding: 8px 10px; }
 .dg-ab { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 6px 0; font-size: 13px; }
@@ -4152,7 +4152,7 @@ var EN = {
   "Ersatz": "Backup",
   "z. B. Mobilfunk-Stick an der FRITZ!Box, wenn DSL ausfällt": "e.g. a mobile stick on the FRITZ!Box when DSL fails",
   "↻ Erneut suchen": "↻ Search again",
-  "🔬 Rohdaten abfragen ›": "🔬 Query raw data ›",
+  "🔬 Diagnose ›": "🔬 Diagnostics ›",
   "automatisch erkannt": "detected automatically",
   "festgelegt": "set manually",
   "Ersatz: {text}": "Backup: {text}",
@@ -6168,7 +6168,7 @@ function extern(p4, d3) {
   const b3 = v2.befund;
   const kopf = b3 ? b2`<div class="befund"><span class="punkt ${PUNKT2[b3.lage] ?? "grau"}"></span><div><b>${b3.titel}</b><p>${b3.text}</p></div></div>` : b2`<div class="befund"><span class="punkt grau"></span><div><b>${t3("Werte vom vorgeschalteten Modem (Beta)")}</b>
       <p>${v2.quelle === "integration" ? t3("Die FRITZ!Box hängt hinter dem {geraet} und kennt das Funknetz nicht. Die Werte kommen aus dessen Integration in Home Assistant. Was sie nicht liefert, steht als „–“.", { geraet: v2.geraet ?? t3("Modem") }) : t3("Die FRITZ!Box hängt hinter dem {geraet} und kennt das Funknetz nicht. Heimnetz liest Zelle und Signal direkt am Gerät (Anmeldung mit dem in ⚙ › 🌐 Zugang hinterlegten Kennwort). Was es nicht liefert, steht als „–“.", { geraet: v2.geraet ?? t3("Modem") })}${v2.gelesen ? ` ${t3("Zuletzt gelesen {zeit}.", { zeit: zeit(v2.gelesen) })}` : ""}${v2.naechste ? ` ${t3("Nächste Abfrage {zeit}.", { zeit: zeit(v2.naechste) })}` : ""}</p></div></div>`;
-  const knoepfe = p4.istAdmin && b3 ? b2`<div class="dg-knoepfe"><button @click=${() => p4.einstellungenOeffnen("zugang")}>${t3("🌐 Zugang ›")}</button><button @click=${() => p4.einstellungenOeffnen("diag")}>${t3("🔬 Rohdaten abfragen ›")}</button></div>` : A;
+  const knoepfe = p4.istAdmin && b3 ? b2`<div class="dg-knoepfe"><button @click=${() => p4.einstellungenOeffnen("zugang")}>${t3("🌐 Zugang ›")}</button><button @click=${() => p4.einstellungenOeffnen("diag")}>${t3("🔬 Diagnose ›")}</button></div>` : A;
   return b2`<div class="glas-panel block">${kopf}${knoepfe}</div>
     ${d3.mobilfunk ? mobilfunk(p4, d3.mobilfunk) : A}`;
 }
@@ -6496,7 +6496,7 @@ function zugang(p4) {
     <div class="ez"><span>${t3("Ersatz")}<small>${t3("z. B. Mobilfunk-Stick an der FRITZ!Box, wenn DSL ausfällt")}</small></span>${seg(tl(ERSATZ), z2.ersatz_wahl, (v2) => p4.zugangSetzen({ ersatz: v2 }))}</div>
     ${p4._hinweisZugang ? b2`<p class="fein">${p4._hinweisZugang}</p>` : A}
     <div class="dg-knoepfe" style="margin-top:8px"><button @click=${() => p4.zugangSuchen()}>${t3("↻ Erneut suchen")}</button>
-      <button @click=${() => p4.zuDiagnose(vorgeschaltet ? z2.adresse || z2.adresse_jetzt || z2.adressen[0] : null)}>${t3("🔬 Rohdaten abfragen ›")}</button></div>
+      <button @click=${() => p4.zuDiagnose(vorgeschaltet ? z2.adresse || z2.adresse_jetzt || z2.adressen[0] : null)}>${t3("🔬 Diagnose ›")}</button></div>
     <p class="hinweis" style="margin-top:8px">${t3("Gesucht wird nur an der gespeicherten Adresse, am Vorschlag der FRITZ!Box und an den üblichen Modem-Adressen ({liste}) – kein Absuchen des Heimnetzes. Heimnetz liest nur.", { liste: z2.adressen.join(", ") })}</p>`;
 }
 function erkannt(v2) {
@@ -6631,7 +6631,7 @@ function protokoll(p4, d3) {
 }
 
 // src/heimnetz-panel.js
-var VERSION = true ? "0.28.7" : "entwicklung";
+var VERSION = true ? "0.28.8" : "entwicklung";
 var REITER = [
   ["uebersicht", merke("Übersicht")],
   ["speedtest", merke("Speedtest")],
@@ -7075,7 +7075,7 @@ var HeimnetzPanel = class extends i4 {
       this._hinweisZugang = err && err.message || String(err);
     }
   }
-  /** „🔬 Rohdaten abfragen ›“: in den Reiter Diagnose, die Adresse des vorgeschalteten Geräts übernehmen. */
+  /** „🔬 Diagnose ›“: in den Reiter Diagnose, die Adresse des vorgeschalteten Geräts übernehmen. */
   zuDiagnose(adresse) {
     if (adresse) this._diag = { ...this._diag, adresse };
     this._blatt = { ...this._blatt, teil: "diag" };
@@ -7501,7 +7501,7 @@ var HeimnetzPanel = class extends i4 {
             <div class="leise" style="text-align:center;padding:8px">Heimnetz ${VERSION}</div>
           </div></div>
           <div class="schleier ${this._blatt ? "an" : ""}" @click=${() => this.zu()}></div>
-          <div class="sheet glas-panel ${this._blatt ? "an" : ""}">${this._blatt && !["melden", "github"].includes(this._blatt.art) ? meldenKnopf(this, true) : A}${this._blattInhalt()}</div>
+          <div class="sheet glas-panel ${this._blatt ? "an" : ""} ${this._blatt?.art === "einstellungen" ? "breit" : ""}">${this._blatt && !["melden", "github"].includes(this._blatt.art) ? meldenKnopf(this, true) : A}${this._blattInhalt()}</div>
           ${this._blatt ? A : meldenKnopf(this)}
           <div class="toast glas-panel ${this._toast ? "an" : ""}" role="status">${this._toast}</div>
           ${this._kachel && this._reiter === "speedtest" ? kachelPopup(this) : A}

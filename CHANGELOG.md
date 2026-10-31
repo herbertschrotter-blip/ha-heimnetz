@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [0.28.8]
+
+- Fix: Die Reiter der **Einstellungen** liefen rechts aus dem Fenster („Zugang“ und die Reiter danach nur mit
+  Scrollbalken erreichbar). Das Fenster ist auf dem Desktop jetzt breiter (760 statt 520 px), damit alle Reiter in eine
+  Zeile passen; reicht die Breite nicht, etwa auf dem Handy, brechen sie in eine zweite Zeile um.
+- Der Knopf „🔬 Rohdaten abfragen“ heißt jetzt „🔬 Diagnose“, wie der Reiter, in den er führt.
+
 ## [0.28.7]
 
 - GitHub #2: Im Reiter **Internet** steht bei einem vorgeschalteten Modem neben „Zuletzt gelesen“ jetzt auch, wann es
