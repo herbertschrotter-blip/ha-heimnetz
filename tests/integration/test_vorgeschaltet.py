@@ -12,6 +12,7 @@ import base64
 import json
 import logging
 import re
+from datetime import timedelta
 
 import aiohttp
 import pytest
@@ -21,7 +22,8 @@ from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import issue_registry as ir
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from homeassistant.util import dt as dt_util
+from pytest_homeassistant_custom_component.common import MockConfigEntry, async_fire_time_changed
 from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMockResponse
 
 from custom_components.heimnetz.const import CONF_MODEM_KENNWORT, DOMAIN
@@ -673,6 +675,25 @@ async def test_gemerktes_zte_ohne_schnittstelle_wird_beim_lesen_bestimmt(
     stand = await dienst.arbeiten((ADRESSE,), KENNWORT)
     assert stand.befund is None and stand.mobil is not None and stand.mobil.haupt.rsrp == -97
     assert stand.erkennung.baustein == "zte_ubus" and dienst.gemerkt.baustein == "zte_ubus"
+
+
+async def test_werte_nach_dem_lesen_gleich_auf_der_seite(
+    hass: HomeAssistant, hinter_modem, modem_netz, hass_ws_client
+):
+    """GitHub #2: Ist das Modem im Hintergrund gelesen, stehen die Werte gleich im Stand (Seite, Entitäten) – nicht erst
+    mit dem nächsten Abruf der Box."""
+    abruf = hinter_modem.runtime_data.abruf
+    _zte_ubus(modem_netz)
+    abruf.modem.gemerkt, abruf.modem.adresse = ve.Erkennung("zte_ubus", ""), ADRESSE
+    abruf.modem.anstossen()
+    assert abruf.data.mobil_quelle != "modem"
+    await abruf._modem_arbeiten((ADRESSE,), KENNWORT, "de", None)  # noqa: SLF001
+    # die Suche beim Einrichten hat eben schon aktualisiert – HA wartet danach 10 s (Sperrfrist der Anfrage)
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=11))
+    await hass.async_block_till_done()
+    assert abruf.data.mobil_quelle == "modem" and abruf.data.mobil.haupt.rsrp == -97
+    d = (await _frage(await hass_ws_client(hass), type="heimnetz/internet", tage=1))["result"]
+    assert d["mobilfunk"]["herkunft"] == "modem"
 
 
 async def test_kein_zweiter_zugriff_ohne_anlass_und_suche_merkt_sich_fehler(

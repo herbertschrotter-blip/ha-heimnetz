@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [0.28.6]
+
+- GitHub #2: Werte vom vorgeschalteten Modem erscheinen gleich nach dem Lesen auf der Seite und in den Entitäten –
+  bisher erst mit dem nächsten Abruf der FRITZ!Box (bis zu einer Minute später; bis dahin stand nur „Werte vom
+  vorgeschalteten Modem (Beta)“ ohne Zelle und Signal da).
+
 ## [0.28.5]
 
 - Fix (GitHub #2): Hatte Heimnetz ein ZTE-Modem nur als „ZTE“ ohne Schnittstelle erkannt (die Suche gibt jedem Gerät

@@ -287,6 +287,9 @@ class Abruf(DataUpdateCoordinator[sm.Stand]):
             else None
         )
         self._modem_hinweise(self.modem.stand)
+        # Werte gleich auf die Seite und in die Entitäten – nicht erst mit dem nächsten Abruf (bis zu 60 s, GitHub #2).
+        # Kein Kreislauf: im neuen Abruf ist das Gerät eben gelesen, also nicht fällig.
+        await self.async_request_refresh()
 
     async def modem_jetzt(self, *, suchen: bool = False) -> bool:
         """Gleich suchen bzw. lesen (⚙ › Zugang: neue Wahl, Adresse, Kennwort, „↻ Erneut suchen“). False, wenn das
