@@ -4244,6 +4244,7 @@ var EN = {
   "Modem": "modem",
   "Die FRITZ!Box hängt hinter dem {geraet} und kennt das Funknetz nicht. Heimnetz liest Zelle und Signal direkt am Gerät (Anmeldung mit dem in ⚙ › 🌐 Zugang hinterlegten Kennwort). Was es nicht liefert, steht als „–“.": "The FRITZ!Box sits behind the {geraet} and does not know the mobile network. Heimnetz reads cell and signal directly from the device (login with the password stored under ⚙ › 🌐 Access). Whatever it does not provide shows as “–”.",
   "Zuletzt gelesen {zeit}.": "Last read {zeit}.",
+  "Nächste Abfrage {zeit}.": "Next read {zeit}.",
   "🌐 Zugang ›": "🌐 Access ›",
   "Band {band}": "band {band}",
   "Verbindung von {geraet} zur Basisstation": "Connection of {geraet} to the base station",
@@ -6166,7 +6167,7 @@ function extern(p4, d3) {
   const v2 = d3.vorgeschaltet || {};
   const b3 = v2.befund;
   const kopf = b3 ? b2`<div class="befund"><span class="punkt ${PUNKT2[b3.lage] ?? "grau"}"></span><div><b>${b3.titel}</b><p>${b3.text}</p></div></div>` : b2`<div class="befund"><span class="punkt grau"></span><div><b>${t3("Werte vom vorgeschalteten Modem (Beta)")}</b>
-      <p>${v2.quelle === "integration" ? t3("Die FRITZ!Box hängt hinter dem {geraet} und kennt das Funknetz nicht. Die Werte kommen aus dessen Integration in Home Assistant. Was sie nicht liefert, steht als „–“.", { geraet: v2.geraet ?? t3("Modem") }) : t3("Die FRITZ!Box hängt hinter dem {geraet} und kennt das Funknetz nicht. Heimnetz liest Zelle und Signal direkt am Gerät (Anmeldung mit dem in ⚙ › 🌐 Zugang hinterlegten Kennwort). Was es nicht liefert, steht als „–“.", { geraet: v2.geraet ?? t3("Modem") })}${v2.gelesen ? ` ${t3("Zuletzt gelesen {zeit}.", { zeit: zeit(v2.gelesen) })}` : ""}</p></div></div>`;
+      <p>${v2.quelle === "integration" ? t3("Die FRITZ!Box hängt hinter dem {geraet} und kennt das Funknetz nicht. Die Werte kommen aus dessen Integration in Home Assistant. Was sie nicht liefert, steht als „–“.", { geraet: v2.geraet ?? t3("Modem") }) : t3("Die FRITZ!Box hängt hinter dem {geraet} und kennt das Funknetz nicht. Heimnetz liest Zelle und Signal direkt am Gerät (Anmeldung mit dem in ⚙ › 🌐 Zugang hinterlegten Kennwort). Was es nicht liefert, steht als „–“.", { geraet: v2.geraet ?? t3("Modem") })}${v2.gelesen ? ` ${t3("Zuletzt gelesen {zeit}.", { zeit: zeit(v2.gelesen) })}` : ""}${v2.naechste ? ` ${t3("Nächste Abfrage {zeit}.", { zeit: zeit(v2.naechste) })}` : ""}</p></div></div>`;
   const knoepfe = p4.istAdmin && b3 ? b2`<div class="dg-knoepfe"><button @click=${() => p4.einstellungenOeffnen("zugang")}>${t3("🌐 Zugang ›")}</button><button @click=${() => p4.einstellungenOeffnen("diag")}>${t3("🔬 Rohdaten abfragen ›")}</button></div>` : A;
   return b2`<div class="glas-panel block">${kopf}${knoepfe}</div>
     ${d3.mobilfunk ? mobilfunk(p4, d3.mobilfunk) : A}`;
@@ -6630,7 +6631,7 @@ function protokoll(p4, d3) {
 }
 
 // src/heimnetz-panel.js
-var VERSION = true ? "0.28.6" : "entwicklung";
+var VERSION = true ? "0.28.7" : "entwicklung";
 var REITER = [
   ["uebersicht", merke("Übersicht")],
   ["speedtest", merke("Speedtest")],

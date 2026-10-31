@@ -1266,6 +1266,7 @@ test('WU-0009: vorgeschaltetes Gerät – Werte vom Modem mit Herkunft, Zellen m
     const t = text(el);
     assert.match(t, /Werte vom vorgeschalteten Modem \(Beta\)/);
     assert.match(t, /hängt hinter dem ZTE G5TC \(ubus\)/);
+    assert.match(t, /Zuletzt gelesen .{0,15}\d{1,2}:\d{2}\. Nächste Abfrage .{0,15}\d{1,2}:\d{2}\./, 'GitHub #2: Zeit des nächsten Lesens');
     assert.match(t, /vom vorgeschalteten Modem/, 'Herkunft der Werte');
     assert.match(t, /Band B3 · SINR 8,0 dB/);
     assert.match(t, /genutzt \(laut Modem\)/);

@@ -801,6 +801,8 @@ def _vorgeschaltet(lz: Laufzeit, s: str) -> dict[str, Any]:
         "quelle": stand.quelle if stand else None,  # geraet / integration
         "integration": e.b.integration or None if e else None,
         "gelesen": stand.zeit if stand else None,
+        # nächstes Lesen im eigenen Takt (GitHub #2: „Nächste Abfrage HH:MM“)
+        "naechste": dienst.gelesen + ve.TAKT_S if dienst.gelesen else None,
         "werte": lz.abruf.data.mobil_quelle == "modem",
         "befund": ve.befund_daten(befund, s),
     }

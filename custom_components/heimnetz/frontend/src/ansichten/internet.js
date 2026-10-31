@@ -143,7 +143,7 @@ function extern(p, d) {
     : html`<div class="befund"><span class="punkt grau"></span><div><b>${t('Werte vom vorgeschalteten Modem (Beta)')}</b>
       <p>${v.quelle === 'integration'
         ? t('Die FRITZ!Box hängt hinter dem {geraet} und kennt das Funknetz nicht. Die Werte kommen aus dessen Integration in Home Assistant. Was sie nicht liefert, steht als „–“.', { geraet: v.geraet ?? t('Modem') })
-        : t('Die FRITZ!Box hängt hinter dem {geraet} und kennt das Funknetz nicht. Heimnetz liest Zelle und Signal direkt am Gerät (Anmeldung mit dem in ⚙ › 🌐 Zugang hinterlegten Kennwort). Was es nicht liefert, steht als „–“.', { geraet: v.geraet ?? t('Modem') })}${v.gelesen ? ` ${t('Zuletzt gelesen {zeit}.', { zeit: zeit(v.gelesen) })}` : ''}</p></div></div>`;
+        : t('Die FRITZ!Box hängt hinter dem {geraet} und kennt das Funknetz nicht. Heimnetz liest Zelle und Signal direkt am Gerät (Anmeldung mit dem in ⚙ › 🌐 Zugang hinterlegten Kennwort). Was es nicht liefert, steht als „–“.', { geraet: v.geraet ?? t('Modem') })}${v.gelesen ? ` ${t('Zuletzt gelesen {zeit}.', { zeit: zeit(v.gelesen) })}` : ''}${v.naechste ? ` ${t('Nächste Abfrage {zeit}.', { zeit: zeit(v.naechste) })}` : ''}</p></div></div>`;
   const knoepfe = p.istAdmin && b
     ? html`<div class="dg-knoepfe"><button @click=${() => p.einstellungenOeffnen('zugang')}>${t('🌐 Zugang ›')}</button><button @click=${() => p.einstellungenOeffnen('diag')}>${t('🔬 Rohdaten abfragen ›')}</button></div>`
     : nothing;

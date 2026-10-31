@@ -3269,6 +3269,7 @@
    "quelle": "geraet",
    "integration": null,
    "gelesen": 1793139572.846563,
+   "naechste": 1793140172.846563,
    "werte": true,
    "befund": null
   },
@@ -3328,6 +3329,7 @@
    "quelle": "geraet",
    "integration": null,
    "gelesen": 1793139572.846563,
+   "naechste": 1793140172.846563,
    "werte": true,
    "befund": null
   },

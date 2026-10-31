@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## [0.28.7]
+
+- GitHub #2: Im Reiter **Internet** steht bei einem vorgeschalteten Modem neben „Zuletzt gelesen“ jetzt auch, wann es
+  das nächste Mal gelesen wird („Nächste Abfrage HH:MM“, im 10-Minuten-Takt). Die Zeit liefert die Integration.
+
 ## [0.28.6]
 
 - GitHub #2: Werte vom vorgeschalteten Modem erscheinen gleich nach dem Lesen auf der Seite und in den Entitäten –

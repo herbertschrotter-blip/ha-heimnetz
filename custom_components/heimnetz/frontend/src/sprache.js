@@ -710,6 +710,7 @@ export const EN = {
   'Modem': 'modem',
   'Die FRITZ!Box hängt hinter dem {geraet} und kennt das Funknetz nicht. Heimnetz liest Zelle und Signal direkt am Gerät (Anmeldung mit dem in ⚙ › 🌐 Zugang hinterlegten Kennwort). Was es nicht liefert, steht als „–“.': 'The FRITZ!Box sits behind the {geraet} and does not know the mobile network. Heimnetz reads cell and signal directly from the device (login with the password stored under ⚙ › 🌐 Access). Whatever it does not provide shows as “–”.',
   'Zuletzt gelesen {zeit}.': 'Last read {zeit}.',
+  'Nächste Abfrage {zeit}.': 'Next read {zeit}.',
   '🌐 Zugang ›': '🌐 Access ›',
   'Band {band}': 'band {band}',
   'Verbindung von {geraet} zur Basisstation': 'Connection of {geraet} to the base station',

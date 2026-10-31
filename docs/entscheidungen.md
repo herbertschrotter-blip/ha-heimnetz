@@ -432,7 +432,7 @@ nachgetragen.
   Sperre). Liefert das Gerät Funkwerte, gelten sie als `Stand.mobil` (Herkunft `modem`): Reiter Internet, die
   vorhandenen Mobilfunk-Entitäten, Journal (Zellwechsel, Neueinwahl) und Momentaufnahme. Werte gelten 22 Minuten, danach
   „nicht verfügbar“. Nach jedem Lesen stößt Heimnetz gleich einen Abruf an, damit Seite und Entitäten die Werte sofort
-  zeigen (GitHub #2). Neu als Entitäten nur, was das Modem zusätzlich liefert: SINR (Anker, 5G) und Band.
+  zeigen; die Seite nennt die Zeit des nächsten Lesens als Uhrzeit, ohne Countdown (GitHub #2). Neu als Entitäten nur, was das Modem zusätzlich liefert: SINR (Anker, 5G) und Band.
 - Befunde statt Stille (Texte von der Integration): nicht gefunden, nicht erreichbar, Kennwort fehlt, abgelehnt,
   gesperrt, keine Funkwerte, nicht unterstützt, Integration fehlt, Glasfaser-Modem. Abgelehnt: der Hash von Adresse und
   Kennwort bleibt nur im Speicher; mit diesem Kennwort keine weitere Anmeldung, bis ein anderes hinterlegt ist
