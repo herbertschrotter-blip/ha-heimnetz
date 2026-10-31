@@ -447,8 +447,10 @@ nachgetragen.
   meldet sich nicht selbst an, wenn die passende HA-Integration eingerichtet ist, und nimmt ein als abgelehnt
   gemerktes hinterlegtes Kennwort nicht noch einmal – nur ein frisch eingetipptes.
 - Zusatz-Entitäten (SINR Anker/5G, Band) je Wert erst, wenn genau dieser Wert einmal geliefert wurde (Gedächtnis
-  `modem_werte`). ZTE ubus: PCI nur mit Ziffern dezimal, sonst hexadezimal (am Gerät prüfen). Dauer aus Huawei LTE
-  (CurrentConnectTime) nach der Einheit der Entität in Sekunden.
+  `modem_werte`). ZTE ubus: PCI und Zellkennung nur mit Ziffern dezimal, sonst hexadezimal; TAC aus `lac_code`
+  (dezimal); aktives LTE-Band aus `wan_active_band` bzw. dem ersten Eintrag von `lteca` – `lte_band` ist dort die
+  Liste der freigegebenen Bänder (am G5TC bestätigt, GitHub #2, 31.10.2026). Dauer aus Huawei LTE (CurrentConnectTime)
+  nach der Einheit der Entität in Sekunden.
 - Ungetestet am Gerät: alle Bausteine sind nach öffentlicher Doku und erfundenen Antworten gebaut; echte Rohdaten
   über 🔬 Diagnose bessern sie nach.
 

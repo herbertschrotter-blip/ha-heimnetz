@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from collections.abc import Mapping
 from typing import Any
 
@@ -207,13 +208,37 @@ def zelle_lte(eci: int | None) -> str:
     return f"{eci >> 8:x}-{eci & 0xFF:02x}"
 
 
-def _pci(wert: Any, hex_: bool) -> int | None:
-    """goform nennt die PCI hexadezimal. Bei ubus ist das offen: nur Ziffern → dezimal, mit a–f → hexadezimal
-    (am Gerät prüfen, sobald echte Rohdaten vorliegen)."""
+def _kennung(wert: Any, hex_: bool) -> int | None:
+    """goform nennt PCI und Zellkennung hexadezimal. ubus (G5TC, GitHub #2) nennt beide als Zahl: nur Ziffern →
+    dezimal, mit a–f → hexadezimal."""
     roh = text(wert)
     if not hex_ and roh.isdigit():
         return int(roh)
     return _hex(roh)
+
+
+def _tac(w: Mapping[str, Any]) -> str:
+    """TAC hexadezimal wie die Box: goform `tac` (hex), ubus `lac_code` (dezimal, G5TC)."""
+    tac = text(w.get("tac")).lower().removeprefix("0x")
+    if tac:
+        return tac
+    lac = text(w.get("lac_code"))
+    return f"{int(lac):x}" if lac.isdigit() and int(lac) > 0 else ""
+
+
+def _lte_band(w: Mapping[str, Any]) -> str:
+    """Aktives LTE-Band. ubus (G5TC) nennt in `lte_band` die freigegebenen Bänder („1,3,7,20“) – das aktive steht in
+    `wan_active_band` („LTE BAND 3“) bzw. im ersten Eintrag von `lteca` („pci,band,…;“)."""
+    aktiv = text(w.get("wan_active_band"))
+    if "LTE" in aktiv.upper() and (m := re.search(r"(\d+)\s*$", aktiv)):
+        return f"B{m.group(1)}"
+    ca = text(w.get("lteca")).split(";")[0].split(",")
+    if len(ca) > 1 and ca[1].strip().isdigit():
+        return f"B{ca[1].strip()}"
+    if band := _band(w.get("lte_ca_pcell_band"), "B"):
+        return band
+    liste = text(w.get("lte_band"))
+    return "" if "," in liste else _band(liste, "B")
 
 
 def aus_werten(w: Mapping[str, Any], pci_hex: bool = True) -> Mobilfunk | None:
@@ -227,14 +252,14 @@ def aus_werten(w: Mapping[str, Any], pci_hex: bool = True) -> Mobilfunk | None:
             rolle="primary",
             art="LTE",
             anbieter=anbieter,
-            pci=_pci(w.get("lte_pci"), pci_hex),
-            zelle=zelle_lte(_hex(w.get("cell_id"))),
+            pci=_kennung(w.get("lte_pci"), pci_hex),
+            zelle=zelle_lte(_kennung(w.get("cell_id"), pci_hex)),
             rsrp=rsrp,
             rsrq=_ganz(w.get("lte_rsrq")),
             plmn=plmn,
-            tac=text(w.get("tac")).lower().removeprefix("0x"),
+            tac=_tac(w),
             sinr=_zahl(w.get("lte_snr")),
-            band=_band(w.get("lte_band") or w.get("lte_ca_pcell_band"), "B"),
+            band=_lte_band(w),
         )
     nr_rsrp = _ganz(w.get("nr5g_rsrp") if text(w.get("nr5g_rsrp")) else w.get("Z5g_rsrp"))
     nr: Zelle | None = None
@@ -243,7 +268,7 @@ def aus_werten(w: Mapping[str, Any], pci_hex: bool = True) -> Mobilfunk | None:
             rolle="secondary" if lte else "primary",
             art="5G",
             anbieter=anbieter,
-            pci=_pci(w.get("nr5g_pci"), pci_hex),
+            pci=_kennung(w.get("nr5g_pci"), pci_hex),
             zelle="",  # 5G-Zellkennung lässt sich nicht nachschlagen – wie bei der Box nur die PCI
             rsrp=nr_rsrp,
             rsrq=_ganz(w.get("nr5g_rsrq") if text(w.get("nr5g_rsrq")) else w.get("Z5g_rsrq")),

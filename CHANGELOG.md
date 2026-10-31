@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [0.28.4]
+
+- Fix (GitHub #2): Mit 0.28.3 liest Heimnetz das ZTE G5TC über ubus (Anmeldung und Funkwerte gehen). Drei Werte waren
+  falsch umgerechnet: das **Band** (B1 statt B3 – `lte_band` ist beim G5TC die Liste der freigegebenen Bänder, das
+  aktive steht in `wan_active_band`), die **Zellkennung** (ubus nennt sie dezimal, gelesen wurde sie hexadezimal –
+  dadurch falsche Zelle und Sendeanlage) und die fehlende **TAC** (ubus: `lac_code`).
+
 ## [0.28.3]
 
 - Fix (GitHub #2): Ein ZTE G5TC wurde zwar als „ZTE“ erkannt, aber keine seiner Schnittstellen („Gerät erkannt, Werte

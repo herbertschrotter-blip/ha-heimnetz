@@ -6630,7 +6630,7 @@ function protokoll(p4, d3) {
 }
 
 // src/heimnetz-panel.js
-var VERSION = true ? "0.28.3" : "entwicklung";
+var VERSION = true ? "0.28.4" : "entwicklung";
 var REITER = [
   ["uebersicht", merke("Übersicht")],
   ["speedtest", merke("Speedtest")],

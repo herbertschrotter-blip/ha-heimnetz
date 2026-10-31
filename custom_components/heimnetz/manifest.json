@@ -29,5 +29,5 @@
     "tplinkrouterc6u>=5.37.0"
   ],
   "single_config_entry": true,
-  "version": "0.28.3"
+  "version": "0.28.4"
 }

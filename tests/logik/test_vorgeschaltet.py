@@ -217,6 +217,44 @@ def test_ubus_umrechnen():
     assert (m.nr.pci, m.nr.sinr, m.laufzeit_s) == (500, 15.5, 600)
 
 
+def test_ubus_g5tc_band_zelle_tac():
+    """GitHub #2 (Form der echten G5TC-Antwort, Werte erfunden): `lte_band` ist die Liste der freigegebenen Bänder,
+    das aktive steht in `wan_active_band`/`lteca`; Zellkennung als Zahl dezimal; TAC als `lac_code` dezimal."""
+    netinfo = {
+        "network_type": "ENDC",
+        "network_provider": "3 AT",
+        "rmcc": 232,
+        "rmnc": 5,
+        "wan_active_band": "LTE BAND 3",
+        "lte_band": "1,3,7,8,20,28,38",
+        "lteca": "123,3,0,1525,15;456,1,1,500,20;",
+        "cell_id": 26917889,  # 0x19ABC01 → eNodeB 19abc, Sektor 01
+        "lac_code": 6699,  # 0x1A2B
+        "lte_pci": 123,
+        "lte_rsrp": -91,
+        "lte_rsrq": -12,
+        "lte_snr": "5.0",
+        "nr5g_pci": 500,
+        "nr5g_rsrp": -94,
+        "nr5g_snr": "23.4",
+        "nr5g_action_band": "n78",
+    }
+    m = vz.aus_ubus(netinfo)
+    h = m.haupt
+    assert (h.band, h.zelle, h.tac, h.pci, h.plmn) == ("B3", "19abc-01", "1a2b", 123, "23205")
+    assert (m.technik, m.nr.band, m.nr.pci) == ("5G-NSA", "n78", 500)
+    ohne_aktiv = {k: v for k, v in netinfo.items() if k != "wan_active_band"}
+    assert vz.aus_ubus(ohne_aktiv).haupt.band == "B3", "aus dem ersten Eintrag von lteca"
+    nur_liste = {k: v for k, v in ohne_aktiv.items() if k != "lteca"}
+    assert vz.aus_ubus(nur_liste).haupt.band == "", "eine Liste ist kein aktives Band"
+    assert vz.aus_werten({"lte_rsrp": "-90", "lte_band": "3"}).haupt.band == "B3", (
+        "goform: ein Band"
+    )
+    assert vz.aus_werten({"lte_rsrp": "-90", "cell_id": "1A2B3C4"}).haupt.zelle == "1a2b3-c4", (
+        "goform hex"
+    )
+
+
 # ── Huawei HiLink ──
 # Form wie huawei-lte-api (Salamek/huawei-lte-api) device/signal, net/current-plmn, monitoring/traffic-statistics;
 # Felder wie in der Integration huawei_lte von Home Assistant
