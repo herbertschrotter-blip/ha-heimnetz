@@ -216,7 +216,7 @@ class Dienst:
         async with netz.neue_session(aiohttp.ClientTimeout(total=GESAMT_S)) as session:
             lauf = Lauf(session, adresse, sprache, roh=False)
             try:
-                lesung, quelle = await asyncio.wait_for(
+                lesung, quelle, erkennung = await asyncio.wait_for(
                     self._mit_startseite(lauf, erkennung, None if abgelehnt else kennwort), GESAMT_S
                 )
             except TimeoutError:
@@ -239,13 +239,22 @@ class Dienst:
 
     async def _mit_startseite(
         self, lauf: Lauf, erkennung: ve.Erkennung, kennwort: str | None
-    ) -> tuple[zte.Lesung, str]:
+    ) -> tuple[zte.Lesung, str, ve.Erkennung]:
+        """Lesen; bei einem gemerkten ZTE ohne Schnittstelle (die Suche hat kurze Zeitlimits) die Schnittstelle erst
+        mit den normalen bestimmen und merken (GitHub #2). (Lesung, Quelle, Erkennung)."""
         b = erkennung.b
         if b.integration and integrationen.eingerichtet(self.hass, b.integration):
-            return await baustein_lesen(self.hass, lauf, erkennung, kennwort)
-        if await lauf.startseite() is None:
-            return zte.Lesung(befund="nicht_erreichbar"), "geraet"
-        return await baustein_lesen(self.hass, lauf, erkennung, kennwort)
+            return (*await baustein_lesen(self.hass, lauf, erkennung, kennwort), erkennung)
+        startseite = await lauf.startseite()
+        if startseite is None:
+            return zte.Lesung(befund="nicht_erreichbar"), "geraet", erkennung
+        if erkennung.baustein == "zte":
+            neu = await erkennen_aus(lauf, self.hass, startseite)
+            if neu is not None and neu.baustein != "zte":
+                erkennung = ve.Erkennung(neu.baustein, neu.modell or erkennung.modell)
+                if self.gemerkt is not None and self.gemerkt.baustein == "zte":
+                    self.gemerkt = erkennung
+        return (*await baustein_lesen(self.hass, lauf, erkennung, kennwort), erkennung)
 
     @property
     def nicht_erreichbar_lange(self) -> bool:

@@ -661,6 +661,20 @@ async def test_goform_netzfehler_bei_anmeldung_ist_kein_abgelehnt(
     assert len(_logins(modem_netz)) == 1 and abruf.modem.stand.befund == "anmeldung_abgelehnt"
 
 
+async def test_gemerktes_zte_ohne_schnittstelle_wird_beim_lesen_bestimmt(
+    hass: HomeAssistant, hinter_modem, modem_netz
+):
+    """GitHub #2: Die Suche (kurze Zeitlimits) hat nur „ZTE“ ohne Schnittstelle gemerkt. Der nächste Abruf bestimmt die
+    Schnittstelle mit den normalen Zeitlimits, liest die Werte und merkt sich das Ergebnis – ohne „Erneut suchen“."""
+    dienst = hinter_modem.runtime_data.abruf.modem
+    _zte_ubus(modem_netz)
+    dienst.gemerkt, dienst.adresse = ve.Erkennung("zte", ""), ADRESSE
+    dienst.anstossen()
+    stand = await dienst.arbeiten((ADRESSE,), KENNWORT)
+    assert stand.befund is None and stand.mobil is not None and stand.mobil.haupt.rsrp == -97
+    assert stand.erkennung.baustein == "zte_ubus" and dienst.gemerkt.baustein == "zte_ubus"
+
+
 async def test_kein_zweiter_zugriff_ohne_anlass_und_suche_merkt_sich_fehler(
     hass: HomeAssistant, hinter_modem, modem_netz, hass_ws_client, monkeypatch
 ):

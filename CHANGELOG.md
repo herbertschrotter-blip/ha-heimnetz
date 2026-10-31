@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [0.28.5]
+
+- Fix (GitHub #2): Hatte Heimnetz ein ZTE-Modem nur als „ZTE“ ohne Schnittstelle erkannt (die Suche gibt jedem Gerät
+  wenig Zeit, das G5TC braucht mit https länger), blieb es dabei – der Reiter Internet zeigte weiter „Gerät erkannt,
+  Werte noch nicht unterstützt“, obwohl 🔬 Diagnose die Werte las. Jetzt bestimmt der nächste Abruf die Schnittstelle
+  mit den normalen Zeitlimits, liest die Werte und merkt sich das Ergebnis; „↻ Erneut suchen“ ist nicht nötig.
+
 ## [0.28.4]
 
 - Fix (GitHub #2): Mit 0.28.3 liest Heimnetz das ZTE G5TC über ubus (Anmeldung und Funkwerte gehen). Drei Werte waren

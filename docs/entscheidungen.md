@@ -423,8 +423,9 @@ nachgetragen.
     solange keine echte Antwort vorliegt. Neue Zugangsart „Glasfaser über ein eigenes Modem“ (`ont`, für die Box ein
     vorgeschaltetes Gerät).
 - Suche: nacheinander an gespeicherter Adresse, Vorschlag der Box und 192.168.0.1, .1.1, .8.1, .18.1, .100.1 – nie die
-  Adresse der Box, Ende beim ersten erkannten Gerät; kein Absuchen weiterer Adressen. Angestoßen beim Einrichten (Wahl
-  oder Adresse geändert), bei „↻ Erneut suchen“ und – solange nichts gefunden ist – höchstens alle 10 Minuten. Das
+  Adresse der Box, Ende beim ersten erkannten Gerät; kein Absuchen weiterer Adressen. Die Suche hat kurze Zeitlimits;
+  erkennt sie nur „ZTE“ ohne Schnittstelle, bestimmt der nächste Abruf die Schnittstelle mit den normalen Zeitlimits
+  und merkt sie (GitHub #2). Angestoßen beim Einrichten (Wahl oder Adresse geändert), bei „↻ Erneut suchen“ und – solange nichts gefunden ist – höchstens alle 10 Minuten. Das
   erkannte Gerät steht im Gedächtnis des Abrufs (Adresse, Baustein, Modell), ohne neue Schema-Version.
 - Abruf: nur bei Internet über ein vorgeschaltetes Gerät (festgelegt oder erkannt), im eigenen 10-Minuten-Takt im
   Hintergrund, getrennt von der Sperre der Box (anderes Gerät), nie zweimal zugleich und nie neben der Diagnose (eine
