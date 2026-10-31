@@ -99,8 +99,8 @@ class Lauf:
         self.basis = ""
         self.kopf: dict[str, str] = {}
 
-    def zeit_uebrig(self) -> bool:
-        return (time.monotonic() - self.start) < self.gesamt_s
+    def zeit_uebrig(self, reserve: float = 0) -> bool:
+        return (time.monotonic() - self.start) < self.gesamt_s - reserve
 
     def eintrag(self, name: str, status: str, angabe: str) -> None:
         self.abfragen.append({"name": t(name, self.sprache), "status": status, "angabe": angabe})

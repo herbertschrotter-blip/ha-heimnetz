@@ -80,7 +80,7 @@ async def baustein_lesen(
     if erkennung.baustein == "zte_goform":
         return await zte.goform_lesen(lauf, kennwort, diagnose), "geraet"
     if erkennung.baustein == "zte_ubus":
-        return await zte.ubus_lesen(lauf, kennwort), "geraet"
+        return await zte.ubus_lesen(lauf, kennwort, diagnose), "geraet"
     # Die Bibliotheken laufen im Executor. Läuft das Zeitlimit des Aufrufers (asyncio.wait_for) ab, arbeitet der Thread
     # womöglich weiter – abbrechen lässt er sich nicht; begrenzt wird das durch die Zeitlimits je Anfrage (ZEIT_S).
     try:

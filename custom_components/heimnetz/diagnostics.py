@@ -14,9 +14,9 @@ from homeassistant.core import HomeAssistant
 from homeassistant.loader import async_get_integration
 
 from . import EintragMitLaufzeit
+from .ansichten import diagnose_namen
 from .const import CONF_MODEM_KENNWORT, DOMAIN, sprache
 from .logik import diagnose as dg
-from .logik import github as gh
 from .speedtest import ookla_einstellung
 
 
@@ -30,12 +30,6 @@ async def async_get_config_entry_diagnostics(
     datenbank = await hass.async_add_executor_job(lambda: {"zeilen": db.anzahl()})
     stand = abruf.data
     info = abruf.box_info
-    # Gerätenamen – kommen sie in einem Text vor, werden sie geschwärzt (Box und Geräte-Tracker in HA)
-    namen = [g.name for g in stand.geraete.values()] if stand else []
-    namen += [s.name for s in hass.states.async_all("device_tracker")]
-    namen += gh.zell_kennungen(stand.mobil if stand else None)  # Zellkennungen auch in Texten
-    # WU-0010: Namen eigener Arten sind Daten des Nutzers – kommen sie in einem Text vor, geschwärzt
-    namen += [e.name for e in lz.einstellungen.eigene.values()]
     roh = {
         "version": {
             "heimnetz": str((await async_get_integration(hass, DOMAIN)).version or ""),
@@ -67,5 +61,5 @@ async def async_get_config_entry_diagnostics(
         },
         "datenbank": datenbank,
     }
-    ergebnis: dict[str, Any] = dg.schwaerzen(roh, namen)
+    ergebnis: dict[str, Any] = dg.schwaerzen(roh, diagnose_namen(hass, lz))
     return ergebnis

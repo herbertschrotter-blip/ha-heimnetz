@@ -334,6 +334,8 @@ EN: dict[str, str] = {
     "ubus: Anmeldung": "ubus: login",
     "ubus: Funkwerte": "ubus: radio values",
     "ubus: Verbindung": "ubus: connection",
+    "ubus: Datenvolumen": "ubus: data volume",
+    "Datenvolumen": "Data volume",
     "{n} Versuche frei": "{n} attempts left",
     "Code {code}": "code {code}",
     "keine Antwort": "no answer",

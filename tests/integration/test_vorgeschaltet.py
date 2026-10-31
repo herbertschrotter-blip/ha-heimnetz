@@ -13,6 +13,7 @@ import json
 import logging
 import re
 from datetime import timedelta
+from unittest.mock import patch
 
 import aiohttp
 import pytest
@@ -83,7 +84,7 @@ def _leeren(mock):
     mock.post(OVERPASS, json={"elements": []})
 
 
-def _zte_ubus(mock, *, kennwort_ok=True, versuche=5, erreichbar=True, umleiten=False):
+def _zte_ubus(mock, *, kennwort_ok=True, versuche=5, erreichbar=True, umleiten=False, volumen=True):
     """ZTE G5TC (ubus) unter ADRESSE; jede andere Adresse antwortet nicht. `umleiten`: per http nur eine leere
     Weiterleitung auf https (GitHub #2), die Seite gibt es erst dort."""
     _leeren(mock)
@@ -110,6 +111,9 @@ def _zte_ubus(mock, *, kennwort_ok=True, versuche=5, erreichbar=True, umleiten=F
             "nwinfo_get_netinfo": [0, NETINFO] if angemeldet else [6],
             "get_wwaniface": [0, {"connect_status": "connected", "realtime_time": 3600}]
             if angemeldet
+            else [6],
+            "get_wwandst": [0, {"real_rx_bytes": 1000, "real_tx_bytes": 200}]
+            if angemeldet and volumen
             else [6],
             "web_logout": [0],
         }[methode]
@@ -197,6 +201,7 @@ async def test_zte_ubus_gefunden_werte_im_reiter_und_in_entitaeten(
     aufrufe = _ubus_aufrufe(modem_netz)
     assert aufrufe.count("web_login") == 1
     assert set(aufrufe) <= {m for _, m in lz.UBUS_ERLAUBT}
+    assert "get_wwandst" not in aufrufe  # das Datenvolumen liest nur die 🔬 Diagnose
     assert all(ADRESSE in str(c[1]) for c in modem_netz.mock_calls if "/ubus/" in str(c[1]))
     assert KENNWORT not in json.dumps(d) and KENNWORT not in json.dumps(z)
     assert not any(KENNWORT in r.getMessage() for r in _eigene(caplog))
@@ -363,6 +368,46 @@ def _huawei(m: rm.Mocker, *, kennwort_ok=True):
         text="<response><CurrentConnectTime>7200</CurrentConnectTime></response>",
     )
     m.post(HUAWEI + "api/user/logout", text="<response>OK</response>")
+
+
+async def test_diagnose_mit_umfeld_und_datenvolumen(hass, hinter_modem, hass_ws_client, modem_netz):
+    """GitHub #4: eine Datei für alles – Box, Zähler, laufender Abruf; das Datenvolumen nur in der Diagnose."""
+    _zte_ubus(modem_netz)
+    client = await hass_ws_client(hass)
+    d = (await _frage(client, type="heimnetz/modem", adresse=ADRESSE, kennwort=KENNWORT))["result"]
+
+    assert d["daten"]["ubus_get_wwandst"]["real_rx_bytes"] == 1000
+    assert "ubus: Datenvolumen" in [a["name"] for a in d["abfragen"]]
+    u = d["umfeld"]
+    assert set(u) == {"umgebung", "box", "zaehler", "modem_abruf", "warnungen"}
+    assert u["umgebung"]["home_assistant"]
+    assert u["box"]["zugang_wahl"] and "vorschlag" not in u["box"]
+    assert u["zaehler"]["down"]["vorhanden"] in (True, False)
+    assert "aktiv" in u["modem_abruf"]
+    assert all(set(w) == {"t", "stufe", "art"} for w in u["warnungen"])
+    roh = json.dumps(u)
+    assert KENNWORT not in roh and ADRESSE not in roh
+
+
+async def test_diagnose_ubus_ohne_datenvolumen_ist_kein_fehler(
+    hass, hinter_modem, hass_ws_client, modem_netz
+):
+    _zte_ubus(modem_netz, volumen=False)
+    client = await hass_ws_client(hass)
+    d = (await _frage(client, type="heimnetz/modem", adresse=ADRESSE, kennwort=KENNWORT))["result"]
+    eintraege = {a["name"]: a["status"] for a in d["abfragen"]}
+    assert eintraege["ubus: Datenvolumen"] == "aus" and eintraege["ubus: Funkwerte"] == "ok"
+    assert d["befund"] is None
+
+
+async def test_umfeld_fehlt_rohdaten_bleiben(hass, hinter_modem, hass_ws_client, modem_netz):
+    _zte_ubus(modem_netz)
+    client = await hass_ws_client(hass)
+    with patch("custom_components.heimnetz.ansichten.umfeld", side_effect=RuntimeError):
+        d = (await _frage(client, type="heimnetz/modem", adresse=ADRESSE, kennwort=KENNWORT))[
+            "result"
+        ]
+    assert "umfeld" not in d and d["daten"]["ubus_nwinfo_get_netinfo"]
 
 
 async def test_diagnose_huawei_hilink_mit_bibliothek(hass, hass_ws_client, modem_netz, caplog):

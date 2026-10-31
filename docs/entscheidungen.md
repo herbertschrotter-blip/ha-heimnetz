@@ -318,6 +318,10 @@ nachgetragen.
 
 ## Vorgeschaltetes Modem – Rohdaten-Werkzeug (Herbert, 27.10.2026, WU-0008)
 
+- Seit 0.29.0 (GitHub #4, Herbert, 31.10.2026) liefert die Abfrage auch `umfeld` (`ansichten.umfeld`): Umgebung, Betrieb
+  der Box, Zähler, laufender Abruf, letzte zehn Warnungen (ohne Text: er nennt Geräte, auch frühere) – eine Datei statt
+  mehrerer Rückfragen, weiter nur auf Knopfdruck und nichts wird verschickt. Dazu liest die Diagnose beim ZTE das Datenvolumen (ubus `get_wwandst`,
+  nur Diagnose; ob der G5TC es liefert, ist ungeprüft). Der laufende Abruf bleibt dabei unverändert.
 - Anlass: Ein Nutzer hat das Mobilfunk-Modem nicht in der FRITZ!Box, sondern ein vorgeschaltetes ZTE-5G-Modem
   (vermutlich ZTE G5TC von Drei Österreich oder G5TS). Die FRITZ!Box kennt dann keine Funkdaten, „Funk › Mobilfunk“
   bleibt leer. Um das später zu unterstützen, braucht der Entwickler Rohdaten. Diese Version (Mockup `netzwerk.html` ·

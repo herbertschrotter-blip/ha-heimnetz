@@ -619,6 +619,7 @@ export const EN = {
   'z. B. Mobilfunk-Stick an der FRITZ!Box, wenn DSL ausfällt': 'e.g. a mobile stick on the FRITZ!Box when DSL fails',
   '↻ Erneut suchen': '↻ Search again',
   '🔬 Diagnose ›': '🔬 Diagnostics ›',
+  'Dazu kommen Betrieb der Box, Verbrauchszähler, laufender Abruf und die letzten Warnungen.': 'Also included: box operation, usage counters, the running poll and the latest warnings.',
   'automatisch erkannt': 'detected automatically',
   'festgelegt': 'set manually',
   'Ersatz: {text}': 'Backup: {text}',

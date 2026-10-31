@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## [0.29.0]
+
+- GitHub #4: Die **🔬 Diagnose** enthält jetzt alles zur Fehlersuche in einer Datei: Umgebung (Versionen, Box, Netz),
+  Betrieb der Box (Zugangsart, Art der WAN-Adresse), Verbrauchszähler von FRITZ!Box Tools, laufender Abruf des Modems
+  (Gerät, Quelle, letzte und nächste Abfrage, Befund) und die letzten zehn Warnungen (nur Zeit, Stufe und Art, ohne
+  Text). Sie steht auch in der Datei, wenn das Modem nicht antwortet.
+- GitHub #4: Bei ZTE-Modems fragt die Diagnose lesend auch das Datenvolumen ab (ubus `get_wwandst`, goform
+  `monthly_*`/`realtime_*`) – um zu klären, ob sich der Verbrauch aus dem Modem lesen lässt. Der laufende Abruf nutzt
+  das nicht.
+
 ## [0.28.8]
 
 - Fix: Die Reiter der **Einstellungen** liefen rechts aus dem Fenster („Zugang“ und die Reiter danach nur mit

@@ -43,11 +43,17 @@ UBUS_ERLAUBT = frozenset(
         ("zwrt_web", "web_logout"),
         ("zte_nwinfo_api", "nwinfo_get_netinfo"),
         ("zwrt_data", "get_wwaniface"),
+        ("zwrt_data", "get_wwandst"),  # Datenvolumen, nur in der 🔬 Diagnose (GitHub #4)
     }
 )
 UBUS_LESEN: tuple[tuple[str, str, dict[str, Any]], ...] = (
     ("zte_nwinfo_api", "nwinfo_get_netinfo", {}),
     ("zwrt_data", "get_wwaniface", {"source_module": "web", "cid": 1}),
+)
+UBUS_VOLUMEN: tuple[str, str, dict[str, Any]] = (
+    "zwrt_data",
+    "get_wwandst",
+    {"source_module": "web", "cid": 1, "type": 4},
 )
 
 

@@ -198,8 +198,9 @@ wie die Integration Huawei LTE) und `tplinkrouterc6u` ≥ 5.37.0 (GPL-3.0, Proje
 im Repo mitgeliefert). Beide sind Pflicht-Abhängigkeiten: Kann Home Assistant sie nicht installieren, lädt Heimnetz
 nicht. Benutzt werden sie nur bei einem solchen Gerät.
 
-Die **Diagnose** (⚙ → 🔬 Diagnose, Beta) zeigt erkannten Hersteller und Schnittstelle und die Rohdaten aller passenden
-Schnittstellen geschwärzt an (die Zellkennung bleibt, IMEI, Kennwort, Rufnummer und Adressen nicht), damit man sie dem
+Die **Diagnose** (⚙ → 🔬 Diagnose, Beta) zeigt erkannten Hersteller und Schnittstelle, die Rohdaten aller passenden
+Schnittstellen (beim ZTE auch das Datenvolumen), Betrieb der Box, Verbrauchszähler, den laufenden Abruf und die letzten
+Warnungen geschwärzt an (die Zellkennung bleibt, IMEI, Kennwort, Rufnummer und Adressen nicht), damit man sie dem
 Entwickler schicken kann – für Geräte, die Heimnetz noch nicht ausliest. Heimnetz sendet selbst nichts; ein dort
 eingetipptes Kennwort wird nur für die Abfrage verwendet und nicht gespeichert (leer gelassen, nimmt Heimnetz das unter
 🌐 Zugang für die gespeicherte bzw. gefundene Adresse hinterlegte).
@@ -521,7 +522,8 @@ same as the Huawei LTE integration) and `tplinkrouterc6u` ≥ 5.37.0 (GPL-3.0, p
 this repository). Both are required dependencies: if Home Assistant cannot install them, Heimnetz does not load. They
 are used only with such a device.
 
-The **Diagnostics** tab (⚙ → 🔬 Diagnostics, beta) shows the detected maker and interface and the raw data of all
+The **Diagnostics** tab (⚙ → 🔬 Diagnostics, beta) shows the detected maker and interface, box operation, usage
+counters, the running poll, the latest warnings and the raw data (on ZTE also the data volume) of all
 matching interfaces, redacted (the cell ID stays; IMEI, password, phone number and addresses do not), so you can send
 it to the developer – for devices Heimnetz does not read yet. Heimnetz sends nothing itself; a password typed there is
 used only for the query and not stored (left empty, Heimnetz uses the one stored under 🌐 Access for the stored or found

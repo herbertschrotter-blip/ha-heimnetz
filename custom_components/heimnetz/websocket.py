@@ -4,6 +4,7 @@ Admin). Gibt es keine geladene Einrichtung, antwortet jeder Befehl mit dem Fehle
 from __future__ import annotations
 
 import functools
+import logging
 from typing import Any
 
 import voluptuous as vol
@@ -22,6 +23,8 @@ from .logik import zugang as zg
 from .logik.einstellungen import Ungueltig
 from .logik.sprache import t
 from .speicher import Angehalten
+
+LOGGER = logging.getLogger(__package__)
 
 
 def _tr(hass: HomeAssistant, text: str) -> str:
@@ -465,9 +468,11 @@ async def _modem(
     kennwort = msg.get("kennwort")
     sperre = None
     hinterlegt_abgelehnt = False
+    laufzeit = None
     adresse = msg["adresse"].strip()
     for e in hass.config_entries.async_loaded_entries(DOMAIN):
-        dienst = e.runtime_data.abruf.modem
+        laufzeit = e.runtime_data
+        dienst = laufzeit.abruf.modem
         sperre = dienst.sperre  # nie zugleich mit dem laufenden Abruf am Gerät
         if not kennwort and adresse == _hinterlegt_fuer(e.runtime_data):
             # WU-0009: ohne eingetipptes Kennwort das in ⚙ › Zugang hinterlegte – nur für genau diese Adresse und
@@ -485,6 +490,11 @@ async def _modem(
             "befund": "anmeldung_abgelehnt",
             "hinweis": ve.befund_daten("anmeldung_abgelehnt", s),
         }
+    if laufzeit is not None:
+        try:
+            antwort = {**antwort, "umfeld": await ansichten.umfeld(hass, laufzeit)}
+        except Exception:  # nur eine Beigabe: sie darf die gelesenen Rohdaten nicht kosten
+            LOGGER.exception("Heimnetz: Umfeld der Diagnose nicht lesbar")
     connection.send_result(msg["id"], antwort)
 
 

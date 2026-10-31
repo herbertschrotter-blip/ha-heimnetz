@@ -125,3 +125,16 @@ async def test_nur_fuer_admins(hass, hass_ws_client, hass_read_only_access_token
     assert await async_setup_component(hass, DOMAIN, {})
     antwort = await _frage(hass, hass_ws_client, hass_read_only_access_token, adresse=ADRESSE)
     assert not antwort["success"] and antwort["error"]["code"] == "unauthorized"
+
+
+async def test_goform_datenvolumen_eigene_abfrage(hass, hass_ws_client, modem_session) -> None:
+    """GitHub #4: lehnt eine Firmware die Felder ab, bleiben die Funkwerte."""
+    assert await async_setup_component(hass, DOMAIN, {})
+    modem_session.get(re.compile(rf"{re.escape(ADRESSE)}/$"), text=STARTSEITE)
+    modem_session.get(re.compile(r"cmd=monthly_rx_bytes"), status=500, text="nein")
+    modem_session.get(re.compile(r"goform_get_cmd_process"), json=WERTE)
+    modem_session.post(re.compile(r"/ubus"), status=404, text="")
+    d = await _frage(hass, hass_ws_client, adresse=ADRESSE)
+    r = d["result"]
+    assert "ohne_anmeldung" in r["daten"] and r["umgerechnet"]
+    assert {a["name"]: a["status"] for a in r["abfragen"]}["Datenvolumen"] == "aus"

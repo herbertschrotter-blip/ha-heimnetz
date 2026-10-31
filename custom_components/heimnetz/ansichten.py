@@ -15,6 +15,7 @@ from dataclasses import asdict
 from datetime import date, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
+from homeassistant.const import __version__ as HA_VERSION
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.util import dt as dt_util
@@ -24,7 +25,9 @@ from .const import CONF_MODEM_KENNWORT, sprache
 from .logik import arten as ar
 from .logik import auswertung as aw
 from .logik import befunde as bf
+from .logik import diagnose as dg
 from .logik import geraete as gr
+from .logik import github as gh
 from .logik import karte as ka
 from .logik import leitung as ln
 from .logik import messplan as mp
@@ -975,6 +978,78 @@ async def verbrauch(
             "speedtest": k.speedtest,
         },
     }
+
+
+# ── Diagnose ──
+def diagnose_namen(hass: HomeAssistant, lz: Laufzeit) -> list[str]:
+    """Was in Texten geschwärzt wird: Gerätenamen (Box und Geräte-Tracker in HA), Zellkennungen und die Namen eigener
+    Arten (WU-0010: Daten des Nutzers)."""
+    stand = lz.abruf.data
+    namen = [g.name for g in stand.geraete.values()] if stand else []
+    namen += [s.name for s in hass.states.async_all("device_tracker")]
+    namen += gh.zell_kennungen(stand.mobil if stand else None)
+    namen += [e.name for e in lz.einstellungen.eigene.values()]
+    return namen
+
+
+async def umfeld(hass: HomeAssistant, lz: Laufzeit) -> dict[str, Any]:
+    """🔬 Diagnose: was neben den Rohdaten des Modems zur Fehlersuche gehört (GitHub #4) – Umgebung, Betrieb der Box,
+    Zähler, laufender Abruf des Modems und die letzten Warnungen. Geschwärzt wie der Diagnose-Download."""
+    abruf, s = lz.abruf, sprache(hass)
+    stand, info, m = abruf.data, abruf.box_info, abruf.modem
+    meldung = (stand.zugang if stand else None) or abruf.gedaechtnis.zugang
+    box = asdict(meldung) if meldung else {}
+    box.pop("vorschlag", None)  # eine Adresse, und für die Fehlersuche reicht `wan_netz`
+    ids = ab.fritz_zaehler(hass, abruf.fritz_eintrag)
+
+    def zaehler(richtung: str) -> dict[str, Any]:
+        sid = ids.get(richtung)
+        zustand = hass.states.get(sid) if sid else None
+        return {"vorhanden": bool(sid), "stand_gb": zustand.state if zustand else None}
+
+    heute = (await verbrauch(hass, lz, 1, ganzer_monat=False))["kacheln"]
+    warnungen = await hass.async_add_executor_job(
+        lambda: lz.datenbank.journal_lesen(0, nur_wichtig=True, grenze=10, suche="")
+    )
+    gemerkt, gelesen, aktiv = m.gemerkt, m.stand, abruf.modem_aktiv()
+    roh = {
+        "umgebung": {
+            "home_assistant": HA_VERSION,
+            "sprache": s,
+            "box_modell": info.modell if info else None,
+            "box_firmware": info.firmware if info else None,
+            "netz": stand.mobil.technik if stand and stand.mobil else None,
+        },
+        "box": {
+            "zugang_erkannt": stand.zugang_art if stand else None,
+            "zugang_wahl": lz.einstellungen.wert.zugang_wahl,
+            "ersatz_aktiv": stand.ersatz_aktiv if stand else None,
+            **box,
+        },
+        "zaehler": {
+            "down": zaehler("down"),
+            "up": zaehler("up"),
+            "heute_gb": heute["heute"] if heute else None,
+        },
+        "modem_abruf": {
+            "aktiv": aktiv,
+            "baustein": gemerkt.baustein if gemerkt else None,
+            "geraet": gemerkt.name if gemerkt else None,
+            "werte_quelle": stand.mobil_quelle if stand else None,
+            "befund": gelesen.befund if gelesen else None,
+            "angemeldet": gelesen.angemeldet if gelesen else None,
+            "technik": gelesen.mobil.technik if gelesen and gelesen.mobil else None,
+            "gelesen": round(m.gelesen) or None,
+            "naechste": round(m.gelesen + ve.TAKT_S) if aktiv and m.gelesen else None,
+            "gesucht": round(m.gesucht) if m.gesucht else None,
+        },
+        # nur Zeit, Stufe und Art: Texte nennen Geräte und Dienste, auch frühere, die keine Schwärzliste mehr kennt
+        "warnungen": [
+            {"t": round(z.t), "stufe": z.ereignis.stufe, "art": z.ereignis.art} for z in warnungen
+        ],
+    }
+    ergebnis: dict[str, Any] = dg.schwaerzen(roh, diagnose_namen(hass, lz))
+    return ergebnis
 
 
 # ── Protokoll ──

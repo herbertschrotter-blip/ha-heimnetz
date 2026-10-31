@@ -4153,6 +4153,7 @@ var EN = {
   "z. B. Mobilfunk-Stick an der FRITZ!Box, wenn DSL ausfällt": "e.g. a mobile stick on the FRITZ!Box when DSL fails",
   "↻ Erneut suchen": "↻ Search again",
   "🔬 Diagnose ›": "🔬 Diagnostics ›",
+  "Dazu kommen Betrieb der Box, Verbrauchszähler, laufender Abruf und die letzten Warnungen.": "Also included: box operation, usage counters, the running poll and the latest warnings.",
   "automatisch erkannt": "detected automatically",
   "festgelegt": "set manually",
   "Ersatz: {text}": "Backup: {text}",
@@ -6527,7 +6528,7 @@ function diagnose(p4) {
   if (!p4.istAdmin) return b2`<p class="hinweis" style="padding-top:8px">${t3("Diese Abfrage können nur Admins starten.")}</p>`;
   const d3 = p4._diag;
   const kopf = b2`
-    <p class="hinweis" style="margin:4px 0 6px">${t3("Hier fragt Heimnetz ein Gerät vor der FRITZ!Box (5G/LTE-Modem, Glasfaser-Modem) ab: erkennt Hersteller und Schnittstelle und zeigt alle Rohdaten, geschwärzt – damit der Entwickler weitere Geräte unterstützen kann.")} <span class="neu">BETA</span></p>
+    <p class="hinweis" style="margin:4px 0 6px">${t3("Hier fragt Heimnetz ein Gerät vor der FRITZ!Box (5G/LTE-Modem, Glasfaser-Modem) ab: erkennt Hersteller und Schnittstelle und zeigt alle Rohdaten, geschwärzt – damit der Entwickler weitere Geräte unterstützen kann.")} ${t3("Dazu kommen Betrieb der Box, Verbrauchszähler, laufender Abruf und die letzten Warnungen.")} <span class="neu">BETA</span></p>
     <label class="dg-feld">${t3("Adresse des Modems")}<input name="adresse" inputmode="decimal" .value=${l3(d3.adresse)} ?disabled=${d3.laeuft} @input=${(ev) => {
     p4._diag = { ...p4._diag, adresse: ev.target.value };
   }}></label>
@@ -6552,13 +6553,13 @@ function rohAnzeige(daten) {
 }
 function ergebnis(p4, a3) {
   if (!a3.abfragen.length) {
-    return b2`${befundBlock(a3)}${a3.befund === "anmeldung_abgelehnt" ? b2`<div class="dg-knoepfe"><button @click=${() => p4.modemSpeichern()}>${t3("⬇ Trotzdem als Datei speichern")}</button></div>` : A}`;
+    return b2`${befundBlock(a3)}${a3.umfeld ? b2`<div class="dg-roh">${rohAnzeige({ umfeld: a3.umfeld })}</div>` : A}${a3.befund === "anmeldung_abgelehnt" || a3.umfeld ? b2`<div class="dg-knoepfe"><button @click=${() => p4.modemSpeichern()}>${t3("⬇ Trotzdem als Datei speichern")}</button></div>` : A}`;
   }
   const s4 = a3.summen;
   return b2`${befundBlock(a3)}${erkanntZeile(a3.erkannt)}
     <div class="vs-stufe" style="margin-top:6px"><span>${t3("Ergebnis")}</span><span>${t3("{ok} von {gesamt} Abfragen · {werte} Werte · {geschwaerzt} geschwärzt", { ok: s4.ok, gesamt: s4.gesamt, werte: s4.werte, geschwaerzt: s4.geschwaerzt })}</span></div>
     ${a3.abfragen.map((ab) => b2`<div class="dg-ab"><span class="vs-st ${ab.status === "ok" ? "ok" : "aus"}" style="width:18px;height:18px;font-size:10px">${ab.status === "ok" ? "✓" : "–"}</span><span>${ab.name}</span><code>${ab.angabe}</code></div>`)}
-    <div class="dg-roh">${rohAnzeige(a3.daten)}</div>
+    <div class="dg-roh">${rohAnzeige(a3.umfeld ? { umfeld: a3.umfeld, ...a3.daten } : a3.daten)}</div>
     <div class="gh-warn"><b>${t3("Geschwärzt:")}</b> ${t3("IMEI, IMSI, ICCID, Rufnummer, Seriennummer, MAC- und öffentliche IP-Adressen, WLAN-Namen und -Kennwörter. Die Zellkennung bleibt drin – daraus lässt sich ungefähr bestimmen, wo das Modem steht.")}</div>
     <div class="dg-knoepfe"><button class="amber" @click=${() => p4.modemSpeichern()}>${t3("⬇ Als Datei speichern")}</button><button @click=${() => p4.modemKopieren()}>${t3("⧉ Kopieren")}</button></div>
     <p class="hinweis" style="margin-top:8px">${t3("Datei an den Entwickler schicken – per Mail oder als Anhang an ein GitHub-Issue. Heimnetz sendet selbst nichts.")}</p>`;
@@ -6631,7 +6632,7 @@ function protokoll(p4, d3) {
 }
 
 // src/heimnetz-panel.js
-var VERSION = true ? "0.28.8" : "entwicklung";
+var VERSION = true ? "0.29.0" : "entwicklung";
 var REITER = [
   ["uebersicht", merke("Übersicht")],
   ["speedtest", merke("Speedtest")],

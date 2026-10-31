@@ -209,7 +209,7 @@ function diagnose(p) {
   if (!p.istAdmin) return html`<p class="hinweis" style="padding-top:8px">${t('Diese Abfrage können nur Admins starten.')}</p>`;
   const d = p._diag;
   const kopf = html`
-    <p class="hinweis" style="margin:4px 0 6px">${t('Hier fragt Heimnetz ein Gerät vor der FRITZ!Box (5G/LTE-Modem, Glasfaser-Modem) ab: erkennt Hersteller und Schnittstelle und zeigt alle Rohdaten, geschwärzt – damit der Entwickler weitere Geräte unterstützen kann.')} <span class="neu">BETA</span></p>
+    <p class="hinweis" style="margin:4px 0 6px">${t('Hier fragt Heimnetz ein Gerät vor der FRITZ!Box (5G/LTE-Modem, Glasfaser-Modem) ab: erkennt Hersteller und Schnittstelle und zeigt alle Rohdaten, geschwärzt – damit der Entwickler weitere Geräte unterstützen kann.')} ${t('Dazu kommen Betrieb der Box, Verbrauchszähler, laufender Abruf und die letzten Warnungen.')} <span class="neu">BETA</span></p>
     <label class="dg-feld">${t('Adresse des Modems')}<input name="adresse" inputmode="decimal" .value=${live(d.adresse)} ?disabled=${d.laeuft} @input=${(ev) => { p._diag = { ...p._diag, adresse: ev.target.value }; }}></label>
     <label class="dg-feld">${t('Kennwort der Weboberfläche (optional)')}<input name="kennwort" type="password" autocomplete="off" placeholder=${t('wie beim Anmelden im Browser')} ?disabled=${d.laeuft}><small>${t('wird nur für diese Abfrage verwendet und nicht gespeichert – leer: das unter 🌐 Zugang für diese Adresse hinterlegte')}</small></label>
     <div class="dg-knoepfe"><button class="amber" ?disabled=${d.laeuft} @click=${() => p.modemAbfragen()}>${d.laeuft ? t('⏳ fragt ab …') : t('▶ Abfragen')}</button></div>
@@ -237,7 +237,7 @@ function rohAnzeige(daten) {
 
 function ergebnis(p, a) {
   if (!a.abfragen.length) {
-    return html`${befundBlock(a)}${a.befund === 'anmeldung_abgelehnt'
+    return html`${befundBlock(a)}${a.umfeld ? html`<div class="dg-roh">${rohAnzeige({ umfeld: a.umfeld })}</div>` : nothing}${a.befund === 'anmeldung_abgelehnt' || a.umfeld
       ? html`<div class="dg-knoepfe"><button @click=${() => p.modemSpeichern()}>${t('⬇ Trotzdem als Datei speichern')}</button></div>`
       : nothing}`;
   }
@@ -245,7 +245,7 @@ function ergebnis(p, a) {
   return html`${befundBlock(a)}${erkanntZeile(a.erkannt)}
     <div class="vs-stufe" style="margin-top:6px"><span>${t('Ergebnis')}</span><span>${t('{ok} von {gesamt} Abfragen · {werte} Werte · {geschwaerzt} geschwärzt', { ok: s.ok, gesamt: s.gesamt, werte: s.werte, geschwaerzt: s.geschwaerzt })}</span></div>
     ${a.abfragen.map((ab) => html`<div class="dg-ab"><span class="vs-st ${ab.status === 'ok' ? 'ok' : 'aus'}" style="width:18px;height:18px;font-size:10px">${ab.status === 'ok' ? '✓' : '–'}</span><span>${ab.name}</span><code>${ab.angabe}</code></div>`)}
-    <div class="dg-roh">${rohAnzeige(a.daten)}</div>
+    <div class="dg-roh">${rohAnzeige(a.umfeld ? { umfeld: a.umfeld, ...a.daten } : a.daten)}</div>
     <div class="gh-warn"><b>${t('Geschwärzt:')}</b> ${t('IMEI, IMSI, ICCID, Rufnummer, Seriennummer, MAC- und öffentliche IP-Adressen, WLAN-Namen und -Kennwörter. Die Zellkennung bleibt drin – daraus lässt sich ungefähr bestimmen, wo das Modem steht.')}</div>
     <div class="dg-knoepfe"><button class="amber" @click=${() => p.modemSpeichern()}>${t('⬇ Als Datei speichern')}</button><button @click=${() => p.modemKopieren()}>${t('⧉ Kopieren')}</button></div>
     <p class="hinweis" style="margin-top:8px">${t('Datei an den Entwickler schicken – per Mail oder als Anhang an ein GitHub-Issue. Heimnetz sendet selbst nichts.')}</p>`;

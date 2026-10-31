@@ -28,6 +28,10 @@ DIAGNOSE_FELDER = (
     "nr5g_action_band,nr5g_pci,nr5g_cell_id,nr5g_action_channel,nr5g_rsrp,nr5g_rsrq,nr5g_snr,"
     "Z5g_rsrp,Z5g_rsrq,Z5g_snr,Z5g_SINR,Z5g_CELL_ID,wan_active_band,wan_active_channel,ngbr_cell_info"
 )
+# Datenvolumen als eigene Abfrage: eine Firmware, die diese Felder ablehnt, kostet so nicht die Funkwerte (GitHub #4)
+VOLUMEN_FELDER = (
+    "monthly_rx_bytes,monthly_tx_bytes,monthly_time,realtime_rx_bytes,realtime_tx_bytes"
+)
 _LOGIN, _LOGOUT = "LOGIN", "LOGOUT"  # goform_set_cmd_process nur hiermit
 
 _N_OHNE = merke("Werte ohne Anmeldung")
@@ -37,6 +41,8 @@ _N_UBUS_INFO = merke("ubus: Anmeldedaten")
 _N_UBUS_ANMELDUNG = merke("ubus: Anmeldung")
 _N_UBUS_WERTE = merke("ubus: Funkwerte")
 _N_UBUS_VERBINDUNG = merke("ubus: Verbindung")
+_N_UBUS_VOLUMEN = merke("ubus: Datenvolumen")
+_N_VOLUMEN = merke("Datenvolumen")
 
 
 @dataclass
@@ -83,20 +89,22 @@ async def goform_probe(lauf: Lauf) -> str | None:
 
 
 async def _goform_werte(
-    lauf: Lauf, felder: str, schluessel: str, name: str
+    lauf: Lauf, felder: str, schluessel: str, name: str, probe: bool = False
 ) -> dict[str, Any] | None:
+    """`probe`: eine Antwort ohne diese Werte ist kein Fehler, das Gerät kennt sie nur nicht."""
+    misslungen = "aus" if probe else "fehler"
     try:
         status, text = await lauf.lesen(
             f"/goform/goform_get_cmd_process?isTest=false&multi_data=1&cmd={felder}",
             referer=f"{lauf.basis}/index.html",
         )
     except (aiohttp.ClientError, TimeoutError) as err:
-        lauf.eintrag(name, "fehler", type(err).__name__)
+        lauf.eintrag(name, misslungen, type(err).__name__)
         return None
     werte = lz.json_objekt(text)
     if werte is None:
         lauf.ablegen(schluessel, {"rohdaten": gekuerzt(text)})
-        lauf.eintrag(name, "fehler", f"HTTP {status}")
+        lauf.eintrag(name, misslungen, f"HTTP {status}")
         return None
     anzahl = lauf.ablegen(schluessel, werte)
     lauf.eintrag(name, "ok", t("{n} Werte", lauf.sprache, n=anzahl))
@@ -145,6 +153,12 @@ async def _goform_abmelden(lauf: Lauf) -> None:
         pass  # Abmelden ist eine Höflichkeit; die Sitzung läuft am Gerät ohnehin ab
 
 
+async def _goform_volumen(lauf: Lauf) -> None:
+    """Nur 🔬 Diagnose; lässt der laufenden Abfrage Zeit zum Abmelden."""
+    if lauf.zeit_uebrig(2 * lauf.zeit_s):
+        await _goform_werte(lauf, VOLUMEN_FELDER, "volumen", _N_VOLUMEN, probe=True)
+
+
 async def goform_lesen(lauf: Lauf, kennwort: str | None, diagnose: bool = False) -> Lesung:
     """Werte ohne Anmeldung, mit Kennwort einmal anmelden, Werte nach Anmeldung, abmelden."""
     felder = DIAGNOSE_FELDER if diagnose else lz.GOFORM_FELDER
@@ -155,11 +169,15 @@ async def goform_lesen(lauf: Lauf, kennwort: str | None, diagnose: bool = False)
         if anmeldung == "ok":
             lesung.angemeldet = True
             nach = await _goform_werte(lauf, felder, "nach_anmeldung", _N_NACH)
+            if diagnose:
+                await _goform_volumen(lauf)
             await _goform_abmelden(lauf)
             if nach:
                 lesung.mobil = lz.aus_werten(nach) or lesung.mobil
         else:
             lesung.befund = "anmeldung_abgelehnt" if anmeldung == "abgelehnt" else "fehler"
+    if diagnose and not lesung.angemeldet:
+        await _goform_volumen(lauf)
     lesung.befund = lesung.befund or _befund_ohne(lesung.mobil, kennwort)
     return lesung
 
@@ -201,9 +219,9 @@ async def ubus_probe(lauf: Lauf) -> bool:
     return da
 
 
-async def ubus_lesen(lauf: Lauf, kennwort: str | None) -> Lesung:
+async def ubus_lesen(lauf: Lauf, kennwort: str | None, diagnose: bool = False) -> Lesung:
     """Anmeldedaten lesen; mit Kennwort einmal anmelden (nicht, wenn das Gerät gesperrt ist); Funkwerte und
-    Verbindung lesen; abmelden."""
+    Verbindung lesen, in der Diagnose auch das Datenvolumen; abmelden."""
     u = _Ubus(lauf)
     lesung = Lesung()
     try:
@@ -255,14 +273,21 @@ async def ubus_lesen(lauf: Lauf, kennwort: str | None) -> Lesung:
                     else:
                         lesung.befund = "anmeldung_abgelehnt"
     werte: dict[str, dict[str, Any]] = {}
-    for objekt, methode, argumente in lz.UBUS_LESEN:
-        name = _N_UBUS_WERTE if objekt == "zte_nwinfo_api" else _N_UBUS_VERBINDUNG
-        if not lauf.zeit_uebrig():
+    schritte = [
+        (_N_UBUS_WERTE, *lz.UBUS_LESEN[0]),
+        (_N_UBUS_VERBINDUNG, *lz.UBUS_LESEN[1]),
+        *(((_N_UBUS_VOLUMEN, *lz.UBUS_VOLUMEN),) if diagnose else ()),
+    ]
+    for name, objekt, methode, argumente in schritte:
+        # das Datenvolumen ist nur eine Probe: fehlt es, ist das kein Fehler, und abmelden geht vor
+        probe = name == _N_UBUS_VOLUMEN
+        misslungen = "aus" if probe else "fehler"
+        if not lauf.zeit_uebrig(2 * lauf.zeit_s if probe else 0):
             break
         try:
             code, daten, text = await u.rufen(objekt, methode, argumente)
         except (aiohttp.ClientError, TimeoutError) as err:
-            lauf.eintrag(name, "fehler", type(err).__name__)
+            lauf.eintrag(name, misslungen, type(err).__name__)
             continue
         if code == 0:
             werte[methode] = daten
@@ -270,7 +295,7 @@ async def ubus_lesen(lauf: Lauf, kennwort: str | None) -> Lesung:
             lauf.eintrag(name, "ok", t("{n} Werte", lauf.sprache, n=n))
         else:
             lauf.ablegen(f"ubus_{methode}", {"rohdaten": gekuerzt(text)})
-            lauf.eintrag(name, "fehler", t("Code {code}", lauf.sprache, code=code))
+            lauf.eintrag(name, misslungen, t("Code {code}", lauf.sprache, code=code))
     if lesung.angemeldet:
         try:
             await u.rufen("zwrt_web", "web_logout", {})
