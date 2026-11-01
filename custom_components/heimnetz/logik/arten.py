@@ -286,6 +286,47 @@ def mesh_aus(roh: str | bytes) -> dict[str, str]:
     return out
 
 
+def anbindung_aus(roh: str | bytes) -> dict[str, str]:
+    """Mesh-Liste der Box → {MAC: „Box“ oder Modell des Repeaters}: wo ein Gerät gerade hängt. Gleiche Modelle bekommen
+    eine Nummer; Namen der Mesh-Geräte bleiben draußen, sie gehen in die Datei des Diagnose-Logs."""
+    try:
+        daten = json.loads(roh)
+    except ValueError, TypeError:
+        return {}
+    roh_knoten = daten.get("nodes") if isinstance(daten, dict) else None
+    knoten = [
+        k for k in (roh_knoten if isinstance(roh_knoten, list) else ()) if isinstance(k, dict)
+    ]
+    namen: dict[str, str] = {}
+    gezaehlt: dict[str, int] = {}
+    for k in knoten:
+        rolle = k.get("mesh_role")
+        if rolle == "master":
+            namen[str(k.get("uid"))] = "Box"
+        elif rolle == "slave":
+            modell = str(k.get("device_model") or "Repeater")
+            gezaehlt[modell] = gezaehlt.get(modell, 0) + 1
+            n = gezaehlt[modell]
+            namen[str(k.get("uid"))] = modell if n == 1 else f"{modell} {n}"
+    out: dict[str, str] = {}
+    for k in knoten:
+        uid = str(k.get("uid"))
+        if uid in namen:
+            continue
+        for i in k.get("node_interfaces") or []:
+            if not isinstance(i, dict):
+                continue
+            for link in i.get("node_links") or []:
+                if not isinstance(link, dict) or link.get("state") != "CONNECTED":
+                    continue
+                a, b = str(link.get("node_1_uid")), str(link.get("node_2_uid"))
+                gegen = namen.get(b if a == uid else a)
+                mac = k.get("device_mac_address")
+                if gegen and isinstance(mac, str) and mac:
+                    out[mac.upper()] = gegen
+    return out
+
+
 def bestimmen(
     name: str,
     mac: str,

@@ -93,6 +93,7 @@ class BoxDaten:
     wlan_gast: bool | None = None
     wlan_geraete: tuple[wl.Funkgeraet, ...] | None = None
     mesh: dict[str, str] | None = None  # MAC → Modell der Mesh-Geräte (langsam, AN-0001)
+    anbindung: dict[str, str] | None = None  # MAC → Box oder Repeater (langsam, Diagnose-Log)
     info: BoxInfo | None = None  # langsam (WU-0005)
     zugang: zg.Meldung | None = None  # langsam (WU-0009)
     dsl: ln.Dsl | None = None  # langsam, nur mit DSL-Dienst
@@ -433,7 +434,8 @@ class Box:
             pfad = text(
                 self._aktion("Hosts1", "X_AVM-DE_GetMeshListPath")["NewX_AVM-DE_MeshListPath"]
             )
-            d.mesh = ar.mesh_aus(self._datei(pfad))
+            roh = self._datei(pfad)
+            d.mesh, d.anbindung = ar.mesh_aus(roh), ar.anbindung_aus(roh)
 
         try:
             teil(merke("Ereignisprotokoll"), protokoll)

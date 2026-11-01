@@ -19,6 +19,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from .logik import diagnoselog as dl
 from .logik import messung as ms
 from .logik.ereignis import Ereignis
 from .logik.messung import Messung
@@ -51,8 +52,12 @@ SCHRITTE: dict[int, tuple[str, ...]] = {
 ZUSATZ = (
     "CREATE TABLE IF NOT EXISTS messung_kontext (t REAL PRIMARY KEY, kontext TEXT NOT NULL)",
     "CREATE TABLE IF NOT EXISTS messung_geloescht (t REAL PRIMARY KEY, geloescht REAL NOT NULL)",
+    """CREATE TABLE IF NOT EXISTS diagnoselog (
+        id INTEGER PRIMARY KEY, t REAL NOT NULL, art TEXT NOT NULL, mac TEXT NOT NULL, daten TEXT NOT NULL)""",
+    "CREATE INDEX IF NOT EXISTS diagnoselog_t ON diagnoselog (t)",
 )
 
+DIAGNOSELOG = "INSERT INTO diagnoselog (t, art, mac, daten) VALUES (?, ?, ?, ?)"
 JOURNAL = "INSERT INTO journal (t, art, stufe, text, mac) VALUES (?, ?, ?, ?, ?)"
 PROTOKOLL = (
     "INSERT OR IGNORE INTO protokoll (t, roh_zeit, kategorie, text, schluessel, eingetragen) "
@@ -287,10 +292,42 @@ class Datenbank:
             with db:
                 db.execute("BEGIN")
                 n = db.execute("DELETE FROM journal WHERE t < ?", (grenze,)).rowcount
+                db.execute(
+                    "DELETE FROM diagnoselog WHERE t < ?", (jetzt - dl.AUFBEWAHREN_S,)
+                )  # eigene Frist, zählt nicht mit
                 n += db.execute(
                     "DELETE FROM protokoll WHERE COALESCE(t, eingetragen) < ?", (grenze,)
                 ).rowcount
             return n
+
+    def diagnoselog_schreiben(self, eintraege: Iterable[dl.Eintrag]) -> int:
+        return self._schreiben(
+            (
+                DIAGNOSELOG,
+                [
+                    (e.t, e.art, e.schluessel, json.dumps(e.daten, ensure_ascii=False))
+                    for e in eintraege
+                ],
+            )
+        )
+
+    def diagnoselog_loeschen(self) -> None:
+        with self._sperre:
+            if self._angehalten:
+                raise Angehalten
+            db = self._verbindung
+            with db:
+                db.execute("BEGIN")
+                db.execute("DELETE FROM diagnoselog")
+
+    def diagnoselog_lesen(self, ab: float) -> list[dl.Eintrag]:
+        """Älteste zuerst."""
+        return [
+            dl.Eintrag(z[0], z[1], z[2], json.loads(z[3]))
+            for z in self._lesen(
+                "SELECT t, art, mac, daten FROM diagnoselog WHERE t >= ? ORDER BY t, id", (ab,)
+            )
+        ]
 
     # ── Lesen ──
     def _lesen(self, befehl: str, werte: tuple[Any, ...] = ()) -> list[tuple[Any, ...]]:

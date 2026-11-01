@@ -111,6 +111,9 @@ class Warndienst:
         self.journal: Callable[[list[Ereignis]], None] = lambda _e: None
         self._sperre = asyncio.Lock()  # Abrufe nie gleichzeitig durch den Wächter
         self._letzter = 0.0  # Zeit des zuletzt verarbeiteten Abrufs
+        self.letzte: tuple[
+            tuple[wn.Meldung, bool], ...
+        ] = ()  # fürs Diagnose-Log: Meldung, verschickt
 
     async def async_bekannt_laden(self) -> None:
         """Je gesehene Geräte für „neues Gerät“: gemerkte, die der Box (Gedächtnis, auch aus der Übernahme) und alle
@@ -129,6 +132,7 @@ class Warndienst:
     async def abruf(self, stand: sm.Stand) -> list[Ereignis]:
         """Wächter fortschreiben, Ereignisse feuern, Versand anstoßen. Zurück: Journalzeilen zu den Meldungen.
         Blockierendes (Arten bestimmen) im Executor, der Wächter selbst nur hier im Event-Loop und nacheinander."""
+        self.letzte = ()
         async with self._sperre:
             if stand.zeit <= self._letzter:
                 return []  # älterer Abruf, der sich überholt hat
@@ -157,6 +161,9 @@ class Warndienst:
                 beobachtet,
                 e,
                 lambda mac: ueberwacht.get(mac, False),
+            )
+            self.letzte = tuple(
+                (m, e.ziel != wn.KEINE and m in ergebnis.senden) for m in ergebnis.neu
             )
             if w.bekannt_geaendert:
                 self.lz.abruf.gedaechtnis.bekannt = list(w.bekannt)

@@ -1613,3 +1613,32 @@ test('WU-0010: Reiter Warnungen auf Englisch', async () => {
   assert.match(t, /Watch by type/);
   assert.match(t, /push service of Google or Apple/);
 });
+
+test('Diagnose-Log: Schalter, Häufung, Filter, löschen mit Rückfrage, Datei', async () => {
+  const hass = machHass();
+  const el = await seite(hass);
+  await einstellungen(el);
+  await einTab(el, 'Diagnose');
+  await warten(10);
+  await el.updateComplete;
+  const inhalt = () => blatt(el).querySelector('.dl');
+  assert.ok(inhalt().querySelector('.sw.on'));
+  assert.match(inhalt().textContent, /Häufung/);
+  assert.equal(inhalt().querySelectorAll('.dl-e').length, 2);
+  [...inhalt().querySelectorAll('.chip')].find((c) => c.textContent === 'nur Auffälliges').click();
+  await el.updateComplete;
+  assert.equal(inhalt().querySelectorAll('.dl-e').length, 1);
+  assert.match(inhalt().textContent, /Drucker/);
+  knoepfe(inhalt()).find((x) => x.textContent.includes('Log löschen')).click();
+  await el.updateComplete;
+  assert.ok(!hass.aufrufe.some((a) => a.type === 'heimnetz/diagnoselog/loeschen'), 'erst nach der Rückfrage');
+  knoepfe(inhalt()).find((x) => x.textContent === 'Löschen').click();
+  await warten(10);
+  await el.updateComplete;
+  assert.ok(hass.aufrufe.some((a) => a.type === 'heimnetz/diagnoselog/loeschen'));
+  inhalt().querySelector('.sw').click();
+  await warten(10);
+  await el.updateComplete;
+  assert.equal(hass.aufrufe.find((a) => a.type === 'heimnetz/diagnoselog/setzen').an, false);
+  assert.ok(!inhalt().querySelector('.dl-e'), 'aus und leer: nur der Schalter');
+});

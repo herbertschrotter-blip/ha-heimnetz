@@ -61,6 +61,7 @@ export class HeimnetzPanel extends LitElement {
     _hinweisPlan: { state: true },
     _hinweisEinr: { state: true },
     _diag: { state: true },
+    _dlog: { state: true },
     _hinweisZugang: { state: true },
     _hinweisArten: { state: true },
     _hinweisWarn: { state: true },
@@ -79,6 +80,7 @@ export class HeimnetzPanel extends LitElement {
     this._hinweisPlan = '';
     this._hinweisEinr = '';
     this._diag = { adresse: '192.168.0.1', laeuft: false, antwort: null, fehler: '' }; // WU-0008; Kennwort nie im Zustand
+    this._dlog = { daten: null, filter: 'alle', frage: false, fehler: '' }; // Diagnose-Log
     this._hinweisZugang = ''; // WU-0009: Fehler beim Festlegen des Zugangs
     this._hinweisArten = ''; // WU-0010: Fehler bei eigenen Arten
     this._hinweisWarn = ''; // WU-0010: Fehler bei Warnungen
@@ -353,7 +355,7 @@ export class HeimnetzPanel extends LitElement {
 
   /** Reiter im Fenster Einstellungen gewählt: was nur dieser Reiter braucht, frisch von der Integration. */
   teilLaden(teil) {
-    const laden = { einr: this.einrichtungLaden, zugang: this.zugangLaden, arten: this.artenLaden, warn: this.warnungenLaden }[teil];
+    const laden = { einr: this.einrichtungLaden, zugang: this.zugangLaden, arten: this.artenLaden, warn: this.warnungenLaden, diag: () => this.dlogBefehl('diagnoselog') }[teil];
     if (laden) laden.call(this);
   }
 
@@ -495,6 +497,7 @@ export class HeimnetzPanel extends LitElement {
   zuDiagnose(adresse) {
     if (adresse) this._diag = { ...this._diag, adresse };
     this._blatt = { ...this._blatt, teil: 'diag' };
+    this.teilLaden('diag');
   }
 
   /** WU-0007: was eingerichtet ist und was fehlt – geprüft beim Öffnen (nur Admins; die Integration erkennt). */
@@ -555,6 +558,41 @@ export class HeimnetzPanel extends LitElement {
     if (!this._diag.antwort) return;
     if (navigator.clipboard) navigator.clipboard.writeText(this._modemDatei()).catch(() => {});
     this.toast(t('Kopiert – {n} Werte', { n: this._diag.antwort.summen.werte }));
+  }
+
+  /** Diagnose-Log (nur Admins): die Integration zeichnet auf und liefert fertige Zeilen, die Seite zeigt nur an. */
+  async dlogBefehl(befehl, parameter = {}) {
+    if (!this.istAdmin) return;
+    try {
+      const daten = await this.ws(befehl, parameter);
+      this._dlog = { ...this._dlog, daten, frage: false, fehler: '' };
+    } catch (err) {
+      this._dlog = { ...this._dlog, frage: false, fehler: (err && err.message) || String(err) };
+    }
+  }
+
+  dlogFilter(filter) {
+    this._dlog = { ...this._dlog, filter };
+  }
+
+  dlogFrage(frage) {
+    this._dlog = { ...this._dlog, frage };
+  }
+
+  async dlogSpeichern() {
+    try {
+      const inhalt = await this.ws('diagnoselog/datei');
+      const name = `heimnetz-log-${new Date().toISOString().slice(0, 10)}.json`;
+      const text = JSON.stringify({ heimnetz: VERSION, zeit: new Date().toISOString(), ...inhalt }, null, 2);
+      const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+      const a = document.createElement('a');
+      a.href = url; a.download = name;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      this.toast(t('Gespeichert: {name}', { name }));
+    } catch (err) {
+      this._dlog = { ...this._dlog, fehler: (err && err.message) || String(err) };
+    }
   }
 
   /* ---- Melden (Tickets) ---- */

@@ -2194,6 +2194,7 @@
   "zugang_wahl": "auto",
   "zugang_adresse": null,
   "zugang_ersatz": "auto",
+  "diagnoselog": false,
   "messplan": {
    "an": true,
    "takt_h": 4,

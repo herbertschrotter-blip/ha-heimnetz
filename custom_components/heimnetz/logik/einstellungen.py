@@ -27,6 +27,7 @@ class Einstellungen:
     zugang_wahl: str = "auto"
     zugang_adresse: str | None = None
     zugang_ersatz: str = "auto"
+    diagnoselog: bool = False  # ⚙ › Diagnose: Aufzeichnung läuft
 
     def als_dict(self) -> dict[str, Any]:
         return {
@@ -37,6 +38,7 @@ class Einstellungen:
             "zugang_wahl": self.zugang_wahl,
             "zugang_adresse": self.zugang_adresse,
             "zugang_ersatz": self.zugang_ersatz,
+            "diagnoselog": self.diagnoselog,
         }
 
 
@@ -95,4 +97,5 @@ def pruefen(daten: dict[str, Any], heute: date) -> Einstellungen:
         wahl,
         adresse,
         ersatz,
+        daten.get("diagnoselog") is True,
     )

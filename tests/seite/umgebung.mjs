@@ -24,6 +24,7 @@ export const QUELLE = join(hier, '../../custom_components/heimnetz/frontend/src'
 export function machHass({ admin = true, dunkel = true, sprache = 'de' } = {}) {
   const aufrufe = [];
   let bilder = 0;
+  let dlog = null; // Diagnose-Log: Stand nach dem letzten Befehl
   let zugang = null; // WU-0009: zuletzt gespeicherter Zugang (wie in der Integration)
   let arten = DATEN.arten, warnungen = DATEN.warnungen; // WU-0010: Stand nach dem letzten Speichern
   return {
@@ -49,6 +50,10 @@ export function machHass({ admin = true, dunkel = true, sprache = 'de' } = {}) {
       if (befehl === 'meldung/status') return { ...MELDUNGEN[0], status: msg.status, offen: msg.status !== 'geschlossen' };
       if (befehl === 'meldung/loeschen') return { ok: true };
       if (befehl === 'modem') return MODEM_ANTWORT(msg);
+      if (befehl === 'diagnoselog/datei') return { eintraege: 1, geraete: 1, haeufungen: [], zeilen: [] };
+      if (befehl === 'diagnoselog/loeschen') { dlog = { ...DIAGNOSELOG(), eintraege: 0, zeilen: [], haeufungen: [] }; return dlog; }
+      if (befehl === 'diagnoselog/setzen') { dlog = { ...(dlog ?? DIAGNOSELOG()), an: msg.an }; return dlog; }
+      if (befehl === 'diagnoselog') return dlog ?? DIAGNOSELOG();
       if (befehl === 'zugang/setzen') {
         // WU-0009: wie die Integration – das Kennwort kommt nie zurück, nur „hinterlegt“
         const z = zugang ?? DATEN.zugang;
@@ -92,6 +97,16 @@ export function machHass({ admin = true, dunkel = true, sprache = 'de' } = {}) {
     },
   };
 }
+
+/** Antwort von heimnetz/diagnoselog (tests/integration/test_diagnoselog.py prüft dieselbe Form). */
+const DIAGNOSELOG = () => ({
+  an: true, seit: 1_800_000_000, tage: 7, eintraege: 2,
+  haeufungen: [{ t: 1_800_000_500, text: '3 Geräte in 1 min weg, darunter ein Repeater. Zur selben Zeit keine Störung bei Internet oder Modem.' }],
+  zeilen: [
+    { t: 1_800_000_500, art: 'geraet', kat: 'geraet', badge: 'Gerät', auffaellig: true, name: 'Drucker', text: 'weg', detail: 'war LAN · Repeater' },
+    { t: 1_800_000_400, art: 'stand', kat: 'stand', badge: 'Stand', auffaellig: false, name: '', text: 'Internet ok · 2 von 3 Geräten online', detail: 'Box ok' },
+  ],
+});
 
 /** Antwort von heimnetz/modem (WU-0008; tests/integration/test_modem.py prüft dieselbe Form). Seit WU-0009 Stufe 2
  *  mit erkanntem Gerät (`erkannt`), Befund fertig formuliert (`hinweis`) und umgerechneten Werten. */

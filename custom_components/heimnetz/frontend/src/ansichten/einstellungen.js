@@ -12,7 +12,7 @@
 // gezeichnet in warnungen.js.
 import { html, nothing } from 'lit';
 import { live } from 'lit/directives/live.js';
-import { uhr, zahl, zeit } from '../format.js';
+import { tag, uhr, zahl, zeit } from '../format.js';
 import { merke, t, tl } from '../sprache.js';
 import { seg } from './teile.js';
 import { meldungenZeile } from './melden.js';
@@ -205,6 +205,45 @@ function einrichtung(p) {
 
 /** WU-0008: Diagnose – Rohdaten eines vorgeschalteten Modems. Nur Admins; Abfragen und Schwärzen macht die Integration. */
 const ROH = '⟨geschwärzt⟩';
+
+const DLOG_FILTER = [['alle', merke('Alle')], ['geraet', merke('Geräte')], ['internet', merke('Internet')], ['modem', merke('Modem')], ['box', merke('Box')], ['auffaellig', merke('nur Auffälliges')]];
+
+/** Diagnose-Log (Mockup diagnose-log.html, abgenommen 1.11.2026): Zeilen, Tage und Häufungen kommen fertig von der Integration. */
+function diagnoseLog(p) {
+  const { daten: d, filter, frage, fehler } = p._dlog;
+  const schalter = html`<div class="ez dl-kopf"><span><b>${t('Diagnose-Log')}</b><small>${t('zeichnet auf, wann welches Gerät wo und wie im Netz war, dazu Internet, Box und Modem')}</small></span>
+    <button class="sw ${d && d.an ? 'on' : ''}" role="switch" aria-checked=${d && d.an ? 'true' : 'false'} aria-label=${t('Diagnose-Log')} ?disabled=${!d} @click=${() => p.dlogBefehl('diagnoselog/setzen', { an: !d.an })}><i></i></button></div>`;
+  const fein = fehler ? html`<p class="fein">${fehler}</p>` : nothing;
+  if (!d || (!d.an && !d.eintraege)) return html`<div class="dl">${schalter}${fein}</div>`;
+  const passt = (z) => filter === 'alle' || (filter === 'auffaellig' ? z.auffaellig : z.kat === filter);
+  let letzter = '';
+  const zeilen = d.zeilen.filter(passt).flatMap((z) => {
+    const kopf = tag(z.t);
+    const neu = kopf !== letzter;
+    letzter = kopf;
+    return [
+      neu ? html`<div class="dl-tag">${kopf}</div>` : nothing,
+      html`<div class="dl-e ${z.auffaellig ? 'weg' : ''}"><time>${uhr(z.t)}</time><span class="dl-badge">${z.badge}</span><span>${z.name ? html`<b>${z.name}</b> ` : nothing}${z.text}${z.detail ? html`<small>${z.detail}</small>` : nothing}</span></div>`,
+    ];
+  });
+  const staende = [
+    d.an ? t('läuft seit {zeit}', { zeit: zeit(d.seit) }) : t('angehalten'),
+    t('{n} Einträge', { n: zahl(d.eintraege) }),
+    t('bleibt {n} Tage, dann fällt das Älteste weg', { n: d.tage }),
+  ];
+  return html`<div class="dl">${schalter}
+    <div class="leise">${staende.join(' · ')}</div>
+    <div class="chips dl-filter">${DLOG_FILTER.map(([k, text]) => html`<button class="chip ${filter === k ? 'on' : ''}" @click=${() => p.dlogFilter(k)}>${t(text)}</button>`)}</div>
+    ${d.haeufungen.slice(0, 5).map((h) => html`<div class="dl-haeufung">⚠ <span><b>${t('Häufung {zeit}:', { zeit: zeit(h.t) })}</b> ${h.text}</span></div>`)}
+    ${zeilen.length ? zeilen : html`<p class="hinweis">${t('Noch keine Einträge.')}</p>`}
+    ${d.eintraege > d.zeilen.length ? html`<p class="hinweis">${t('Hier die neuesten {n}, in der Datei alle.', { n: zahl(d.zeilen.length) })}</p>` : nothing}
+    ${fein}
+    ${frage
+      ? html`<div class="mg-frage"><p>${t('Alle Einträge des Logs löschen?')}</p><div class="dg-knoepfe"><button class="rot" @click=${() => p.dlogBefehl('diagnoselog/loeschen')}>${t('Löschen')}</button><button @click=${() => p.dlogFrage(false)}>${t('Abbrechen')}</button></div></div>`
+      : html`<div class="dg-knoepfe"><button @click=${() => p.dlogSpeichern()}>${t('💾 Datei speichern (geschwärzt)')}</button><button @click=${() => p.dlogFrage(true)}>${t('🗑 Log löschen')}</button></div>`}
+    <p class="hinweis">${t('Gerätenamen sieht nur, wer hier angemeldet ist. In der Datei heißen sie „Gerät 1“, „Gerät 2“ …, ohne MAC- und IP-Adressen. Das Log bleibt lokal, Heimnetz schickt es nirgendwohin.')}</p>
+  </div>`;
+}
 function diagnose(p) {
   if (!p.istAdmin) return html`<p class="hinweis" style="padding-top:8px">${t('Diese Abfrage können nur Admins starten.')}</p>`;
   const d = p._diag;
@@ -214,8 +253,8 @@ function diagnose(p) {
     <label class="dg-feld">${t('Kennwort der Weboberfläche (optional)')}<input name="kennwort" type="password" autocomplete="off" placeholder=${t('wie beim Anmelden im Browser')} ?disabled=${d.laeuft}><small>${t('wird nur für diese Abfrage verwendet und nicht gespeichert – leer: das unter 🌐 Zugang für diese Adresse hinterlegte')}</small></label>
     <div class="dg-knoepfe"><button class="amber" ?disabled=${d.laeuft} @click=${() => p.modemAbfragen()}>${d.laeuft ? t('⏳ fragt ab …') : t('▶ Abfragen')}</button></div>
     ${d.fehler ? html`<p class="fein">${d.fehler}</p>` : nothing}`;
-  if (!d.antwort) return html`${kopf}<p class="hinweis" style="margin-top:8px">${t('Nur Adressen im eigenen Heimnetz (z. B. 192.168.x.x). Heimnetz liest nur und ändert am Modem nichts.')}</p>`;
-  return html`${kopf}${ergebnis(p, d.antwort)}`;
+  if (!d.antwort) return html`${diagnoseLog(p)}${kopf}<p class="hinweis" style="margin-top:8px">${t('Nur Adressen im eigenen Heimnetz (z. B. 192.168.x.x). Heimnetz liest nur und ändert am Modem nichts.')}</p>`;
+  return html`${diagnoseLog(p)}${kopf}${ergebnis(p, d.antwort)}`;
 }
 
 /** Befund und erkanntes Gerät kommen fertig von der Integration (heimnetz/modem → hinweis, erkannt). */

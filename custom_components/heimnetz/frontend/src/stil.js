@@ -237,6 +237,13 @@ select.ga-wahl { font: inherit; font-size: 13px; color: var(--ink); background: 
 .vs-r button.blau { background: color-mix(in srgb, var(--blau) 22%, transparent); }
 .vs-kopf { border-radius: 12px; padding: 8px 12px; font-size: 13px; line-height: 1.4; background: rgba(127,127,127,.1); margin: 6px 0 2px; }
 @container (max-width: 520px) { .vs { grid-template-columns: 22px minmax(0, 1fr); } .vs-r { grid-column: 2; justify-content: flex-start; } }
+.dl { border-bottom: 1px solid var(--gridc); padding-bottom: 10px; margin-bottom: 10px; } .dl-filter { margin: 8px 0; gap: 6px; } .dl-filter .chip.on { color: var(--ink); background: rgba(127,127,127,.3); }
+.dl-haeufung { display: flex; gap: 8px; padding: 8px 10px; border-radius: 12px; background: rgba(255,159,10,.14); border: 1px solid var(--amber); font-size: 13px; margin: 8px 0; }
+.dl-tag { font-size: 12px; font-weight: 700; color: var(--ink2); margin: 10px 0 2px; }
+.dl-e { display: grid; grid-template-columns: 46px 66px minmax(0, 1fr); gap: 8px; padding: 6px 0; border-top: 1px solid var(--gridc); font-size: 13px; align-items: baseline; overflow-wrap: anywhere; }
+.dl-e time { color: var(--ink2); font-variant-numeric: tabular-nums; } .dl-e small { display: block; color: var(--ink2); font-size: 12px; } .dl-e.weg b { color: var(--amber); }
+.dl-badge { font-size: 11px; padding: 1px 6px; border-radius: 8px; background: rgba(142,142,147,.25); color: var(--ink2); text-align: center; }
+@media (max-width: 480px) { .dl-e { grid-template-columns: 46px minmax(0, 1fr); } .dl-badge { display: none; } }
 .dg-feld { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--ink2); padding: 6px 0; }
 .dg-feld input { font: inherit; font-size: 14px; color: var(--ink); background: rgba(120,120,128,.14); border: 1px solid var(--gridc); border-radius: 12px; padding: 8px 10px; }
 .dg-ab { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 6px 0; font-size: 13px; }

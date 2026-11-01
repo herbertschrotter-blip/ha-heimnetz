@@ -734,3 +734,29 @@ async def test_geraete_vpn_gruppe(hass, geladen, hass_ws_client):
     d = (await _frage(hass_ws_client, hass, type="heimnetz/geraete"))["result"]
     assert d["gruppen"][0]["name"] == gr.VPN and d["gruppen"][0]["gesamt"] == 1
     assert sum(x["verbindung"] == gr.VPN for x in d["geraete"]) == 1
+
+
+async def test_diagnoselog(hass, geladen, hass_ws_client, hass_read_only_access_token, freezer):
+    """Aus ab Werk, nur Admins; an: zeichnet beim Abruf auf; Datei ohne Namen; löschen."""
+    d = (await _frage(hass_ws_client, hass, type="heimnetz/diagnoselog"))["result"]
+    assert d["an"] is False and d["eintraege"] == 0 and d["seit"] is None
+
+    gast = await hass_ws_client(hass, hass_read_only_access_token)
+    await gast.send_json_auto_id({"type": "heimnetz/diagnoselog"})
+    assert (await gast.receive_json())["error"]["code"] == "unauthorized"
+
+    d = (await _frage(hass_ws_client, hass, type="heimnetz/diagnoselog/setzen", an=True))["result"]
+    assert d["an"] is True and d["seit"]
+    await geladen.runtime_data.abruf.async_refresh()
+    await hass.async_block_till_done()
+    d = (await _frage(hass_ws_client, hass, type="heimnetz/diagnoselog"))["result"]
+    assert d["eintraege"] >= 2
+    assert {"t", "art", "kat", "badge", "auffaellig", "name", "text", "detail"} == set(
+        d["zeilen"][0]
+    )
+
+    datei = (await _frage(hass_ws_client, hass, type="heimnetz/diagnoselog/datei"))["result"]
+    assert datei["eintraege"] == d["eintraege"]
+
+    d = (await _frage(hass_ws_client, hass, type="heimnetz/diagnoselog/loeschen"))["result"]
+    assert d["eintraege"] == 0 and d["an"] is True

@@ -57,6 +57,9 @@ class Gedaechtnis:
     mesh: dict[str, str] = field(
         default_factory=dict
     )  # MAC → Modell der Mesh-Geräte der Box (AN-0001)
+    anbindung: dict[str, str] = field(
+        default_factory=dict
+    )  # MAC → Box oder Repeater (nur im Speicher)
     stoerung: sg.Stoerung | None = None  # offene Internet-Störung (AN-0003)
     pi: bf.PiVerbindung | None = None
     gw_mac_bekannt: str = ""
@@ -109,6 +112,7 @@ class Rohdaten:
     wlan_gast: bool | None = None
     wlan_geraete: tuple[wl.Funkgeraet, ...] | None = None
     mesh: dict[str, str] | None = None  # Mesh-Geräte (langsam)
+    anbindung: dict[str, str] | None = None  # wo ein Gerät hängt (langsam)
     zugang: zg.Meldung | None = None  # WU-0009: Zugang (langsam)
     dsl: ln.Dsl | None = None  # nur mit DSL-Dienst (langsam)
     faser: ln.Faser | None = None  # nur mit Glasfaser-Dienst (langsam)
@@ -139,6 +143,7 @@ class Stand:
     wlan: wl.Wlan | None = None  # None = Box ohne WLAN-Dienst oder nicht gelesen
     mobil_baender: str = ""
     mesh: dict[str, str] = field(default_factory=dict)
+    anbindung: dict[str, str] = field(default_factory=dict)  # MAC → Box oder Repeater
     # WU-0009: Zugang (zuletzt gelesen) und Werte der Leitung; None = noch nicht gelesen oder nicht vorhanden
     zugang: zg.Meldung | None = None
     zugang_art: str = ""  # erkannt, ohne Wahl des Admins
@@ -234,6 +239,8 @@ def auswerten(g: Gedaechtnis, roh: Rohdaten) -> Stand:
         g.mobil_baender = roh.mobil_baender
     if roh.mesh is not None:
         g.mesh = roh.mesh
+    if roh.anbindung is not None:
+        g.anbindung = roh.anbindung
 
     if roh.wlan_baender is not None:
         neu_kanal, g.wlan_kanaele = wl.abgleich(g.wlan_kanaele, roh.wlan_baender, sprache)
@@ -314,6 +321,7 @@ def auswerten(g: Gedaechtnis, roh: Rohdaten) -> Stand:
         wlan=wlan,
         mobil_baender=g.mobil_baender,
         mesh=dict(g.mesh),
+        anbindung=dict(g.anbindung),
         zugang=g.zugang,
         zugang_art=g.zugang_art,
         ersatz_aktiv=g.ersatz_seit is not None,

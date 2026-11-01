@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## [0.31.0]
+
+- GitHub #4: Neu in ⚙ › Diagnose: das **Diagnose-Log**, ab Werk aus. Es hält fest, wann welches Gerät wo und wie im Netz
+  war (Verbindung, Box oder Repeater, Signal und Tempo, soweit die Box sie nennt), dazu Internet, Box, Modem, Lücken im
+  Abruf, unbrauchbare Gerätelisten, gesendete Warnungen und das Protokoll der Box, alle 10 Minuten ein Gesamtstand.
+  Mehrere Geräte kurz nacheinander weg zeigt es als **Häufung** mit Gemeinsamkeiten. Filter, 7 Tage Aufbewahrung, Datei
+  ohne Namen, MAC- und IP-Adressen, löschen. Es bleibt lokal.
+
 ## [0.30.3]
 
 - GitHub #4: Die Karte **Wo steht der Mast?** erscheint jetzt auch ohne gefundene Zelle und ohne Entfernung, etwa bei

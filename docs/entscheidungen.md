@@ -522,6 +522,19 @@ nachgetragen.
   `art/aendern`, `art/loeschen`, `warnungen`, `warnungen/setzen`, `warnungen/geraet`, `warnungen/test`. Zählungen,
   Auswahl der Ziele und das Beispiel liefert die Integration; die Seite zeigt nur an.
 
+## Diagnose-Log (Herbert, 1.11.2026)
+
+- Anlass GitHub #4: viele Meldungen „offline / wieder online“. Warnungen beruhen auf dem Feld `Active` der Box; das Log
+  soll zeigen, ob ein Ausfall echt war oder an der Abfrage lag. Herbert hat das eigene Log gewählt, obwohl Journal und
+  Box-Protokoll einen Teil davon schon enthalten: Es führt alles an einem Ort zusammen und ergänzt, was dort fehlt
+  (Lücken im Abruf, Größe der Liste, Band, Box oder Repeater).
+- Schalter ab Werk aus, nur Admins. Eigene Tabelle `diagnoselog` ohne Versionssprung (wie `messung_kontext`), 7 Tage.
+  Der Vergleich liegt nur im Speicher; nach einem Neustart beginnt er mit „Aufzeichnung beginnt“.
+- Box oder Repeater liest die Integration aus der Mesh-Liste im 10-Minuten-Takt, der Wert kann also bis zu 10 Minuten
+  alt sein. Band, Signal und Tempo nennt die Box nur für Geräte in ihrer eigenen WLAN-Liste.
+- Datei: Geräte als „Gerät 1, 2 …“, keine MAC- und IP-Adressen. Vom Box-Protokoll nur die Gruppen WLAN und Internet,
+  mit ausgetauschten bekannten Gerätenamen. Ein Name, den die Box anders schreibt als in der Geräteliste, bliebe stehen.
+
 ## Offene Entscheidungen
 
 - Keine.

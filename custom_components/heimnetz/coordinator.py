@@ -125,6 +125,7 @@ class Abruf(DataUpdateCoordinator[sm.Stand]):
         self.kontext_holen: Callable[[Messung], Awaitable[dict[str, Any]]] | None = None
         # WU-0010: Warnungen nach jedem Abruf (gesetzt in __init__); zurück kommen Journalzeilen
         self.warnen: Callable[[sm.Stand], Awaitable[list[Ereignis]]] | None = None
+        self.mitschreiben: Callable[[sm.Stand], Awaitable[None]] | None = None  # Diagnose-Log
         self.plan_status: mp.Entscheidung | None = None
         self.serie_status: dict[str, int] | None = None  # WU-0001: laufende Serie {n, lauf}
         self._serie_aufgabe: asyncio.Task[None] | None = None
@@ -170,6 +171,7 @@ class Abruf(DataUpdateCoordinator[sm.Stand]):
             wlan_gast=daten.wlan_gast,
             wlan_geraete=daten.wlan_geraete,
             mesh=daten.mesh,
+            anbindung=daten.anbindung,
             zugang=daten.zugang,
             dsl=daten.dsl,
             faser=daten.faser,
@@ -178,6 +180,8 @@ class Abruf(DataUpdateCoordinator[sm.Stand]):
         )
         stand = sm.auswerten(g, roh)
         await self._speichern(stand, await self._warnen(stand))
+        if self.mitschreiben is not None:
+            await self.mitschreiben(stand)
         self.speedtest.verbinden()
         await self._messplan(stand)
         if stand.fehler:

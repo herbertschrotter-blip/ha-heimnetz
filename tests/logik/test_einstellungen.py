@@ -19,6 +19,7 @@ def test_gueltig_und_leer():
         "zugang_wahl": "auto",
         "zugang_adresse": None,
         "zugang_ersatz": "auto",
+        "diagnoselog": False,
     }
     assert es.pruefen({"wlan_schwach": "50"}, HEUTE).wlan_schwach == 50
     assert es.pruefen({"tarif_down": 0, "ab": ""}, HEUTE) == es.Einstellungen()

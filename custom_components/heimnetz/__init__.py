@@ -31,6 +31,7 @@ from .const import (
     ISSUE_RECORDER_FEHLT,
 )
 from .coordinator import Abruf, zugang_aus_fritz
+from .diagnoselog import Diagnoselog
 from .einstellungen import Einstellungsdienst
 from .logik import sammeln as sm
 from .mast import Mastsuche
@@ -60,6 +61,7 @@ class Laufzeit:
     osm: OsmMasten
     ocid: OcidAbzug
     warnungen: Warndienst | None = None  # WU-0010, gesetzt gleich nach dem Anlegen
+    diagnoselog: Diagnoselog | None = None  # gesetzt gleich nach dem Anlegen
 
     def diagnose(self) -> dict[str, Any]:
         """Zahlen statt Inhalte: keine Gerätenamen, Hardware-Adressen oder Meldungstexte."""
@@ -167,6 +169,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: EintragMitLaufzeit) -> b
         lz.warnungen = Warndienst(hass, entry, lz)  # WU-0010
         lz.warnungen.journal = abruf.journal_merken
         abruf.warnen = lz.warnungen.abruf
+        lz.diagnoselog = Diagnoselog(hass, lz)
+        abruf.mitschreiben = lz.diagnoselog.abruf
         await lz.warnungen.async_bekannt_laden()
         entry.async_on_unload(abruf.speedtest.trennen)
         await abruf.async_config_entry_first_refresh()

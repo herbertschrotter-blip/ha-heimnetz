@@ -205,6 +205,10 @@ Entwickler schicken kann – für Geräte, die Heimnetz noch nicht ausliest. Hei
 eingetipptes Kennwort wird nur für die Abfrage verwendet und nicht gespeichert (leer gelassen, nimmt Heimnetz das unter
 🌐 Zugang für die gespeicherte bzw. gefundene Adresse hinterlegte).
 
+Das **Diagnose-Log** (⚙ → 🔬 Diagnose, ab Werk aus) zeichnet auf, wann welches Gerät wo und wie im Netz war, dazu
+Internet, Box und Modem, und markiert Häufungen. Die Einträge bleiben 7 Tage lokal; die Datei enthält Geräte als
+„Gerät 1, 2 …“ und keine MAC- oder IP-Adressen.
+
 **Zugang** (⚙ → 🌐 Zugang): Woher das Internet kommt, liest Heimnetz bei der FRITZ!Box (TR-064, alle 10 Minuten) und –
 nur bei einem vorgeschalteten Gerät – an dessen wenigen Adressen; der Beleg lautet z. B. „192.168.0.1 antwortet: ZTE G5TC
 (ubus)“. Zur Wahl steht auch „Glasfaser über ein eigenes Modem“ (ONT). Wer ein vorgeschaltetes Modem festlegt, kann dessen Adresse (nur private Adressen) und
@@ -528,6 +532,10 @@ matching interfaces, redacted (the cell ID stays; IMEI, password, phone number a
 it to the developer – for devices Heimnetz does not read yet. Heimnetz sends nothing itself; a password typed there is
 used only for the query and not stored (left empty, Heimnetz uses the one stored under 🌐 Access for the stored or found
 address).
+
+The **diagnostic log** (⚙ → 🔬 Diagnostics, off by default) records when which device was where and how on the network,
+plus internet, box and modem, and marks clusters. Entries stay local for 7 days; the file names devices “Device 1, 2 …”
+and contains no MAC or IP addresses.
 
 **Access** (⚙ → 🌐 Access): Heimnetz finds out where the internet comes from by asking the FRITZ!Box (TR-064, every
 10 minutes) and – only with an upstream device – its few addresses; the evidence reads e.g. “192.168.0.1 answers: ZTE

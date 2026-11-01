@@ -3531,6 +3531,13 @@ select.ga-wahl { font: inherit; font-size: 13px; color: var(--ink); background: 
 .vs-r button.blau { background: color-mix(in srgb, var(--blau) 22%, transparent); }
 .vs-kopf { border-radius: 12px; padding: 8px 12px; font-size: 13px; line-height: 1.4; background: rgba(127,127,127,.1); margin: 6px 0 2px; }
 @container (max-width: 520px) { .vs { grid-template-columns: 22px minmax(0, 1fr); } .vs-r { grid-column: 2; justify-content: flex-start; } }
+.dl { border-bottom: 1px solid var(--gridc); padding-bottom: 10px; margin-bottom: 10px; } .dl-filter { margin: 8px 0; gap: 6px; } .dl-filter .chip.on { color: var(--ink); background: rgba(127,127,127,.3); }
+.dl-haeufung { display: flex; gap: 8px; padding: 8px 10px; border-radius: 12px; background: rgba(255,159,10,.14); border: 1px solid var(--amber); font-size: 13px; margin: 8px 0; }
+.dl-tag { font-size: 12px; font-weight: 700; color: var(--ink2); margin: 10px 0 2px; }
+.dl-e { display: grid; grid-template-columns: 46px 66px minmax(0, 1fr); gap: 8px; padding: 6px 0; border-top: 1px solid var(--gridc); font-size: 13px; align-items: baseline; overflow-wrap: anywhere; }
+.dl-e time { color: var(--ink2); font-variant-numeric: tabular-nums; } .dl-e small { display: block; color: var(--ink2); font-size: 12px; } .dl-e.weg b { color: var(--amber); }
+.dl-badge { font-size: 11px; padding: 1px 6px; border-radius: 8px; background: rgba(142,142,147,.25); color: var(--ink2); text-align: center; }
+@media (max-width: 480px) { .dl-e { grid-template-columns: 46px minmax(0, 1fr); } .dl-badge { display: none; } }
 .dg-feld { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--ink2); padding: 6px 0; }
 .dg-feld input { font: inherit; font-size: 14px; color: var(--ink); background: rgba(120,120,128,.14); border: 1px solid var(--gridc); border-radius: 12px; padding: 8px 10px; }
 .dg-ab { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 6px 0; font-size: 13px; }
@@ -4335,7 +4342,22 @@ var EN = {
   "Warnungen nicht abrufbar: {fehler}": "Alerts not available: {fehler}",
   "Nicht gespeichert: {fehler}": "Not saved: {fehler}",
   "Testnachricht an {ziel} geschickt": "Test message sent to {ziel}",
-  "Keine Nachricht eingestellt – nur das Ereignis „heimnetz_warnung“ ausgelöst": "No message set up – only the event “heimnetz_warnung” was fired"
+  "Keine Nachricht eingestellt – nur das Ereignis „heimnetz_warnung“ ausgelöst": "No message set up – only the event “heimnetz_warnung” was fired",
+  "Diagnose-Log": "Diagnostic log",
+  "Box": "Box",
+  "nur Auffälliges": "only anomalies",
+  "zeichnet auf, wann welches Gerät wo und wie im Netz war, dazu Internet, Box und Modem": "records when which device was where and how on the network, plus internet, box and modem",
+  "läuft seit {zeit}": "running since {zeit}",
+  "angehalten": "stopped",
+  "{n} Einträge": "{n} entries",
+  "bleibt {n} Tage, dann fällt das Älteste weg": "kept for {n} days, then the oldest drops out",
+  "Häufung {zeit}:": "Cluster {zeit}:",
+  "Noch keine Einträge.": "No entries yet.",
+  "Hier die neuesten {n}, in der Datei alle.": "The latest {n} here, all of them in the file.",
+  "Alle Einträge des Logs löschen?": "Delete all log entries?",
+  "💾 Datei speichern (geschwärzt)": "💾 Save file (redacted)",
+  "🗑 Log löschen": "🗑 Delete log",
+  "Gerätenamen sieht nur, wer hier angemeldet ist. In der Datei heißen sie „Gerät 1“, „Gerät 2“ …, ohne MAC- und IP-Adressen. Das Log bleibt lokal, Heimnetz schickt es nirgendwohin.": "Device names are visible only to those logged in here. In the file they are called “Device 1”, “Device 2” …, without MAC or IP addresses. The log stays local; Heimnetz sends it nowhere."
 };
 
 // src/format.js
@@ -6560,6 +6582,40 @@ function einrichtung(p4) {
     <p class="hinweis" style="margin-top:8px">${t3("Heimnetz installiert nichts selbst: die Knöpfe öffnen Home Assistant oder HACS an der richtigen Stelle. Nach einem Download aus HACS Home Assistant neu starten, dann einrichten. Geprüft wird beim Öffnen dieses Reiters.")}</p>`;
 }
 var ROH = "⟨geschwärzt⟩";
+var DLOG_FILTER = [["alle", merke("Alle")], ["geraet", merke("Geräte")], ["internet", merke("Internet")], ["modem", merke("Modem")], ["box", merke("Box")], ["auffaellig", merke("nur Auffälliges")]];
+function diagnoseLog(p4) {
+  const { daten: d3, filter, frage, fehler } = p4._dlog;
+  const schalter2 = b2`<div class="ez dl-kopf"><span><b>${t3("Diagnose-Log")}</b><small>${t3("zeichnet auf, wann welches Gerät wo und wie im Netz war, dazu Internet, Box und Modem")}</small></span>
+    <button class="sw ${d3 && d3.an ? "on" : ""}" role="switch" aria-checked=${d3 && d3.an ? "true" : "false"} aria-label=${t3("Diagnose-Log")} ?disabled=${!d3} @click=${() => p4.dlogBefehl("diagnoselog/setzen", { an: !d3.an })}><i></i></button></div>`;
+  const fein = fehler ? b2`<p class="fein">${fehler}</p>` : A;
+  if (!d3 || !d3.an && !d3.eintraege) return b2`<div class="dl">${schalter2}${fein}</div>`;
+  const passt2 = (z2) => filter === "alle" || (filter === "auffaellig" ? z2.auffaellig : z2.kat === filter);
+  let letzter = "";
+  const zeilen = d3.zeilen.filter(passt2).flatMap((z2) => {
+    const kopf = tag(z2.t);
+    const neu = kopf !== letzter;
+    letzter = kopf;
+    return [
+      neu ? b2`<div class="dl-tag">${kopf}</div>` : A,
+      b2`<div class="dl-e ${z2.auffaellig ? "weg" : ""}"><time>${uhr(z2.t)}</time><span class="dl-badge">${z2.badge}</span><span>${z2.name ? b2`<b>${z2.name}</b> ` : A}${z2.text}${z2.detail ? b2`<small>${z2.detail}</small>` : A}</span></div>`
+    ];
+  });
+  const staende = [
+    d3.an ? t3("läuft seit {zeit}", { zeit: zeit(d3.seit) }) : t3("angehalten"),
+    t3("{n} Einträge", { n: zahl(d3.eintraege) }),
+    t3("bleibt {n} Tage, dann fällt das Älteste weg", { n: d3.tage })
+  ];
+  return b2`<div class="dl">${schalter2}
+    <div class="leise">${staende.join(" · ")}</div>
+    <div class="chips dl-filter">${DLOG_FILTER.map(([k2, text]) => b2`<button class="chip ${filter === k2 ? "on" : ""}" @click=${() => p4.dlogFilter(k2)}>${t3(text)}</button>`)}</div>
+    ${d3.haeufungen.slice(0, 5).map((h3) => b2`<div class="dl-haeufung">⚠ <span><b>${t3("Häufung {zeit}:", { zeit: zeit(h3.t) })}</b> ${h3.text}</span></div>`)}
+    ${zeilen.length ? zeilen : b2`<p class="hinweis">${t3("Noch keine Einträge.")}</p>`}
+    ${d3.eintraege > d3.zeilen.length ? b2`<p class="hinweis">${t3("Hier die neuesten {n}, in der Datei alle.", { n: zahl(d3.zeilen.length) })}</p>` : A}
+    ${fein}
+    ${frage ? b2`<div class="mg-frage"><p>${t3("Alle Einträge des Logs löschen?")}</p><div class="dg-knoepfe"><button class="rot" @click=${() => p4.dlogBefehl("diagnoselog/loeschen")}>${t3("Löschen")}</button><button @click=${() => p4.dlogFrage(false)}>${t3("Abbrechen")}</button></div></div>` : b2`<div class="dg-knoepfe"><button @click=${() => p4.dlogSpeichern()}>${t3("💾 Datei speichern (geschwärzt)")}</button><button @click=${() => p4.dlogFrage(true)}>${t3("🗑 Log löschen")}</button></div>`}
+    <p class="hinweis">${t3("Gerätenamen sieht nur, wer hier angemeldet ist. In der Datei heißen sie „Gerät 1“, „Gerät 2“ …, ohne MAC- und IP-Adressen. Das Log bleibt lokal, Heimnetz schickt es nirgendwohin.")}</p>
+  </div>`;
+}
 function diagnose(p4) {
   if (!p4.istAdmin) return b2`<p class="hinweis" style="padding-top:8px">${t3("Diese Abfrage können nur Admins starten.")}</p>`;
   const d3 = p4._diag;
@@ -6571,8 +6627,8 @@ function diagnose(p4) {
     <label class="dg-feld">${t3("Kennwort der Weboberfläche (optional)")}<input name="kennwort" type="password" autocomplete="off" placeholder=${t3("wie beim Anmelden im Browser")} ?disabled=${d3.laeuft}><small>${t3("wird nur für diese Abfrage verwendet und nicht gespeichert – leer: das unter 🌐 Zugang für diese Adresse hinterlegte")}</small></label>
     <div class="dg-knoepfe"><button class="amber" ?disabled=${d3.laeuft} @click=${() => p4.modemAbfragen()}>${d3.laeuft ? t3("⏳ fragt ab …") : t3("▶ Abfragen")}</button></div>
     ${d3.fehler ? b2`<p class="fein">${d3.fehler}</p>` : A}`;
-  if (!d3.antwort) return b2`${kopf}<p class="hinweis" style="margin-top:8px">${t3("Nur Adressen im eigenen Heimnetz (z. B. 192.168.x.x). Heimnetz liest nur und ändert am Modem nichts.")}</p>`;
-  return b2`${kopf}${ergebnis(p4, d3.antwort)}`;
+  if (!d3.antwort) return b2`${diagnoseLog(p4)}${kopf}<p class="hinweis" style="margin-top:8px">${t3("Nur Adressen im eigenen Heimnetz (z. B. 192.168.x.x). Heimnetz liest nur und ändert am Modem nichts.")}</p>`;
+  return b2`${diagnoseLog(p4)}${kopf}${ergebnis(p4, d3.antwort)}`;
 }
 function befundBlock(a3) {
   const b3 = a3.hinweis;
@@ -6668,7 +6724,7 @@ function protokoll(p4, d3) {
 }
 
 // src/heimnetz-panel.js
-var VERSION = true ? "0.30.3" : "entwicklung";
+var VERSION = true ? "0.31.0" : "entwicklung";
 var REITER = [
   ["uebersicht", merke("Übersicht")],
   ["speedtest", merke("Speedtest")],
@@ -6709,6 +6765,7 @@ var HeimnetzPanel = class extends i4 {
     _hinweisPlan: { state: true },
     _hinweisEinr: { state: true },
     _diag: { state: true },
+    _dlog: { state: true },
     _hinweisZugang: { state: true },
     _hinweisArten: { state: true },
     _hinweisWarn: { state: true },
@@ -6725,6 +6782,7 @@ var HeimnetzPanel = class extends i4 {
     this._hinweisPlan = "";
     this._hinweisEinr = "";
     this._diag = { adresse: "192.168.0.1", laeuft: false, antwort: null, fehler: "" };
+    this._dlog = { daten: null, filter: "alle", frage: false, fehler: "" };
     this._hinweisZugang = "";
     this._hinweisArten = "";
     this._hinweisWarn = "";
@@ -6986,7 +7044,7 @@ var HeimnetzPanel = class extends i4 {
   }
   /** Reiter im Fenster Einstellungen gewählt: was nur dieser Reiter braucht, frisch von der Integration. */
   teilLaden(teil) {
-    const laden = { einr: this.einrichtungLaden, zugang: this.zugangLaden, arten: this.artenLaden, warn: this.warnungenLaden }[teil];
+    const laden = { einr: this.einrichtungLaden, zugang: this.zugangLaden, arten: this.artenLaden, warn: this.warnungenLaden, diag: () => this.dlogBefehl("diagnoselog") }[teil];
     if (laden) laden.call(this);
   }
   /* ---- WU-0010: eigene Arten (⚙ › 🏷️ Arten, Fenster eines Geräts; nur Admins) ---- */
@@ -7116,6 +7174,7 @@ var HeimnetzPanel = class extends i4 {
   zuDiagnose(adresse) {
     if (adresse) this._diag = { ...this._diag, adresse };
     this._blatt = { ...this._blatt, teil: "diag" };
+    this.teilLaden("diag");
   }
   /** WU-0007: was eingerichtet ist und was fehlt – geprüft beim Öffnen (nur Admins; die Integration erkennt). */
   async einrichtungLaden() {
@@ -7175,6 +7234,38 @@ var HeimnetzPanel = class extends i4 {
     if (navigator.clipboard) navigator.clipboard.writeText(this._modemDatei()).catch(() => {
     });
     this.toast(t3("Kopiert – {n} Werte", { n: this._diag.antwort.summen.werte }));
+  }
+  /** Diagnose-Log (nur Admins): die Integration zeichnet auf und liefert fertige Zeilen, die Seite zeigt nur an. */
+  async dlogBefehl(befehl, parameter = {}) {
+    if (!this.istAdmin) return;
+    try {
+      const daten = await this.ws(befehl, parameter);
+      this._dlog = { ...this._dlog, daten, frage: false, fehler: "" };
+    } catch (err) {
+      this._dlog = { ...this._dlog, frage: false, fehler: err && err.message || String(err) };
+    }
+  }
+  dlogFilter(filter) {
+    this._dlog = { ...this._dlog, filter };
+  }
+  dlogFrage(frage) {
+    this._dlog = { ...this._dlog, frage };
+  }
+  async dlogSpeichern() {
+    try {
+      const inhalt = await this.ws("diagnoselog/datei");
+      const name = `heimnetz-log-${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}.json`;
+      const text = JSON.stringify({ heimnetz: VERSION, zeit: (/* @__PURE__ */ new Date()).toISOString(), ...inhalt }, null, 2);
+      const url = URL.createObjectURL(new Blob([text], { type: "application/json" }));
+      const a3 = document.createElement("a");
+      a3.href = url;
+      a3.download = name;
+      a3.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1e3);
+      this.toast(t3("Gespeichert: {name}", { name }));
+    } catch (err) {
+      this._dlog = { ...this._dlog, fehler: err && err.message || String(err) };
+    }
   }
   /* ---- Melden (Tickets) ---- */
   toast(text) {

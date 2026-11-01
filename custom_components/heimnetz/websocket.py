@@ -16,6 +16,7 @@ from homeassistant.helpers import config_validation as cv
 from . import ansichten, einrichtung, modem
 from . import warnungen as wd
 from .const import CONF_MODEM_KENNWORT, DOMAIN, SEITEN_SPRACHE
+from .diagnoselog import Diagnoselog
 from .logik import auswertung as aw
 from .logik import vorgeschaltet as ve
 from .logik import warnungen as wn
@@ -499,6 +500,63 @@ async def _modem(
 
 
 # ── WU-0010: eigene Arten (⚙ › 🏷️ Arten, Fenster eines Geräts) – nur Admins ──
+def _dlog(hass: HomeAssistant, connection: Any, msg: dict[str, Any]) -> Diagnoselog | None:
+    lz = _laufzeit(hass, connection, msg)
+    return lz.diagnoselog if lz else None
+
+
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/diagnoselog"})
+@websocket_api.require_admin
+@websocket_api.async_response
+async def _diagnoselog(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
+) -> None:
+    if d := _dlog(hass, connection, msg):
+        connection.send_result(msg["id"], await d.ansicht())
+
+
+@websocket_api.websocket_command(
+    {vol.Required("type"): f"{DOMAIN}/diagnoselog/setzen", vol.Required("an"): bool}
+)
+@websocket_api.require_admin
+@websocket_api.async_response
+async def _diagnoselog_setzen(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
+) -> None:
+    if d := _dlog(hass, connection, msg):
+        try:
+            connection.send_result(msg["id"], await d.setzen(msg["an"]))
+        except Ungueltig as err:
+            connection.send_error(msg["id"], "ungueltig", err.text(ansichten.sprache(hass)))
+
+
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/diagnoselog/loeschen"})
+@websocket_api.require_admin
+@websocket_api.async_response
+async def _diagnoselog_loeschen(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
+) -> None:
+    if d := _dlog(hass, connection, msg):
+        try:
+            connection.send_result(msg["id"], await d.loeschen())
+        except Angehalten:
+            connection.send_error(
+                msg["id"],
+                "besetzt",
+                _tr(hass, "Gerade läuft eine Sicherung – bitte gleich noch einmal."),
+            )
+
+
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/diagnoselog/datei"})
+@websocket_api.require_admin
+@websocket_api.async_response
+async def _diagnoselog_datei(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
+) -> None:
+    if d := _dlog(hass, connection, msg):
+        connection.send_result(msg["id"], await d.datei())
+
+
 @websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/arten"})
 @websocket_api.require_admin
 @websocket_api.async_response
@@ -705,6 +763,10 @@ BEFEHLE = (
     _serie,
     _einrichtung,
     _modem,
+    _diagnoselog,
+    _diagnoselog_setzen,
+    _diagnoselog_loeschen,
+    _diagnoselog_datei,
     _arten,
     _art_neu,
     _art_aendern,
