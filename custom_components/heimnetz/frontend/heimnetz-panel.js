@@ -3971,6 +3971,8 @@ var EN = {
   "ohne Neueinwahl (7 Tage)": "no reconnect (7 days)",
   "Neueinwahlen, letzte 7 Tage": "reconnects, last 7 days",
   "laut Modem": "according to the modem",
+  "Funkmasten der Umgebung": "Masts nearby",
+  "Das Modem nennt keine Zelle zum Nachschlagen und keine Entfernung. Die Karte zeigt deshalb nur die Funkmasten der Umgebung aus OpenStreetMap; welcher davon dein Sender ist, ist nicht bekannt.": "The modem reports no cell to look up and no distance. The map therefore only shows masts nearby from OpenStreetMap; which one serves you is unknown.",
   "OpenCellID-Schlüssel (kostenlos von opencellid.org) eintragen: Einstellungen von Home Assistant → Geräte & Dienste → Heimnetz → Konfigurieren.": "Enter the OpenCellID key (free from opencellid.org): Home Assistant settings → Devices & services → Heimnetz → Configure.",
   "Paketfehler": "Packet errors",
   "Fehler und verworfene Pakete": "errors and dropped packets",
@@ -6074,6 +6076,7 @@ function strecke(s4) {
 }
 var SCHLUESSEL_ORT = merke("OpenCellID-Schlüssel (kostenlos von opencellid.org) eintragen: Einstellungen von Home Assistant → Geräte & Dienste → Heimnetz → Konfigurieren.");
 var STAND = {
+  nur_umgebung: merke("Das Modem nennt keine Zelle zum Nachschlagen und keine Entfernung. Die Karte zeigt deshalb nur die Funkmasten der Umgebung aus OpenStreetMap; welcher davon dein Sender ist, ist nicht bekannt."),
   ohne_schluessel: merke("BeaconDB kennt diese Zellen nicht. Mit einem Schlüssel von opencellid.org (Einstellungen → Geräte & Dienste → Heimnetz → Konfigurieren) fragt die Integration zusätzlich OpenCellID."),
   nicht_gefunden: merke("Weder OpenCellID noch BeaconDB kennen diese Zellen – die Karte zeigt nur die Entfernung laut Box."),
   fehler: merke("Der Dienst für den Standort der Zellen war nicht erreichbar; neuer Versuch in einer Stunde."),
@@ -6082,7 +6085,7 @@ var STAND = {
 };
 function karte(p4, k2, dunkel) {
   return b2`<div class="glas-panel block">
-    <div class="block-kopf"><h3>${t3("Wo steht der Mast?")} <span class="leise" title=${t3(SCHLUESSEL_ORT)}>ⓘ</span></h3><span class="leise">${k2.gefunden ? t3("geschätzt · {n} von {gesamt} Zellen gefunden", { n: k2.gefunden, gesamt: k2.zellen }) : t3("Entfernung laut Box")}</span></div>
+    <div class="block-kopf"><h3>${t3("Wo steht der Mast?")} <span class="leise" title=${t3(SCHLUESSEL_ORT)}>ⓘ</span></h3><span class="leise">${k2.gefunden ? t3("geschätzt · {n} von {gesamt} Zellen gefunden", { n: k2.gefunden, gesamt: k2.zellen }) : !k2.ring ? t3("Funkmasten der Umgebung") : t3("Entfernung laut Box")}</span></div>
     <heimnetz-karte .daten=${k2} ?dunkel=${dunkel} .sprache=${sprache()} @osm-umgeschaltet=${() => p4.requestUpdate()}></heimnetz-karte>
     <div class="legende"><span><i style="background:var(--blau)"></i>${t3("Wohnung")}</span>
       ${k2.masten.map((m3) => b2`<span><i style="background:var(--amber)"></i>${t3("Mast {name} (geschätzt)", { name: m3.name })}${m3.fuenf_g ? ` · ${t3("4G + 5G (vermutlich)")}` : ""} · ${m3.entfernung} ${m3.richtung}${m3.genau ? ` (± ${m3.genau})` : ""}</span>`)}
@@ -6665,7 +6668,7 @@ function protokoll(p4, d3) {
 }
 
 // src/heimnetz-panel.js
-var VERSION = true ? "0.30.2" : "entwicklung";
+var VERSION = true ? "0.30.3" : "entwicklung";
 var REITER = [
   ["uebersicht", merke("Übersicht")],
   ["speedtest", merke("Speedtest")],

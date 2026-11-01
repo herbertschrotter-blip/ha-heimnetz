@@ -115,6 +115,7 @@ function strecke(s) {
 const SCHLUESSEL_ORT = merke('OpenCellID-Schlüssel (kostenlos von opencellid.org) eintragen: Einstellungen von Home Assistant → Geräte & Dienste → Heimnetz → Konfigurieren.');
 
 const STAND = {
+  nur_umgebung: merke('Das Modem nennt keine Zelle zum Nachschlagen und keine Entfernung. Die Karte zeigt deshalb nur die Funkmasten der Umgebung aus OpenStreetMap; welcher davon dein Sender ist, ist nicht bekannt.'),
   ohne_schluessel: merke('BeaconDB kennt diese Zellen nicht. Mit einem Schlüssel von opencellid.org (Einstellungen → Geräte & Dienste → Heimnetz → Konfigurieren) fragt die Integration zusätzlich OpenCellID.'),
   nicht_gefunden: merke('Weder OpenCellID noch BeaconDB kennen diese Zellen – die Karte zeigt nur die Entfernung laut Box.'),
   fehler: merke('Der Dienst für den Standort der Zellen war nicht erreichbar; neuer Versuch in einer Stunde.'),
@@ -125,7 +126,7 @@ const STAND = {
 /** Karte: Orte und Rahmen kommen fertig von der Integration; gezeichnet wird mit Leaflet (src/karte.js). */
 function karte(p, k, dunkel) {
   return html`<div class="glas-panel block">
-    <div class="block-kopf"><h3>${t('Wo steht der Mast?')} <span class="leise" title=${t(SCHLUESSEL_ORT)}>ⓘ</span></h3><span class="leise">${k.gefunden ? t('geschätzt · {n} von {gesamt} Zellen gefunden', { n: k.gefunden, gesamt: k.zellen }) : t('Entfernung laut Box')}</span></div>
+    <div class="block-kopf"><h3>${t('Wo steht der Mast?')} <span class="leise" title=${t(SCHLUESSEL_ORT)}>ⓘ</span></h3><span class="leise">${k.gefunden ? t('geschätzt · {n} von {gesamt} Zellen gefunden', { n: k.gefunden, gesamt: k.zellen }) : !k.ring ? t('Funkmasten der Umgebung') : t('Entfernung laut Box')}</span></div>
     <heimnetz-karte .daten=${k} ?dunkel=${dunkel} .sprache=${sprache()} @osm-umgeschaltet=${() => p.requestUpdate()}></heimnetz-karte>
     <div class="legende"><span><i style="background:var(--blau)"></i>${t('Wohnung')}</span>
       ${k.masten.map((m) => html`<span><i style="background:var(--amber)"></i>${t('Mast {name} (geschätzt)', { name: m.name })}${m.fuenf_g ? ` · ${t('4G + 5G (vermutlich)')}` : ''} · ${m.entfernung} ${m.richtung}${m.genau ? ` (± ${m.genau})` : ''}</span>`)}

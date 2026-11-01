@@ -414,6 +414,8 @@ export const EN = {
   'ohne Neueinwahl (7 Tage)': 'no reconnect (7 days)',
   'Neueinwahlen, letzte 7 Tage': 'reconnects, last 7 days',
   'laut Modem': 'according to the modem',
+  'Funkmasten der Umgebung': 'Masts nearby',
+  'Das Modem nennt keine Zelle zum Nachschlagen und keine Entfernung. Die Karte zeigt deshalb nur die Funkmasten der Umgebung aus OpenStreetMap; welcher davon dein Sender ist, ist nicht bekannt.': 'The modem reports no cell to look up and no distance. The map therefore only shows masts nearby from OpenStreetMap; which one serves you is unknown.',
   'OpenCellID-Schlüssel (kostenlos von opencellid.org) eintragen: Einstellungen von Home Assistant → Geräte & Dienste → Heimnetz → Konfigurieren.': 'Enter the OpenCellID key (free from opencellid.org): Home Assistant settings → Devices & services → Heimnetz → Configure.',
   'Paketfehler': 'Packet errors',
   'Fehler und verworfene Pakete': 'errors and dropped packets',

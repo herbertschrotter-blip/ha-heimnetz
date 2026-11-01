@@ -1276,6 +1276,18 @@ test('WU-0009: vorgeschaltetes Gerät – Werte vom Modem mit Herkunft, Zellen m
   });
 });
 
+test('GitHub #4: Karte nur mit den Masten der Umgebung sagt das dazu', async () => {
+  const d = DATEN.internet_vorgeschaltet;
+  const karte = { stand: 'nur_umgebung', gefunden: 0, zellen: 1, rahmen: [48, 16, 49, 17], wohnung: [48.5, 16.5], ring_m: null, ring: null, masten: [], punkte: [], osm: [] };
+  await mitInternet({ ...d, mobilfunk: { ...d.mobilfunk, karte } }, async () => {
+    const el = await seite(machHass());
+    await reiter(el, 'Internet');
+    assert.ok(el.shadowRoot.querySelector('heimnetz-karte'));
+    assert.match(text(el), /Funkmasten der Umgebung/);
+    assert.match(text(el), /welcher davon dein Sender ist/);
+  });
+});
+
 test('Tooltip nennt den Ort für den OpenCellID-Schlüssel', async () => {
   await mitInternet(DATEN.internet_vorgeschaltet, async () => {
     const el = await seite(machHass());

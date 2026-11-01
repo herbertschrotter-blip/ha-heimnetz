@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [0.30.3]
+
+- GitHub #4: Die Karte **Wo steht der Mast?** erscheint jetzt auch ohne gefundene Zelle und ohne Entfernung, etwa bei
+  5G-SA hinter einem Modem. Sie zeigt dann die Wohnung und die Funkmasten der Umgebung aus OpenStreetMap und sagt dazu,
+  dass der eigene Sender nicht bekannt ist.
+
 ## [0.30.2]
 
 - Im Reiter **Internet** zeigt ein Tooltip bei „Wo steht der Mast?“ und an den Fundangaben der Zellen, wo der

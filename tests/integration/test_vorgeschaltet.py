@@ -852,3 +852,21 @@ async def test_zusatz_entitaeten_je_wert(
     assert _zustand(hass, eintrag, "sinr_anker") == "8.0"
     assert _zustand(hass, eintrag, "sinr_5g") is None
     assert eintrag.runtime_data.abruf.gedaechtnis.modem_werte == ["sinr_anker", "mobil_band"]
+
+
+def test_karte_ohne_fund_zeigt_die_masten_der_umgebung():
+    """GitHub #4: 5G-SA hinter einem Modem – keine Zelle zum Nachschlagen, keine Entfernung."""
+    from custom_components.heimnetz import ansichten
+    from custom_components.heimnetz.logik import karte as ka
+    from custom_components.heimnetz.logik import osm as lo
+
+    m = lz.aus_ubus({"network_type": "SA", "nr5g_rsrp": -90, "nr5g_pci": 512})
+    wohnung = ka.Ort(48.2, 16.4)
+    mast = lo.OsmMast(ka.Ort(48.21, 16.41))
+    k = ansichten._karte(wohnung, m, {}, [mast], [None], None, "de")
+    assert k["stand"] == "nur_umgebung" and k["rahmen"] and len(k["osm"]) == 1
+    assert k["ring_m"] is None and k["gefunden"] == 0
+    assert ansichten._karte(wohnung, m, {}, [], [], None, "de")["rahmen"] is None
+    fund = ka.Fund(ka.NICHT_GEFUNDEN)
+    k = ansichten._karte(wohnung, m, {m.haupt: fund}, [mast], [None], None, "de")
+    assert k["stand"] == ka.NICHT_GEFUNDEN and k["rahmen"], "der Stand der Suche bleibt sichtbar"

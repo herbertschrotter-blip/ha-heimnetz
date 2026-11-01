@@ -617,8 +617,13 @@ def _karte(
     r = ka.rahmen(
         wohnung, m.haupt.entfernung_m, [mast.ort for _, mast in masten], [ort for _, ort in zellen]
     )
+    # GitHub #4: ohne Fund und Entfernung (5G-SA hinter einem Modem) bleiben die Funkmasten der Umgebung
+    nur_umgebung = r is None and bool(osm)
+    stand = ka.gesamtstand([f for f in funde.values() if f])
+    if nur_umgebung:
+        r = ka.rahmen(wohnung, ka.FERN_M)
     return {
-        "stand": ka.gesamtstand([f for f in funde.values() if f]),
+        "stand": "nur_umgebung" if nur_umgebung and stand == ka.OHNE_KENNUNG else stand,
         "gefunden": len(zellen),
         "zellen": len(m.zellen),
         "rahmen": list(r) if r else None,
