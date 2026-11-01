@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## [0.30.1]
+
+- Fix: Das Fenster **Einstellungen** hat jetzt immer dieselbe Höhe. Bisher änderte es die Größe je Reiter, und das
+  Reiterband sprang beim Wechsel nach oben oder unten. Längere Reiter scrollen im Fenster.
+
 ## [0.30.0]
 
 - GitHub #4: Fix: Läuft ein ZTE-Modem auf **5G Standalone**, zeigt der Reiter **Internet** jetzt nur noch die 5G-Zelle

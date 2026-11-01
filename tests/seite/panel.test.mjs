@@ -1276,6 +1276,11 @@ test('WU-0009: vorgeschaltetes Gerät – Werte vom Modem mit Herkunft, Zellen m
   });
 });
 
+test('Einstellungen: feste Höhe, das Reiterband springt nicht', async () => {
+  const { stil } = await import(`${QUELLE}/stil.js`);
+  assert.match(stil.cssText, /\.sheet\.breit \{ height: 82%; \}/);
+});
+
 test('GitHub #4: ZTE – Block „Daten vom Modem“, Paketfehler, Symbol; ohne Daten kein Block', async () => {
   const d = DATEN.internet_vorgeschaltet;
   await mitInternet(d, async () => {

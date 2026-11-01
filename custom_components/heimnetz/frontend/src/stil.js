@@ -86,6 +86,7 @@ const GLAS = `
 .sheet { position: absolute; left: 8px; right: 8px; bottom: 8px; max-height: 82%; overflow-y: auto; z-index: 21; padding: 8px 18px 18px; background: var(--sheet);
   transform: translateY(110%); transition: transform .32s cubic-bezier(.2,.8,.2,1); border-radius: 28px; display: flex; flex-direction: column; gap: 10px; }
 .sheet.an { transform: none; } .sheet > * { flex-shrink: 0; }
+.sheet.breit { height: 82%; } /* Einstellungen: feste Höhe, das Reiterband springt beim Wechsel nicht */
 .sheet h3 { margin: 4px 0 0; font-size: 20px; }
 .griff { width: 40px; height: 5px; border-radius: 3px; background: var(--ink2); opacity: .5; margin: 0 auto 4px; }
 .sheet .zeile { padding: 8px 0; } .sheet .zeile + .zeile { border-top: 1px solid var(--gridc); }
