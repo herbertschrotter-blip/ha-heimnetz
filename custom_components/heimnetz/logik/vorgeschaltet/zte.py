@@ -23,7 +23,7 @@ import re
 from collections.abc import Mapping
 from typing import Any
 
-from ..mobil import Mobilfunk, Zelle
+from ..mobil import Datenmenge, Mobilfunk, ModemDaten, Zelle
 from ..werte import text
 
 # Lesende goform-Werte für den laufenden Abruf (die Diagnose fragt eine breitere Liste)
@@ -43,7 +43,7 @@ UBUS_ERLAUBT = frozenset(
         ("zwrt_web", "web_logout"),
         ("zte_nwinfo_api", "nwinfo_get_netinfo"),
         ("zwrt_data", "get_wwaniface"),
-        ("zwrt_data", "get_wwandst"),  # Datenvolumen, nur in der 🔬 Diagnose (GitHub #4)
+        ("zwrt_data", "get_wwandst"),  # Datenmenge und Laufzeit (GitHub #4)
     }
 )
 UBUS_LESEN: tuple[tuple[str, str, dict[str, Any]], ...] = (
@@ -252,8 +252,11 @@ def aus_werten(w: Mapping[str, Any], pci_hex: bool = True) -> Mobilfunk | None:
     anbieter = text(w.get("network_provider"))
     plmn = _plmn(w.get("rmcc"), w.get("rmnc"))
     rsrp = _ganz(w.get("lte_rsrp"))
+    nr_rsrp = _ganz(w.get("nr5g_rsrp") if text(w.get("nr5g_rsrp")) else w.get("Z5g_rsrp"))
+    # Das Modem nennt bei 5G-SA weiter LTE-Werte, ohne Zelle dazu: die Verbindung läuft nur über 5G (GitHub #4)
+    sa = nr_rsrp is not None and technik(text(w.get("network_type")), True, True) == "5G-SA"
     lte: Zelle | None = None
-    if rsrp is not None or text(w.get("cell_id")):
+    if not sa and (rsrp is not None or text(w.get("cell_id"))):
         lte = Zelle(
             rolle="primary",
             art="LTE",
@@ -267,7 +270,6 @@ def aus_werten(w: Mapping[str, Any], pci_hex: bool = True) -> Mobilfunk | None:
             sinr=_zahl(w.get("lte_snr")),
             band=_lte_band(w),
         )
-    nr_rsrp = _ganz(w.get("nr5g_rsrp") if text(w.get("nr5g_rsrp")) else w.get("Z5g_rsrp"))
     nr: Zelle | None = None
     if nr_rsrp is not None:
         nr = Zelle(
@@ -279,8 +281,13 @@ def aus_werten(w: Mapping[str, Any], pci_hex: bool = True) -> Mobilfunk | None:
             rsrp=nr_rsrp,
             rsrq=_ganz(w.get("nr5g_rsrq") if text(w.get("nr5g_rsrq")) else w.get("Z5g_rsrq")),
             plmn=plmn,
+            tac=_tac(w) if sa else "",
             sinr=_zahl(w.get("nr5g_snr") if text(w.get("nr5g_snr")) else w.get("Z5g_SINR")),
             band=_band(w.get("nr5g_action_band"), "n"),
+            bandbreite_mhz=_ganz(w.get("nr5g_bandwidth")) or None,
+            kanal=_ganz(w.get("nr5g_action_channel")) or None,
+            kennung_lang=text(w.get("nr5g_cell_id")),
+            rssi=_ganz(w.get("nr5g_rssi")) or None,
         )
     if lte is None and nr is None:
         return None
@@ -304,3 +311,45 @@ def aus_ubus(netinfo: Mapping[str, Any], wwan: Mapping[str, Any] | None = None) 
             if k in wwan and k not in werte:
                 werte[k] = wwan[k]
     return aus_werten(werte, pci_hex=False)
+
+
+def _menge(volumen: Mapping[str, Any], vor: str) -> Datenmenge | None:
+    down, up = _ganz(volumen.get(f"{vor}_rx_bytes")), _ganz(volumen.get(f"{vor}_tx_bytes"))
+    return Datenmenge(down, up) if down is not None and up is not None else None
+
+
+def _liste(wert: Any) -> tuple[str, ...]:
+    return tuple(b.strip() for b in text(wert).split(",") if b.strip().isdigit())
+
+
+def modem_daten(
+    netinfo: Mapping[str, Any],
+    wwan: Mapping[str, Any] | None = None,
+    volumen: Mapping[str, Any] | None = None,
+) -> ModemDaten:
+    """ubus: Zähler und Verbindung des Modems (GitHub #4). Felder wie am G5TC gelesen; was fehlt, bleibt leer."""
+    wwan, volumen = wwan or {}, volumen or {}
+    fehler = [
+        _ganz(volumen.get(f"total_{r}_{a}_packets"))
+        for r in ("rx", "tx")
+        for a in ("error", "drop")
+    ]
+    gezaehlt = [f for f in fehler if f is not None]
+    roaming = text(netinfo.get("simcard_roam")).lower()
+    return ModemDaten(
+        heute=_menge(volumen, "day"),
+        monat=_menge(volumen, "month"),
+        verbindung=_menge(volumen, "real"),
+        gesamt=_menge(volumen, "total"),
+        online_s=_ganz(volumen.get("total_time")),
+        verbindung_s=_ganz(volumen.get("real_time")),
+        paketfehler=sum(gezaehlt) if gezaehlt else None,
+        status=text(wwan.get("connect_status")),
+        fehlversuche=_ganz(wwan.get("connect_fail_count")),
+        roaming=(roaming != "home") if roaming else None,
+        netzwahl=text(netinfo.get("net_select_mode")),
+        balken=_ganz(netinfo.get("signalbar")),
+        baender_sa=_liste(netinfo.get("nr5g_sa_band_lock")),
+        baender_nsa=_liste(netinfo.get("nr5g_nsa_band_lock")),
+        baender_lte=_liste(netinfo.get("lte_band")),
+    )

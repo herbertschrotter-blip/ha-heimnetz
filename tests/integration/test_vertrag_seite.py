@@ -241,6 +241,32 @@ async def test_antworten_haben_die_form_der_vorlage(
         None,
         jetzt_s,
         angemeldet=True,
+        daten=vz.modem_daten(
+            {
+                "simcard_roam": "Home",
+                "net_select_mode": "auto_select",
+                "signalbar": "4",
+                "lte_band": "1,3,20",
+                "nr5g_sa_band_lock": "28,78",
+                "nr5g_nsa_band_lock": "78",
+            },
+            {"connect_status": "ipv4_connected", "connect_fail_count": 0},
+            {
+                "day_rx_bytes": 9800000000,
+                "day_tx_bytes": 1200000000,
+                "month_rx_bytes": 9800000000,
+                "month_tx_bytes": 1200000000,
+                "real_rx_bytes": 28600000000,
+                "real_tx_bytes": 2800000000,
+                "total_rx_bytes": 8200000000000,
+                "total_tx_bytes": 700000000000,
+                "total_time": 25401600,
+                "total_rx_error_packets": 0,
+                "total_tx_error_packets": 0,
+                "total_rx_drop_packets": 0,
+                "total_tx_drop_packets": 0,
+            },
+        ),
     )
     await abruf.async_refresh()
     await hass.async_block_till_done()

@@ -14,7 +14,7 @@ from typing import Any
 import aiohttp
 
 from ..logik import modem as lm
-from ..logik.mobil import Mobilfunk
+from ..logik.mobil import Mobilfunk, ModemDaten
 from ..logik.sprache import merke, t
 from ..logik.vorgeschaltet import zte as lz
 from .netz import Lauf, gekuerzt
@@ -52,6 +52,7 @@ class Lesung:
     mobil: Mobilfunk | None = None
     befund: str | None = None
     angemeldet: bool = False
+    daten: ModemDaten | None = None
 
 
 def _befund_ohne(mobil: Mobilfunk | None, kennwort: str | None) -> str | None:
@@ -219,9 +220,9 @@ async def ubus_probe(lauf: Lauf) -> bool:
     return da
 
 
-async def ubus_lesen(lauf: Lauf, kennwort: str | None, diagnose: bool = False) -> Lesung:
-    """Anmeldedaten lesen; mit Kennwort einmal anmelden (nicht, wenn das Gerät gesperrt ist); Funkwerte und
-    Verbindung lesen, in der Diagnose auch das Datenvolumen; abmelden."""
+async def ubus_lesen(lauf: Lauf, kennwort: str | None) -> Lesung:
+    """Anmeldedaten lesen; mit Kennwort einmal anmelden (nicht, wenn das Gerät gesperrt ist); Funkwerte, Verbindung
+    und Datenmenge lesen; abmelden."""
     u = _Ubus(lauf)
     lesung = Lesung()
     try:
@@ -276,7 +277,7 @@ async def ubus_lesen(lauf: Lauf, kennwort: str | None, diagnose: bool = False) -
     schritte = [
         (_N_UBUS_WERTE, *lz.UBUS_LESEN[0]),
         (_N_UBUS_VERBINDUNG, *lz.UBUS_LESEN[1]),
-        *(((_N_UBUS_VOLUMEN, *lz.UBUS_VOLUMEN),) if diagnose else ()),
+        (_N_UBUS_VOLUMEN, *lz.UBUS_VOLUMEN),
     ]
     for name, objekt, methode, argumente in schritte:
         # das Datenvolumen ist nur eine Probe: fehlt es, ist das kein Fehler, und abmelden geht vor
@@ -302,6 +303,8 @@ async def ubus_lesen(lauf: Lauf, kennwort: str | None, diagnose: bool = False) -
         except aiohttp.ClientError, TimeoutError:
             pass
     netinfo = werte.get("nwinfo_get_netinfo")
-    lesung.mobil = lz.aus_ubus(netinfo, werte.get("get_wwaniface")) if netinfo else None
+    wwan, volumen = werte.get("get_wwaniface"), werte.get("get_wwandst")
+    lesung.mobil = lz.aus_ubus(netinfo, wwan) if netinfo else None
+    lesung.daten = lz.modem_daten(netinfo, wwan, volumen) if netinfo else None
     lesung.befund = lesung.befund or _befund_ohne(lesung.mobil, kennwort)
     return lesung

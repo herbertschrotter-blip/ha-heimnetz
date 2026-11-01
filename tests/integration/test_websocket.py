@@ -410,6 +410,7 @@ async def test_wlan_und_mobilfunk_neu(hass, geladen, hass_ws_client):
     assert m["herkunft"] == "box" and m["herkunft_text"] == "laut FRITZ!Box"
     assert m["strecke"] == {
         "geraet": "FRITZ!Box",
+        "symbol": None,
         "rsrp": -100,
         "lage": 0.5,
         "wort": "mittel",

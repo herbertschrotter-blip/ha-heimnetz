@@ -322,6 +322,12 @@ nachgetragen.
   der Box, Zähler, laufender Abruf, letzte zehn Warnungen (ohne Text: er nennt Geräte, auch frühere) – eine Datei statt
   mehrerer Rückfragen, weiter nur auf Knopfdruck und nichts wird verschickt. Dazu liest die Diagnose beim ZTE das Datenvolumen (ubus `get_wwandst`,
   nur Diagnose; ob der G5TC es liefert, ist ungeprüft). Der laufende Abruf bleibt dabei unverändert.
+- Seit 0.30.0 (GitHub #4, Herbert, 01.11.2026, Mockup abgenommen): Der G5TC liefert `get_wwandst`. Der laufende Abruf
+  liest es deshalb bei ZTE über ubus mit, für „Daten vom Modem“ und die Anzeige „Verbunden seit“ (`real_time`; wofür der
+  Wert genau steht, ist nur aus einer Diagnose abgeleitet, deshalb zählt er nicht für Neueinwahlen und Abbrüche). Nur Anzeige im Reiter Internet, keine neuen Entitäten, kein Tempo; der
+  Reiter Verbrauch bleibt bei den Zählern der Box. Bei `network_type` SA zählen die LTE-Werte nicht: Das Modem nennt sie
+  ohne Zelle dazu. `nrca` (Bündelung) wird nicht gezeigt, solange seine Bedeutung nicht geklärt ist. Das Modell nennt das
+  Gerät bisher nicht: die Grafik schreibt dann „ZTE-Modem“ und zeichnet für jedes ZTE über ubus dieselbe Form.
 - Anlass: Ein Nutzer hat das Mobilfunk-Modem nicht in der FRITZ!Box, sondern ein vorgeschaltetes ZTE-5G-Modem
   (vermutlich ZTE G5TC von Drei Österreich oder G5TS). Die FRITZ!Box kennt dann keine Funkdaten, „Funk › Mobilfunk“
   bleibt leer. Um das später zu unterstützen, braucht der Entwickler Rohdaten. Diese Version (Mockup `netzwerk.html` ·

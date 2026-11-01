@@ -186,8 +186,13 @@ async def test_zte_ubus_gefunden_werte_im_reiter_und_in_entitaeten(
     assert d["mobilfunk"]["herkunft"] == "modem"
     assert d["mobilfunk"]["herkunft_text"] == "vom vorgeschalteten Modem"
     assert (
-        d["mobilfunk"]["strecke"]["geraet"] == "Modem" and d["mobilfunk"]["baender"] == "B3 · n78"
+        d["mobilfunk"]["strecke"]["geraet"] == "ZTE G5TC"
+        and d["mobilfunk"]["baender"] == "B3 · n78"
     )
+    assert d["mobilfunk"]["strecke"]["symbol"] == "zte"
+    assert d["mobilfunk"]["modem"]["mengen"] == [
+        {"name": "Aktuelle Verbindung", "down": "0 MB", "up": "0 MB"}
+    ]
     zellen = {z["art"]: z for z in d["mobilfunk"]["zellen"]}
     assert zellen["LTE"]["sinr"] == 8.0 and zellen["5G"]["band"] == "n78"
     assert (
@@ -201,7 +206,7 @@ async def test_zte_ubus_gefunden_werte_im_reiter_und_in_entitaeten(
     aufrufe = _ubus_aufrufe(modem_netz)
     assert aufrufe.count("web_login") == 1
     assert set(aufrufe) <= {m for _, m in lz.UBUS_ERLAUBT}
-    assert "get_wwandst" not in aufrufe  # das Datenvolumen liest nur die 🔬 Diagnose
+    assert "get_wwandst" in aufrufe  # GitHub #4: Datenmenge und Laufzeit auch im laufenden Abruf
     assert all(ADRESSE in str(c[1]) for c in modem_netz.mock_calls if "/ubus/" in str(c[1]))
     assert KENNWORT not in json.dumps(d) and KENNWORT not in json.dumps(z)
     assert not any(KENNWORT in r.getMessage() for r in _eigene(caplog))

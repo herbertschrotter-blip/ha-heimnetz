@@ -80,7 +80,7 @@ async def baustein_lesen(
     if erkennung.baustein == "zte_goform":
         return await zte.goform_lesen(lauf, kennwort, diagnose), "geraet"
     if erkennung.baustein == "zte_ubus":
-        return await zte.ubus_lesen(lauf, kennwort, diagnose), "geraet"
+        return await zte.ubus_lesen(lauf, kennwort), "geraet"
     # Die Bibliotheken laufen im Executor. Läuft das Zeitlimit des Aufrufers (asyncio.wait_for) ab, arbeitet der Thread
     # womöglich weiter – abbrechen lässt er sich nicht; begrenzt wird das durch die Zeitlimits je Anfrage (ZEIT_S).
     try:
@@ -234,7 +234,14 @@ class Dienst:
             self._abgelehnt = None
         self._fehlt_seit = self._fehlt_seit + 1 if lesung.befund == "nicht_erreichbar" else 0
         return ve.Modemstand(
-            adresse, erkennung, lesung.mobil, lesung.befund, jetzt, quelle, lesung.angemeldet
+            adresse,
+            erkennung,
+            lesung.mobil,
+            lesung.befund,
+            jetzt,
+            quelle,
+            lesung.angemeldet,
+            lesung.daten,
         )
 
     async def _mit_startseite(

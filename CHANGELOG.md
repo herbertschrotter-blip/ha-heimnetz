@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## [0.30.0]
+
+- GitHub #4: Fix: Läuft ein ZTE-Modem auf **5G Standalone**, zeigt der Reiter **Internet** jetzt nur noch die 5G-Zelle
+  als „verbunden“. Bisher stand eine LTE-Zelle als Anker da, weil das Modem bei SA weiter LTE-Werte nennt; Signalzeile,
+  Befund und SINR nahmen deshalb die falschen Werte. Der Verlauf zeigt bei SA nur die 5G-Linie.
+- GitHub #4: Bei einem ZTE über ubus (G5TS, G5TC) zeigt der Reiter **Internet** den neuen Block **Daten vom Modem**:
+  Datenmenge für heute, Monat, aktuelle Verbindung und gesamt, Verbindung, Roaming, Netzwahl und freigegebene Bänder.
+  Dazu die Kachel **Paketfehler**, „Verbunden seit“ laut Modem sowie Bandbreite, Kanal, Zellkennung und RSSI an der
+  5G-Zelle. Der laufende Abruf liest dafür im 10-Minuten-Takt auch `get_wwandst`, nur lesend. Der Reiter **Verbrauch**
+  zählt weiter die FRITZ!Box.
+- Das Modem wird bei ZTE über ubus als flaches Gerät gezeichnet. Die Form ist aus den Maßen des G5TC abgeleitet, nicht
+  nach einem Foto.
+
 ## [0.29.0]
 
 - GitHub #4: Die **🔬 Diagnose** enthält jetzt alles zur Fehlersuche in einer Datei: Umgebung (Versionen, Box, Netz),

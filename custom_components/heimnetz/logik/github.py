@@ -113,7 +113,7 @@ def zell_kennungen(m: mb.Mobilfunk | None) -> list[str]:
     kennungen = []
     for z in (m.haupt, m.nr, *m.zellen):
         if z is not None:
-            kennungen += [z.zelle, z.zelle.split("-", 1)[0], z.tac]
+            kennungen += [z.zelle, z.zelle.split("-", 1)[0], z.tac, z.kennung_lang]
     return [k for k in dict.fromkeys(kennungen) if k]
 
 

@@ -185,7 +185,7 @@ bleiben in Home Assistant; die Zellkennung geht – wie bei der Box – nur für
 | Gerät | Schnittstelle | Werte | Stand |
 |-------|---------------|-------|-------|
 | ZTE (MC801A, MF289F und ähnliche) | goform (Weboberfläche) | ja | ungetestet am Gerät |
-| ZTE (G5TS, G5TC und ähnliche) | ubus (JSON-RPC der Weboberfläche) | ja | ungetestet am Gerät |
+| ZTE (G5TS, G5TC und ähnliche) | ubus (JSON-RPC der Weboberfläche) | ja, dazu Datenmenge, Verbindung und freigegebene Bänder | am G5TC mit Diagnose und Nutzerbericht geprüft (GitHub #2, #4) |
 | Huawei HiLink (B535, B818, E5xxx, 5G CPE …) | Bibliothek huawei-lte-api oder Integration Huawei LTE | ja | ungetestet am Gerät |
 | TP-Link LTE/5G (Archer MR-, NX-Serie, M-Serie) | Bibliothek tplinkrouterc6u | Signal, Netz, Betreiber (keine Zellkennung) | ungetestet am Gerät |
 | NETGEAR LTE, Teltonika | Integration von Home Assistant, wenn eingerichtet | Signal, Band, Betreiber | ungetestet am Gerät |
@@ -509,7 +509,7 @@ only the cell ID goes to BeaconDB/OpenCellID for the map to the mast.
 | Device | Interface | Values | Status |
 |--------|-----------|--------|--------|
 | ZTE (MC801A, MF289F and similar) | goform (web interface) | yes | untested on a real device |
-| ZTE (G5TS, G5TC and similar) | ubus (JSON-RPC of the web interface) | yes | untested on a real device |
+| ZTE (G5TS, G5TC and similar) | ubus (JSON-RPC of the web interface) | yes, plus data volume, connection and allowed bands | checked on a G5TC with a diagnosis file and user report (GitHub #2, #4) |
 | Huawei HiLink (B535, B818, E5xxx, 5G CPE …) | library huawei-lte-api or the Huawei LTE integration | yes | untested on a real device |
 | TP-Link LTE/5G (Archer MR, NX series, M series) | library tplinkrouterc6u | signal, network, operator (no cell ID) | untested on a real device |
 | NETGEAR LTE, Teltonika | Home Assistant integration, if set up | signal, band, operator | untested on a real device |

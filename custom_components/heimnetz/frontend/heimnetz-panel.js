@@ -3466,6 +3466,14 @@ svg.dia { width: 100%; height: auto; display: block; overflow: visible; } .dia t
 .strecke .m-t { font-size: 12px; fill: var(--ink2); } .strecke .m-w { font-size: 15px; fill: var(--ink); font-weight: 600; }
 .strecke .fluss { animation: fluss 1.6s linear infinite; } @keyframes fluss { to { stroke-dashoffset: -24; } }
 .zellen { display: flex; flex-direction: column; }
+.m-mengen { width: 100%; border-collapse: collapse; font-size: 13px; }
+.m-mengen th, .m-mengen td { text-align: right; padding: 6px 0 6px 12px; border-top: 1px solid var(--gridc); font-weight: 400; white-space: nowrap; }
+.m-mengen th { color: var(--ink2); font-size: 12px; border-top: 0; } .m-mengen td:first-child, .m-mengen th:first-child { text-align: left; padding-left: 0; white-space: normal; }
+.m-spalten { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 24px; margin-top: 10px; }
+.m-gruppe { font-size: 13px; font-weight: 700; margin: 4px 0; }
+.m-zeile { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-top: 1px solid var(--gridc); font-size: 13px; }
+.m-zeile span:first-child { color: var(--ink2); } .m-zeile span:last-child { text-align: right; }
+@container (max-width: 520px) { .m-spalten { grid-template-columns: 1fr; } }
 .zelle { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto auto; gap: 10px; align-items: center; padding: 8px 0; }
 .zelle + .zelle { border-top: 1px solid var(--gridc); } .zelle .badge { text-align: center; }
 .z-name { display: flex; flex-direction: column; min-width: 0; } .z-name b { font-weight: 600; font-size: 14px; }
@@ -3961,6 +3969,15 @@ var EN = {
   "Neueinwahl {zeit}": "reconnect {zeit}",
   "ohne Neueinwahl (7 Tage)": "no reconnect (7 days)",
   "Neueinwahlen, letzte 7 Tage": "reconnects, last 7 days",
+  "laut Modem": "according to the modem",
+  "Paketfehler": "Packet errors",
+  "Fehler und verworfene Pakete": "errors and dropped packets",
+  "Daten vom Modem": "Data from the modem",
+  "gezählt vom Modem, nicht von der FRITZ!Box": "counted by the modem, not by the FRITZ!Box",
+  "Datenmenge": "Data volume",
+  "Fähigkeiten": "Capabilities",
+  "Kanal {n}": "channel {n}",
+  "Kennung {kennung}": "ID {kennung}",
   "Bänder": "Bands",
   "Verlauf Signalstärke": "Signal strength history",
   "4G-Anker": "4G anchor",
@@ -4219,7 +4236,6 @@ var EN = {
   "Umschaltungen": "Switchovers",
   "letzte 30 Tage": "last 30 days",
   "Über Ersatz": "Via backup",
-  "Datenmenge": "Data volume",
   "über Ersatz: meldet die Box nicht getrennt": "via backup: not reported separately by the box",
   "Neusynchronisierung": "Resync",
   "Zugang nicht abrufbar: {fehler}": "Access not available: {fehler}",
@@ -5990,10 +6006,12 @@ function mobilfunk(p4, d3) {
     </div>` : A}
     ${d3.karte && d3.karte.rahmen ? karte(p4, d3.karte, !!(p4.hass && p4.hass.themes && p4.hass.themes.darkMode)) : A}
     <div class="glas-raster">
-      ${kachel(t3("Verbunden seit"), d3.laufzeit ?? "–", d3.letzter_abbruch ? t3("Neueinwahl {zeit}", { zeit: zeit(d3.letzter_abbruch) }) : t3("ohne Neueinwahl (7 Tage)"))}
+      ${kachel(t3("Verbunden seit"), d3.laufzeit ?? "–", d3.letzter_abbruch ? t3("Neueinwahl {zeit}", { zeit: zeit(d3.letzter_abbruch) }) : d3.modem && d3.laufzeit ? t3("laut Modem") : t3("ohne Neueinwahl (7 Tage)"))}
       ${kachel(t3("Abbrüche"), b2`${d3.abbrueche_7}`, t3("Neueinwahlen, letzte 7 Tage"))}
       ${kachel(t3("Bänder"), d3.baender ? b2`<span style="font-size:15px">${d3.baender}</span>` : "–", d3.baender_unter)}
+      ${d3.modem?.paketfehler != null ? kachel(t3("Paketfehler"), b2`${d3.modem.paketfehler}`, t3("Fehler und verworfene Pakete")) : A}
     </div>
+    ${d3.modem ? modemBlock(d3.modem) : A}
     <div class="glas-panel block">
       <div class="block-kopf"><h3>${t3("Verlauf Signalstärke")}</h3>${seg([[1, "24 h"], [7, t3("{n} Tage", { n: 7 })], [30, t3("{n} Tage", { n: 30 })]], o7.tage, (v2) => p4.setze("mobilfunk", { tage: v2 }))}</div>
       ${d3.verlauf.anker.length || d3.verlauf.nr.length ? b2`<svg class="dia" viewBox="-30 -6 ${W + 36} ${H2 + 24}">
@@ -6003,20 +6021,30 @@ function mobilfunk(p4, d3) {
         ${w`<path d=${linie(d3.verlauf.nr, von, bis)} fill="none" stroke="var(--s2)" stroke-width="1.6"></path>`}
         ${w`<text x="0" y=${H2 + 16}>${o7.tage === 1 ? t3("vor {n} h", { n: 24 }) : t3("vor {n} Tagen", { n: o7.tage })}</text><text x=${W} y=${H2 + 16} text-anchor="end">${t3("jetzt")}</text>`}
       </svg>
-      <div class="legende"><span><i style="background:var(--s1)"></i>${t3("4G-Anker")}</span><span><i style="background:var(--s2)"></i>5G</span><span><i style="background:var(--rot);opacity:.3"></i>${t3("schwach (unter {n} dBm)", { n: d3.schwach_unter })}</span></div>
+      <div class="legende">${d3.verlauf.anker.length ? b2`<span><i style="background:var(--s1)"></i>${t3("4G-Anker")}</span>` : A}<span><i style="background:var(--s2)"></i>5G</span><span><i style="background:var(--rot);opacity:.3"></i>${t3("schwach (unter {n} dBm)", { n: d3.schwach_unter })}</span></div>
       <p class="hinweis">${t3("Steigt die Linie nach dem Umstellen der Box um etwa 10 dBm, war der Standort die Bremse.")}</p>` : b2`<div class="leer">${t3("Noch kein Verlauf aufgezeichnet.")}</div>`}
       ${A}
     </div>`;
+}
+function modemBlock(m3) {
+  const zeilen = (titel, liste) => liste.length ? b2`<div><div class="m-gruppe">${titel}</div>
+    ${liste.map(([n4, w2]) => b2`<div class="m-zeile"><span>${n4}</span><span>${w2}</span></div>`)}</div>` : A;
+  return b2`<div class="glas-panel block modem-daten">
+    <div class="block-kopf"><h3>${t3("Daten vom Modem")}</h3><span class="leise">${t3("gezählt vom Modem, nicht von der FRITZ!Box")}</span></div>
+    ${m3.mengen.length ? b2`<table class="m-mengen"><thead><tr><th>${t3("Datenmenge")}</th><th>Download</th><th>Upload</th></tr></thead>
+      <tbody>${m3.mengen.map((z2) => b2`<tr><td>${z2.name}</td><td>${z2.down}</td><td>${z2.up}</td></tr>`)}</tbody></table>` : A}
+    <div class="m-spalten">${zeilen(t3("Verbindung"), m3.verbindung)}${zeilen(t3("Fähigkeiten"), m3.faehigkeiten)}</div>
+  </div>`;
 }
 function stufen(n4, lage) {
   return b2`<span class="stufen">${[1, 2, 3, 4].map((i6) => b2`<i style="height:${i6 * 25}%;${i6 <= n4 ? `background:${farbe(lage)}` : ""}"></i>`)}</span>`;
 }
 function zelle(z2) {
   const titel = z2.anker && z2.rolle_art === "anker" ? t3("4G-Anker") : t3("{art}-Zelle", { art: z2.art });
-  const kennung = [z2.band ? t3("Band {band}", { band: z2.band }) : "", z2.sinr != null ? `SINR ${zahl(z2.sinr, 1)} dB` : "", z2.tac ? `TAC ${z2.tac}` : "", z2.plmn ? `PLMN ${z2.plmn}` : ""].filter(Boolean).join(" · ");
+  const kennung = [z2.band ? t3("Band {band}", { band: z2.band }) : "", z2.bandbreite ? `${z2.bandbreite} MHz` : "", z2.kanal ? t3("Kanal {n}", { n: z2.kanal }) : "", z2.sinr != null ? `SINR ${zahl(z2.sinr, 1)} dB` : "", z2.rssi != null ? `RSSI ${z2.rssi} dBm` : "", z2.tac ? `TAC ${z2.tac}` : "", z2.plmn ? `PLMN ${z2.plmn}` : ""].filter(Boolean).join(" · ");
   const wo = z2.fund ? b2`<span class="z-wo">📍 ${z2.fund.quelle}${z2.fund.genau ? ` · ±${z2.fund.genau}` : ""}</span>` : z2.such ? b2`<span class="z-wo">${z2.such}</span>` : A;
   return b2`<div class="zelle"><span class="badge ${z2.anker ? "blau-b" : ""}">${z2.art}</span>
-    <span class="z-name"><b>${titel}</b><span class="leise">${z2.kennung ? `${t3("Zelle {kennung}", { kennung: z2.kennung })} · ` : ""}${z2.rolle}</span>
+    <span class="z-name"><b>${titel}</b><span class="leise">${z2.kennung ? `${t3("Zelle {kennung}", { kennung: z2.kennung })} · ` : ""}${z2.rolle}${z2.kennung_lang ? ` · ${t3("Kennung {kennung}", { kennung: z2.kennung_lang })}` : ""}</span>
       <span class="leise">${kennung}${kennung && (z2.fund || z2.such) ? " · " : ""}${wo}</span></span>
     ${stufen(z2.stufen, z2.lage)}<span class="z-wert">${z2.rsrp ?? "–"}<small> dBm</small><span class="leise">${z2.rsrq ?? "–"} dB</span></span></div>`;
 }
@@ -6029,9 +6057,11 @@ function strecke(s4) {
     <path d="M-10,36 a14,14 0 0 1 0,-20 M10,36 a14,14 0 0 0 0,-20 M-17,42 a24,24 0 0 1 0,-32 M17,42 a24,24 0 0 0 0,-32" stroke="var(--ink2)" stroke-width="1.6" fill="none" opacity=".7"></path>
     <circle cx="0" cy="62" r="13" fill="var(--sheet)" stroke="var(--panel-rand)"></circle><text x="0" y="66" text-anchor="middle" class="m-t">${t7}</text></g>`;
   return b2`<svg class="strecke" viewBox="0 0 600 132" role="img" aria-label=${t3("Verbindung von {geraet} zur Basisstation", { geraet: s4.geraet ?? "FRITZ!Box" })}>
-    <rect x="30" y="22" width="44" height="74" rx="9" fill="var(--panel)" stroke="var(--ink2)" stroke-width="2"></rect>
-    <rect x="30" y="84" width="44" height="12" rx="4" fill="var(--s2)"></rect>
-    <line x1="58" y1="44" x2="66" y2="44" stroke="var(--ink2)" stroke-width="2"></line><line x1="58" y1="50" x2="66" y2="50" stroke="var(--ink2)" stroke-width="2"></line>
+    ${s4.symbol === "zte" ? w`<rect x="36" y="25" width="47" height="71" rx="6" fill="var(--ink2)" opacity=".35"></rect>
+      <rect x="30" y="22" width="47" height="74" rx="6" fill="var(--panel)" stroke="var(--ink2)" stroke-width="2"></rect>
+      <text x="53" y="58" text-anchor="middle" class="m-t">ZTE</text><circle cx="53" cy="84" r="2.5" fill=${f3}></circle>` : w`<rect x="30" y="22" width="44" height="74" rx="9" fill="var(--panel)" stroke="var(--ink2)" stroke-width="2"></rect>
+      <rect x="30" y="84" width="44" height="12" rx="4" fill="var(--s2)"></rect>
+      <line x1="58" y1="44" x2="66" y2="44" stroke="var(--ink2)" stroke-width="2"></line><line x1="58" y1="50" x2="66" y2="50" stroke="var(--ink2)" stroke-width="2"></line>`}
     <text x="52" y="122" text-anchor="middle" class="m-t">${s4.geraet ?? "FRITZ!Box"}</text>
     <line x1="96" y1="62" x2=${mitte - 60} y2="62" stroke=${f3} stroke-width="5" stroke-linecap="round"></line>
     <line class="fluss" x1="96" y1="62" x2=${mitte - 60} y2="62" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-dasharray="2 22" opacity=".45"></line>
@@ -6632,7 +6662,7 @@ function protokoll(p4, d3) {
 }
 
 // src/heimnetz-panel.js
-var VERSION = true ? "0.29.0" : "entwicklung";
+var VERSION = true ? "0.30.0" : "entwicklung";
 var REITER = [
   ["uebersicht", merke("Übersicht")],
   ["speedtest", merke("Speedtest")],

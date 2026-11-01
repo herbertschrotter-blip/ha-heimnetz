@@ -1271,8 +1271,33 @@ test('WU-0009: vorgeschaltetes Gerät – Werte vom Modem mit Herkunft, Zellen m
     assert.match(t, /vom vorgeschalteten Modem/, 'Herkunft der Werte');
     assert.match(t, /Band B3 · SINR 8,0 dB/);
     assert.match(t, /genutzt \(laut Modem\)/);
-    assert.ok(el.shadowRoot.querySelector('svg.strecke').textContent.includes('Modem'), 'Grafik beginnt beim Modem');
+    assert.ok(el.shadowRoot.querySelector('svg.strecke').textContent.includes('ZTE G5TC'), 'Grafik beginnt beim Modem');
     assert.ok(!/undefined|NaN|\[object Object\]/.test(t), t);
+  });
+});
+
+test('GitHub #4: ZTE – Block „Daten vom Modem“, Paketfehler, Symbol; ohne Daten kein Block', async () => {
+  const d = DATEN.internet_vorgeschaltet;
+  await mitInternet(d, async () => {
+    const el = await seite(machHass());
+    await reiter(el, 'Internet');
+    const t = text(el);
+    assert.match(t, /Daten vom Modem/);
+    assert.match(t, /Aktuelle Verbindung/);
+    assert.match(t, /Gesamt \(294 Tage online\)/);
+    assert.match(t, /9,8 GB/);
+    assert.match(t, /8,2 TB/);
+    assert.match(t, /Paketfehler/);
+    assert.match(t, /verbunden \(IPv4\)/);
+    assert.match(t, /Bänder 5G SA/);
+    assert.ok(!/Tempo|speed/i.test(el.shadowRoot.querySelector('.modem-daten').textContent), 'kein Tempo');
+    assert.ok(el.shadowRoot.querySelector('svg.strecke').textContent.includes('ZTE'), 'Symbol mit Schriftzug');
+  });
+  await mitInternet({ ...d, mobilfunk: { ...d.mobilfunk, modem: null } }, async () => {
+    const el = await seite(machHass());
+    await reiter(el, 'Internet');
+    assert.ok(!el.shadowRoot.querySelector('.modem-daten'));
+    assert.doesNotMatch(text(el), /Paketfehler/);
   });
 });
 

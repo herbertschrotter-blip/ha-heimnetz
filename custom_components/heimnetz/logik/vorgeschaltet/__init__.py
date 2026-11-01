@@ -16,7 +16,7 @@ import re
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 
-from ..mobil import Mobilfunk
+from ..mobil import Mobilfunk, ModemDaten
 from ..modem import adresse_erlaubt
 from ..sprache import DE, merke, t
 
@@ -228,6 +228,7 @@ class Modemstand:
     zeit: float
     quelle: str = "geraet"
     angemeldet: bool = False
+    daten: ModemDaten | None = None  # GitHub #4: nur ZTE über ubus
 
     def frisch(self, jetzt: float) -> bool:
         return jetzt - self.zeit < FRISCH_S

@@ -30,6 +30,40 @@ class Zelle:
     # WU-0009: nur von einem vorgeschalteten Modem – die Box meldet beides über TR-064 nicht
     sinr: float | None = None  # Signal zu Störung und Rauschen in dB
     band: str = ""  # „B3“, „n78“
+    # GitHub #4: nur von einem ZTE über ubus
+    bandbreite_mhz: int | None = None
+    kanal: int | None = None
+    kennung_lang: str = ""  # 5G-Zellkennung; nachschlagen lässt sie sich nicht
+    rssi: int | None = None
+
+
+@dataclass(frozen=True)
+class Datenmenge:
+    down: int  # Byte
+    up: int  # Byte
+
+
+@dataclass(frozen=True)
+class ModemDaten:
+    """GitHub #4: was ein ZTE über ubus zusätzlich meldet (Zähler des Modems, nicht der FRITZ!Box); leer = nicht genannt."""
+
+    heute: Datenmenge | None = None
+    monat: Datenmenge | None = None
+    verbindung: Datenmenge | None = None
+    gesamt: Datenmenge | None = None
+    online_s: int | None = None
+    verbindung_s: int | None = (
+        None  # `real_time`: nur Anzeige, zählt nicht als Laufzeit der Verbindung
+    )
+    paketfehler: int | None = None  # Fehler und verworfene Pakete, gesamt
+    status: str = ""
+    fehlversuche: int | None = None
+    roaming: bool | None = None
+    netzwahl: str = ""
+    balken: int | None = None
+    baender_sa: tuple[str, ...] = ()
+    baender_nsa: tuple[str, ...] = ()
+    baender_lte: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

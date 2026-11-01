@@ -5,7 +5,9 @@ wie dort, Werte ausgedacht (Zellen `aaaaa-xx`-artig, TAC `1a2b`, keine echten Ke
 """
 
 import pytest
+from logik import github as gh
 from logik import kontext as kx
+from logik import mobil as mb
 from logik import vorgeschaltet as ve
 from logik import zugang as zg
 from logik.vorgeschaltet import huawei as vh
@@ -392,3 +394,109 @@ def test_zusatzwerte_je_wert():
     m = vz.aus_werten({k: v for k, v in GOFORM.items() if k != "nr5g_snr"})
     assert ve.zusatzwerte(m) == ["sinr_anker", "mobil_band"]
     assert ve.zusatzwerte(vz.aus_werten(GOFORM)) == ["sinr_anker", "sinr_5g", "mobil_band"]
+
+
+# Werte wie in der Diagnose von GitHub #4 (G5TC auf 5G-SA)
+SA_NETINFO = {
+    "network_type": "SA",
+    "network_provider": "3 AT",
+    "wan_active_band": "n78",
+    "rmcc": 232,
+    "rmnc": 5,
+    "nr5g_cell_id": 123456789,
+    "nr5g_pci": 512,
+    "nr5g_action_channel": 640000,
+    "lac_code": 6699,
+    "nr5g_action_band": "n78",
+    "nr5g_bandwidth": "100",
+    "nr5g_rsrp": -90,
+    "nr5g_rsrq": -11,
+    "nr5g_snr": "24.9",
+    "nr5g_rssi": -84,
+    "lte_rsrp": -86,
+    "lte_rsrq": -15,
+    "lte_snr": "3.0",
+    "simcard_roam": "Home",
+    "net_select_mode": "auto_select",
+    "signalbar": "4",
+    "lte_band": "1,3,7,8,20,28,38",
+    "nr5g_sa_band_lock": "1,3,7,28,75,78",
+    "nr5g_nsa_band_lock": "1,3,7,28,75,78",
+}
+SA_VOLUMEN = {
+    "real_time": 3600,
+    "real_rx_bytes": 28600000000,
+    "real_tx_bytes": 2800000000,
+    "day_rx_bytes": 9800000000,
+    "day_tx_bytes": 1200000000,
+    "month_rx_bytes": 9800000000,
+    "month_tx_bytes": 1200000000,
+    "total_rx_bytes": 8200000000000,
+    "total_tx_bytes": 700000000000,
+    "total_time": 25401600,
+    "total_rx_error_packets": 1,
+    "total_tx_error_packets": 0,
+    "total_rx_drop_packets": 2,
+    "total_tx_drop_packets": 0,
+}
+
+
+def test_sa_nur_die_5g_zelle():
+    """GitHub #4: bei SA nennt das Modem weiter LTE-Werte – die Verbindung läuft trotzdem nur über 5G."""
+    m = vz.aus_ubus(SA_NETINFO)
+    assert m.technik == "5G-SA"
+    assert [z.art for z in m.zellen] == ["5G"]
+    assert m.haupt == m.nr
+    assert m.haupt.rolle == "primary"
+    assert (m.haupt.rsrp, m.haupt.sinr, m.haupt.tac) == (-90, 24.9, "1a2b")
+    assert (m.haupt.bandbreite_mhz, m.haupt.kanal, m.haupt.rssi) == (100, 640000, -84)
+    assert m.haupt.kennung_lang == "123456789"
+
+
+def test_nsa_behaelt_den_lte_anker():
+    m = vz.aus_ubus({**SA_NETINFO, "network_type": "ENDC"})
+    assert m.technik == "5G-NSA"
+    assert m.haupt.art == "LTE"
+    assert m.nr.rolle == "secondary"
+
+
+def test_sa_ohne_5g_werte_bleibt_lte_sichtbar():
+    ohne = {k: v for k, v in SA_NETINFO.items() if k != "nr5g_rsrp"}
+    assert vz.aus_ubus(ohne).haupt.art == "LTE"
+
+
+def test_real_time_ist_nur_anzeige():
+    assert vz.aus_ubus(SA_NETINFO, {"connect_status": "x"}).laufzeit_s is None
+    assert vz.modem_daten(SA_NETINFO, None, SA_VOLUMEN).verbindung_s == 3600
+
+
+def test_zellkennung_wird_geschwaerzt():
+    assert "123456789" in gh.zell_kennungen(vz.aus_ubus(SA_NETINFO))
+
+
+def test_modem_daten():
+    d = vz.modem_daten(
+        SA_NETINFO, {"connect_status": "ipv4_connected", "connect_fail_count": 0}, SA_VOLUMEN
+    )
+    assert (d.heute.down, d.heute.up) == (9800000000, 1200000000)
+    assert d.gesamt.down == 8200000000000
+    assert d.verbindung.up == 2800000000
+    assert (d.online_s, d.paketfehler, d.fehlversuche) == (25401600, 3, 0)
+    assert (d.status, d.roaming, d.netzwahl, d.balken) == (
+        "ipv4_connected",
+        False,
+        "auto_select",
+        4,
+    )
+    assert d.baender_sa == ("1", "3", "7", "28", "75", "78")
+    assert d.baender_lte[-1] == "38"
+
+
+def test_modem_daten_ohne_datenvolumen_bleibt_leer():
+    d = vz.modem_daten({})
+    assert d.heute is None and d.paketfehler is None and d.roaming is None and d.baender_sa == ()
+
+
+def test_befund_bei_sa_nennt_keinen_anker():
+    b = mb.befund("5G-SA", None, -90, None, None)
+    assert "4G-Anker" not in b.text and "-90" in b.text

@@ -40,7 +40,7 @@ from .logik import vorgeschaltet as ve
 from .logik import wlan as wl
 from .logik import zugang as zg
 from .logik.ereignis import Ereignis
-from .logik.sprache import merke, t
+from .logik.sprache import merke, t, zahl
 from .logik.werte import ohne_mac
 from .speedtest import _mbit, _wert, alle_finden, ookla_einstellung
 
@@ -381,9 +381,9 @@ async def arten(hass: HomeAssistant, lz: Laufzeit) -> dict[str, Any]:
     liste = (await hass.async_add_executor_job(geraete_daten, lz, _jetzt(), ha_geraete(hass), s))[
         "geraete"
     ]
-    zahl: dict[str, int] = {}
+    anzahl_je: dict[str, int] = {}
     for x in liste:
-        zahl[x["kat"]] = zahl.get(x["kat"], 0) + 1
+        anzahl_je[x["kat"]] = anzahl_je.get(x["kat"], 0) + 1
     return {
         "eigene": [
             {
@@ -391,11 +391,13 @@ async def arten(hass: HomeAssistant, lz: Laufzeit) -> dict[str, Any]:
                 "symbol": e.symbol,
                 "titel": e.name,
                 "text": e.text,
-                "geraete": zahl.get(k, 0),
+                "geraete": anzahl_je.get(k, 0),
             }
             for k, e in lz.einstellungen.eigene.items()
         ],
-        "feste": [{"name": k, "text": text, "geraete": zahl.get(k, 0)} for k, text in ar.alle(s)],
+        "feste": [
+            {"name": k, "text": text, "geraete": anzahl_je.get(k, 0)} for k, text in ar.alle(s)
+        ],
         "hoechstens": ar.EIGENE_HOECHSTENS,
     }
 
@@ -434,7 +436,10 @@ async def mobilfunk(hass: HomeAssistant, lz: Laufzeit, tage: int) -> dict[str, A
         k: [[t, v] for t, v in stat.get(sid or "", []) if v is not None] for k, sid in ids.items()
     }
 
-    anker = m.haupt.rsrp if m and m.haupt else None
+    sa_nur_5g = m is not None and m.nr is not None and m.haupt == m.nr
+    if sa_nur_5g:  # dieselbe Zelle – keine zweite Linie und kein „4G-Anker“ (GitHub #4)
+        verlauf["anker"] = []
+    anker = m.haupt.rsrp if m and m.haupt and not sa_nur_5g else None
     nr = m.nr.rsrp if m and m.nr else None
     neu = await hass.async_add_executor_job(_journal_art, lz, "mobil_neu", jetzt - 7 * TAG_S)
     funde = await _funde(lz, m)
@@ -456,16 +461,106 @@ async def mobilfunk(hass: HomeAssistant, lz: Laufzeit, tage: int) -> dict[str, A
         "verlauf": verlauf,
         "schwach_unter": -105,
         "laufzeit_s": m.laufzeit_s if m else None,
-        "laufzeit": mb.dauer(m.laufzeit_s, s) if m and m.laufzeit_s is not None else None,
+        "laufzeit": _laufzeit(m, lz if vom_modem else None, s),
         "abbrueche_7": len(neu),
         "letzter_abbruch": neu[0]["t"] if neu else None,
         "baender": _baender(m) if vom_modem else lz.abruf.data.mobil_baender or None,
         "baender_unter": t(
             "genutzt (laut Modem)" if vom_modem else "eingeschaltet (in der Box)", s
         ),
-        "strecke": _strecke(m, s, t("Modem", s) if vom_modem else "FRITZ!Box"),
+        "strecke": _strecke(
+            m, s, _geraet_name(lz, s) if vom_modem else "FRITZ!Box", _symbol(lz, vom_modem)
+        ),
         "zellen": [_zelle(z, m, funde.get(z), s) for z in mb.zellen_sortiert(m)] if m else [],
         "karte": _karte(wohnung, m, funde, osm, infos, gemerkt, s),
+        "modem": _modem_daten(lz, s) if vom_modem else None,
+    }
+
+
+def _laufzeit(m: mb.Mobilfunk | None, lz: Laufzeit | None, s: str) -> str | None:
+    """Laufzeit der Verbindung, sonst die reine Anzeige `real_time` eines ZTE (GitHub #4)."""
+    stand = lz.abruf.modem.stand if lz else None
+    sekunden = m.laufzeit_s if m and m.laufzeit_s is not None else None
+    if sekunden is None and stand is not None and stand.daten is not None:
+        sekunden = stand.daten.verbindung_s
+    return mb.dauer(sekunden, s) if sekunden is not None else None
+
+
+def _geraet_name(lz: Laufzeit, s: str) -> str:
+    """Name in der Grafik: das Modell, wenn das Gerät es nennt (der G5TC tut das bisher nicht)."""
+    e = lz.abruf.modem.gemerkt
+    if e is None or e.baustein != "zte_ubus":
+        return t("Modem", s)
+    return e.modell or t("ZTE-Modem", s)
+
+
+def _symbol(lz: Laufzeit, vom_modem: bool) -> str | None:
+    e = lz.abruf.modem.gemerkt
+    return "zte" if vom_modem and e is not None and e.baustein == "zte_ubus" else None
+
+
+def _menge(wert: int, s: str) -> str:
+    if wert >= 1_000_000_000_000:
+        return f"{zahl(wert / 1_000_000_000_000, 1, s)} TB"
+    if wert >= 1_000_000_000:
+        return f"{zahl(wert / 1_000_000_000, 1, s)} GB"
+    return f"{zahl(wert / 1_000_000, 0, s)} MB"
+
+
+def _modem_status(status: str, s: str) -> str:
+    """`ipv4_connected`, `ipv6_connected`, `ipv4_ipv6_connected` → „verbunden (IPv4)“; Unbekanntes bleibt wörtlich."""
+    if not status.endswith("_connected"):
+        return status
+    netze = [n for n in ("IPv4", "IPv6") if n.lower() in status]
+    return f"{t('verbunden', s)} ({' + '.join(netze)})" if netze else t("verbunden", s)
+
+
+def _modem_daten(lz: Laufzeit, s: str) -> dict[str, Any] | None:
+    """GitHub #4: Block „Daten vom Modem“, fertig für die Anzeige; nur, was das Gerät genannt hat."""
+    stand = lz.abruf.modem.stand
+    d = stand.daten if stand else None
+    if d is None:
+        return None
+    gesamt = (
+        t("Gesamt ({n} Tage online)", s, n=d.online_s // 86_400)
+        if d.online_s is not None
+        else t("Gesamt", s)
+    )
+    mengen = [
+        {"name": name, "down": _menge(m.down, s), "up": _menge(m.up, s)}
+        for name, m in (
+            (t("Heute", s), d.heute),
+            (t("Dieser Monat", s), d.monat),
+            (t("Aktuelle Verbindung", s), d.verbindung),
+            (gesamt, d.gesamt),
+        )
+        if m is not None
+    ]
+    netzwahl = {"auto_select": t("automatisch", s), "manual_select": t("manuell", s)}
+    verbindung = [
+        (t("Status", s), _modem_status(d.status, s)),
+        (t("Fehlversuche", s), d.fehlversuche),
+        (
+            t("Roaming", s),
+            None if d.roaming is None else t("ja" if d.roaming else "nein, Heimnetz", s),
+        ),
+        (t("Netzwahl", s), netzwahl.get(d.netzwahl, d.netzwahl)),
+        (t("Signalbalken", s), d.balken),
+    ]
+    faehigkeiten = [
+        (t("Bänder 5G SA", s), ", ".join(f"n{b}" for b in d.baender_sa)),
+        (t("Bänder 5G NSA", s), ", ".join(f"n{b}" for b in d.baender_nsa)),
+        (t("Bänder LTE", s), ", ".join(d.baender_lte)),
+    ]
+    zeilen = [[n, str(w)] for n, w in verbindung if w not in (None, "")]
+    baender = [[n, w] for n, w in faehigkeiten if w]
+    if not (mengen or zeilen or baender or d.paketfehler is not None):
+        return None
+    return {
+        "mengen": mengen,
+        "paketfehler": d.paketfehler,
+        "verbindung": zeilen,
+        "faehigkeiten": baender,
     }
 
 
@@ -579,7 +674,10 @@ def _baender(m: mb.Mobilfunk | None) -> str | None:
 
 
 def _strecke(
-    m: mb.Mobilfunk | None, sprache_: str, geraet: str = "FRITZ!Box"
+    m: mb.Mobilfunk | None,
+    sprache_: str,
+    geraet: str = "FRITZ!Box",
+    symbol: str | None = None,
 ) -> dict[str, Any] | None:
     """Grafik Gerät → Basisstation: Empfang der Ankerzelle, Entfernung, Anbieter, welche Masten (5G/4G)."""
     if m is None or m.haupt is None:
@@ -587,6 +685,7 @@ def _strecke(
     z = m.haupt
     return {
         "geraet": geraet,
+        "symbol": symbol,
         "rsrp": z.rsrp,
         "lage": mb.lage_rsrp(z.rsrp),
         "wort": mb.wort_rsrp(z.rsrp, sprache_) if z.rsrp is not None else None,
@@ -609,11 +708,15 @@ def _zelle(z: mb.Zelle, m: mb.Mobilfunk, fund: ka.Fund | None, sprache_: str) ->
         "rsrp": z.rsrp,
         "rsrq": z.rsrq,
         "sinr": z.sinr,  # nur vom vorgeschalteten Modem
+        "bandbreite": z.bandbreite_mhz,
+        "kanal": z.kanal,
+        "kennung_lang": z.kennung_lang or None,
+        "rssi": z.rssi,
         "band": z.band or None,
         "stufen": mb.stufen(z.rsrp),
         "lage": mb.lage_rsrp(z.rsrp),
-        "tac": tac.lower() if z.art == "LTE" and tac else None,
-        "plmn": ka.plmn_text(plmn) if z.art == "LTE" else None,
+        "tac": tac.lower() if (z.art == "LTE" or z.rolle == "primary") and tac else None,
+        "plmn": ka.plmn_text(plmn) if z.art == "LTE" or z.rolle == "primary" else None,
         "fund": {
             "quelle": fund.quelle,
             "genau": ka.strecke(fund.mast.genau_m, sprache_) if fund.mast.genau_m else None,

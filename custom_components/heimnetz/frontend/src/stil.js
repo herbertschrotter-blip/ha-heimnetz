@@ -172,6 +172,14 @@ svg.dia { width: 100%; height: auto; display: block; overflow: visible; } .dia t
 .strecke .m-t { font-size: 12px; fill: var(--ink2); } .strecke .m-w { font-size: 15px; fill: var(--ink); font-weight: 600; }
 .strecke .fluss { animation: fluss 1.6s linear infinite; } @keyframes fluss { to { stroke-dashoffset: -24; } }
 .zellen { display: flex; flex-direction: column; }
+.m-mengen { width: 100%; border-collapse: collapse; font-size: 13px; }
+.m-mengen th, .m-mengen td { text-align: right; padding: 6px 0 6px 12px; border-top: 1px solid var(--gridc); font-weight: 400; white-space: nowrap; }
+.m-mengen th { color: var(--ink2); font-size: 12px; border-top: 0; } .m-mengen td:first-child, .m-mengen th:first-child { text-align: left; padding-left: 0; white-space: normal; }
+.m-spalten { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 24px; margin-top: 10px; }
+.m-gruppe { font-size: 13px; font-weight: 700; margin: 4px 0; }
+.m-zeile { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-top: 1px solid var(--gridc); font-size: 13px; }
+.m-zeile span:first-child { color: var(--ink2); } .m-zeile span:last-child { text-align: right; }
+@container (max-width: 520px) { .m-spalten { grid-template-columns: 1fr; } }
 .zelle { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto auto; gap: 10px; align-items: center; padding: 8px 0; }
 .zelle + .zelle { border-top: 1px solid var(--gridc); } .zelle .badge { text-align: center; }
 .z-name { display: flex; flex-direction: column; min-width: 0; } .z-name b { font-weight: 600; font-size: 14px; }

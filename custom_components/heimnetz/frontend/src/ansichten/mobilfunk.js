@@ -36,10 +36,12 @@ export function mobilfunk(p, d) {
     </div>` : nothing}
     ${d.karte && d.karte.rahmen ? karte(p, d.karte, !!(p.hass && p.hass.themes && p.hass.themes.darkMode)) : nothing}
     <div class="glas-raster">
-      ${kachel(t('Verbunden seit'), d.laufzeit ?? '–', d.letzter_abbruch ? t('Neueinwahl {zeit}', { zeit: zeit(d.letzter_abbruch) }) : t('ohne Neueinwahl (7 Tage)'))}
+      ${kachel(t('Verbunden seit'), d.laufzeit ?? '–', d.letzter_abbruch ? t('Neueinwahl {zeit}', { zeit: zeit(d.letzter_abbruch) }) : d.modem && d.laufzeit ? t('laut Modem') : t('ohne Neueinwahl (7 Tage)'))}
       ${kachel(t('Abbrüche'), html`${d.abbrueche_7}`, t('Neueinwahlen, letzte 7 Tage'))}
       ${kachel(t('Bänder'), d.baender ? html`<span style="font-size:15px">${d.baender}</span>` : '–', d.baender_unter)}
+      ${d.modem?.paketfehler != null ? kachel(t('Paketfehler'), html`${d.modem.paketfehler}`, t('Fehler und verworfene Pakete')) : nothing}
     </div>
+    ${d.modem ? modemBlock(d.modem) : nothing}
     <div class="glas-panel block">
       <div class="block-kopf"><h3>${t('Verlauf Signalstärke')}</h3>${seg([[1, '24 h'], [7, t('{n} Tage', { n: 7 })], [30, t('{n} Tage', { n: 30 })]], o.tage, (v) => p.setze('mobilfunk', { tage: v }))}</div>
       ${d.verlauf.anker.length || d.verlauf.nr.length ? html`<svg class="dia" viewBox="-30 -6 ${W + 36} ${H + 24}">
@@ -49,11 +51,23 @@ export function mobilfunk(p, d) {
         ${svg`<path d=${linie(d.verlauf.nr, von, bis)} fill="none" stroke="var(--s2)" stroke-width="1.6"></path>`}
         ${svg`<text x="0" y=${H + 16}>${o.tage === 1 ? t('vor {n} h', { n: 24 }) : t('vor {n} Tagen', { n: o.tage })}</text><text x=${W} y=${H + 16} text-anchor="end">${t('jetzt')}</text>`}
       </svg>
-      <div class="legende"><span><i style="background:var(--s1)"></i>${t('4G-Anker')}</span><span><i style="background:var(--s2)"></i>5G</span><span><i style="background:var(--rot);opacity:.3"></i>${t('schwach (unter {n} dBm)', { n: d.schwach_unter })}</span></div>
+      <div class="legende">${d.verlauf.anker.length ? html`<span><i style="background:var(--s1)"></i>${t('4G-Anker')}</span>` : nothing}<span><i style="background:var(--s2)"></i>5G</span><span><i style="background:var(--rot);opacity:.3"></i>${t('schwach (unter {n} dBm)', { n: d.schwach_unter })}</span></div>
       <p class="hinweis">${t('Steigt die Linie nach dem Umstellen der Box um etwa 10 dBm, war der Standort die Bremse.')}</p>`
         : html`<div class="leer">${t('Noch kein Verlauf aufgezeichnet.')}</div>`}
       ${nothing}
     </div>`;
+}
+
+/** GitHub #4: Zähler und Verbindung eines ZTE, fertig von der Integration. */
+function modemBlock(m) {
+  const zeilen = (titel, liste) => (liste.length ? html`<div><div class="m-gruppe">${titel}</div>
+    ${liste.map(([n, w]) => html`<div class="m-zeile"><span>${n}</span><span>${w}</span></div>`)}</div>` : nothing);
+  return html`<div class="glas-panel block modem-daten">
+    <div class="block-kopf"><h3>${t('Daten vom Modem')}</h3><span class="leise">${t('gezählt vom Modem, nicht von der FRITZ!Box')}</span></div>
+    ${m.mengen.length ? html`<table class="m-mengen"><thead><tr><th>${t('Datenmenge')}</th><th>Download</th><th>Upload</th></tr></thead>
+      <tbody>${m.mengen.map((z) => html`<tr><td>${z.name}</td><td>${z.down}</td><td>${z.up}</td></tr>`)}</tbody></table>` : nothing}
+    <div class="m-spalten">${zeilen(t('Verbindung'), m.verbindung)}${zeilen(t('Fähigkeiten'), m.faehigkeiten)}</div>
+  </div>`;
 }
 
 /** Vier Balken wie an der Box; Anzahl und Farbe kommen von der Integration. */
@@ -64,10 +78,10 @@ function stufen(n, lage) {
 function zelle(z) {
   const titel = z.anker && z.rolle_art === 'anker' ? t('4G-Anker') : t('{art}-Zelle', { art: z.art });
   // Band und SINR liefert nur ein vorgeschaltetes Modem (WU-0009 Stufe 2) – die Box über TR-064 nicht
-  const kennung = [z.band ? t('Band {band}', { band: z.band }) : '', z.sinr != null ? `SINR ${zahl(z.sinr, 1)} dB` : '', z.tac ? `TAC ${z.tac}` : '', z.plmn ? `PLMN ${z.plmn}` : ''].filter(Boolean).join(' · ');
+  const kennung = [z.band ? t('Band {band}', { band: z.band }) : '', z.bandbreite ? `${z.bandbreite} MHz` : '', z.kanal ? t('Kanal {n}', { n: z.kanal }) : '', z.sinr != null ? `SINR ${zahl(z.sinr, 1)} dB` : '', z.rssi != null ? `RSSI ${z.rssi} dBm` : '', z.tac ? `TAC ${z.tac}` : '', z.plmn ? `PLMN ${z.plmn}` : ''].filter(Boolean).join(' · ');
   const wo = z.fund ? html`<span class="z-wo">📍 ${z.fund.quelle}${z.fund.genau ? ` · ±${z.fund.genau}` : ''}</span>` : z.such ? html`<span class="z-wo">${z.such}</span>` : nothing;
   return html`<div class="zelle"><span class="badge ${z.anker ? 'blau-b' : ''}">${z.art}</span>
-    <span class="z-name"><b>${titel}</b><span class="leise">${z.kennung ? `${t('Zelle {kennung}', { kennung: z.kennung })} · ` : ''}${z.rolle}</span>
+    <span class="z-name"><b>${titel}</b><span class="leise">${z.kennung ? `${t('Zelle {kennung}', { kennung: z.kennung })} · ` : ''}${z.rolle}${z.kennung_lang ? ` · ${t('Kennung {kennung}', { kennung: z.kennung_lang })}` : ''}</span>
       <span class="leise">${kennung}${kennung && (z.fund || z.such) ? ' · ' : ''}${wo}</span></span>
     ${stufen(z.stufen, z.lage)}<span class="z-wert">${z.rsrp ?? '–'}<small> dBm</small><span class="leise">${z.rsrq ?? '–'} dB</span></span></div>`;
 }
@@ -82,9 +96,12 @@ function strecke(s) {
     <path d="M-10,36 a14,14 0 0 1 0,-20 M10,36 a14,14 0 0 0 0,-20 M-17,42 a24,24 0 0 1 0,-32 M17,42 a24,24 0 0 0 0,-32" stroke="var(--ink2)" stroke-width="1.6" fill="none" opacity=".7"></path>
     <circle cx="0" cy="62" r="13" fill="var(--sheet)" stroke="var(--panel-rand)"></circle><text x="0" y="66" text-anchor="middle" class="m-t">${t}</text></g>`;
   return html`<svg class="strecke" viewBox="0 0 600 132" role="img" aria-label=${t('Verbindung von {geraet} zur Basisstation', { geraet: s.geraet ?? 'FRITZ!Box' })}>
-    <rect x="30" y="22" width="44" height="74" rx="9" fill="var(--panel)" stroke="var(--ink2)" stroke-width="2"></rect>
-    <rect x="30" y="84" width="44" height="12" rx="4" fill="var(--s2)"></rect>
-    <line x1="58" y1="44" x2="66" y2="44" stroke="var(--ink2)" stroke-width="2"></line><line x1="58" y1="50" x2="66" y2="50" stroke="var(--ink2)" stroke-width="2"></line>
+    ${s.symbol === 'zte' ? svg`<rect x="36" y="25" width="47" height="71" rx="6" fill="var(--ink2)" opacity=".35"></rect>
+      <rect x="30" y="22" width="47" height="74" rx="6" fill="var(--panel)" stroke="var(--ink2)" stroke-width="2"></rect>
+      <text x="53" y="58" text-anchor="middle" class="m-t">ZTE</text><circle cx="53" cy="84" r="2.5" fill=${f}></circle>`
+    : svg`<rect x="30" y="22" width="44" height="74" rx="9" fill="var(--panel)" stroke="var(--ink2)" stroke-width="2"></rect>
+      <rect x="30" y="84" width="44" height="12" rx="4" fill="var(--s2)"></rect>
+      <line x1="58" y1="44" x2="66" y2="44" stroke="var(--ink2)" stroke-width="2"></line><line x1="58" y1="50" x2="66" y2="50" stroke="var(--ink2)" stroke-width="2"></line>`}
     <text x="52" y="122" text-anchor="middle" class="m-t">${s.geraet ?? 'FRITZ!Box'}</text>
     <line x1="96" y1="62" x2=${mitte - 60} y2="62" stroke=${f} stroke-width="5" stroke-linecap="round"></line>
     <line class="fluss" x1="96" y1="62" x2=${mitte - 60} y2="62" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-dasharray="2 22" opacity=".45"></line>
