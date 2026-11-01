@@ -3971,6 +3971,7 @@ var EN = {
   "ohne Neueinwahl (7 Tage)": "no reconnect (7 days)",
   "Neueinwahlen, letzte 7 Tage": "reconnects, last 7 days",
   "laut Modem": "according to the modem",
+  "OpenCellID-Schlüssel (kostenlos von opencellid.org) eintragen: Einstellungen von Home Assistant → Geräte & Dienste → Heimnetz → Konfigurieren.": "Enter the OpenCellID key (free from opencellid.org): Home Assistant settings → Devices & services → Heimnetz → Configure.",
   "Paketfehler": "Packet errors",
   "Fehler und verworfene Pakete": "errors and dropped packets",
   "Daten vom Modem": "Data from the modem",
@@ -6043,7 +6044,7 @@ function stufen(n4, lage) {
 function zelle(z2) {
   const titel = z2.anker && z2.rolle_art === "anker" ? t3("4G-Anker") : t3("{art}-Zelle", { art: z2.art });
   const kennung = [z2.band ? t3("Band {band}", { band: z2.band }) : "", z2.bandbreite ? `${z2.bandbreite} MHz` : "", z2.kanal ? t3("Kanal {n}", { n: z2.kanal }) : "", z2.sinr != null ? `SINR ${zahl(z2.sinr, 1)} dB` : "", z2.rssi != null ? `RSSI ${z2.rssi} dBm` : "", z2.tac ? `TAC ${z2.tac}` : "", z2.plmn ? `PLMN ${z2.plmn}` : ""].filter(Boolean).join(" · ");
-  const wo = z2.fund ? b2`<span class="z-wo">📍 ${z2.fund.quelle}${z2.fund.genau ? ` · ±${z2.fund.genau}` : ""}</span>` : z2.such ? b2`<span class="z-wo">${z2.such}</span>` : A;
+  const wo = z2.fund ? b2`<span class="z-wo" title=${t3(SCHLUESSEL_ORT)}>📍 ${z2.fund.quelle}${z2.fund.genau ? ` · ±${z2.fund.genau}` : ""}</span>` : z2.such ? b2`<span class="z-wo" title=${t3(SCHLUESSEL_ORT)}>${z2.such}</span>` : A;
   return b2`<div class="zelle"><span class="badge ${z2.anker ? "blau-b" : ""}">${z2.art}</span>
     <span class="z-name"><b>${titel}</b><span class="leise">${z2.kennung ? `${t3("Zelle {kennung}", { kennung: z2.kennung })} · ` : ""}${z2.rolle}${z2.kennung_lang ? ` · ${t3("Kennung {kennung}", { kennung: z2.kennung_lang })}` : ""}</span>
       <span class="leise">${kennung}${kennung && (z2.fund || z2.such) ? " · " : ""}${wo}</span></span>
@@ -6071,6 +6072,7 @@ function strecke(s4) {
     ${masten.map((t7, i6) => mast(mitte + i6 * 60, t7))}
     <text x=${mitte + (masten.length - 1) * 30} y="122" text-anchor="middle" class="m-t">${t3("Basisstation")}</text></svg>`;
 }
+var SCHLUESSEL_ORT = merke("OpenCellID-Schlüssel (kostenlos von opencellid.org) eintragen: Einstellungen von Home Assistant → Geräte & Dienste → Heimnetz → Konfigurieren.");
 var STAND = {
   ohne_schluessel: merke("BeaconDB kennt diese Zellen nicht. Mit einem Schlüssel von opencellid.org (Einstellungen → Geräte & Dienste → Heimnetz → Konfigurieren) fragt die Integration zusätzlich OpenCellID."),
   nicht_gefunden: merke("Weder OpenCellID noch BeaconDB kennen diese Zellen – die Karte zeigt nur die Entfernung laut Box."),
@@ -6080,7 +6082,7 @@ var STAND = {
 };
 function karte(p4, k2, dunkel) {
   return b2`<div class="glas-panel block">
-    <div class="block-kopf"><h3>${t3("Wo steht der Mast?")}</h3><span class="leise">${k2.gefunden ? t3("geschätzt · {n} von {gesamt} Zellen gefunden", { n: k2.gefunden, gesamt: k2.zellen }) : t3("Entfernung laut Box")}</span></div>
+    <div class="block-kopf"><h3>${t3("Wo steht der Mast?")} <span class="leise" title=${t3(SCHLUESSEL_ORT)}>ⓘ</span></h3><span class="leise">${k2.gefunden ? t3("geschätzt · {n} von {gesamt} Zellen gefunden", { n: k2.gefunden, gesamt: k2.zellen }) : t3("Entfernung laut Box")}</span></div>
     <heimnetz-karte .daten=${k2} ?dunkel=${dunkel} .sprache=${sprache()} @osm-umgeschaltet=${() => p4.requestUpdate()}></heimnetz-karte>
     <div class="legende"><span><i style="background:var(--blau)"></i>${t3("Wohnung")}</span>
       ${k2.masten.map((m3) => b2`<span><i style="background:var(--amber)"></i>${t3("Mast {name} (geschätzt)", { name: m3.name })}${m3.fuenf_g ? ` · ${t3("4G + 5G (vermutlich)")}` : ""} · ${m3.entfernung} ${m3.richtung}${m3.genau ? ` (± ${m3.genau})` : ""}</span>`)}
@@ -6663,7 +6665,7 @@ function protokoll(p4, d3) {
 }
 
 // src/heimnetz-panel.js
-var VERSION = true ? "0.30.1" : "entwicklung";
+var VERSION = true ? "0.30.2" : "entwicklung";
 var REITER = [
   ["uebersicht", merke("Übersicht")],
   ["speedtest", merke("Speedtest")],

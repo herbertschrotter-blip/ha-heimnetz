@@ -1276,6 +1276,14 @@ test('WU-0009: vorgeschaltetes Gerät – Werte vom Modem mit Herkunft, Zellen m
   });
 });
 
+test('Tooltip nennt den Ort für den OpenCellID-Schlüssel', async () => {
+  await mitInternet(DATEN.internet_vorgeschaltet, async () => {
+    const el = await seite(machHass());
+    await reiter(el, 'Internet');
+    assert.match(el.shadowRoot.querySelector('.z-wo').title, /Geräte & Dienste → Heimnetz → Konfigurieren/);
+  });
+});
+
 test('Einstellungen: feste Höhe, das Reiterband springt nicht', async () => {
   const { stil } = await import(`${QUELLE}/stil.js`);
   assert.match(stil.cssText, /\.sheet\.breit \{ height: 82%; \}/);

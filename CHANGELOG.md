@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## [0.30.2]
+
+- Im Reiter **Internet** zeigt ein Tooltip bei „Wo steht der Mast?“ und an den Fundangaben der Zellen, wo der
+  OpenCellID-Schlüssel eingetragen wird.
+
 ## [0.30.1]
 
 - Fix: Das Fenster **Einstellungen** hat jetzt immer dieselbe Höhe. Bisher änderte es die Größe je Reiter, und das

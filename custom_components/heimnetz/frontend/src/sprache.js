@@ -414,6 +414,7 @@ export const EN = {
   'ohne Neueinwahl (7 Tage)': 'no reconnect (7 days)',
   'Neueinwahlen, letzte 7 Tage': 'reconnects, last 7 days',
   'laut Modem': 'according to the modem',
+  'OpenCellID-Schlüssel (kostenlos von opencellid.org) eintragen: Einstellungen von Home Assistant → Geräte & Dienste → Heimnetz → Konfigurieren.': 'Enter the OpenCellID key (free from opencellid.org): Home Assistant settings → Devices & services → Heimnetz → Configure.',
   'Paketfehler': 'Packet errors',
   'Fehler und verworfene Pakete': 'errors and dropped packets',
   'Daten vom Modem': 'Data from the modem',

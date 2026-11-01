@@ -79,7 +79,7 @@ function zelle(z) {
   const titel = z.anker && z.rolle_art === 'anker' ? t('4G-Anker') : t('{art}-Zelle', { art: z.art });
   // Band und SINR liefert nur ein vorgeschaltetes Modem (WU-0009 Stufe 2) – die Box über TR-064 nicht
   const kennung = [z.band ? t('Band {band}', { band: z.band }) : '', z.bandbreite ? `${z.bandbreite} MHz` : '', z.kanal ? t('Kanal {n}', { n: z.kanal }) : '', z.sinr != null ? `SINR ${zahl(z.sinr, 1)} dB` : '', z.rssi != null ? `RSSI ${z.rssi} dBm` : '', z.tac ? `TAC ${z.tac}` : '', z.plmn ? `PLMN ${z.plmn}` : ''].filter(Boolean).join(' · ');
-  const wo = z.fund ? html`<span class="z-wo">📍 ${z.fund.quelle}${z.fund.genau ? ` · ±${z.fund.genau}` : ''}</span>` : z.such ? html`<span class="z-wo">${z.such}</span>` : nothing;
+  const wo = z.fund ? html`<span class="z-wo" title=${t(SCHLUESSEL_ORT)}>📍 ${z.fund.quelle}${z.fund.genau ? ` · ±${z.fund.genau}` : ''}</span>` : z.such ? html`<span class="z-wo" title=${t(SCHLUESSEL_ORT)}>${z.such}</span>` : nothing;
   return html`<div class="zelle"><span class="badge ${z.anker ? 'blau-b' : ''}">${z.art}</span>
     <span class="z-name"><b>${titel}</b><span class="leise">${z.kennung ? `${t('Zelle {kennung}', { kennung: z.kennung })} · ` : ''}${z.rolle}${z.kennung_lang ? ` · ${t('Kennung {kennung}', { kennung: z.kennung_lang })}` : ''}</span>
       <span class="leise">${kennung}${kennung && (z.fund || z.such) ? ' · ' : ''}${wo}</span></span>
@@ -111,6 +111,9 @@ function strecke(s) {
     <text x=${mitte + (masten.length - 1) * 30} y="122" text-anchor="middle" class="m-t">${t('Basisstation')}</text></svg>`;
 }
 
+// Tooltip: wo der Schlüssel hingehört
+const SCHLUESSEL_ORT = merke('OpenCellID-Schlüssel (kostenlos von opencellid.org) eintragen: Einstellungen von Home Assistant → Geräte & Dienste → Heimnetz → Konfigurieren.');
+
 const STAND = {
   ohne_schluessel: merke('BeaconDB kennt diese Zellen nicht. Mit einem Schlüssel von opencellid.org (Einstellungen → Geräte & Dienste → Heimnetz → Konfigurieren) fragt die Integration zusätzlich OpenCellID.'),
   nicht_gefunden: merke('Weder OpenCellID noch BeaconDB kennen diese Zellen – die Karte zeigt nur die Entfernung laut Box.'),
@@ -122,7 +125,7 @@ const STAND = {
 /** Karte: Orte und Rahmen kommen fertig von der Integration; gezeichnet wird mit Leaflet (src/karte.js). */
 function karte(p, k, dunkel) {
   return html`<div class="glas-panel block">
-    <div class="block-kopf"><h3>${t('Wo steht der Mast?')}</h3><span class="leise">${k.gefunden ? t('geschätzt · {n} von {gesamt} Zellen gefunden', { n: k.gefunden, gesamt: k.zellen }) : t('Entfernung laut Box')}</span></div>
+    <div class="block-kopf"><h3>${t('Wo steht der Mast?')} <span class="leise" title=${t(SCHLUESSEL_ORT)}>ⓘ</span></h3><span class="leise">${k.gefunden ? t('geschätzt · {n} von {gesamt} Zellen gefunden', { n: k.gefunden, gesamt: k.zellen }) : t('Entfernung laut Box')}</span></div>
     <heimnetz-karte .daten=${k} ?dunkel=${dunkel} .sprache=${sprache()} @osm-umgeschaltet=${() => p.requestUpdate()}></heimnetz-karte>
     <div class="legende"><span><i style="background:var(--blau)"></i>${t('Wohnung')}</span>
       ${k.masten.map((m) => html`<span><i style="background:var(--amber)"></i>${t('Mast {name} (geschätzt)', { name: m.name })}${m.fuenf_g ? ` · ${t('4G + 5G (vermutlich)')}` : ''} · ${m.entfernung} ${m.richtung}${m.genau ? ` (± ${m.genau})` : ''}</span>`)}
