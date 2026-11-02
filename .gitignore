@@ -16,3 +16,10 @@ CLAUDE.md
 mockups/
 tools/tickets-fenster.sh
 .projekt-anlegen.json
+tools/seitenliste*
+tools/seitenbeziehungen.py
+tools/datenliste.py
+tools/schema_leer.py
+tools/mockup_*.mjs
+docs/seiten.md
+docs/daten.md
