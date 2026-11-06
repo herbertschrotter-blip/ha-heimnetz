@@ -68,9 +68,11 @@ Home Assistant (eine Companion App, „alle Companion Apps“ oder „keine Nach
   wieder da, auf Wunsch „wieder online“ mit Dauer. Dazu auf Wunsch: neues, noch nie gesehenes Gerät (einmal je Gerät)
   und „Internet oder FRITZ!Box weg“ – diese Meldung kommt, sobald es wieder geht (Push braucht Internet), mit Dauer.
   Ist die Box nicht erreichbar, gibt es keine Gerätemeldungen; nach einem Neustart von Home Assistant keinen Schwall.
+  Geht ein Gerät binnen 24 h zum dritten Mal offline, sagt die Meldung das und ist die letzte; danach schweigt es (auch
+  „wieder online“), bis es in 24 h seltener als dreimal weg war.
 - **Ereignis für Automationen:** jede Meldung feuert zusätzlich `heimnetz_warnung` mit `art` (`offline`, `online`,
-  `neu`, `internet`, `test`), `geraet`, `ip`, `verbindung`, `dauer` (Sekunden) und `nachricht` – auch bei „nur
-  Ereignis“. Jede Meldung steht im Journal. „🔔 Testnachricht senden“ prüft das Ziel.
+  `neu`, `internet`, `test`), `geraet`, `ip`, `verbindung`, `dauer` (Sekunden), `oft` (bei der dritten Meldung
+  „offline“ binnen 24 h: 3, sonst leer) und `nachricht` – auch bei „nur Ereignis“. Jede Meldung steht im Journal. „🔔 Testnachricht senden“ prüft das Ziel.
 - **Eigene Arten** (⚙ → 🏷️ Arten oder im Fenster eines Geräts „＋ eigene Art …“): Symbol und Name, z. B. „🏗️
   Baustelle“; gelten wie die festen unter Geräte › nach Art und bei den Warnungen. Löschen gibt den Geräten die
   erkannte Art zurück. Die Namen bleiben im Speicher von Home Assistant und werden in der Diagnose geschwärzt.
@@ -396,8 +398,11 @@ Home Assistant (one companion app, “all companion apps” or “no message –
   back, optionally “back online” with the duration. Optionally also: a new, never-seen device (once per device) and
   “internet or FRITZ!Box down” – this one arrives as soon as things work again (push needs internet), with the
   duration. While the box is unreachable there are no device alerts; after a Home Assistant restart no flood.
+  If a device goes offline for the third time within 24 h, the alert says so and is the last one; after that it stays
+  silent (also “back online”) until it was gone fewer than three times in 24 h.
 - **Event for automations:** every alert also fires `heimnetz_warnung` with `art` (`offline`, `online`, `neu`,
-  `internet`, `test`), `geraet`, `ip`, `verbindung`, `dauer` (seconds) and `nachricht` – also with “event only”. Every
+  `internet`, `test`), `geraet`, `ip`, `verbindung`, `dauer` (seconds), `oft` (3 on the third “offline”
+  within 24 h, otherwise empty) and `nachricht` – also with “event only”. Every
   alert is written to the journal. “🔔 Send test message” checks the target.
 - **Custom types** (⚙ → 🏷️ Types or “＋ custom type …” in the window of a device): symbol and name, e.g. “🏗️ Building
   site”; they work like the built-in types under Devices › by type and for alerts. Deleting gives the devices their

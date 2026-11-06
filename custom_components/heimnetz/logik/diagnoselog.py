@@ -4,6 +4,12 @@ Zweck: viele Meldungen „offline / wieder online“ einordnen. Die Geräteliste
 Zeilen rundherum (Abrufe, Größe der Liste, Protokoll der Box, gesendete Warnungen) zeigen, ob das echt war oder an der
 Abfrage lag. Aufgezeichnet wird, was sich ändert, dazu alle 10 Minuten ein Gesamtstand; `Schreiber` hält den Vergleich
 nur im Speicher. Die Einträge bleiben 7 Tage lokal. In der Datei stehen keine Namen, Hardware- oder IP-Adressen.
+
+Ruhig gehalten (Log eines Netzes mit vielen LAN-Geräten, 11/2026): Ein LAN-Gerät gilt erst als „weg“, wenn es
+`LAN_KURZ_S` fehlt – der Eintrag trägt dann die Zeit, ab der es fehlte; kürzere Aussetzer zählt nur der Gesamtstand. Die
+Box nimmt inaktive Geräte aus ihrer Liste und später wieder auf: Verschwindet ein inaktives Gerät, steht nichts im Log;
+kommt ein schon gesehenes zurück, gilt es als „wieder da“ bzw. bleibt still. „Neu“ und „verschwunden“ heißen also:
+seit dem Start nie gesehen bzw. aktiv aus der Liste gefallen.
 """
 
 from __future__ import annotations
@@ -31,6 +37,9 @@ HAEUFUNG_S = 120  # so nah beieinander zählen Geräte als „zugleich weg“
 HAEUFUNG_AB = 3  # so viele Geräte
 DAUERHAFT = 5  # so viele Abrufe in Folge kleiner: die Liste gilt wieder (aufgeräumt, keine Lücke)
 ZEILEN_SEITE = 500  # so viele Einträge bekommt die Seite, die Datei alle
+LAN_KURZ_S = 180  # so lange muss ein LAN-Gerät fehlen, bis es als „weg“ gilt
+LAN = "LAN"
+ENTFERNT_HOECHSTENS = 5000  # gemerkte Geräte, die die Box aus der Liste genommen hat
 BOX_ZEILEN = (
     "wlan",
     "internet",
@@ -116,6 +125,9 @@ class Schreiber:
     stand_t: float = 0.0
     voll: int = 0
     unbrauchbar: int = 0  # Abrufe in Folge mit unbrauchbarer Liste
+    offen: dict[str, Eintrag] = field(default_factory=dict)  # LAN-Gerät fehlt noch kurz
+    entfernt: dict[str, Geraetstand] = field(default_factory=dict)  # inaktiv aus der Liste genommen
+    kurz: int = 0  # kurze LAN-Aussetzer seit dem letzten Gesamtstand
 
     def schritt(self, a: Aufnahme) -> list[Eintrag]:
         v = self.zuletzt
@@ -150,7 +162,7 @@ class Schreiber:
         self.unbrauchbar = self.unbrauchbar + 1 if a.box and not brauchbar else 0
         if a.box and brauchbar:
             if self.alt:
-                self._geraete(a.t, liste, dazu)
+                self._geraete(a.t, liste, dazu, out)
             self.alt, self.voll = liste, len(liste)
         for m, verschickt in a.warnungen:
             dazu(
@@ -177,29 +189,44 @@ class Schreiber:
                 netz=a.netz,
                 pegel=a.pegel,
                 kanaele=a.kanaele,
+                kurz=self.kurz,
             )
+            self.kurz = 0
         self.zuletzt = a
         return out
 
-    def _geraete(self, jetzt: float, liste: dict[str, Geraetstand], dazu: Any) -> None:
+    def _geraete(
+        self, jetzt: float, liste: dict[str, Geraetstand], dazu: Any, out: list[Eintrag]
+    ) -> None:
+        # LAN-Gerät lange genug weg: Eintrag mit der Zeit, ab der es fehlte
+        for k, e in list(self.offen.items()):
+            if jetzt - e.t >= LAN_KURZ_S:
+                out.append(e)
+                self.weg_seit[k] = e.t
+                del self.offen[k]
         for k, g in liste.items():
-            a = self.alt.get(k)
+            a = self.alt.get(k) or self.entfernt.pop(k, None)
             if a is None:
                 dazu(GERAET, "neu", k, name=g.name, verbindung=g.verbindung, mesh=g.mesh)
             elif a.aktiv and not g.aktiv:
-                self.weg_seit[k] = jetzt
-                dazu(
-                    GERAET,
-                    "weg",
-                    k,
-                    name=g.name,
-                    verbindung=a.verbindung,
-                    knoten=a.knoten,
-                    signal=a.signal,
-                    mbit=a.mbit,
-                    mesh=g.mesh,
-                )
+                weg = {
+                    "ereignis": "weg",
+                    "name": g.name,
+                    "verbindung": a.verbindung,
+                    "knoten": a.knoten,
+                    "signal": a.signal,
+                    "mbit": a.mbit,
+                    "mesh": g.mesh,
+                }
+                if a.verbindung == LAN:
+                    self.offen[k] = Eintrag(jetzt, GERAET, k, weg)
+                else:
+                    self.weg_seit[k] = jetzt
+                    out.append(Eintrag(jetzt, GERAET, k, weg))
             elif g.aktiv and not a.aktiv:
+                if self.offen.pop(k, None) is not None:
+                    self.kurz += 1
+                    continue
                 seit = self.weg_seit.pop(k, None)
                 dazu(
                     GERAET,
@@ -232,8 +259,15 @@ class Schreiber:
                         mesh=g.mesh,
                     )
         for k, a in self.alt.items():
-            if k not in liste:
+            if k in liste:
+                continue
+            if a.aktiv:
                 dazu(GERAET, "raus", k, name=a.name, mesh=a.mesh)
+            else:  # die Box räumt inaktive Geräte aus der Liste: still, beim Wiederkommen bekannt
+                self.entfernt.pop(k, None)
+                self.entfernt[k] = a
+                while len(self.entfernt) > ENTFERNT_HOECHSTENS:
+                    del self.entfernt[next(iter(self.entfernt))]
 
 
 # ── Lesen ──
@@ -321,6 +355,7 @@ def _texte(e: Eintrag, s: str) -> tuple[str, str]:
             t("Box {zustand}", s, zustand=_ja_nein(d.get("box"), s)),
             t("Modem {werte}", s, werte=modem) if modem else "",
             d.get("kanaele"),
+            t("{n} kurze LAN-Aussetzer", s, n=d["kurz"]) if d.get("kurz") else "",
         )
     if art == MODEM:
         kopf = t("Zelle gewechselt", s) if ereignis == "zelle" else t("Netz gewechselt", s)
@@ -415,7 +450,11 @@ def _haeufung(
 
 def haeufungen(eintraege: Sequence[Eintrag], s: str = DE) -> list[dict[str, Any]]:
     """Mehrere Geräte kurz nacheinander weg, neueste zuerst. `eintraege`: älteste zuerst."""
-    weg = [e for e in eintraege if e.art == GERAET and e.daten.get("ereignis") == "weg"]
+    # sortiert: ein „weg“ eines LAN-Geräts kommt erst nach LAN_KURZ_S, mit der früheren Zeit
+    weg = sorted(
+        (e for e in eintraege if e.art == GERAET and e.daten.get("ereignis") == "weg"),
+        key=lambda e: e.t,
+    )
     zustaende = [e for e in eintraege if e.daten.get("ereignis") in ZUSTAENDE]
     modem = [e for e in eintraege if e.art == MODEM]
     zeiten = [e.t for e in weg]

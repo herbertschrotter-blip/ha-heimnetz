@@ -19,6 +19,8 @@ erst, nachdem es einmal wieder online war – Einschalten einer Art löst keine 
   Gedächtnis und Journal gefüllt) – höchstens eine Meldung je Gerät, auch nach dem Aufräumen des Journals.
 - Leere oder stark geschrumpfte Gerätetabelle bei erreichbarer Box: wie „Box nicht erreichbar“. Danach eine Frist von
   einer Verzögerung, bevor ein Gerät als offline gilt (nach einem Neustart der Box melden sich Geräte nach und nach).
+- Unstete Geräte: Geht ein Gerät binnen 24 h zum dritten Mal offline, sagt die Meldung das und bleibt die letzte; danach
+  meldet es weder „offline“ noch „wieder online“, bis es in 24 h seltener als dreimal weg war (`OFT_AB`, `OFT_S`).
 """
 
 from __future__ import annotations
@@ -44,6 +46,8 @@ IMMER, NIE, GRUPPE = "immer", "nie", "gruppe"
 AUSNAHMEN = (IMMER, NIE)
 ARTEN = ("offline", "online", "neu", "internet", "test")
 ZURUECK_HOECHSTENS = 20  # so viele Meldungen warten höchstens auf das Internet
+OFT_AB = 3  # so oft offline binnen OFT_S: letzte Meldung mit Hinweis, danach still
+OFT_S = 86_400
 _DIENST = re.compile(r"^[a-z0-9_]{1,100}$")
 
 ONLINE, WEG, GEMELDET, AUS = "online", "weg", "gemeldet", "aus"
@@ -182,13 +186,14 @@ class Meldung:
     von: float | None = None  # internet: Ausfall von … bis t
     box: bool = False  # internet: die FRITZ!Box war (auch) nicht erreichbar
     zufall: bool = False  # neu: zufällige private WLAN-Adresse
+    oft: int = 0  # offline: das wievielte Mal binnen 24 h (ab OFT_AB die letzte Meldung)
 
     def text(self, sprache: str, tz: tzinfo) -> str:
         n = ohne_mac(anzeigename(self.name, sprache))
         dauer = dauer_text(self.dauer_s or 0, sprache)
         v = self.verbindung or "–"
         if self.art == "offline":
-            return t(
+            text = t(
                 "{name} ist seit {dauer} offline (zuletzt {uhr}, {verbindung})",
                 sprache,
                 name=n,
@@ -196,6 +201,13 @@ class Meldung:
                 uhr=_uhr(self.zuletzt, tz),
                 verbindung=v,
             )
+            if self.oft >= OFT_AB:
+                text += " – " + t(
+                    "zum {n}. Mal in 24 h; bis es ruhiger wird, keine weiteren Meldungen zu diesem Gerät",
+                    sprache,
+                    n=self.oft,
+                )
+            return text
         if self.art == "online":
             return t(
                 "{name} ist wieder online – war {dauer} weg ({verbindung})",
@@ -237,6 +249,7 @@ class Meldung:
             "ip": self.ip or None,
             "verbindung": self.verbindung or None,
             "dauer": None if self.dauer_s is None else int(self.dauer_s),
+            "oft": self.oft or None,
             "nachricht": self.text(sprache, tz),
         }
 
@@ -287,6 +300,7 @@ class Zustand:
     ip: str
     verbindung: str
     fehlt: int = 0  # volle Abrufe in Folge ohne dieses Gerät
+    still: bool = False  # gemeldet ohne Meldung (unstet): auch „wieder online“ entfällt
 
 
 @dataclass(frozen=True)
@@ -330,6 +344,7 @@ class Waechter:
     ruhe_ab: float | None = (
         None  # Tabelle nach einer Lücke wieder da: Frist für „weg“ zählt ab hier
     )
+    offline: dict[str, list[float]] = field(default_factory=dict)  # „offline“ je Gerät
 
     def schritt(
         self,
@@ -427,7 +442,7 @@ class Waechter:
             z.fehlt = 0
             z.name, z.ip = b.name, b.ip or z.ip
             if b.aktiv:
-                if z.stand == GEMELDET and einst.wieder:
+                if z.stand == GEMELDET and einst.wieder and not z.still:
                     out.append(
                         Meldung(
                             "online",
@@ -440,6 +455,7 @@ class Waechter:
                         )
                     )
                 z.stand, z.zuletzt, z.verbindung = ONLINE, jetzt, b.verbindung or z.verbindung
+                z.still = False
                 continue
             if z.stand == ONLINE:
                 z.stand, z.seit = (WEG if ueberwacht(b.schluessel) else AUS), jetzt
@@ -447,19 +463,22 @@ class Waechter:
                 if not ueberwacht(b.schluessel):
                     z.stand = AUS
                 elif jetzt - max(z.seit, ruhe) >= verz:
-                    out.append(
-                        Meldung(
-                            "offline",
-                            jetzt,
-                            b.schluessel,
-                            z.name,
-                            z.ip,
-                            z.verbindung,
-                            jetzt - z.seit,
-                            z.zuletzt,
+                    oft = self._oft(b.schluessel, jetzt)
+                    if oft <= OFT_AB:
+                        out.append(
+                            Meldung(
+                                "offline",
+                                jetzt,
+                                b.schluessel,
+                                z.name,
+                                z.ip,
+                                z.verbindung,
+                                jetzt - z.seit,
+                                z.zuletzt,
+                                oft=oft if oft >= OFT_AB else 0,
+                            )
                         )
-                    )
-                    z.stand = GEMELDET
+                    z.stand, z.still = GEMELDET, oft >= OFT_AB
         da = {b.schluessel for b in liste}
         for k in [
             k for k in self.geraete if k not in da
@@ -468,6 +487,14 @@ class Waechter:
             if self.geraete[k].fehlt >= FEHLT_ABRUFE:
                 del self.geraete[k]
         return out
+
+    def _oft(self, schluessel: str, jetzt: float) -> int:
+        """Zählt dieses „offline“ mit; wie oft das Gerät binnen OFT_S offline ging, dieses eingeschlossen."""
+        zeiten = [x for x in self.offline.get(schluessel, ()) if jetzt - x < OFT_S] + [jetzt]
+        self.offline[schluessel] = zeiten
+        for k in [k for k, v in self.offline.items() if jetzt - v[-1] >= OFT_S]:
+            del self.offline[k]
+        return len(zeiten)
 
     @staticmethod
     def _neu(b: Beobachtung, jetzt: float) -> Zustand:

@@ -487,6 +487,9 @@ nachgetragen.
   einmal „offline gemeldet“ → bei Rückkehr „wieder online“ mit Dauer, nur wenn vorher gemeldet. Zurück vor Ablauf =
   keine Meldung (kein Flattern). Ein nicht überwachtes Gerät geht beim Verschwinden still auf „aus“; wird es später
   überwacht, meldet es sich erst nach einmal online – Einschalten einer Art löst keine Welle aus.
+- Unstete Geräte (Herbert, 6.11.2026, nach einem Log mit einem LAN-Gerät, das etwa 11-mal am Tag für 30–100 min
+  wegging): die dritte Meldung „offline“ binnen 24 h sagt das und ist die letzte; danach weder „offline“ noch „wieder
+  online“ (auch kein Ereignis), bis es in 24 h seltener als dreimal weg war. Zählung nur im Speicher.
 - Neustart: kein Zustand wird gespeichert; den Grundzustand übernimmt der erste Abruf mit Gerätetabelle der Box,
   offline gilt dann als „aus“ – keine Massenmeldung. Box nicht erreichbar: keine Gerätemeldungen (alle wären weg), der
   Zustand bleibt stehen. Box oder Internet (Prüfung vom Pi) weg zählt als Ausfall; gemeldet wird er erst, wenn beides
@@ -534,6 +537,11 @@ nachgetragen.
   alt sein. Band, Signal und Tempo nennt die Box nur für Geräte in ihrer eigenen WLAN-Liste.
 - Datei: Geräte als „Gerät 1, 2 …“, keine MAC- und IP-Adressen. Vom Box-Protokoll nur die Gruppen WLAN und Internet,
   mit ausgetauschten bekannten Gerätenamen. Ein Name, den die Box anders schreibt als in der Geräteliste, bliebe stehen.
+- Ruhiger (Herbert, 6.11.2026, nach dem Log eines Netzes mit vielen LAN-Geräten: gut 1000 LAN-Aussetzer von 1–2 min
+  und je etwa 800 Mal „neu“/„verschwunden“ in 5 Tagen): Ein LAN-Gerät gilt erst nach 3 Minuten als „weg“ (Zeile mit
+  der Zeit, ab der es fehlte); kürzere Aussetzer zählt nur der Gesamtstand. Nimmt die Box ein inaktives Gerät aus der
+  Liste, steht nichts im Log; kommt ein seit dem Start gesehenes zurück, ist es „wieder da“, nicht „neu“. Häufungen
+  entstehen damit nur noch aus echten Ausfällen.
 
 ## Offene Entscheidungen
 

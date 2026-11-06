@@ -116,12 +116,40 @@ def test_kein_flattern_vor_ablauf():
     lauf2 = Lauf(einst(verzoegerung=2))
     lauf2(b("Lampe", True))
     meldungen = []
-    for _ in range(3):
+    for _ in range(2):
         for zustand in (False, False, False, True):
             meldungen += arten(lauf2(b("Lampe", zustand)))
-    assert meldungen == [("offline", "Lampe"), ("online", "Lampe")] * 3, (
+    assert meldungen == [("offline", "Lampe"), ("online", "Lampe")] * 2, (
         "wieder online nur nach gemeldet"
     )
+
+
+def test_unstetes_geraet_dritte_meldung_mit_hinweis_dann_still_bis_ruhiger():
+    lauf = Lauf(einst(verzoegerung=2))
+    lauf(b("NAS", True))
+    meldungen = []
+
+    def zyklus():
+        out = []
+        for zustand in (False, False, False, True):
+            out += lauf(b("NAS", zustand)).neu
+        return out
+
+    for _ in range(5):
+        meldungen += zyklus()
+    assert [m.art for m in meldungen] == ["offline", "online", "offline", "online", "offline"]
+    letzte = meldungen[-1]
+    assert letzte.oft == 3 and meldungen[0].oft == 0
+    assert letzte.text("de", UTC).endswith(
+        " – zum 3. Mal in 24 h; bis es ruhiger wird, keine weiteren Meldungen zu diesem Gerät"
+    )
+    assert letzte.text("en", UTC).endswith(
+        " – 3 times in 24 h; no further messages about this device until it settles down"
+    )
+    ereignis = letzte.ereignis("de", UTC)
+    assert ereignis["oft"] == 3 and meldungen[0].ereignis("de", UTC)["oft"] is None
+    lauf(b("NAS", True), schritt=wn.OFT_S)  # einen Tag ruhig
+    assert [m.art for m in zyklus()] == ["offline", "online"], "nach ruhigen 24 h wieder normal"
 
 
 def test_wieder_online_aus_und_nicht_ueberwacht():

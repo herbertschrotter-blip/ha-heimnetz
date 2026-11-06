@@ -189,3 +189,50 @@ def test_haeufung_waehrend_laufendem_ausfall_gilt_als_gestoert():
 def test_schwaerzen_ipv6_kurzformen_und_uhrzeit_bleibt():
     aus = dl.schwaerzen("Gateway fe80::1 und fd00::1234, DNS ::1 um 12:34:56", [])
     assert aus == "Gateway ⟨IP⟩ und ⟨IP⟩, DNS ⟨IP⟩ um 12:34:56"
+
+
+def test_kurzer_lan_aussetzer_nur_im_stand_langer_mit_frueherer_zeit():
+    s = dl.Schreiber()
+    lan = {"verbindung": "LAN", "knoten": "Box"}
+    s.schritt(a(0, [g("a", **lan), g("b")]))
+    assert ereignisse(s.schritt(a(60, [g("a", False), g("b")]))) == []
+    assert ereignisse(s.schritt(a(120, [g("a", **lan), g("b")]))) == [], "nach 1 min zurück: still"
+    assert ereignisse(s.schritt(a(180, [g("a", False), g("b")]))) == []
+    assert ereignisse(s.schritt(a(300, [g("a", False), g("b")]))) == []
+    weg_ = s.schritt(a(360, [g("a", False), g("b")]))  # 3 min weg
+    assert ereignisse(weg_) == ["weg"] and weg_[0].t == T0 + 180
+    assert dl.zeile(weg_[0])["detail"] == "war LAN · Box"
+    for t_ in (420, 480, 540):
+        assert ereignisse(s.schritt(a(t_, [g("a", False), g("b")]))) == []
+    da = s.schritt(a(600, [g("a", **lan), g("b")]))
+    assert ereignisse(da) == ["da", "stand"]
+    assert dl.zeile(da[0])["detail"] == "LAN · Box · nach 7 min"
+    assert dl.zeile(da[1])["detail"].endswith("1 kurze LAN-Aussetzer")
+    assert dl.zeile(da[1], "en")["detail"].endswith("1 short LAN dropouts")
+
+
+def test_box_raeumt_inaktive_still_aus_der_liste_bekannte_sind_nicht_neu():
+    s = dl.Schreiber()
+    s.schritt(a(0, [g("a"), g("b"), g("c")]))
+    assert ereignisse(s.schritt(a(60, [g("a", False), g("b"), g("c")]))) == ["weg"]
+    assert ereignisse(s.schritt(a(120, [g("b"), g("c")]))) == [], "inaktiv entfernt: still"
+    assert ereignisse(s.schritt(a(180, [g("a", False), g("b"), g("c")]))) == []
+    assert ereignisse(s.schritt(a(240, [g("b"), g("c")]))) == []
+    da = s.schritt(a(300, [g("a"), g("b"), g("c")]))
+    assert ereignisse(da) == ["da"] and da[0].daten["dauer_s"] == 240
+    assert ereignisse(s.schritt(a(360, [g("a"), g("b"), g("c"), g("d")]))) == ["neu"]
+    assert ereignisse(s.schritt(a(420, [g("a"), g("b"), g("d")]))) == ["raus"], "aktiv verschwunden"
+
+
+def test_kurzer_lan_aussetzer_auch_wenn_die_box_das_geraet_kurz_entfernt():
+    s = dl.Schreiber()
+    lan = {"verbindung": "LAN"}
+    s.schritt(a(0, [g("a", **lan), g("b"), g("c")]))
+    s.schritt(a(60, [g("a", False), g("b"), g("c")]))
+    assert ereignisse(s.schritt(a(120, [g("b"), g("c")]))) == []
+    assert ereignisse(s.schritt(a(150, [g("a", **lan), g("b"), g("c")]))) == []
+    assert s.kurz == 1 and not s.offen
+
+
+def test_haeufung_mit_nachgetragenem_lan_weg_in_zeitfolge():
+    assert len(dl.haeufungen([weg(100, "a"), weg(0, "b"), weg(60, "c")])) == 1

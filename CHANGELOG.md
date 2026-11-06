@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## [0.32.0]
+
+- GitHub #4: Ein Gerät, das binnen 24 h zum dritten Mal **offline** geht, warnt ein letztes Mal mit dem Hinweis darauf
+  und schweigt dann (auch „wieder online“), bis es ruhiger wird. Das Ereignis `heimnetz_warnung` hat dazu das Feld `oft`.
+- GitHub #4: Das **Diagnose-Log** ist ruhiger. Ein LAN-Gerät gilt erst nach 3 Minuten als weg; kürzere Aussetzer zählt
+  der Gesamtstand („3 kurze LAN-Aussetzer“). Räumt die Box ein inaktives Gerät aus ihrer Liste und nimmt es später
+  wieder auf, steht das nicht mehr als „verschwunden“/„neu“ im Log, sondern als „wieder da“. Dadurch zeigen auch die
+  Häufungen nur noch echte Ausfälle.
+
 ## [0.31.0]
 
 - GitHub #4: Neu in ⚙ › Diagnose: das **Diagnose-Log**, ab Werk aus. Es hält fest, wann welches Gerät wo und wie im Netz
