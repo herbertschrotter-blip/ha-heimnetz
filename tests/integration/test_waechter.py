@@ -359,3 +359,22 @@ async def test_diagnose_schwaerzt_das_kennwort_der_steckdosen(
     d = await async_get_config_entry_diagnostics(hass, geladen)
     assert "geheim" not in json.dumps(d, default=str)
     assert d["laufzeit"]["waechter"] == {"waechter": 1, "arten": ["internet"], "dosen": 1}
+
+
+async def test_veraltetes_skript_wird_selbst_erneuert(hass, geladen, nachbau, hass_ws_client):
+    client = await hass_ws_client(hass)
+    assert (await _frage(client, type="heimnetz/waechter/speichern", waechter=KETTE))["success"]
+    lz = geladen.runtime_data
+    d = nachbau[DOSE]
+    d.status = {**d.status, "wv": wa.SKRIPT_VERSION - 1}
+    await lz.waechter.lesen()
+    d = nachbau[DOSE]
+    assert d.eingespielt == 2, "mit den gespeicherten Regeln neu eingespielt"
+    assert d.regeln["e"] == "192.168.170.1"
+    await lz.waechter.lesen()
+    assert nachbau[DOSE].eingespielt == 2, "höchstens einmal je Stunde"
+    await lz.abruf.async_refresh()
+    texte = await hass.async_add_executor_job(
+        lz.datenbank.journal_texte, "waechter", 0, time.time() + 60
+    )
+    assert any("auf neuen Stand gebracht (Version" in x for _, x in texte)

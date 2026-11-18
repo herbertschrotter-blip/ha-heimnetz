@@ -184,6 +184,16 @@ def test_version_im_skript_passt():
     assert wa.skript_version(SKRIPT.read_text()) == wa.SKRIPT_VERSION
 
 
+def test_skript_geaendert_heisst_version_hochzaehlen():
+    """Sonst bleibt auf den Steckdosen das alte Skript (so geschehen mit 0.34.0)."""
+    import hashlib
+
+    summe = hashlib.sha256(SKRIPT.read_bytes()).hexdigest()[:16]
+    assert summe == wa.SKRIPT_PRUEFSUMME, (
+        f"shelly/waechter.js geändert: WV und SKRIPT_VERSION hochzählen, SKRIPT_PRUEFSUMME = {summe!r}"
+    )
+
+
 def test_anmeldung_nach_shelly_beschreibung():
     a = wa.anmeldung("geheim", "shellyplusplugs-abc", 1700000000, "x1")
     assert a["username"] == "admin" and a["algorithm"] == "SHA-256" and len(a["response"]) == 64
@@ -195,10 +205,16 @@ def test_anmeldung_nach_shelly_beschreibung():
 
 def test_dosenstand_und_veraltet():
     d = wa.dosenstand(
-        {"wv": 1, "zustand": "bereit", "eingriffe": 2, "letzte": [{"t": 1, "was": "start"}]}, 9.5
+        {
+            "wv": wa.SKRIPT_VERSION,
+            "zustand": "bereit",
+            "eingriffe": 2,
+            "letzte": [{"t": 1, "was": "start"}],
+        },
+        9.5,
     )
     assert d.erreichbar and d.eingriffe == 2 and not d.veraltet and d.leistung == 9.5
-    assert wa.dosenstand({"wv": 0, "zustand": "bereit"}).veraltet
+    assert wa.dosenstand({"wv": wa.SKRIPT_VERSION - 1, "zustand": "bereit"}).veraltet
     assert wa.dosenstand(None).fehlt
 
 
@@ -262,7 +278,8 @@ def test_stufe1_nur_internet_und_nicht_bei_unbekannt():
 def test_glied_karte():
     w = wa.pruefen(KETTE)
     k = wa.glied_karte(
-        w.glieder[1], wa.dosenstand({"wv": 1, "zustand": "stoerung", "grund": "inet_weg"}, 9.0)
+        w.glieder[1],
+        wa.dosenstand({"wv": wa.SKRIPT_VERSION, "zustand": "stoerung", "grund": "inet_weg"}, 9.0),
     )
     assert (
         k["punkt"] == "amber"

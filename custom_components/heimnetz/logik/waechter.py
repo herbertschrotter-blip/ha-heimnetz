@@ -27,9 +27,10 @@ from .sprache import DE, Ungueltig, Wort, merke, t
 SKRIPT_NAME = "heimnetz-waechter"
 KVS_REGELN = "heimnetz-waechter"
 KVS_BEFEHL = "heimnetz-waechter-befehl"
-SKRIPT_VERSION = (
-    1  # WV im Skript (shelly/waechter.js) – bei jeder Änderung des Skripts beide hochzählen
-)
+# WV im Skript (shelly/waechter.js). Bei jeder Änderung des Skripts beide hochzählen und die Prüfsumme neu eintragen –
+# der Test vergleicht sie; Heimnetz bringt Steckdosen mit älterer Version selbst auf den neuen Stand.
+SKRIPT_VERSION = 2
+SKRIPT_PRUEFSUMME = "13f8816714fbebe3"  # sha256 des Skripts, erste 16 Zeichen
 STUECK_BYTES = 1024  # Script.PutCode: Stücke an Zeilengrenzen, höchstens so viele Bytes
 
 ARTEN = ("internet", "ha", "geraet")

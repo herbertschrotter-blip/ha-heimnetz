@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [0.34.1]
+
+- **Wächter:** Das Skript auf den Steckdosen blieb nach 0.34.0 auf dem alten Stand (ohne Beobachter und Befund), weil
+  seine Versionsnummer nicht mitgezählt hatte. Jetzt Version 2, ein Test erzwingt das Hochzählen bei jeder Änderung,
+  und Heimnetz bringt Steckdosen mit älterem Skript selbst auf den neuen Stand – mit den gespeicherten Regeln, Eintrag
+  im Journal.
+
 ## [0.34.0]
 
 - **Ausfälle des Pi verstehen.** Der Wächter für Home Assistant fragt zusätzlich den Beobachter des Supervisors

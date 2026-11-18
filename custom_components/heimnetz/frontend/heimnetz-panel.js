@@ -29,9 +29,9 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   mod
 ));
 
-// node_modules/leaflet/dist/leaflet.js
+// ../../../../../../data/entwicklung/ha-heimnetz/custom_components/heimnetz/frontend/node_modules/leaflet/dist/leaflet.js
 var require_leaflet = __commonJS({
-  "node_modules/leaflet/dist/leaflet.js"(exports, module) {
+  "../../../../../../data/entwicklung/ha-heimnetz/custom_components/heimnetz/frontend/node_modules/leaflet/dist/leaflet.js"(exports, module) {
     /* @preserve
      * Leaflet 1.9.4, a JS library for interactive maps. https://leafletjs.com
      * (c) 2010-2023 Vladimir Agafonkin, (c) 2010-2011 CloudMade
@@ -2717,7 +2717,7 @@ var require_leaflet = __commonJS({
   }
 });
 
-// node_modules/@lit/reactive-element/css-tag.js
+// ../../../../../../data/entwicklung/ha-heimnetz/custom_components/heimnetz/frontend/node_modules/@lit/reactive-element/css-tag.js
 /**
  * @license
  * Copyright 2019 Google LLC
@@ -2767,7 +2767,7 @@ var c = e ? (t7) => t7 : (t7) => t7 instanceof CSSStyleSheet ? ((t8) => {
   return r(e6);
 })(t7) : t7;
 
-// node_modules/@lit/reactive-element/reactive-element.js
+// ../../../../../../data/entwicklung/ha-heimnetz/custom_components/heimnetz/frontend/node_modules/@lit/reactive-element/reactive-element.js
 /**
  * @license
  * Copyright 2017 Google LLC
@@ -2994,7 +2994,7 @@ var y = class extends HTMLElement {
 };
 y.elementStyles = [], y.shadowRootOptions = { mode: "open" }, y[d("elementProperties")] = /* @__PURE__ */ new Map(), y[d("finalized")] = /* @__PURE__ */ new Map(), p?.({ ReactiveElement: y }), (a.reactiveElementVersions ??= []).push("2.1.2");
 
-// node_modules/lit-html/lit-html.js
+// ../../../../../../data/entwicklung/ha-heimnetz/custom_components/heimnetz/frontend/node_modules/lit-html/lit-html.js
 /**
  * @license
  * Copyright 2017 Google LLC
@@ -3254,7 +3254,7 @@ var D = (t7, i6, s4) => {
   return h3._$AI(t7), h3;
 };
 
-// node_modules/lit-element/lit-element.js
+// ../../../../../../data/entwicklung/ha-heimnetz/custom_components/heimnetz/frontend/node_modules/lit-element/lit-element.js
 /**
  * @license
  * Copyright 2017 Google LLC
@@ -3288,7 +3288,7 @@ var o4 = s3.litElementPolyfillSupport;
 o4?.({ LitElement: i4 });
 (s3.litElementVersions ??= []).push("4.2.2");
 
-// node_modules/lit-html/is-server.js
+// ../../../../../../data/entwicklung/ha-heimnetz/custom_components/heimnetz/frontend/node_modules/lit-html/is-server.js
 /**
  * @license
  * Copyright 2022 Google LLC
@@ -4897,7 +4897,7 @@ function tagesverlauf(p4, d3) {
   </div>`;
 }
 
-// node_modules/lit-html/directive.js
+// ../../../../../../data/entwicklung/ha-heimnetz/custom_components/heimnetz/frontend/node_modules/lit-html/directive.js
 /**
  * @license
  * Copyright 2017 Google LLC
@@ -4922,7 +4922,7 @@ var i5 = class {
   }
 };
 
-// node_modules/lit-html/directive-helpers.js
+// ../../../../../../data/entwicklung/ha-heimnetz/custom_components/heimnetz/frontend/node_modules/lit-html/directive-helpers.js
 /**
  * @license
  * Copyright 2020 Google LLC
@@ -4933,7 +4933,7 @@ var r4 = (o7) => void 0 === o7.strings;
 var m2 = {};
 var p3 = (o7, t7 = m2) => o7._$AH = t7;
 
-// node_modules/lit-html/directives/live.js
+// ../../../../../../data/entwicklung/ha-heimnetz/custom_components/heimnetz/frontend/node_modules/lit-html/directives/live.js
 /**
  * @license
  * Copyright 2020 Google LLC
@@ -6378,7 +6378,7 @@ function verlauf(titel, unter, linien, marken = [], band = null) {
   </div>`;
 }
 
-// node_modules/lit-html/directives/unsafe-html.js
+// ../../../../../../data/entwicklung/ha-heimnetz/custom_components/heimnetz/frontend/node_modules/lit-html/directives/unsafe-html.js
 /**
  * @license
  * Copyright 2017 Google LLC
@@ -6401,7 +6401,7 @@ var e5 = class extends i5 {
 e5.directiveName = "unsafeHTML", e5.resultType = 1;
 var o5 = e4(e5);
 
-// node_modules/lit-html/directives/unsafe-svg.js
+// ../../../../../../data/entwicklung/ha-heimnetz/custom_components/heimnetz/frontend/node_modules/lit-html/directives/unsafe-svg.js
 /**
  * @license
  * Copyright 2017 Google LLC
@@ -6982,7 +6982,7 @@ function waechterBlatt(p4) {
 }
 
 // src/heimnetz-panel.js
-var VERSION = true ? "0.34.0" : "entwicklung";
+var VERSION = true ? "0.34.1" : "entwicklung";
 var REITER = [
   ["uebersicht", merke("Übersicht")],
   ["speedtest", merke("Speedtest")],

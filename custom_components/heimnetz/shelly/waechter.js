@@ -8,7 +8,7 @@
 // "geraet" = any other device.
 // Keep this file ASCII only and mJS-safe: no const, no arrow functions, no template strings, no let inside blocks.
 
-let WV = 1;
+let WV = 2;
 let KEY = 'heimnetz-waechter';
 let KEY_BEFEHL = 'heimnetz-waechter-befehl';
 // check pages on the internet (fixed here: a KVS value holds at most 255 characters)

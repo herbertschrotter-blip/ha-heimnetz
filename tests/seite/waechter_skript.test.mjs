@@ -57,7 +57,7 @@ test('alles gut: bereit, kein Schalten', () => {
   d.minuten(30);
   assert.equal(d.status().zustand, 'bereit');
   assert.equal(d.schaltungen.length, 0);
-  assert.equal(d.status().wv, 1);
+  assert.equal(d.status().wv, 2);
 });
 
 test('Internet weg: erst nach 12 min Strom aus mit von selbst wieder ein', () => {

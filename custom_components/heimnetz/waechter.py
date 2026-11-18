@@ -51,6 +51,9 @@ class Waechterdienst:
         self._aufgabe: asyncio.Task[None] | None = None
         self._sperre = asyncio.Lock()
         self._befehl_n = int(time.time())
+        self._erneuert: dict[
+            str, float
+        ] = {}  # Steckdose → letzter Versuch, ein älteres Skript zu erneuern
 
     @property
     def liste(self) -> list[wa.Waechter]:
@@ -310,10 +313,58 @@ class Waechterdienst:
                     # nicht erreichbar oder ohne Skript: die zuletzt gelesenen Eingriffe bleiben die Grundlage
                     neu = replace(neu, letzte=alt.letzte)
                 self.staende[(w.id, i)] = neu
+                if neu.veraltet and await self._erneuern(w, i, d):
+                    continue  # Skript neu gestartet: von vorn beginnen
                 if alt is None or not alt.letzte or not neu.erreichbar or neu.fehlt:
                     continue  # erstes Lesen (nach dem Start) oder nichts Neues lesbar: nichts nachmelden
                 for e in wa.neue_eingriffe(alt.letzte, neu.letzte):
                     self._eingriff(w, w.glieder[i], e)
+
+    async def _erneuern(self, w: wa.Waechter, i: int, adresse: str) -> bool:
+        """Älteres Skript auf der Steckdose: mit den gespeicherten Regeln neu einspielen (nur das eigene Skript, wie
+        beim Speichern). Höchstens einmal je Stunde je Steckdose versuchen."""
+        jetzt = time.time()
+        if jetzt - self._erneuert.get(adresse, 0.0) < 3600:
+            return False
+        self._erneuert[adresse] = jetzt
+        sp = sprache_system(self.hass)
+        g = w.glieder[i]
+        try:
+            await self._dose(adresse).einspielen(wa.kvs(w, i, self.router(), BEOBACHTER))
+        except ShellyFehler as err:
+            self.journal(
+                [
+                    Ereignis(
+                        ART,
+                        WARNUNG,
+                        t(
+                            "{geraet}: Skript nicht auf neuen Stand gebracht – {grund}",
+                            sp,
+                            geraet=g.name,
+                            grund=t(str(err), sp),
+                        ),
+                    )
+                ]
+            )
+            return False
+        self.staende.pop(
+            (w.id, i), None
+        )  # nach dem Neustart des Skripts neu beginnen, nichts nachmelden
+        self.journal(
+            [
+                Ereignis(
+                    ART,
+                    INFO,
+                    t(
+                        "{geraet}: Skript der Steckdose auf neuen Stand gebracht (Version {v})",
+                        sp,
+                        geraet=g.name,
+                        v=wa.SKRIPT_VERSION,
+                    ),
+                )
+            ]
+        )
+        return True
 
     def _eingriff(self, w: wa.Waechter, g: wa.Glied, e: dict[str, Any]) -> None:
         sp = sprache_system(self.hass)
