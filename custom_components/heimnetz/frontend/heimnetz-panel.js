@@ -3354,6 +3354,10 @@ var GLAS = `
 .hell .glas-nav button.on { background: rgba(255,255,255,.7); }
 .glas-nav.sechs button { font-size: 12px; padding-left: 1px; padding-right: 1px; }
 .glas-nav.sieben button { font-size: 11px; padding-left: 0; padding-right: 0; letter-spacing: -.1px; }
+/* schmal (Handy): nur Symbole; der Text bleibt für Screenreader und Tooltip im Knopf */
+.glas-nav button { position: relative; padding-top: 7px; padding-bottom: 7px; }
+.glas-nav button::before { content: attr(data-symbol); font-size: 21px; line-height: 1; }
+.glas-nav button .nt { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 /* Wächter (18.11.2026) */
 .wa-glied, .wa-dose { align-items: flex-start; }
 .wa-klein { display: block; margin-top: 2px; }
@@ -3411,6 +3415,8 @@ var GLAS = `
   .glas-nav { top: 16px; bottom: auto; left: 50%; right: auto; transform: translateX(-50%); width: 620px; }
   .glas-nav.sieben { width: 700px; }
   .glas-nav.sieben button { font-size: 13px; }
+  .glas-nav button::before { content: none; }
+  .glas-nav button .nt { position: static; width: auto; height: auto; overflow: visible; clip-path: none; }
   .glas-raster { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
   .sheet { left: 50%; right: auto; width: 520px; bottom: auto; top: 50%; transform: translate(-50%, -40%) scale(.96); opacity: 0; pointer-events: none;
     transition: transform .25s cubic-bezier(.2,.8,.2,1), opacity .2s; }
@@ -6976,7 +6982,7 @@ function waechterBlatt(p4) {
 }
 
 // src/heimnetz-panel.js
-var VERSION = true ? "0.33.1" : "entwicklung";
+var VERSION = true ? "0.33.2" : "entwicklung";
 var REITER = [
   ["uebersicht", merke("Übersicht")],
   ["speedtest", merke("Speedtest")],
@@ -6988,6 +6994,7 @@ var REITER = [
   ["waechter", merke("Wächter")]
   // 18.11.2026: Neustart hängender Geräte über Shelly-Steckdosen
 ];
+var SYMBOL3 = { uebersicht: "🏠", speedtest: "⚡", geraete: "📱", internet: "🌐", verbrauch: "📊", protokoll: "📋", waechter: "🛡️" };
 var ANSICHT = { uebersicht, speedtest, geraete: geraeteReiter, internet, verbrauch, protokoll, waechter };
 var NEU_LADEN_MS = 6e4;
 var KACHEL_WARTEN_MS = 150;
@@ -7955,7 +7962,7 @@ var HeimnetzPanel = class extends i4 {
           </div>
           ${this.narrow ? b2`<button class="menue-knopf glas-panel" title=${t3("Menü")} @click=${() => this.dispatchEvent(new Event("hass-toggle-menu", { bubbles: true, composed: true }))}>☰</button>` : A}
           <nav class="glas-nav glas-panel sieben">
-            ${REITER.map(([k2, name]) => b2`<button class=${k2 === this._reiter ? "on" : ""} @click=${() => this.geh(k2)}>${t3(name)}</button>`)}
+            ${REITER.map(([k2, name]) => b2`<button class=${k2 === this._reiter ? "on" : ""} data-symbol=${SYMBOL3[k2]} title=${t3(name)} aria-label=${t3(name)} @click=${() => this.geh(k2)}><span class="nt">${t3(name)}</span></button>`)}
           </nav>
           <div class="scroll" @scroll=${() => this.kachelWeg(true)}><div class="seite ${this._laedt ? "laden" : ""}">
             ${this._kopf(u3)}
@@ -7976,6 +7983,7 @@ if (!customElements.get("heimnetz-panel")) customElements.define("heimnetz-panel
 export {
   HeimnetzPanel,
   REITER,
+  SYMBOL3 as SYMBOL,
   VERSION,
   istBildDatei
 };

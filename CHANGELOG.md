@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## [0.33.2]
+
+- Die **Reiterleiste** zeigt am Handy nur Symbole (🏠 ⚡ 📱 🌐 📊 📋 🛡️), ab 700 px Breite wie bisher die Namen. Der Name
+  steht weiter als Tooltip und für Screenreader im Knopf.
+
 ## [0.33.1]
 
 - **Wächter:** Einspielen auf die Steckdose scheiterte mit „length should be less than 255“ – ein Wert im Speicher der

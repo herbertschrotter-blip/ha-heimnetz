@@ -1712,3 +1712,15 @@ test('Wächter einrichten: Home Assistant ohne Steckdose zeigt den Fehler im Fen
   assert.equal(el._blatt.form.glieder[0].adresse, '192.168.178.60:8123');
   assert.match(blatt(el).textContent, /Ohne Steckdose kann dieser Wächter nichts tun/);
 });
+
+test('Reiterleiste: am Handy Symbole, ab 700 px Text – Name bleibt als Tooltip und für Screenreader', async () => {
+  const el = await seite(machHass());
+  const knoepfe = [...el.shadowRoot.querySelectorAll('nav button')];
+  assert.deepEqual(knoepfe.map((b) => b.dataset.symbol), ['🏠', '⚡', '📱', '🌐', '📊', '📋', '🛡️']);
+  assert.equal(knoepfe[0].getAttribute('aria-label'), 'Übersicht');
+  assert.equal(knoepfe[6].title, 'Wächter');
+  const { readFileSync } = await import('node:fs');
+  const stil = readFileSync(`${QUELLE}/stil.js`, 'utf8');
+  assert.match(stil, /\.glas-nav button::before \{ content: attr\(data-symbol\)/);
+  assert.match(stil, /@container \(min-width: 700px\)[\s\S]*\.glas-nav button::before \{ content: none; \}/);
+});

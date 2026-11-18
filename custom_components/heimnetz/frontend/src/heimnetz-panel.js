@@ -25,6 +25,8 @@ export const REITER = [
   ['protokoll', merke('Protokoll')],
   ['waechter', merke('Wächter')], // 18.11.2026: Neustart hängender Geräte über Shelly-Steckdosen
 ]; // Namen deutsch (Schlüssel der Übersetzung), angezeigt über t()
+// Symbole der Reiterleiste: am Handy nur sie (Herbert, 18.11.2026), ab 700 px Breite der Text
+export const SYMBOL = { uebersicht: '🏠', speedtest: '⚡', geraete: '📱', internet: '🌐', verbrauch: '📊', protokoll: '📋', waechter: '🛡️' };
 const ANSICHT = { uebersicht, speedtest, geraete: geraeteReiter, internet, verbrauch, protokoll, waechter };
 const NEU_LADEN_MS = 60_000;
 const KACHEL_WARTEN_MS = 150; // Überfahren einer Stundenkachel: so lange stehen bleiben, bis das Popup abfragt
@@ -1042,7 +1044,7 @@ export class HeimnetzPanel extends LitElement {
             ? html`<button class="menue-knopf glas-panel" title=${t('Menü')} @click=${() => this.dispatchEvent(new Event('hass-toggle-menu', { bubbles: true, composed: true }))}>☰</button>`
             : nothing}
           <nav class="glas-nav glas-panel sieben">
-            ${REITER.map(([k, name]) => html`<button class=${k === this._reiter ? 'on' : ''} @click=${() => this.geh(k)}>${t(name)}</button>`)}
+            ${REITER.map(([k, name]) => html`<button class=${k === this._reiter ? 'on' : ''} data-symbol=${SYMBOL[k]} title=${t(name)} aria-label=${t(name)} @click=${() => this.geh(k)}><span class="nt">${t(name)}</span></button>`)}
           </nav>
           <div class="scroll" @scroll=${() => this.kachelWeg(true)}><div class="seite ${this._laedt ? 'laden' : ''}">
             ${this._kopf(u)}

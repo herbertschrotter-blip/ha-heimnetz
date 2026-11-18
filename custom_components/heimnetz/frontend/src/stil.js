@@ -60,6 +60,10 @@ const GLAS = `
 .hell .glas-nav button.on { background: rgba(255,255,255,.7); }
 .glas-nav.sechs button { font-size: 12px; padding-left: 1px; padding-right: 1px; }
 .glas-nav.sieben button { font-size: 11px; padding-left: 0; padding-right: 0; letter-spacing: -.1px; }
+/* schmal (Handy): nur Symbole; der Text bleibt für Screenreader und Tooltip im Knopf */
+.glas-nav button { position: relative; padding-top: 7px; padding-bottom: 7px; }
+.glas-nav button::before { content: attr(data-symbol); font-size: 21px; line-height: 1; }
+.glas-nav button .nt { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 /* Wächter (18.11.2026) */
 .wa-glied, .wa-dose { align-items: flex-start; }
 .wa-klein { display: block; margin-top: 2px; }
@@ -117,6 +121,8 @@ const GLAS = `
   .glas-nav { top: 16px; bottom: auto; left: 50%; right: auto; transform: translateX(-50%); width: 620px; }
   .glas-nav.sieben { width: 700px; }
   .glas-nav.sieben button { font-size: 13px; }
+  .glas-nav button::before { content: none; }
+  .glas-nav button .nt { position: static; width: auto; height: auto; overflow: visible; clip-path: none; }
   .glas-raster { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
   .sheet { left: 50%; right: auto; width: 520px; bottom: auto; top: 50%; transform: translate(-50%, -40%) scale(.96); opacity: 0; pointer-events: none;
     transition: transform .25s cubic-bezier(.2,.8,.2,1), opacity .2s; }
