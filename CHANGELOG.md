@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [0.33.1]
+
+- **Wächter:** Einspielen auf die Steckdose scheiterte mit „length should be less than 255“ – ein Wert im Speicher der
+  Shelly darf höchstens 255 Zeichen haben. Die Regeln stehen jetzt kurz darin (rund 110 Zeichen), die Prüfseiten im
+  Skript. Im Fenster „Wächter einrichten“ steht die Erklärung wieder unter dem Titel statt direkt daneben.
+
 ## [0.33.0]
 
 - Neuer Reiter **Wächter**: startet ein hängendes Gerät neu. Der Wächter „Internet“ kennt die Kette aus ⚙ › Zugang

@@ -62,6 +62,7 @@ const GLAS = `
 .glas-nav.sieben button { font-size: 11px; padding-left: 0; padding-right: 0; letter-spacing: -.1px; }
 /* Wächter (18.11.2026) */
 .wa-glied, .wa-dose { align-items: flex-start; }
+.wa-klein { display: block; margin-top: 2px; }
 .wa-links { display: flex; gap: 10px; align-items: flex-start; min-width: 0; }
 .wa-links .punkt { margin-top: 5px; }
 .wa-links small, .wa-rechts small, .wa-dose small { display: block; }

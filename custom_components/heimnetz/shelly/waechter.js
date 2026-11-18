@@ -11,6 +11,19 @@
 let WV = 1;
 let KEY = 'heimnetz-waechter';
 let KEY_BEFEHL = 'heimnetz-waechter-befehl';
+// check pages on the internet (fixed here: a KVS value holds at most 255 characters)
+let ZIELE = ['http://connectivitycheck.gstatic.com/generate_204', 'http://detectportal.firefox.com/success.txt',
+  'http://www.msftconnecttest.com/connecttest.txt'];
+
+// rules in KVS use short keys and bare addresses; expand them to the names used below
+function url(h) { if (!h) return null; return 'http://' + h; }
+function ausklappen(k) {
+  let z = [];
+  if (k.i) z = ZIELE;
+  return { v: k.v, an: k.an !== 0, pruef_s: k.p, stufe2_min: k.s2, aus_s: k.a, abstand_min: k.ab, pause_nach: k.pn,
+    pause_h: k.ph, eigen: url(k.e), rolle: k.r, pos: k.po, anzahl: k.n, nach: url(k.na), vor: url(k.vo), partner: k.pa,
+    netz: url(k.ne), ziele: z };
+}
 
 let cfg = null;
 let st = {
@@ -66,7 +79,7 @@ function lies(fertig) {
       for (k in items) { werte[k] = items[k].value; }
     }
     if (werte[KEY]) {
-      try { cfg = JSON.parse(werte[KEY]); if (st.grund === 'regeln_kaputt') st.grund = ''; } catch (e) { cfg = null; st.grund = 'regeln_kaputt'; }
+      try { cfg = ausklappen(JSON.parse(werte[KEY])); if (st.grund === 'regeln_kaputt') st.grund = ''; } catch (e) { cfg = null; st.grund = 'regeln_kaputt'; }
     }
     if (werte[KEY_BEFEHL]) {
       try { befehl(JSON.parse(werte[KEY_BEFEHL])); } catch (e2) { }

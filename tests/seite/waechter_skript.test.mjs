@@ -7,11 +7,23 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 
+const ALLE_WEG = { 'connectivitycheck.gstatic.com': false, 'detectportal.firefox.com': false, 'www.msftconnecttest.com': false };
 const QUELLE = join(dirname(fileURLToPath(import.meta.url)), '../../custom_components/heimnetz/shelly/waechter.js');
 const CODE = readFileSync(QUELLE, 'utf8');
 
+// Regeln wie logik/waechter.py:kvs – kurze Schlüssel, Adressen ohne http://
+const ohne = (u) => (u ? u.replace('http://', '') : undefined);
+function kurz(c) {
+  const k = { v: c.v, an: c.an === false ? 0 : 1, p: c.pruef_s, s2: c.stufe2_min, a: c.aus_s, ab: c.abstand_min, pn: c.pause_nach,
+    ph: c.pause_h, e: ohne(c.eigen), r: c.rolle, po: c.pos, n: c.anzahl, na: ohne(c.nach), vo: ohne(c.vor), pa: c.partner, ne: ohne(c.netz),
+    i: c.ziele && c.ziele.length ? 1 : undefined };
+  const s = JSON.stringify(k);
+  assert.ok(s.length <= 254, s);
+  return s;
+}
+
 function steckdose(regeln, netz = {}) {
-  const d = { uptime: 0, kvs: { 'heimnetz-waechter': JSON.stringify(regeln) }, netz, schaltungen: [], output: true, partner: true, timer: [], endpunkte: {} };
+  const d = { uptime: 0, kvs: { 'heimnetz-waechter': kurz(regeln) }, netz, schaltungen: [], output: true, partner: true, timer: [], endpunkte: {} };
   const call = (methode, p, cb) => {
     if (methode === 'HTTP.GET') {
       if (p.url.includes('/rpc/Switch.GetStatus')) return cb({ code: 200, body: JSON.stringify({ output: d.partner }) }, 0);
@@ -38,7 +50,7 @@ function steckdose(regeln, netz = {}) {
   return d;
 }
 
-const BOX = { v: 1, rolle: 'kette', pos: 0, anzahl: 1, eigen: 'http://192.168.178.1', ziele: ['http://1.1.1.1', 'http://9.9.9.9'], stufe2_min: 12, aus_s: 30, abstand_min: 60, pause_nach: 3, pause_h: 6 };
+const BOX = { v: 1, rolle: 'kette', pos: 0, anzahl: 1, eigen: 'http://192.168.178.1', ziele: ['fest'], stufe2_min: 12, aus_s: 30, abstand_min: 60, pause_nach: 3, pause_h: 6 };
 
 test('alles gut: bereit, kein Schalten', () => {
   const d = steckdose(BOX);
@@ -49,7 +61,7 @@ test('alles gut: bereit, kein Schalten', () => {
 });
 
 test('Internet weg: erst nach 12 min Strom aus mit von selbst wieder ein', () => {
-  const d = steckdose(BOX, { '1.1.1.1': false, '9.9.9.9': false });
+  const d = steckdose(BOX, { ...ALLE_WEG });
   d.minuten(12);
   assert.equal(d.schaltungen.length, 0, 'nicht vor Ablauf');
   assert.equal(d.status().zustand, 'stoerung');
@@ -58,13 +70,13 @@ test('Internet weg: erst nach 12 min Strom aus mit von selbst wieder ein', () =>
 });
 
 test('ein Ziel reicht: kein Eingriff, wenn eines antwortet', () => {
-  const d = steckdose(BOX, { '1.1.1.1': false });
+  const d = steckdose(BOX, { 'connectivitycheck.gstatic.com': false });
   d.minuten(30);
   assert.equal(d.schaltungen.length, 0);
 });
 
 test('Bremse: höchstens 1× pro Stunde, nach 3 Fehlschlägen Pause', () => {
-  const d = steckdose(BOX, { '1.1.1.1': false, '9.9.9.9': false });
+  const d = steckdose(BOX, { ...ALLE_WEG });
   d.minuten(13);
   d.output = true; // Steckdose hat sich von selbst wieder eingeschaltet
   d.minuten(30);
@@ -77,9 +89,9 @@ test('Bremse: höchstens 1× pro Stunde, nach 3 Fehlschlägen Pause', () => {
 });
 
 test('Erholung setzt die Fehlschläge zurück', () => {
-  const d = steckdose(BOX, { '1.1.1.1': false, '9.9.9.9': false });
+  const d = steckdose(BOX, { ...ALLE_WEG });
   d.minuten(13); d.output = true;
-  d.netz['1.1.1.1'] = true;
+  d.netz['connectivitycheck.gstatic.com'] = true;
   d.minuten(2);
   const s = d.status();
   assert.equal(s.zustand, 'bereit');
@@ -89,7 +101,7 @@ test('Erholung setzt die Fehlschläge zurück', () => {
 
 test('Kette Modem → Router: Modem-Steckdose urteilt nur, wenn der Router antwortet', () => {
   const modem = { ...BOX, pos: 0, anzahl: 2, eigen: 'http://192.168.0.1', nach: 'http://192.168.178.1' };
-  const d = steckdose(modem, { '192.168.178.1': false, '192.168.0.1': false, '1.1.1.1': false, '9.9.9.9': false });
+  const d = steckdose(modem, { '192.168.178.1': false, '192.168.0.1': false, ...ALLE_WEG });
   d.minuten(30);
   assert.equal(d.schaltungen.length, 0, 'Router weg: dessen Steckdose ist dran');
   d.netz['192.168.178.1'] = true;
@@ -99,7 +111,7 @@ test('Kette Modem → Router: Modem-Steckdose urteilt nur, wenn der Router antwo
 
 test('Kette: Router-Steckdose lässt dem Modem den Vortritt (doppelte Wartezeit) und wartet, solange der Partner schaltet', () => {
   const router = { ...BOX, pos: 1, anzahl: 2, vor: 'http://192.168.0.1', partner: '192.168.170.41' };
-  const d = steckdose(router, { '1.1.1.1': false, '9.9.9.9': false });
+  const d = steckdose(router, { ...ALLE_WEG });
   d.minuten(20);
   assert.equal(d.schaltungen.length, 0);
   d.partner = false; // Modem-Steckdose ist gerade aus
@@ -112,7 +124,7 @@ test('Kette: Router-Steckdose lässt dem Modem den Vortritt (doppelte Wartezeit)
 
 test('Kette: Router antwortet nicht → Router-Steckdose schaltet nach der einfachen Zeit', () => {
   const router = { ...BOX, pos: 1, anzahl: 2, vor: 'http://192.168.0.1' };
-  const d = steckdose(router, { '192.168.178.1': false, '1.1.1.1': false, '9.9.9.9': false, '192.168.0.1': false });
+  const d = steckdose(router, { '192.168.178.1': false, ...ALLE_WEG, '192.168.0.1': false });
   d.minuten(13);
   assert.equal(d.schaltungen.length, 1);
 });
@@ -128,7 +140,7 @@ test('Home Assistant: nur wenn der Router antwortet (sonst ist das WLAN schuld)'
 });
 
 test('Befehle aus Heimnetz: Ruhe und Weiter; der Befehl von vor dem Start zählt nicht', () => {
-  const d = steckdose(BOX, { '1.1.1.1': false, '9.9.9.9': false });
+  const d = steckdose(BOX, { ...ALLE_WEG });
   d.befehl('ruhe', 1, { min: 30 });
   d.minuten(13);
   assert.equal(d.schaltungen.length, 1, 'alter Befehl wirkt nicht');
@@ -143,7 +155,7 @@ test('Befehle aus Heimnetz: Ruhe und Weiter; der Befehl von vor dem Start zählt
 });
 
 test('ausgeschaltet oder ohne Regeln: nichts tun', () => {
-  const d = steckdose({ ...BOX, an: false }, { '1.1.1.1': false, '9.9.9.9': false });
+  const d = steckdose({ ...BOX, an: false }, { ...ALLE_WEG });
   d.minuten(30);
   assert.equal(d.schaltungen.length, 0);
   assert.equal(d.status().zustand, 'aus_regel');
@@ -158,13 +170,13 @@ test('Skript bleibt mJS und ASCII: kein const, keine Pfeile, keine Vorlagen-Stri
 });
 
 test('„wieder in Ordnung“ auch, wenn eine Runde in die Aus-Zeit fällt', () => {
-  const d = steckdose({ ...BOX, aus_s: 60 }, { '1.1.1.1': false, '9.9.9.9': false });
+  const d = steckdose({ ...BOX, aus_s: 60 }, { ...ALLE_WEG });
   d.minuten(13);
   assert.equal(d.schaltungen.length, 1);
   d.minuten(1); // Steckdose noch aus
   assert.equal(d.status().zustand, 'aus');
   d.output = true;
-  d.netz['1.1.1.1'] = true;
+  d.netz['connectivitycheck.gstatic.com'] = true;
   d.minuten(1);
   assert.ok(d.status().letzte.some((e) => e.was === 'ok'));
 });
@@ -178,7 +190,7 @@ test('kaputte Regeln bleiben als Grund stehen; status() über Script.Eval wie de
 });
 
 test('Grundlage aus dem Einspielen: der erste echte Befehl wirkt', () => {
-  const d = steckdose(BOX, { '1.1.1.1': false, '9.9.9.9': false });
+  const d = steckdose(BOX, { ...ALLE_WEG });
   d.befehl('keiner', 0);
   d.minuten(1);
   d.befehl('ruhe', 1, { min: 120 });

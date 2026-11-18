@@ -117,11 +117,10 @@ def test_doppelte_steckdose_ueber_waechter():
 def test_kvs_kette_modem_und_router():
     w = wa.pruefen(KETTE)
     modem, router = wa.kvs(w, 0, "192.168.178.1"), wa.kvs(w, 1, "192.168.178.1")
-    assert modem["rolle"] == "kette" and modem["pos"] == 0 and modem["anzahl"] == 2
-    assert modem["eigen"] == "http://192.168.0.1" and modem["nach"] == "http://192.168.178.1"
-    assert "vor" not in modem and "partner" not in modem
-    assert router["vor"] == "http://192.168.0.1" and router["partner"] == "192.168.178.41"
-    assert router["ziele"] == list(wa.ZIELE) and router["stufe2_min"] == 12
+    assert modem["r"] == "kette" and modem["po"] == 0 and modem["n"] == 2 and modem["i"] == 1
+    assert modem["e"] == "192.168.0.1" and modem["na"] == "192.168.178.1"
+    assert "vo" not in modem and "pa" not in modem
+    assert router["vo"] == "192.168.0.1" and router["pa"] == "192.168.178.41" and router["s2"] == 12
 
 
 def test_kvs_ha_prueft_das_heimnetz_ueber_den_router():
@@ -133,11 +132,44 @@ def test_kvs_ha_prueft_das_heimnetz_ueber_den_router():
     )
     d = wa.kvs(w, 0, "192.168.178.1")
     assert (
-        d["rolle"] == "ha"
-        and d["eigen"] == "http://192.168.178.60:8123"
-        and d["netz"] == "http://192.168.178.1"
+        d["r"] == "ha"
+        and d["e"] == "192.168.178.60:8123"
+        and d["ne"] == "192.168.178.1"
+        and "i" not in d
     )
-    assert d["ziele"] == []
+
+
+def test_kvs_passt_in_einen_wert_der_steckdose():
+    """Ein KVS-Wert der Shelly hat höchstens 255 Zeichen (Fehler am Gerät, 18.11.2026) – längste Kette, längste Adressen."""
+    lang = "192.168.100.254"
+    w = wa.pruefen(
+        {
+            "art": "internet",
+            "glieder": [
+                {"typ": "zte_goform", "adresse": lang, "dose": "192.168.100.251"},
+                {"typ": "tplink", "adresse": "192.168.100.253", "dose": "192.168.100.252"},
+                {"typ": "fritzbox", "adresse": "192.168.100.250", "dose": "192.168.100.249"},
+            ],
+            "regeln": {
+                "stufe1_min": 60,
+                "stufe2_min": 240,
+                "aus_s": 300,
+                "abstand_min": 1440,
+                "pause_nach": 10,
+                "pause_h": 48,
+            },
+        }
+    )
+    for i in range(3):
+        assert len(wa.kvs_text(wa.kvs(w, i, lang))) <= wa.KVS_MAX
+    with pytest.raises(Ungueltig):
+        wa.kvs_text({"x": "y" * 300})
+
+
+def test_pruefseiten_im_skript_wie_in_der_logik():
+    code = SKRIPT.read_text()
+    for z in wa.ZIELE:
+        assert f"'{z}'" in code
 
 
 def test_stuecke_an_zeilengrenzen_und_ganz():

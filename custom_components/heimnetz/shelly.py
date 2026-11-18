@@ -149,7 +149,7 @@ class Steckdose:
             sid = int((await self.rpc("Script.Create", {"name": wa.SKRIPT_NAME}))["id"])
         else:
             await self.rpc("Script.Stop", {"id": sid})
-        await self.rpc("KVS.Set", {"key": wa.KVS_REGELN, "value": json.dumps(regeln)})
+        await self.rpc("KVS.Set", {"key": wa.KVS_REGELN, "value": wa.kvs_text(regeln)})
         # Grundlage für Befehle: das Skript führt den ersten gelesenen Befehl nicht aus (er könnte von vor einem Neustart
         # der Steckdose stammen) – so wirkt schon der erste echte Befehl aus Heimnetz
         await self.rpc(
@@ -163,11 +163,11 @@ class Steckdose:
 
     async def regeln_setzen(self, regeln: dict[str, Any]) -> None:
         """Nur die Regeln (das Skript liest sie in jeder Runde)."""
-        await self.rpc("KVS.Set", {"key": wa.KVS_REGELN, "value": json.dumps(regeln)})
+        await self.rpc("KVS.Set", {"key": wa.KVS_REGELN, "value": wa.kvs_text(regeln)})
 
     async def befehl(self, x: str, n: int, **werte: Any) -> None:
         await self.rpc(
-            "KVS.Set", {"key": wa.KVS_BEFEHL, "value": json.dumps({"x": x, "n": n, **werte})}
+            "KVS.Set", {"key": wa.KVS_BEFEHL, "value": wa.kvs_text({"x": x, "n": n, **werte})}
         )
 
     async def entfernen(self) -> None:

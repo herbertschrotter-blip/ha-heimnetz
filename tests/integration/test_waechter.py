@@ -99,11 +99,7 @@ async def test_speichern_spielt_ein_und_speichert(hass, geladen, nachbau, hass_w
     assert [w.id for w in lz.einstellungen.waechter] == ["w1"]
     d = nachbau[DOSE]
     assert d.eingespielt == 1
-    assert (
-        d.regeln["rolle"] == "kette"
-        and d.regeln["eigen"] == "http://192.168.170.1"
-        and d.regeln["stufe2_min"] == 12
-    )
+    assert d.regeln["r"] == "kette" and d.regeln["e"] == "192.168.170.1" and d.regeln["s2"] == 12
     # Reiter: Karte mit Zustand der Steckdose nach dem ersten Lesen
     await lz.waechter.lesen()
     a = await _frage(client, type="heimnetz/waechter")
@@ -152,7 +148,7 @@ async def test_aendern_ruhe_aus_loeschen(hass, geladen, nachbau, hass_ws_client)
     assert (await _frage(client, type="heimnetz/waechter/aendern", waechter="w1", was="aus"))[
         "success"
     ]
-    assert nachbau[DOSE].regeln["an"] is False
+    assert nachbau[DOSE].regeln["an"] == 0
     assert (await _frage(client, type="heimnetz/waechter/blinken", adresse=DOSE))["success"]
     assert nachbau[DOSE].blinkt == 1
     assert (await _frage(client, type="heimnetz/waechter/aendern", waechter="w1", was="loeschen"))[

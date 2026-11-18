@@ -17,6 +17,7 @@ Heimnetz sanft neu startet (Stufe 1).
 from __future__ import annotations
 
 import hashlib
+import json
 from dataclasses import dataclass, field, replace
 from typing import Any
 
@@ -223,35 +224,50 @@ def doppelte_dose(neu: Waechter, andere: list[Waechter]) -> str | None:
 # ── Regeln je Steckdose ──
 
 
+KVS_MAX = (
+    254  # ein KVS-Wert der Shelly hat höchstens 255 Zeichen („length should be less than 255“)
+)
+
+
 def kvs(w: Waechter, i: int, router: str | None) -> dict[str, Any]:
-    """Regeln für die Steckdose vor Glied `i` (KVS „heimnetz-waechter“). `router`: Adresse der FRITZ!Box – daran
-    erkennt die Steckdose, ob das Heimnetz selbst geht (ha, geraet)."""
+    """Regeln für die Steckdose vor Glied `i` (KVS „heimnetz-waechter“), mit kurzen Schlüsseln – ein KVS-Wert darf
+    nicht länger als KVS_MAX sein. Das Skript klappt sie aus (`ausklappen` in shelly/waechter.js); die Prüfseiten im
+    Internet stehen dort fest (`i: 1`). Adressen ohne „http://“. `router`: Adresse der FRITZ!Box – daran erkennt die
+    Steckdose, ob das Heimnetz selbst geht (ha, geraet)."""
     r, g = w.regeln, w.glieder[i]
     d: dict[str, Any] = {
         "v": 1,
-        "an": w.an,
-        "pruef_s": r.pruef_s,
-        "stufe2_min": r.stufe2_min,
-        "aus_s": r.aus_s,
-        "abstand_min": r.abstand_min,
-        "pause_nach": r.pause_nach,
-        "pause_h": r.pause_h,
-        "eigen": f"http://{g.adresse}",
+        "an": int(w.an),
+        "p": r.pruef_s,
+        "s2": r.stufe2_min,
+        "a": r.aus_s,
+        "ab": r.abstand_min,
+        "pn": r.pause_nach,
+        "ph": r.pause_h,
+        "e": g.adresse,
     }
     if w.art == "internet":
-        d.update(rolle="kette", pos=i, anzahl=len(w.glieder), ziele=list(ZIELE))
+        d.update(r="kette", po=i, n=len(w.glieder), i=1)
         if i + 1 < len(w.glieder):
-            d["nach"] = f"http://{w.glieder[i + 1].adresse}"
+            d["na"] = w.glieder[i + 1].adresse
         if i > 0:
-            d["vor"] = f"http://{w.glieder[i - 1].adresse}"
+            d["vo"] = w.glieder[i - 1].adresse
             # vorne in der Kette schaltet die andere Steckdose: nie beide zugleich
             if partner := w.glieder[i - 1].dose:
-                d["partner"] = partner
+                d["pa"] = partner
     else:
-        d.update(rolle=w.art, ziele=[])
+        d["r"] = w.art
         if router:
-            d["netz"] = f"http://{router}"
+            d["ne"] = router
     return d
+
+
+def kvs_text(d: dict[str, Any]) -> str:
+    """Regeln als kurzes JSON für KVS.Set; zu lang → Ungueltig (statt einer Fehlermeldung der Steckdose)."""
+    text = json.dumps(d, separators=(",", ":"))
+    if len(text) > KVS_MAX:
+        raise Ungueltig("Regeln zu lang für die Steckdose")
+    return text
 
 
 def stuecke(code: str, n: int = STUECK_BYTES) -> list[str]:

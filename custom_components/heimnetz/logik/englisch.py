@@ -570,6 +570,7 @@ EN: dict[str, str] = {
     "Höchstens {n} Wächter": "At most {n} watchdogs",
     "Die Steckdose {d} benutzt schon ein anderer Wächter": "Plug {d} is already used by another watchdog",
     "Wächter {name} eingerichtet": "Watchdog {name} set up",
+    "Regeln zu lang für die Steckdose": "rules too long for the plug",
     "Die Kette des Internets hat sich geändert – Wächter neu einrichten": "The internet chain has changed – set up the watchdog again",
     "Diesen Wächter gibt es nicht (mehr)": "This watchdog does not exist (any more)",
     "Steckdose: {grund}": "Plug: {grund}",

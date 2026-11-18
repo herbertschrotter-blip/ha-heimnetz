@@ -25,7 +25,7 @@ const marke = (text, ok) => html`<span class="leise wa-marke"><span class="vs-st
 function glied(g) {
   return html`<div class="zeile wa-glied">
     <span class="wa-links"><span class="punkt ${PUNKT[g.punkt] ?? 'grau'}"></span>
-      <span>${g.symbol} ${g.name}<small class="leise">${g.adresse} · ${g.zustand}${g.veraltet ? ` · ${t('Skript veraltet – neu einspielen')}` : ''}</small></span></span>
+      <span>${g.symbol} ${g.name}<small class="leise wa-klein">${g.adresse} · ${g.zustand}${g.veraltet ? ` · ${t('Skript veraltet – neu einspielen')}` : ''}</small></span></span>
     <span class="leise wa-rechts">${g.dose ? html`🔌 ${g.dose}${g.leistung != null ? ` · ${zahl(g.leistung, 1)} W` : ''}` : t('keine Steckdose')}
       <small>${g.sanft ? t('sanft: {weg}', { weg: g.sanft }) : t('nur Strom aus/ein')}</small></span>
   </div>`;
@@ -87,7 +87,7 @@ function schritt1(p, b) {
     ${ARTEN.map(([k, name, text]) => html`<button class="zg" @click=${() => p.waechterArt(k)}><span class="zg-r ${f.art === k ? 'on' : ''}"></span><span>${t(name)}<small>${t(text)}</small></span></button>`)}
     ${f.art === 'internet' ? html`
       <div class="vs-stufe"><span>${t('Kette des Internets')}</span><span class="leise">${t('aus ⚙ → Zugang')}</span></div>
-      ${f.glieder.length ? f.glieder.map((g, i) => html`${i ? html`<div class="leise wa-pfeil">↓</div>` : nothing}<div class="zeile"><span>${g.typ === 'fritzbox' ? '🛜' : '📡'} ${g.name}<small class="leise">${g.adresse}</small></span>${marke(g.sanft ? t('sanft möglich') : t('nur Strom aus/ein'), g.sanft)}</div>`)
+      ${f.glieder.length ? f.glieder.map((g, i) => html`${i ? html`<div class="leise wa-pfeil">↓</div>` : nothing}<div class="zeile"><span>${g.typ === 'fritzbox' ? '🛜' : '📡'} ${g.name}<small class="leise wa-klein">${g.adresse}</small></span>${marke(g.sanft ? t('sanft möglich') : t('nur Strom aus/ein'), g.sanft)}</div>`)
         : html`<div class="leer">${t('Keine Kette gefunden – erst ⚙ → Zugang prüfen.')}</div>`}
       <p class="hinweis">${t('Stimmt die Kette nicht, ist sie in ⚙ → Zugang zu ändern. Ohne vorgeschaltetes Modem (DSL, Glasfaser, Kabel in der FRITZ!Box) besteht sie nur aus der Box.')}</p>
       <div class="glas-panel block" style="margin-top:10px;padding:10px 12px">
@@ -95,7 +95,7 @@ function schritt1(p, b) {
         ${SANFT_TABELLE.map(([name, text, ok]) => html`<div class="zeile"><span>${t(name)}</span>${marke(t(text), ok)}</div>`)}
         <p class="hinweis">${t('Sanft heißt: Neustart über die Schnittstelle des Geräts, mit dem dort hinterlegten Kennwort (FRITZ!Box aus FRITZ!Box Tools, Modem aus ⚙ → Zugang). Die Einstellungen des Geräts ändert Heimnetz nie. Geht das nicht, bleibt der Strom-Neustart über die Steckdose.')}</p>
       </div>` : nothing}
-    ${f.art === 'ha' ? html`<div class="zeile"><span>🏠 Home Assistant<small class="leise">${f.glieder[0]?.adresse || t('Adresse nicht gefunden')}</small></span>${marke(t('nur Strom aus/ein'), false)}</div>` : nothing}
+    ${f.art === 'ha' ? html`<div class="zeile"><span>🏠 Home Assistant<small class="leise wa-klein">${f.glieder[0]?.adresse || t('Adresse nicht gefunden')}</small></span>${marke(t('nur Strom aus/ein'), false)}</div>` : nothing}
     ${f.art === 'geraet' ? html`
       <label class="feld"><span>${t('Name')}</span><input .value=${f.glieder[0]?.name || ''} @input=${(e) => p.waechterGlied(0, { name: e.target.value })}></label>
       <label class="feld"><span>${t('Adresse im Heimnetz')}</span><input .value=${f.glieder[0]?.adresse || ''} placeholder="192.168.178.20" @input=${(e) => p.waechterGlied(0, { adresse: e.target.value.trim() })}></label>` : nothing}
@@ -110,7 +110,7 @@ function schritt2(p, b) {
     ${f.glieder.map((g, i) => {
       const d = dosen.find((x) => x.adresse === g.dose);
       return html`<div class="zeile wa-dose"><span>${g.typ === 'fritzbox' ? '🛜' : g.typ === 'ha' ? '🏠' : '📡'} ${g.name || g.adresse}
-          <small class="leise">${d ? (d.leistung != null ? t('misst jetzt {w} W', { w: zahl(d.leistung, 1) }) : d.modell) : t('keine Steckdose – nur sanfter Neustart')}</small></span>
+          <small class="leise wa-klein">${d ? (d.leistung != null ? t('misst jetzt {w} W', { w: zahl(d.leistung, 1) }) : d.modell) : t('keine Steckdose – nur sanfter Neustart')}</small></span>
         <span class="wa-wahl"><select @change=${(e) => p.waechterGlied(i, { dose: e.target.value || null })}>
           <option value="" ?selected=${!g.dose}>${t('keine')}</option>
           ${dosen.map((x) => html`<option value=${x.adresse} ?selected=${x.adresse === g.dose}
@@ -126,7 +126,7 @@ function schritt2(p, b) {
 }
 
 function zahlFeld(p, f, k, name, einheit, klein) {
-  return html`<div class="zeile"><span>${t(name)}<small class="leise">${t(klein)}</small></span>
+  return html`<div class="zeile"><span>${t(name)}<small class="leise wa-klein">${t(klein)}</small></span>
     <span class="wa-zahl"><input type="number" .value=${String(f.regeln[k] ?? '')} @change=${(e) => p.waechterRegel(k, Number(e.target.value))}><span class="leise">${einheit}</span></span></div>`;
 }
 
@@ -134,7 +134,7 @@ function schritt3(p, b) {
   const f = b.form;
   return html`
     <div class="vs-stufe"><span>${t('Prüfen')}</span><span></span></div>
-    <div class="zeile"><span>${t('alle')}<small class="leise">${f.art === 'internet' ? t('drei Prüfseiten im Internet und die Geräte der Kette') : t('ob das Gerät antwortet (und der Router, sonst ist das WLAN schuld)')}</small></span>
+    <div class="zeile"><span>${t('alle')}<small class="leise wa-klein">${f.art === 'internet' ? t('drei Prüfseiten im Internet und die Geräte der Kette') : t('ob das Gerät antwortet (und der Router, sonst ist das WLAN schuld)')}</small></span>
       ${seg([[30, '30 s'], [60, '60 s'], [120, '120 s']], f.regeln.pruef_s, (v) => p.waechterRegel('pruef_s', v))}</div>
     <div class="vs-stufe"><span>${t('Eingreifen')}</span><span class="leise">${f.art === 'internet' ? t('nur beim Gerät, das hängt') : ''}</span></div>
     ${f.art === 'internet' ? zahlFeld(p, f, 'stufe1_min', merke('1 · sanft neu starten nach'), 'min', merke('über die Schnittstelle des Geräts · nur wenn Home Assistant läuft')) : nothing}
@@ -144,7 +144,7 @@ function schritt3(p, b) {
     ${zahlFeld(p, f, 'abstand_min', merke('höchstens alle'), 'min', merke('je Gerät · kein Dauer-Neustart'))}
     ${zahlFeld(p, f, 'pause_nach', merke('Pause nach Fehlschlägen'), '×', merke('Eingriffe ohne Erfolg in Folge'))}
     ${zahlFeld(p, f, 'pause_h', merke('Pause dauert'), 'h', merke('z. B. bei einer Störung beim Anbieter'))}
-    <div class="zeile"><span>🔔 ${t('Bei Eingriff melden')}<small class="leise">${t('über das Ziel aus ⚙ → Warnungen')}</small></span>
+    <div class="zeile"><span>🔔 ${t('Bei Eingriff melden')}<small class="leise wa-klein">${t('über das Ziel aus ⚙ → Warnungen')}</small></span>
       ${seg([[true, t('ja')], [false, t('nein')]], f.regeln.melden !== false, (v) => p.waechterRegel('melden', v))}</div>
     <div class="vs-kopf" style="margin-top:10px"><b>${t('Auf die Steckdosen spielen')}</b><br><span class="leise">${t('Heimnetz legt das Skript „heimnetz-waechter“ auf den gewählten Steckdosen an und startet es. Auf den Steckdosen wird sonst nichts geändert; Löschen nimmt es wieder herunter.')}</span></div>`;
 }
