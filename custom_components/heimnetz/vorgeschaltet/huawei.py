@@ -145,3 +145,25 @@ def probe(lauf: Lauf) -> str | None:
         return None
     finally:
         session.close()
+
+
+def neustarten(lauf: Lauf, kennwort: str | None) -> bool:
+    """Wächter (Stufe 1), blockierend: einmal anmelden, Neustart über device/control. Nie eine Einstellung."""
+    from huawei_lte_api.Client import Client  # noqa: PLC0415
+    from huawei_lte_api.Connection import Connection  # noqa: PLC0415
+
+    if not kennwort:
+        return False
+    session = requests_session(lauf.adresse)
+    try:
+        client = Client(
+            Connection(basis_url(lauf.adresse), timeout=ZEIT_S, requests_session=session)
+        )
+        client.user.login("admin", kennwort, force_new_login=True)
+        return str(client.device.reboot()).upper() == "OK"
+    except (
+        Exception
+    ):  # abgelehnt, Netz, Gerät startet schon neu – Erfolg zeigt erst die Prüfung danach
+        return False
+    finally:
+        session.close()

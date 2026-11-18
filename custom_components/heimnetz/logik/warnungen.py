@@ -44,7 +44,7 @@ VORGABE_AN = frozenset({"netz", "smart", "haushalt", "kamera"})
 AUSGENOMMEN = {"mobil": merke("ausgenommen – gehen unterwegs dauernd offline")}
 IMMER, NIE, GRUPPE = "immer", "nie", "gruppe"
 AUSNAHMEN = (IMMER, NIE)
-ARTEN = ("offline", "online", "neu", "internet", "test")
+ARTEN = ("offline", "online", "neu", "internet", "test", "waechter")
 ZURUECK_HOECHSTENS = 20  # so viele Meldungen warten höchstens auf das Internet
 OFT_AB = 3  # so oft offline binnen OFT_S: letzte Meldung mit Hinweis, danach still
 OFT_S = 86_400
@@ -187,6 +187,7 @@ class Meldung:
     box: bool = False  # internet: die FRITZ!Box war (auch) nicht erreichbar
     zufall: bool = False  # neu: zufällige private WLAN-Adresse
     oft: int = 0  # offline: das wievielte Mal binnen 24 h (ab OFT_AB die letzte Meldung)
+    nachricht: str = ""  # waechter: fertiger Text in der Sprache der Warnungen (logik.waechter)
 
     def text(self, sprache: str, tz: tzinfo) -> str:
         n = ohne_mac(anzeigename(self.name, sprache))
@@ -239,6 +240,8 @@ class Meldung:
                 von=_uhr(self.von, tz),
                 bis=_uhr(self.t, tz),
             )
+        if self.art == "waechter":
+            return t("Wächter: {text}", sprache, text=self.nachricht)
         return t("Testnachricht von Heimnetz – so kommen Warnungen an.", sprache)
 
     def ereignis(self, sprache: str, tz: tzinfo) -> dict[str, Any]:

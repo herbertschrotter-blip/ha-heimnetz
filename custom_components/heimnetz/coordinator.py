@@ -126,6 +126,9 @@ class Abruf(DataUpdateCoordinator[sm.Stand]):
         # WU-0010: Warnungen nach jedem Abruf (gesetzt in __init__); zurück kommen Journalzeilen
         self.warnen: Callable[[sm.Stand], Awaitable[list[Ereignis]]] | None = None
         self.mitschreiben: Callable[[sm.Stand], Awaitable[None]] | None = None  # Diagnose-Log
+        self.waechter: Callable[[sm.Stand], Awaitable[None]] | None = (
+            None  # Wächter (Stufe 1, Steckdosen lesen)
+        )
         self.plan_status: mp.Entscheidung | None = None
         self.serie_status: dict[str, int] | None = None  # WU-0001: laufende Serie {n, lauf}
         self._serie_aufgabe: asyncio.Task[None] | None = None
@@ -182,6 +185,11 @@ class Abruf(DataUpdateCoordinator[sm.Stand]):
         await self._speichern(stand, await self._warnen(stand))
         if self.mitschreiben is not None:
             await self.mitschreiben(stand)
+        if self.waechter is not None:
+            try:
+                await self.waechter(stand)
+            except Exception:  # der Wächter darf den Abruf nie ungültig machen
+                LOGGER.exception("Heimnetz: Wächter")
         self.speedtest.verbinden()
         await self._messplan(stand)
         if stand.fehler:

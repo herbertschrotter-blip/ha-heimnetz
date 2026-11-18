@@ -3597,5 +3597,74 @@
   "neu": true,
   "internet": true,
   "beispiel": "Pi ist seit 5 min offline (zuletzt 00:16, LAN)"
+ },
+ "waechter": {
+  "waechter": [
+   {
+    "id": "w1",
+    "art": "internet",
+    "symbol": "🌐",
+    "name": "Internet",
+    "an": true,
+    "punkt": "ok",
+    "glieder": [
+     {
+      "symbol": "🛜",
+      "name": "FRITZ!Box 6860 5G",
+      "adresse": "192.168.178.1",
+      "dose": "192.168.178.41",
+      "punkt": "ok",
+      "zustand": "bereit",
+      "leistung": 9.5,
+      "sanft": "TR-064",
+      "veraltet": false,
+      "eingriffe": 1
+     }
+    ],
+    "regeln": {
+     "pruef_s": 60,
+     "stufe1_min": 5,
+     "stufe2_min": 12,
+     "aus_s": 30,
+     "abstand_min": 60,
+     "pause_nach": 3,
+     "pause_h": 6,
+     "melden": true
+    },
+    "weg_seit": null,
+    "eingriffe": 1,
+    "roh": {
+     "id": "w1",
+     "art": "internet",
+     "an": true,
+     "glieder": [
+      {
+       "typ": "fritzbox",
+       "name": "FRITZ!Box 6860 5G",
+       "adresse": "192.168.178.1",
+       "dose": "192.168.178.41"
+      }
+     ],
+     "regeln": {
+      "pruef_s": 60,
+      "stufe1_min": 5,
+      "stufe2_min": 12,
+      "aus_s": 30,
+      "abstand_min": 60,
+      "pause_nach": 3,
+      "pause_h": 6,
+      "melden": true
+     }
+    }
+   }
+  ],
+  "eingriffe": [
+   {
+    "t": 1791985856.8715518,
+    "text": "FRITZ!Box 6860 5G: Strom 30 s aus und wieder ein"
+   }
+  ],
+  "gelesen": 1794981136.7537906,
+  "kennwort": false
  }
 }

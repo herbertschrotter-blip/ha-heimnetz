@@ -12,6 +12,7 @@ import { internet } from './ansichten/internet.js';
 import { einstellungenBlatt } from './ansichten/einstellungen.js';
 import { verbrauch } from './ansichten/verbrauch.js';
 import { protokoll } from './ansichten/protokoll.js';
+import { waechter, waechterBlatt } from './ansichten/waechter.js';
 import { MB_MAX, MB_PX, alsMarkdown, bildBlatt, githubBlatt, meldenBlatt, meldenKnopf, meldungenBlatt } from './ansichten/melden.js';
 
 export const VERSION = typeof __HEIMNETZ_VERSION__ === 'string' ? __HEIMNETZ_VERSION__ : 'entwicklung';
@@ -22,8 +23,9 @@ export const REITER = [
   ['internet', merke('Internet')], // WU-0009: vorher „Funk“; WLAN steht jetzt unter Geräte
   ['verbrauch', merke('Verbrauch')],
   ['protokoll', merke('Protokoll')],
+  ['waechter', merke('Wächter')], // 18.11.2026: Neustart hängender Geräte über Shelly-Steckdosen
 ]; // Namen deutsch (Schlüssel der Übersetzung), angezeigt über t()
-const ANSICHT = { uebersicht, speedtest, geraete: geraeteReiter, internet, verbrauch, protokoll };
+const ANSICHT = { uebersicht, speedtest, geraete: geraeteReiter, internet, verbrauch, protokoll, waechter };
 const NEU_LADEN_MS = 60_000;
 const KACHEL_WARTEN_MS = 150; // Überfahren einer Stundenkachel: so lange stehen bleiben, bis das Popup abfragt
 const ENTWURF = 'heimnetz-melden-entwurf'; // FE-0001: Entwurf überlebt ein Neuladen der Seite (z. B. nach der Galerie)
@@ -328,6 +330,97 @@ export class HeimnetzPanel extends LitElement {
 
   zu() {
     this._blatt = null;
+  }
+
+  // ── Wächter (18.11.2026) ──
+
+  /** Fenster „Wächter einrichten“ öffnen; `roh` = gespeicherter Wächter zum Bearbeiten. Kette, Home Assistant und die
+   *  Steckdosen kommen von der Integration (die Suche fragt jede Steckdose einmal und dauert ein paar Sekunden). */
+  async waechterEinrichten(roh) {
+    const form = roh ? JSON.parse(JSON.stringify(roh)) : { art: 'internet', glieder: [], regeln: {} };
+    const blatt = { art: 'waechter', schritt: 1, form, vorschlag: null, kennwort: '', kennwort_da: !!this._daten.waechter?.kennwort, fehler: '' };
+    this._blatt = blatt;
+    try {
+      const vorschlag = await this.ws('waechter/vorschlag');
+      if (this._blatt !== blatt) return;
+      const neu = { ...blatt, vorschlag };
+      if (!roh) neu.form = this._waechterForm('internet', vorschlag);
+      this._blatt = neu;
+    } catch (err) {
+      if (this._blatt === blatt) this._blatt = { ...blatt, fehler: (err && err.message) || String(err) };
+    }
+  }
+
+  /** Neues Formular für eine Art: Geräte aus dem Vorschlag, Regeln aus den Vorgaben der Integration. */
+  _waechterForm(art, v) {
+    const glieder = art === 'internet' ? (v?.kette || []).map((g) => ({ ...g, dose: null }))
+      : art === 'ha' ? (v?.ha ? [{ ...v.ha, dose: null }] : [{ typ: 'ha', name: 'Home Assistant', adresse: '', dose: null }])
+        : [{ typ: 'geraet', name: '', adresse: '', dose: null }];
+    return { art, glieder, regeln: { ...(v?.vorgabe?.[art] || {}), pause_nach: 3, pause_h: 6, melden: true } };
+  }
+
+  waechterSetze(werte) {
+    if (this._blatt?.art === 'waechter') this._blatt = { ...this._blatt, ...werte };
+  }
+
+  waechterArt(art) {
+    const b = this._blatt;
+    if (b?.art !== 'waechter' || b.form.art === art) return;
+    this._blatt = { ...b, form: { ...this._waechterForm(art, b.vorschlag), ...(b.form.id ? { id: b.form.id } : {}) } };
+  }
+
+  waechterGlied(i, werte) {
+    const b = this._blatt;
+    if (b?.art !== 'waechter') return;
+    const glieder = b.form.glieder.map((g, n) => (n === i ? { ...g, ...werte } : g));
+    this._blatt = { ...b, form: { ...b.form, glieder } };
+  }
+
+  waechterRegel(k, v) {
+    const b = this._blatt;
+    if (b?.art === 'waechter') this._blatt = { ...b, form: { ...b.form, regeln: { ...b.form.regeln, [k]: v } } };
+  }
+
+  async waechterSpeichern() {
+    const b = this._blatt;
+    if (b?.art !== 'waechter' || !this.istAdmin) return;
+    const laufend = { ...b, laeuft: true, fehler: '' };
+    this._blatt = laufend;
+    try {
+      await this.ws('waechter/speichern', { waechter: b.form, ...(b.kennwort ? { kennwort: b.kennwort } : {}) });
+    } catch (err) {
+      if (this._blatt === laufend) this._blatt = { ...laufend, laeuft: false, fehler: (err && err.message) || String(err) };
+      return;
+    }
+    if (this._blatt === laufend) this._blatt = null;
+    this.toast(t('Wächter eingespielt'));
+    this.laden();
+  }
+
+  async waechterLoeschen() {
+    const b = this._blatt;
+    if (b?.art !== 'waechter' || !b.form.id) return;
+    if (!b.frage) { this._blatt = { ...b, frage: true }; return; }
+    await this.waechterAendern(b.form.id, 'loeschen');
+    if (this._blatt?.art === 'waechter') this._blatt = null;
+  }
+
+  async waechterAendern(id, was) {
+    try {
+      await this.ws('waechter/aendern', { waechter: id, was });
+      this.laden();
+    } catch (err) {
+      this.toast(t('Wächter: {fehler}', { fehler: (err && err.message) || err }));
+    }
+  }
+
+  async waechterBlinken(adresse) {
+    try {
+      await this.ws('waechter/blinken', { adresse });
+      this.toast(t('Steckdose {adresse} blinkt', { adresse }));
+    } catch (err) {
+      this.toast(t('Wächter: {fehler}', { fehler: (err && err.message) || err }));
+    }
   }
 
   /** Art eines Geräts selbst wählen oder wieder automatisch (AN-0001, nur Admins). */
@@ -930,7 +1023,7 @@ export class HeimnetzPanel extends LitElement {
   _blattInhalt() {
     const b = this._blatt;
     if (!b) return nothing;
-    const art = { einstellungen: einstellungenBlatt, melden: meldenBlatt, github: githubBlatt, meldungen: meldungenBlatt, bild: bildBlatt, messung: messungBlatt }[b.art];
+    const art = { einstellungen: einstellungenBlatt, melden: meldenBlatt, github: githubBlatt, meldungen: meldungenBlatt, bild: bildBlatt, messung: messungBlatt, waechter: waechterBlatt }[b.art];
     return art ? art(this) : geraetBlatt(this, b);
   }
 
@@ -948,7 +1041,7 @@ export class HeimnetzPanel extends LitElement {
           ${this.narrow
             ? html`<button class="menue-knopf glas-panel" title=${t('Menü')} @click=${() => this.dispatchEvent(new Event('hass-toggle-menu', { bubbles: true, composed: true }))}>☰</button>`
             : nothing}
-          <nav class="glas-nav glas-panel sechs">
+          <nav class="glas-nav glas-panel sieben">
             ${REITER.map(([k, name]) => html`<button class=${k === this._reiter ? 'on' : ''} @click=${() => this.geh(k)}>${t(name)}</button>`)}
           </nav>
           <div class="scroll" @scroll=${() => this.kachelWeg(true)}><div class="seite ${this._laedt ? 'laden' : ''}">
@@ -958,7 +1051,7 @@ export class HeimnetzPanel extends LitElement {
             <div class="leise" style="text-align:center;padding:8px">Heimnetz ${VERSION}</div>
           </div></div>
           <div class="schleier ${this._blatt ? 'an' : ''}" @click=${() => this.zu()}></div>
-          <div class="sheet glas-panel ${this._blatt ? 'an' : ''} ${this._blatt?.art === 'einstellungen' ? 'breit' : ''}">${this._blatt && !['melden', 'github'].includes(this._blatt.art) ? meldenKnopf(this, true) : nothing}${this._blattInhalt()}</div>
+          <div class="sheet glas-panel ${this._blatt ? 'an' : ''} ${['einstellungen', 'waechter'].includes(this._blatt?.art) ? 'breit' : ''}">${this._blatt && !['melden', 'github'].includes(this._blatt.art) ? meldenKnopf(this, true) : nothing}${this._blattInhalt()}</div>
           ${this._blatt ? nothing : meldenKnopf(this)}
           <div class="toast glas-panel ${this._toast ? 'an' : ''}" role="status">${this._toast}</div>
           ${this._kachel && this._reiter === 'speedtest' ? kachelPopup(this) : nothing}

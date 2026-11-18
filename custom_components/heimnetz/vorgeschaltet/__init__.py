@@ -63,6 +63,22 @@ async def erkennen_aus(lauf: Lauf, hass: HomeAssistant, startseite: str) -> ve.E
     return erkennung
 
 
+async def baustein_neustarten(
+    hass: HomeAssistant, lauf: Lauf, baustein: str, kennwort: str | None
+) -> bool:
+    """Wächter (Stufe 1): das vorgeschaltete Gerät sanft neu starten (logik.waechter.SANFT). Nie eine Einstellung."""
+    try:
+        if baustein == "zte_goform":
+            return await zte.goform_neustarten(lauf, kennwort)
+        if baustein == "huawei_hilink":
+            return await hass.async_add_executor_job(huawei.neustarten, lauf, kennwort)
+        if baustein == "tplink":
+            return await hass.async_add_executor_job(tplink.neustarten, lauf, kennwort)
+    except ImportError:
+        LOGGER.warning("Heimnetz: Bibliothek für den Neustart fehlt")
+    return False
+
+
 async def baustein_lesen(
     hass: HomeAssistant,
     lauf: Lauf,

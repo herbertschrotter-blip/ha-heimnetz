@@ -15,7 +15,7 @@ from homeassistant.helpers import config_validation as cv
 
 from . import ansichten, einrichtung, modem
 from . import warnungen as wd
-from .const import CONF_MODEM_KENNWORT, DOMAIN, SEITEN_SPRACHE
+from .const import CONF_MODEM_KENNWORT, CONF_SHELLY_KENNWORT, DOMAIN, SEITEN_SPRACHE
 from .diagnoselog import Diagnoselog
 from .logik import auswertung as aw
 from .logik import vorgeschaltet as ve
@@ -23,6 +23,7 @@ from .logik import warnungen as wn
 from .logik import zugang as zg
 from .logik.einstellungen import Ungueltig
 from .logik.sprache import t
+from .shelly import ShellyFehler
 from .speicher import Angehalten
 
 LOGGER = logging.getLogger(__package__)
@@ -740,6 +741,126 @@ def _hinterlegt_fuer(lz: Any) -> str:
     return lz.einstellungen.wert.zugang_adresse or lz.abruf.modem.adresse or ""
 
 
+# ── Wächter (18.11.2026) ──
+
+
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/waechter"})
+@websocket_api.async_response
+async def _waechter(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
+) -> None:
+    if (lz := _laufzeit(hass, connection, msg)) and lz.waechter is not None:
+        connection.send_result(msg["id"], await lz.waechter.ansicht(ansichten.sprache(hass)))
+
+
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/waechter/vorschlag"})
+@websocket_api.require_admin
+@websocket_api.async_response
+async def _waechter_vorschlag(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
+) -> None:
+    """Für „Wächter einrichten“: Kette, Home Assistant und die Shelly-Steckdosen im Heimnetz (fragt jede einmal)."""
+    if (lz := _laufzeit(hass, connection, msg)) and lz.waechter is not None:
+        connection.send_result(msg["id"], await lz.waechter.vorschlag())
+
+
+async def _waechter_tun(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any], tun: Any
+) -> None:
+    """Gemeinsamer Rahmen der ändernden Wächter-Befehle: Fehler verständlich zurück."""
+    if not ((lz := _laufzeit(hass, connection, msg)) and lz.waechter is not None):
+        return
+    s = ansichten.sprache(hass)
+    try:
+        ergebnis = await tun(lz.waechter)
+    except Ungueltig as err:
+        connection.send_error(msg["id"], "ungueltig", err.text(s))
+        return
+    except KeyError:
+        connection.send_error(
+            msg["id"], websocket_api.ERR_NOT_FOUND, t("Diesen Wächter gibt es nicht (mehr)", s)
+        )
+        return
+    except ShellyFehler as err:
+        connection.send_error(
+            msg["id"], "steckdose", t("Steckdose: {grund}", s, grund=t(str(err), s))
+        )
+        return
+    connection.send_result(msg["id"], {"ok": True, **(ergebnis or {})})
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): f"{DOMAIN}/waechter/speichern",
+        vol.Required("waechter"): dict,
+        vol.Optional("kennwort"): vol.Any(None, vol.All(str, vol.Length(max=100))),
+    }
+)
+@websocket_api.require_admin
+@websocket_api.async_response
+async def _waechter_speichern(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
+) -> None:
+    """Prüfen, Skript auf die Steckdosen spielen, speichern (nur Admins). Ein Kennwort der Steckdosen kommt nur in die
+    Optionen des Eintrags, nie in eine Antwort."""
+
+    async def tun(d: Any) -> dict[str, Any]:
+        neu = await d.speichern(msg["waechter"], msg.get("kennwort") or None)
+        if msg.get("kennwort"):  # erst nach erfolgreichem Einspielen hinterlegen
+            entry = d.lz.abruf.config_entry
+            optionen = {k: v for k, v in entry.options.items() if k != CONF_SHELLY_KENNWORT}
+            optionen[CONF_SHELLY_KENNWORT] = msg["kennwort"]
+            hass.config_entries.async_update_entry(entry, options=optionen)
+        return {"id": neu.id}
+
+    await _waechter_tun(hass, connection, msg, tun)
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): f"{DOMAIN}/waechter/aendern",
+        vol.Required("waechter"): vol.All(str, vol.Length(max=20)),
+        vol.Required("was"): vol.In(("an", "aus", "ruhe", "weiter", "loeschen")),
+    }
+)
+@websocket_api.require_admin
+@websocket_api.async_response
+async def _waechter_aendern(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
+) -> None:
+    """an/aus, „ruhe“ (laufenden Eingriff abbrechen: 60 min Ruhe), „weiter“ (Pause beenden), löschen (Skript runter)."""
+    was, wid = msg["was"], msg["waechter"]
+
+    async def tun(d: Any) -> None:
+        if was in ("an", "aus"):
+            await d.schalten(wid, was == "an")
+        elif was == "loeschen":
+            await d.entfernen(wid)
+        else:
+            await d.befehl(wid, was)
+
+    await _waechter_tun(hass, connection, msg, tun)
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): f"{DOMAIN}/waechter/blinken",
+        vol.Required("adresse"): vol.All(str, vol.Length(max=60)),
+    }
+)
+@websocket_api.require_admin
+@websocket_api.async_response
+async def _waechter_blinken(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
+) -> None:
+    """Steckdose finden: LED kurz blinken lassen (Shelly.Identify) – der Strom bleibt an."""
+
+    async def tun(d: Any) -> None:
+        await d.blinken(msg["adresse"])
+
+    await _waechter_tun(hass, connection, msg, tun)
+
+
 BEFEHLE = (
     _uebersicht,
     _speedtest,
@@ -775,6 +896,11 @@ BEFEHLE = (
     _warnungen_setzen,
     _warnungen_geraet,
     _warnungen_test,
+    _waechter,
+    _waechter_vorschlag,
+    _waechter_speichern,
+    _waechter_aendern,
+    _waechter_blinken,
 )
 
 

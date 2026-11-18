@@ -41,6 +41,7 @@ from .panel import abmelden, async_anmelden
 from .speicher import Datenbank, SchemaZuNeu
 from .tickets import meldungen
 from .tickets import registrieren as tickets_registrieren
+from .waechter import Waechterdienst
 from .warnungen import Warndienst
 from .websocket import registrieren
 
@@ -62,6 +63,7 @@ class Laufzeit:
     ocid: OcidAbzug
     warnungen: Warndienst | None = None  # WU-0010, gesetzt gleich nach dem Anlegen
     diagnoselog: Diagnoselog | None = None  # gesetzt gleich nach dem Anlegen
+    waechter: Waechterdienst | None = None  # Wächter (18.11.2026), gesetzt gleich nach dem Anlegen
 
     def diagnose(self) -> dict[str, Any]:
         """Zahlen statt Inhalte: keine Gerätenamen, Hardware-Adressen oder Meldungstexte."""
@@ -90,6 +92,7 @@ class Laufzeit:
             else None,
             # WU-0010: nur Zahlen und Schalter – keine Gerätenamen, keine Namen eigener Arten, kein Dienstname
             "warnungen": self.warnungen.diagnose() if self.warnungen else None,
+            "waechter": self.waechter.diagnose() if self.waechter else None,  # nur Zahlen
         }
 
 
@@ -171,6 +174,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: EintragMitLaufzeit) -> b
         abruf.warnen = lz.warnungen.abruf
         lz.diagnoselog = Diagnoselog(hass, lz)
         abruf.mitschreiben = lz.diagnoselog.abruf
+        lz.waechter = Waechterdienst(hass, lz)
+        abruf.waechter = lz.waechter.abruf
         await lz.warnungen.async_bekannt_laden()
         entry.async_on_unload(abruf.speedtest.trennen)
         await abruf.async_config_entry_first_refresh()

@@ -15,7 +15,7 @@ from homeassistant.loader import async_get_integration
 
 from . import EintragMitLaufzeit
 from .ansichten import diagnose_namen
-from .const import CONF_MODEM_KENNWORT, DOMAIN, sprache
+from .const import CONF_MODEM_KENNWORT, CONF_SHELLY_KENNWORT, DOMAIN, sprache
 from .logik import diagnose as dg
 from .speedtest import ookla_einstellung
 
@@ -39,7 +39,8 @@ async def async_get_config_entry_diagnostics(
         "eintrag": dict(entry.data),
         # WU-0009: das Kennwort des vorgeschalteten Modems nie, auch nicht als Länge
         "optionen": {
-            k: (dg.GESCHWAERZT if k == CONF_MODEM_KENNWORT else v) for k, v in entry.options.items()
+            k: (dg.GESCHWAERZT if k in (CONF_MODEM_KENNWORT, CONF_SHELLY_KENNWORT) else v)
+            for k, v in entry.options.items()
         },
         "laufzeit": lz.diagnose(),
         "box": {

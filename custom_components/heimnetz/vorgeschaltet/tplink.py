@@ -117,3 +117,22 @@ def lesen(lauf: Lauf, kennwort: str | None) -> Lesung:
     if lesung.befund is None and lesung.mobil is None:
         lesung.befund = "keine_werte"
     return lesung
+
+
+def neustarten(lauf: Lauf, kennwort: str | None) -> bool:
+    """Wächter (Stufe 1), blockierend: Familie erkennen, einmal anmelden, reboot(). Nie eine Einstellung."""
+    if not kennwort:
+        return False
+    session = requests_session(lauf.adresse)
+    try:
+        gefunden = familie(lauf.adresse, session)
+        if gefunden is None:
+            return False
+        router = _client(gefunden[1], lauf.adresse, kennwort, session)
+        router.authorize()
+        router.reboot()
+        return True
+    except Exception:  # abgelehnt, Netz, Gerät startet schon neu
+        return False
+    finally:
+        session.close()

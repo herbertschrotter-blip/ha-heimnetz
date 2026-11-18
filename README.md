@@ -14,7 +14,9 @@ Seite in der Seitenleiste und als Entitäten für Automationen und Dashboards.
 >
 > Hobbyprojekt, **ohne Gewähr**. Die Integration liest nur: Sie ändert keine Einstellungen der FRITZ!Box und steuert
 > keine Geräte. Ausnahmen: Sie startet Speedtest-Messungen über die Ookla-Integration und meldet sich mit dem
-> hinterlegten Kennwort an der Weboberfläche eines vorgeschalteten Modems an (nur zum Lesen).
+> hinterlegten Kennwort an der Weboberfläche eines vorgeschalteten Modems an (nur zum Lesen). Und – nur wenn man im Reiter
+> **Wächter** einen einrichtet – startet sie ein hängendes Gerät neu: FRITZ!Box oder Modem sanft über ihre Schnittstelle,
+> dazu ein eigenes Skript auf gewählten Shelly-Steckdosen, das den Strom kurz aus- und von selbst wieder einschaltet.
 
 ## Schnelleinrichtung
 
@@ -81,6 +83,30 @@ Home Assistant (eine Companion App, „alle Companion Apps“ oder „keine Nach
 **Gerätenamen** (und IP und Verbindung). Wer das nicht will, wählt „keine Nachricht – nur Ereignis“ und baut sich
 seine Meldung selbst.
 
+### Wächter
+
+Im Reiter **Wächter** (einrichten nur Admins) startet Heimnetz ein Gerät neu, das hängt:
+
+- **Internet:** die Kette aus ⚙ → 🌐 Zugang (vorgeschaltetes Modem → FRITZ!Box, oder nur die Box). Ist das Internet weg,
+  findet der Wächter das Gerät, das schuld ist, und startet nur dieses neu – nie zwei zugleich.
+  **Stufe 1** (ab Werk nach 5 min): sanft über die Schnittstelle des Geräts – FRITZ!Box über TR-064 (mit dem Zugang aus
+  FRITZ!Box Tools), ZTE (goform), Huawei (HiLink) und TP-Link über die Weboberfläche mit dem Kennwort aus ⚙ → 🌐 Zugang
+  (Beta, ungetestet am Gerät). **Stufe 2** (ab Werk nach 12 min): die Shelly-Steckdose davor schaltet den Strom 30 s
+  aus und von selbst wieder ein.
+- **Home Assistant (dieser Pi):** antwortet Home Assistant 20 min nicht (der Router aber schon), schaltet die
+  Steckdose den Pi 15 s stromlos – höchstens einmal in 2 h.
+- **Anderes Gerät** (Repeater, Switch, Kamera …): Strom aus/ein, wenn es nicht mehr antwortet.
+
+Stufe 2 macht die **Steckdose selbst**: Heimnetz spielt dafür ein kleines Skript („heimnetz-waechter“) auf die gewählte
+Shelly-Steckdose (Generation 2 oder neuer, z. B. Plus Plug S) und legt die Regeln dort ab. So klappt der Neustart auch,
+wenn Home Assistant hängt oder mit dem Router das WLAN weg ist. Bremse: höchstens einmal je Abstand (ab Werk 60 min),
+nach 3 Eingriffen ohne Erfolg 6 h Pause – dann liegt es meist am Anbieter. Jeder Eingriff steht im Journal und kommt –
+wie die Warnungen – über das Ziel aus ⚙ → 🔔 Warnungen, mit dem Ereignis `heimnetz_warnung` (`art`: `waechter`).
+Löschen nimmt das Skript wieder von der Steckdose; andere Skripte und Einstellungen der Steckdose bleiben unberührt.
+
+**Achtung:** Strom aus ist für den Pi und manche Router eine harte Notbremse (Datenträger, Firmware-Update). Deshalb
+die langen Wartezeiten; wer an einem Gerät gerade arbeitet, schaltet seinen Wächter aus.
+
 ## Voraussetzungen
 
 ### Muss – ohne das läuft Heimnetz nicht
@@ -109,6 +135,7 @@ seine Meldung selbst.
 | **[Scribe](https://github.com/jonathan-gtd/scribe)** (HACS) mit **TimescaleDB** oder ein anderes Langzeitarchiv (z. B. InfluxDB) | Werte der Entitäten über Jahre aufheben | der Recorder hält den Verlauf nur so lange, wie er eingestellt ist (Standard 10 Tage); Messungen und Journal in Heimnetz bleiben trotzdem |
 | **Kennwort der Weboberfläche** eines vorgeschalteten Modems, unter ⚙ → 🌐 Zugang (nur bei Internet über ein eigenes Modem vor der Box) | Funkwerte vom Modem im Reiter Internet und in den Mobilfunk-Entitäten | die meisten Modems geben ohne Anmeldung keine Signalwerte heraus; Befund „Kennwort fehlt“ |
 | Integration **Huawei LTE**, **NETGEAR LTE** oder **Teltonika** (in Home Assistant enthalten) für das Modem davor | Heimnetz liest deren Entitäten, statt das Gerät selbst zu fragen | Huawei fragt Heimnetz selbst (mit Kennwort); NETGEAR und Teltonika nur erkennen |
+| **Shelly-Steckdose** ab Generation 2 (z. B. Plus Plug S) je Gerät, das ein Wächter neu starten soll; feste Adresse in der FRITZ!Box empfohlen | Stufe 2 des Wächters (Strom aus/ein), auch wenn Home Assistant hängt | nur der sanfte Neustart (FRITZ!Box, Modem); kein Wächter für Home Assistant |
 
 ## Installation
 
@@ -136,9 +163,10 @@ starten. Danach im Browser die Seite neu laden, falls noch die alte Seite angeze
 
 ## Entfernen
 
-1. Einstellungen → Geräte & Dienste → Heimnetz → ⋮ → **Löschen**.
-2. HACS → Heimnetz → ⋮ → **Entfernen**, Home Assistant neu starten.
-3. Wer auch die Daten loswerden will: Ordner `<config>/heimnetz/` löschen (Messungen, Journal, Tickets). Die Tickets
+1. Im Reiter **Wächter** jeden Wächter löschen – sonst bleibt sein Skript auf den Steckdosen und arbeitet weiter.
+2. Einstellungen → Geräte & Dienste → Heimnetz → ⋮ → **Löschen**.
+3. HACS → Heimnetz → ⋮ → **Entfernen**, Home Assistant neu starten.
+4. Wer auch die Daten loswerden will: Ordner `<config>/heimnetz/` löschen (Messungen, Journal, Tickets). Die Tickets
    im Speicher von Home Assistant bleiben beim Löschen der Einrichtung absichtlich erhalten.
 
 ## Umstieg von „Netzwerk“
@@ -175,6 +203,9 @@ Heimnetz arbeitet lokal. Nach außen geht nur:
 | GitHub | vorausgefülltes Issue – öffnet der **Browser**, abgeschickt mit dem eigenen Konto | nur, wenn man selbst „öffentlich auf GitHub“ meldet |
 | notify-Dienst von Home Assistant (Companion App → Push-Dienst von Google bzw. Apple) | Text der Warnung: Gerätename, IP, Verbindung, Dauer | nur, wenn unter ⚙ → 🔔 Warnungen ein Ziel gewählt ist (ab Werk: keines) |
 | Vorgeschaltetes Gerät im eigenen Heimnetz (nur private Adressen) | Suche: Startseite an wenigen Adressen nacheinander (gespeicherte, Vorschlag der Box, 192.168.0.1, 192.168.1.1, 192.168.8.1, 192.168.18.1, 192.168.100.1) bis ein Gerät erkannt ist; danach nur lesende Abfragen und die Anmeldung mit dem hinterlegten Kennwort (höchstens ein Versuch, abgelehnt: kein weiterer) | nur bei Internet über ein vorgeschaltetes Gerät: alle 10 Minuten, beim Einrichten, bei „↻ Erneut suchen“ und unter ⚙ → Diagnose „Abfragen“ |
+| Shelly-Steckdosen im eigenen Heimnetz (nur private Adressen) | Suche: `GET /shelly` an den Steckdosen aus der Shelly-Integration und der Geräteliste der Box (Name beginnt mit „shelly“); Wächter: Skript „heimnetz-waechter“ und seine Regeln (KVS) anlegen, ändern, löschen, Zustand und Leistung lesen, auf Knopfdruck kurz blinken; mit dem hinterlegten Kennwort der Steckdosen | nur mit eingerichtetem Wächter: alle 2 Minuten lesen; einspielen beim Speichern |
+| FRITZ!Box bzw. vorgeschaltetes Gerät | Wächter Stufe 1: Neustart (TR-064 `Reboot`, goform `REBOOT_DEVICE`, HiLink `device/control`, TP-Link `reboot`) – nie eine Einstellung | nur mit Wächter „Internet“, höchstens einmal je Gerät und Störung |
+| Von der **Steckdose** aus: Prüfseiten von Google (`connectivitycheck.gstatic.com`), Mozilla (`detectportal.firefox.com`) und Microsoft (`www.msftconnecttest.com`), dazu die Geräte der Kette im Heimnetz | nur der Abruf der Prüfseite (keine Daten über das Heimnetz) | Wächter „Internet“: jede Minute (einstellbar 30–120 s) |
 
 **Vorgeschaltetes Gerät** (Beta): Kommt das Internet über ein eigenes Modem vor der FRITZ!Box, kennt die Box das
 Funknetz nicht. Heimnetz sucht das Gerät dann an den oben genannten Adressen (kein Absuchen des Heimnetzes), erkennt
@@ -216,7 +247,8 @@ nur bei einem vorgeschalteten Gerät – an dessen wenigen Adressen; der Beleg l
 (ubus)“. Zur Wahl steht auch „Glasfaser über ein eigenes Modem“ (ONT). Wer ein vorgeschaltetes Modem festlegt, kann dessen Adresse (nur private Adressen) und
 das Kennwort der Weboberfläche eintragen. **Das Kennwort wird in Home Assistant gespeichert** (in den Optionen der
 Heimnetz-Einrichtung, wie bei anderen Integrationen), nie an die Seite zurückgegeben (sie zeigt nur „hinterlegt“), nie
-protokolliert und in der Diagnose geschwärzt; „Kennwort entfernen“ löscht es.
+protokolliert und in der Diagnose geschwärzt; „Kennwort entfernen“ löscht es. Ebenso das **Kennwort der
+Shelly-Steckdosen** für den Wächter (nur nötig, wenn dort eines gesetzt ist).
 
 **Nie** gehen hinaus: der Standort von Home Assistant, Kennwörter, Hardware- (MAC) und IP-Adressen und
 Gerätenamen – außer im Text einer Warnung, wenn man dafür ein Ziel gewählt hat (siehe oben). Der
@@ -345,7 +377,9 @@ the sidebar and as entities for automations and dashboards.
 >
 > Hobby project, **no warranty**. The integration only reads: it never changes FRITZ!Box settings and controls no
 > devices. Exceptions: it starts speed tests through the Ookla integration and logs in to the web interface of an
-> upstream modem with the stored password (read-only).
+> upstream modem with the stored password (read-only). And – only if you set one up in the **Watchdog** tab – it
+> restarts a hanging device: FRITZ!Box or modem softly through their interface, plus its own script on chosen Shelly
+> plugs that switches the power off briefly and back on by itself.
 
 ### Quick start
 
@@ -412,6 +446,30 @@ Home Assistant (one companion app, “all companion apps” or “no message –
 name** (plus IP and connection). If you do not want that, choose “no message – event only” and build your own
 notification.
 
+#### Watchdog
+
+In the **Watchdog** tab (setup admins only) Heimnetz restarts a device that hangs:
+
+- **Internet:** the chain from ⚙ → 🌐 Access (upstream modem → FRITZ!Box, or the box only). When the internet is gone,
+  the watchdog finds the device at fault and restarts only that one – never two at once. **Stage 1** (default after
+  5 min): softly through the device's interface – FRITZ!Box via TR-064 (with the access from FRITZ!Box Tools), ZTE
+  (goform), Huawei (HiLink) and TP-Link via the web interface with the password from ⚙ → 🌐 Access (beta, untested on
+  a real device). **Stage 2** (default after 12 min): the Shelly plug in front of it switches the power off for 30 s and
+  back on by itself.
+- **Home Assistant (this Pi):** if Home Assistant does not respond for 20 min (while the router does), the plug cuts
+  power to the Pi for 15 s – at most once in 2 h.
+- **Other device** (repeater, switch, camera …): power cycle when it stops responding.
+
+Stage 2 is done **by the plug itself**: Heimnetz installs a small script (“heimnetz-waechter”) on the chosen Shelly plug
+(generation 2 or newer, e.g. Plus Plug S) and stores the rules there. So the restart also works when Home Assistant
+hangs or the WLAN is gone with the router. Brake: at most once per interval (default 60 min), a 6 h pause after 3
+interventions without success – then it is usually the provider. Every intervention is written to the journal and – like
+alerts – sent through the target from ⚙ → 🔔 Alerts, with the event `heimnetz_warnung` (`art`: `waechter`). Deleting
+removes the script from the plug; other scripts and settings of the plug stay untouched.
+
+**Caution:** cutting the power is a hard emergency brake for the Pi and some routers (storage, firmware update). Hence the
+long waiting times; switch a watchdog off while you work on its device.
+
 ### Requirements
 
 #### Must – Heimnetz does not run without
@@ -440,6 +498,7 @@ notification.
 | **[Scribe](https://github.com/jonathan-gtd/scribe)** (HACS) with **TimescaleDB**, or another long-term store (e.g. InfluxDB) | keep entity values for years | the recorder keeps history only as long as configured (default 10 days); measurements and journal in Heimnetz are kept anyway |
 | **Web interface password** of an upstream modem, under ⚙ → 🌐 Access (only when the internet comes through an own modem in front of the box) | radio values from the modem in the Internet tab and in the mobile entities | most modems give no signal values without login; finding “Password missing” |
 | Integration **Huawei LTE**, **NETGEAR LTE** or **Teltonika** (built into Home Assistant) for that modem | Heimnetz reads its entities instead of querying the device itself | Heimnetz queries Huawei itself (with password); NETGEAR and Teltonika detection only |
+| **Shelly plug** of generation 2 or newer (e.g. Plus Plug S) for each device a watchdog should restart; a fixed address in the FRITZ!Box is recommended | stage 2 of the watchdog (power cycle), even when Home Assistant hangs | soft restart only (FRITZ!Box, modem); no watchdog for Home Assistant |
 
 ### Installation
 
@@ -467,9 +526,10 @@ Assistant, reload the page in the browser if it still shows the old one.
 
 ### Removal
 
-1. Settings → Devices & services → Heimnetz → ⋮ → **Delete**.
-2. HACS → Heimnetz → ⋮ → **Remove**, restart Home Assistant.
-3. To remove the data as well: delete `<config>/heimnetz/` (measurements, journal, tickets). Tickets in Home
+1. In the **Watchdog** tab delete every watchdog – otherwise its script stays on the plugs and keeps working.
+2. Settings → Devices & services → Heimnetz → ⋮ → **Delete**.
+3. HACS → Heimnetz → ⋮ → **Remove**, restart Home Assistant.
+4. To remove the data as well: delete `<config>/heimnetz/` (measurements, journal, tickets). Tickets in Home
    Assistant's storage are deliberately kept when the setup is deleted.
 
 ### Migrating from "Netzwerk"
@@ -506,6 +566,9 @@ Heimnetz works locally. Only this leaves your network:
 | GitHub | prefilled issue – opened by the **browser**, submitted with your own account | only when you report "publicly on GitHub" yourself |
 | notify service of Home Assistant (companion app → push service of Google or Apple) | text of the alert: device name, IP, connection, duration | only if a target is chosen under ⚙ → 🔔 Alerts (default: none) |
 | Upstream device in your own home network (private addresses only) | search: home page at a few addresses (stored one, box suggestion, 192.168.0.1, 192.168.1.1, 192.168.8.1, 192.168.18.1, 192.168.100.1) until a device is recognised; then read-only queries and the login with the stored password (at most one attempt; rejected: no further attempt) | only with internet via an upstream device: every 10 minutes, at setup, on “↻ Search again” and under ⚙ → Diagnostics “Query” |
+| Shelly plugs in your own home network (private addresses only) | search: `GET /shelly` at the plugs from the Shelly integration and the box's device list (name starts with “shelly”); watchdog: create, change, delete the script “heimnetz-waechter” and its rules (KVS), read state and power, blink briefly on request; with the stored password of the plugs | only with a watchdog set up: read every 2 minutes; install on saving |
+| FRITZ!Box or upstream device | watchdog stage 1: restart (TR-064 `Reboot`, goform `REBOOT_DEVICE`, HiLink `device/control`, TP-Link `reboot`) – never a setting | only with an “Internet” watchdog, at most once per device and outage |
+| From the **plug**: check pages of Google (`connectivitycheck.gstatic.com`), Mozilla (`detectportal.firefox.com`) and Microsoft (`www.msftconnecttest.com`), plus the devices of the chain in the home network | only fetching the check page (no data about the home network) | “Internet” watchdog: every minute (adjustable 30–120 s) |
 
 **Upstream device** (beta): if the internet comes through an own modem in front of the FRITZ!Box, the box does not
 know the mobile network. Heimnetz then looks for the device at the addresses above (no scanning of the home network),
@@ -547,7 +610,8 @@ and contains no MAC or IP addresses.
 G5TC (ubus)”. You can also choose “Fibre via an own modem” (ONT). If you set an upstream modem, you can enter its address (private
 addresses only) and the password of its web interface. **The password is stored in Home Assistant** (in the options of
 the Heimnetz entry, like other integrations), never returned to the page (it only shows "stored"), never logged and
-redacted in the diagnostics; "Remove password" deletes it.
+redacted in the diagnostics; "Remove password" deletes it. The same applies to the **password of the Shelly plugs** for
+the watchdog (only needed if one is set there).
 
 **Never** sent: the Home Assistant location, passwords, hardware (MAC) and IP addresses and device names – except
 in the text of an alert if you chose a target for it (see above). Box credentials

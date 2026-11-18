@@ -353,3 +353,14 @@ def modem_daten(
         baender_nsa=_liste(netinfo.get("nr5g_nsa_band_lock")),
         baender_lte=_liste(netinfo.get("lte_band")),
     )
+
+
+def goform_erfolg(antwort: dict[str, Any] | None) -> bool:
+    """Antwort eines goform-set-Befehls: {"result": "success"} (manche Firmware: "0")."""
+    return antwort is not None and str(antwort.get("result")) in ("success", "0")
+
+
+def goform_ad(wa_inner_version: str, cr_version: str, rd: str) -> str:
+    """AD-Feld für goform-set-Befehle neuerer Firmware (MC801A, MC888 …): md5(md5(Version) + RD)."""
+    erst = hashlib.md5((wa_inner_version + cr_version).encode()).hexdigest()  # noqa: S324 – Vorgabe des Geräts
+    return hashlib.md5((erst + rd).encode()).hexdigest()  # noqa: S324

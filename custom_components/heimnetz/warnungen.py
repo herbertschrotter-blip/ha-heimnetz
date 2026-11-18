@@ -262,6 +262,18 @@ class Warndienst:
             return grund
         return None
 
+    async def waechter_melden(self, text: Callable[[str], str], geraet: str) -> None:
+        """Wächter (18.11.2026): Eingriff melden – Ereignis immer, Nachricht an das Ziel der Warnungen (wenn eines
+        gewählt ist). `text(sprache)` liefert den Text in der Sprache der Warnungen."""
+        e = self.lz.einstellungen.warnungen
+        tz = dt_util.get_default_time_zone()
+        m = wn.Meldung(
+            "waechter", dt_util.utcnow().timestamp(), name=geraet, nachricht=text(e.sprache)
+        )
+        self.hass.bus.async_fire(EREIGNIS, m.ereignis(e.sprache, tz))
+        if e.ziel != wn.KEINE:
+            await self._zustellen([m], e)
+
     async def testen(self) -> list[str]:
         """„Testnachricht senden“ (Sprache der Seite): Ereignis immer, Nachricht an das Ziel. Zurück: erreichte
         Dienste; ein Fehler → RuntimeError mit dem Grund."""

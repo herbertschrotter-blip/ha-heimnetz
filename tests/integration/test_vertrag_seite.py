@@ -16,10 +16,13 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry, async_
 from custom_components.heimnetz.box import BoxInfo
 from custom_components.heimnetz.logik import leitung as ln
 from custom_components.heimnetz.logik import vorgeschaltet as ve
+from custom_components.heimnetz.logik import waechter as wa
 from custom_components.heimnetz.logik import zugang as zg
+from custom_components.heimnetz.logik.ereignis import WARNUNG, Ereignis
 from custom_components.heimnetz.logik.messung import Messung
 from custom_components.heimnetz.logik.verlauf import geraete_id
 from custom_components.heimnetz.logik.vorgeschaltet import zte as vz
+from custom_components.heimnetz.speicher import Journalzeile
 from tests.integration.conftest import box_daten
 
 VORLAGE = Path(__file__).parents[1] / "seite" / "daten.json"
@@ -37,6 +40,7 @@ BEFEHLE = {
     "zugang": {},
     "arten": {},  # WU-0010
     "warnungen": {},  # WU-0010
+    "waechter": {},  # Wächter (18.11.2026)
 }
 # WU-0009: Reiter „Internet“ je Zugangsart – DSL, Glasfaser und Kabel mit erfundenen Werten in der Form der FRITZ!-Doku
 ANDERE_ZUGAENGE = {
@@ -158,6 +162,40 @@ async def test_antworten_haben_die_form_der_vorlage(
     eigen = await lz.einstellungen.async_eigene_neu("🏗️", "Baustelle")
     await lz.einstellungen.async_art_setzen(geraete_id("00:11:22:33:44:02", lz.salz), eigen)
     await lz.einstellungen.async_warnung_geraet(geraete_id("00:11:22:33:44:01", lz.salz), "immer")
+    # Wächter: einer für das Internet mit Steckdose (Adressen erfunden), Zustand wie von der Steckdose gelesen
+    w = wa.pruefen(
+        {
+            "id": "w1",
+            "art": "internet",
+            "glieder": [
+                {
+                    "typ": "fritzbox",
+                    "name": "FRITZ!Box 6860 5G",
+                    "adresse": "192.168.178.1",
+                    "dose": "192.168.178.41",
+                }
+            ],
+        }
+    )
+    await lz.einstellungen.async_waechter_setzen([w])
+    lz.waechter._gelesen = time.time()  # im Test keine Steckdose fragen
+    lz.waechter.staende[("w1", 0)] = wa.dosenstand(
+        {"wv": wa.SKRIPT_VERSION, "zustand": "bereit", "eingriffe": 1, "letzte": []}, 9.5
+    )
+    lz.waechter.sanft["w1"] = wa.Sanft(weg_seit=time.time() - 120)
+    await hass.async_add_executor_job(
+        db.journal_schreiben,
+        [
+            Journalzeile(
+                time.time() - 3600,
+                Ereignis(
+                    "waechter",
+                    WARNUNG,
+                    "FRITZ!Box 6860 5G: Strom 30 s aus und wieder ein",
+                ),
+            )
+        ],
+    )
     client = await hass_ws_client(hass)
     await client.send_json_auto_id({"type": "heimnetz/messplan/setzen", "an": True, "takt_h": 4})
     assert (await client.receive_json())["success"]

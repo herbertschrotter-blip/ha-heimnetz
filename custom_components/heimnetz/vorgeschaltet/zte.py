@@ -1,6 +1,7 @@
 """Bausteine ZTE goform und ZTE ubus über das Netz (dünn; Anfragen bauen und Antworten lesen: `logik.vorgeschaltet.zte`).
 
-Nur lesen: goform `goform_get_cmd_process`; `goform_set_cmd_process` ausschließlich mit `goformId=LOGIN`/`LOGOUT`.
+Nur lesen: goform `goform_get_cmd_process`; `goform_set_cmd_process` ausschließlich mit `goformId=LOGIN`/`LOGOUT` –
+und für den Wächter (18.11.2026) `REBOOT_DEVICE` in `goform_neustarten`, nie eine Einstellung.
 ubus nur mit den Methoden aus `UBUS_ERLAUBT` (Anmelden, Abmelden, Lesen). Höchstens ein Anmeldeversuch je Abruf,
 nur mit dem Kennwort des Besitzers; abgelehnt → Befund, der Aufrufer versucht es nicht wieder.
 """
@@ -32,7 +33,8 @@ DIAGNOSE_FELDER = (
 VOLUMEN_FELDER = (
     "monthly_rx_bytes,monthly_tx_bytes,monthly_time,realtime_rx_bytes,realtime_tx_bytes"
 )
-_LOGIN, _LOGOUT = "LOGIN", "LOGOUT"  # goform_set_cmd_process nur hiermit
+_LOGIN, _LOGOUT = "LOGIN", "LOGOUT"  # goform_set_cmd_process nur hiermit (Lesen)
+_NEUSTART = "REBOOT_DEVICE"  # Wächter: nur goform_neustarten
 
 _N_OHNE = merke("Werte ohne Anmeldung")
 _N_ANMELDUNG = merke("Anmeldung")
@@ -152,6 +154,43 @@ async def _goform_abmelden(lauf: Lauf) -> None:
         )
     except aiohttp.ClientError, TimeoutError:
         pass  # Abmelden ist eine Höflichkeit; die Sitzung läuft am Gerät ohnehin ab
+
+
+async def goform_neustarten(lauf: Lauf, kennwort: str | None) -> bool:
+    """Wächter (Stufe 1): einmal anmelden, REBOOT_DEVICE schicken. Neuere Firmware will dazu ein AD-Feld (aus Version
+    und RD); wird es ohne abgelehnt, ein zweiter Versuch mit AD. Zurück: hat das Gerät angenommen?"""
+    if not kennwort:
+        return False
+    await lauf.startseite()
+    if await _goform_anmelden(lauf, kennwort) != "ok":
+        return False
+    referer = f"{lauf.basis}/index.html"
+    daten = {"isTest": "false", "goformId": _NEUSTART}
+    try:
+        _, antwort = await lauf.lesen(
+            "/goform/goform_set_cmd_process", methode="POST", daten=daten, referer=referer
+        )
+        if lz.goform_erfolg(lz.json_objekt(antwort)):
+            return True
+        _, text = await lauf.lesen(
+            "/goform/goform_get_cmd_process?isTest=false&multi_data=1&cmd=wa_inner_version,cr_version,RD",
+            referer=referer,
+        )
+        werte = lz.json_objekt(text) or {}
+        ad = lz.goform_ad(
+            str(werte.get("wa_inner_version", "")),
+            str(werte.get("cr_version", "")),
+            str(werte.get("RD", "")),
+        )
+        _, antwort = await lauf.lesen(
+            "/goform/goform_set_cmd_process",
+            methode="POST",
+            daten={**daten, "AD": ad},
+            referer=referer,
+        )
+        return lz.goform_erfolg(lz.json_objekt(antwort))
+    except aiohttp.ClientError, TimeoutError:
+        return False  # die Verbindung bricht beim Neustart oft gleich ab – Erfolg zeigt erst die Prüfung danach
 
 
 async def _goform_volumen(lauf: Lauf) -> None:

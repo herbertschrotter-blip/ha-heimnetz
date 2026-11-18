@@ -60,7 +60,7 @@ test('alle Reiter rendern ohne Fehler und ohne „undefined“', async () => {
     assert.ok(!t.includes('Daten nicht abrufbar'), name);
   }
   const typen = new Set(hass.aufrufe.map((a) => a.type));
-  for (const b of ['uebersicht', 'speedtest', 'einstellungen', 'geraete', 'internet', 'verbrauch', 'protokoll']) {
+  for (const b of ['uebersicht', 'speedtest', 'einstellungen', 'geraete', 'internet', 'verbrauch', 'protokoll', 'waechter']) {
     assert.ok(typen.has(`heimnetz/${b}`), b);
   }
 });
@@ -1191,7 +1191,7 @@ test('WU-0009: Kopf zeigt Box und Zugang; Internet über Mobilfunk mit Herkunfts
   const hass = machHass();
   const el = await seite(hass);
   assert.match(el.shadowRoot.querySelector('.glas-kopf').textContent, new RegExp(DATEN.uebersicht.zugang.kopf));
-  assert.deepEqual(REITER.map(([k]) => k), ['uebersicht', 'speedtest', 'geraete', 'internet', 'verbrauch', 'protokoll']);
+  assert.deepEqual(REITER.map(([k]) => k), ['uebersicht', 'speedtest', 'geraete', 'internet', 'verbrauch', 'protokoll', 'waechter']);
   await reiter(el, 'Internet');
   const zeile = el.shadowRoot.querySelector('.iq');
   assert.match(zeile.textContent, /Internet über Mobilfunk/);
@@ -1641,4 +1641,74 @@ test('Diagnose-Log: Schalter, Häufung, Filter, löschen mit Rückfrage, Datei',
   await el.updateComplete;
   assert.equal(hass.aufrufe.find((a) => a.type === 'heimnetz/diagnoselog/setzen').an, false);
   assert.ok(!inhalt().querySelector('.dl-e'), 'aus und leer: nur der Schalter');
+});
+
+
+// ── Wächter (Mockup 1.8 / 3.8) ──
+
+test('Wächter: Karte mit Kette, Steckdose, Leistung, Regeln und Eingriffen', async () => {
+  const el = await seite(machHass());
+  await reiter(el, 'Wächter');
+  const t = text(el);
+  assert.match(t, /Internet/);
+  assert.match(t, /FRITZ!Box 6860 5G/);
+  assert.match(t, /192\.168\.178\.41 · 9,5 W/);
+  assert.match(t, /sanft: TR-064/);
+  assert.match(t, /sanft nach 5 min · Strom 30 s aus nach 12 min · höchstens alle 60 min/);
+  assert.match(t, /Strom 30 s aus und wieder ein/);
+  assert.ok(!/undefined|NaN/.test(t), t);
+});
+
+test('Wächter: ohne Admin keine Knöpfe', async () => {
+  const el = await seite(machHass({ admin: false }));
+  await reiter(el, 'Wächter');
+  assert.ok(!text(el).includes('Wächter einrichten'));
+  assert.ok(!text(el).includes('Bearbeiten'));
+});
+
+test('Wächter einrichten: drei Schritte, Gen 1 gesperrt, Einspielen schickt Kette, Steckdose und Regeln', async () => {
+  const hass = machHass();
+  const el = await seite(hass);
+  await reiter(el, 'Wächter');
+  const knopf = (re) => [...el.shadowRoot.querySelectorAll('button')].find((b) => re.test(b.textContent));
+  knopf(/Wächter einrichten/).click();
+  await warten(10); await el.updateComplete;
+  assert.ok(hass.aufrufe.some((a) => a.type === 'heimnetz/waechter/vorschlag'));
+  assert.match(blatt(el).textContent, /Kette des Internets/);
+  assert.match(blatt(el).textContent, /FRITZ!Box 6860 5G/);
+  assert.match(blatt(el).textContent, /Welche Geräte gehen wie\?/);
+  knopf(/^Weiter$/).click(); await el.updateComplete;
+  const wahl = blatt(el).querySelector('.wa-dose select');
+  const alt = [...wahl.options].find((o) => o.value === '192.168.178.44');
+  assert.ok(alt.disabled, 'Gen 1 nicht wählbar');
+  wahl.value = '192.168.178.41';
+  wahl.dispatchEvent(new Event('change'));
+  await el.updateComplete;
+  assert.match(blatt(el).textContent, /misst jetzt 9,5 W/);
+  blatt(el).querySelector('.wa-dose .knopf').click();
+  await warten(5);
+  assert.ok(hass.aufrufe.some((a) => a.type === 'heimnetz/waechter/blinken' && a.adresse === '192.168.178.41'));
+  knopf(/^Weiter$/).click(); await el.updateComplete;
+  assert.match(blatt(el).textContent, /sanft neu starten nach/);
+  knopf(/Einspielen und starten/).click();
+  await warten(10); await el.updateComplete;
+  const s = hass.aufrufe.find((a) => a.type === 'heimnetz/waechter/speichern');
+  assert.equal(s.waechter.art, 'internet');
+  assert.deepEqual(s.waechter.glieder.map((g) => [g.typ, g.adresse, g.dose]), [['fritzbox', '192.168.178.1', '192.168.178.41']]);
+  assert.equal(s.waechter.regeln.stufe2_min, 12);
+  assert.ok(!('kennwort' in s), 'ohne eingetipptes Kennwort keins schicken');
+  assert.equal(el._blatt, null);
+});
+
+test('Wächter einrichten: Home Assistant ohne Steckdose zeigt den Fehler im Fenster', async () => {
+  const hass = machHass();
+  const el = await seite(hass);
+  await el.waechterEinrichten();
+  el.waechterArt('ha');
+  el.waechterSetze({ schritt: 3 });
+  await el.updateComplete;
+  await el.waechterSpeichern();
+  await el.updateComplete;
+  assert.equal(el._blatt.form.glieder[0].adresse, '192.168.178.60:8123');
+  assert.match(blatt(el).textContent, /Ohne Steckdose kann dieser Wächter nichts tun/);
 });

@@ -20,6 +20,17 @@ globalThis.getComputedStyle = (el) => fenster.getComputedStyle(el);  // Farben d
 export const DATEN = JSON.parse(readFileSync(join(hier, 'daten.json'), 'utf8'));
 export const QUELLE = join(hier, '../../custom_components/heimnetz/frontend/src');
 
+export const WAECHTER_VORSCHLAG = {
+  kette: [{ typ: 'fritzbox', name: 'FRITZ!Box 6860 5G', adresse: '192.168.178.1', dose: null, sanft: true }],
+  ha: { typ: 'ha', name: 'Home Assistant', adresse: '192.168.178.60:8123', dose: null },
+  router: '192.168.178.1',
+  dosen: [
+    { adresse: '192.168.178.41', name: 'shelly-router', kennung: 'shellyplusplugs-a1', modell: 'PlusPlugS', gen: 2, passt: true, kennwort: false, leistung: 9.5, belegt: null },
+    { adresse: '192.168.178.44', name: 'shelly-alt', kennung: 'shellyplug-s-77', modell: 'SHPLG-S', gen: 1, passt: false, kennwort: false, leistung: null, belegt: null },
+  ],
+  vorgabe: { internet: { pruef_s: 60, stufe1_min: 5, stufe2_min: 12, aus_s: 30, abstand_min: 60 }, ha: { pruef_s: 120, stufe1_min: 5, stufe2_min: 20, aus_s: 15, abstand_min: 120 }, geraet: { pruef_s: 60, stufe1_min: 5, stufe2_min: 10, aus_s: 15, abstand_min: 60 } },
+};
+
 /** hass mit callWS aus der Vorlage; `aufrufe` sammelt jede Nachricht. `sprache` = Sprache des Nutzers in HA. */
 export function machHass({ admin = true, dunkel = true, sprache = 'de' } = {}) {
   const aufrufe = [];
@@ -91,6 +102,10 @@ export function machHass({ admin = true, dunkel = true, sprache = 'de' } = {}) {
         warnungen = { ...warnungen, ausnahmen: msg.wert === 'gruppe' ? warnungen.ausnahmen.filter((x) => x.id !== msg.geraet) : warnungen.ausnahmen };
         return { ...DATEN.geraet, warnen: { ...DATEN.geraet.warnen, wert: msg.wert } };
       }
+      // Wächter: Vorschlag mit Kette, HA und zwei Steckdosen (eine zu alt); Speichern antwortet wie die Integration
+      if (befehl === 'waechter/vorschlag') return WAECHTER_VORSCHLAG;
+      if (befehl === 'waechter/speichern') { if (!msg.waechter.glieder.some((g) => g.dose)) throw new Error('Ohne Steckdose kann dieser Wächter nichts tun'); return { ok: true, id: 'w2' }; }
+      if (befehl === 'waechter/aendern' || befehl === 'waechter/blinken') return { ok: true };
       if (befehl === 'warnungen/test') return { dienste: warnungen.ziel === 'keine' ? [] : warnungen.ziel === 'alle' ? ['mobile_app_handy'] : [warnungen.ziel] };
       if (!(befehl in DATEN)) throw new Error(`unbekannt: ${msg.type}`);
       return DATEN[befehl];

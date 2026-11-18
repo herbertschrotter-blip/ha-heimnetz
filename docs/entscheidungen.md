@@ -13,8 +13,9 @@ nachgetragen.
   `netzdiagnose/fritz_diag.py`, `dashboards/netzwerk.yaml`, `www/netzwerk-cards.js`), damit er danach vollständig
   abgelöst werden kann. Funktionen werden dabei überarbeitet, wo nötig.
 - Ausdrücklich nicht: eigene Speedtest-Messung (das macht die Ookla-Integration, siehe unten); Geräte steuern oder
-  Einstellungen der FRITZ!Box ändern – die Integration liest nur. Ausnahmen: Ookla-Messungen auslösen (Messplan) und – seit
-  WU-0010 – Warnungen über notify-Dienste von Home Assistant schicken (siehe „Warnungen und eigene Arten“).
+  Einstellungen der FRITZ!Box ändern – die Integration liest nur. Ausnahmen: Ookla-Messungen auslösen (Messplan), – seit
+  WU-0010 – Warnungen über notify-Dienste von Home Assistant schicken (siehe „Warnungen und eigene Arten“) und – seit
+  0.33.0 – der Wächter: hängende Geräte neu starten (siehe „Wächter“). Einstellungen ändert Heimnetz weiterhin nie.
 
 ## Ablösung des Altbestands (Herbert, 12.10.2026)
 
@@ -542,6 +543,39 @@ nachgetragen.
   der Zeit, ab der es fehlte); kürzere Aussetzer zählt nur der Gesamtstand. Nimmt die Box ein inaktives Gerät aus der
   Liste, steht nichts im Log; kommt ein seit dem Start gesehenes zurück, ist es „wieder da“, nicht „neu“. Häufungen
   entstehen damit nur noch aus echten Ausfällen.
+
+## Wächter (Herbert, 18.11.2026)
+
+- Auftrag: Shellys mit Skripten belegen, die ein hängendes Gerät einmal aus- und wieder einschalten (Pi nicht
+  erreichbar, Router hängt / kein Internet), als eigener Reiter „Wächter“ in Heimnetz, mit Wahl von Router (AVM, ZTE …)
+  und Steckdose. Mockup 1.8/3.8 abgenommen mit „mach das mal“ (18.11.2026).
+- **Ausnahme von „liest nur“:** Heimnetz darf (1) die FRITZ!Box über TR-064 `DeviceConfig1 Reboot` und ein
+  vorgeschaltetes Gerät über seine Weboberfläche neu starten (ZTE goform `REBOOT_DEVICE`, Huawei HiLink
+  `device/control`, TP-Link `reboot`; jeweils mit dem Kennwort des Besitzers, ein Anmeldeversuch) und (2) auf den
+  gewählten Shelly-Steckdosen sein eigenes Skript „heimnetz-waechter“ mit zwei KVS-Schlüsseln anlegen, ändern und
+  löschen sowie `Shelly.Identify` (blinken) auslösen. Sonst nichts – keine Einstellung eines Geräts, keine anderen
+  Skripte, kein Schalten der Steckdose durch Heimnetz selbst. Nur, wenn ein Admin einen Wächter einrichtet; ab Werk
+  keiner.
+- **Ein Wächter „Internet“ für die ganze Kette** (nicht je Router und Modem): er findet das Gerät, das hängt – Box
+  antwortet nicht → Box; Box antwortet, Modem nicht oder ohne Netz → Modem; beide antworten, kein Internet → erst Modem,
+  dann Box; nie zwei zugleich. Daneben Wächter „Home Assistant“ und „anderes Gerät“ (nur Strom).
+- **Strom aus/ein macht die Steckdose selbst** (Skript auf der Shelly, Gen 2+): nur so klappt es, wenn Home Assistant
+  hängt oder mit dem Router das WLAN weg ist. Immer `Switch.Set` mit `toggle_after` (schaltet von selbst wieder ein).
+  Regeln im KVS der Steckdose, Code für alle gleich (`shelly/waechter.js`, Version `WV`); Befehle aus Heimnetz (Ruhe,
+  Pause beenden) ebenfalls über KVS, also geschützt wie die Steckdose. Der Zustand ist unter `/script/<id>/status`
+  lesbar (nur Codes, keine Texte).
+- **Sanft zuerst** (Stufe 1, Heimnetz, ab Werk nach 5 min), Strom danach (Stufe 2, Steckdose, ab Werk 12 min); bei Home
+  Assistant 20 min und höchstens einmal in 2 h. Bremse je Gerät (ab Werk 60 min), nach 3 Eingriffen ohne Erfolg 6 h
+  Pause. Home Assistant und andere Geräte nur, wenn der Router antwortet (sonst ist das WLAN schuld).
+- Prüfadressen im Internet sind die Prüfseiten von Google, Mozilla und Microsoft (HTTP): `1.1.1.1`/`9.9.9.9` auf Port 80
+  antworten an Herberts Anschluss nicht.
+- Das Skript ist reines ASCII und mJS-tauglich (kein `const`, keine Pfeile, keine Vorlagen-Strings, kein `let` in
+  Blöcken), hochgeladen in Stücken an Zeilengrenzen – sonst lehnt die Shelly (Firmware 1.7.5) es ab; geprüft an einer
+  Plus Plug S.
+- Eingriffe ins Journal (Art `waechter`) und über das Ziel der Warnungen mit Ereignis `heimnetz_warnung`
+  (`art: waechter`). Kennwort der Steckdosen nur in den Optionen des Eintrags. Gespeichert im Einstellungsspeicher
+  (Schlüssel `waechter`, ohne neue Version). Beim Entfernen der Integration bleiben Skripte auf den Steckdosen – deshalb
+  im README: erst die Wächter löschen.
 
 ## Offene Entscheidungen
 

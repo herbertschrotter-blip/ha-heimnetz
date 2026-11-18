@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## [0.33.0]
+
+- Neuer Reiter **Wächter**: startet ein hängendes Gerät neu. Der Wächter „Internet“ kennt die Kette aus ⚙ › Zugang
+  (Modem → FRITZ!Box) und startet nur das Gerät, das hängt, neu – zuerst sanft über seine Schnittstelle (FRITZ!Box über
+  TR-064; ZTE, Huawei, TP-Link über die Weboberfläche, Beta), dann schaltet eine **Shelly-Steckdose** den Strom kurz aus
+  und von selbst wieder ein. Dazu Wächter für **Home Assistant** selbst und für **andere Geräte** (nur Strom aus/ein).
+  Den Strom-Neustart macht ein Skript auf der Steckdose, das Heimnetz einspielt – er klappt auch, wenn Home Assistant
+  hängt oder das WLAN weg ist. Bremse und Pause gegen Dauer-Neustarts, Eingriffe im Journal und als Warnung (Ereignis
+  `heimnetz_warnung` mit `art: waechter`). Einrichten in drei Schritten (Gerät, Steckdose mit Leistung und
+  „💡 blinken“, Regeln); nur Admins.
+
 ## [0.32.0]
 
 - GitHub #4: Ein Gerät, das binnen 24 h zum dritten Mal **offline** geht, warnt ein letztes Mal mit dem Hinweis darauf

@@ -3353,6 +3353,22 @@ var GLAS = `
 .glas-nav button.on { color: var(--ink); font-weight: 700; background: rgba(255,255,255,.16); }
 .hell .glas-nav button.on { background: rgba(255,255,255,.7); }
 .glas-nav.sechs button { font-size: 12px; padding-left: 1px; padding-right: 1px; }
+.glas-nav.sieben button { font-size: 11px; padding-left: 0; padding-right: 0; letter-spacing: -.1px; }
+/* Wächter (18.11.2026) */
+.wa-glied, .wa-dose { align-items: flex-start; }
+.wa-links { display: flex; gap: 10px; align-items: flex-start; min-width: 0; }
+.wa-links .punkt { margin-top: 5px; }
+.wa-links small, .wa-rechts small, .wa-dose small { display: block; }
+.wa-rechts { text-align: right; font-size: 12px; }
+.wa-pfeil { text-align: center; font-size: 11px; line-height: 1; }
+.wa-regel { font-size: 12px; margin: 4px 0 2px; }
+.wa-marke { font-size: 11px; white-space: nowrap; display: inline-flex; gap: 4px; align-items: center; }
+.wa-marke .vs-st { width: 16px; height: 16px; font-size: 10px; }
+.wa-wahl { display: flex; gap: 6px; align-items: center; }
+.wa-wahl select { max-width: 220px; }
+.wa-zahl { display: flex; gap: 6px; align-items: center; }
+.wa-zahl input { width: 64px; }
+.wa-knoepfe { margin-top: 12px; display: flex; gap: 8px; justify-content: space-between; }
 .block { padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
 .block-kopf { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .block-kopf h3 { margin: 0; font-size: 16px; font-weight: 600; }
@@ -3392,6 +3408,8 @@ var GLAS = `
 @container (min-width: 700px) {
   .seite { padding: 84px 28px 40px; }
   .glas-nav { top: 16px; bottom: auto; left: 50%; right: auto; transform: translateX(-50%); width: 620px; }
+  .glas-nav.sieben { width: 700px; }
+  .glas-nav.sieben button { font-size: 13px; }
   .glas-raster { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
   .sheet { left: 50%; right: auto; width: 520px; bottom: auto; top: 50%; transform: translate(-50%, -40%) scale(.96); opacity: 0; pointer-events: none;
     transition: transform .25s cubic-bezier(.2,.8,.2,1), opacity .2s; }
@@ -4357,7 +4375,96 @@ var EN = {
   "Alle Einträge des Logs löschen?": "Delete all log entries?",
   "💾 Datei speichern (geschwärzt)": "💾 Save file (redacted)",
   "🗑 Log löschen": "🗑 Delete log",
-  "Gerätenamen sieht nur, wer hier angemeldet ist. In der Datei heißen sie „Gerät 1“, „Gerät 2“ …, ohne MAC- und IP-Adressen. Das Log bleibt lokal, Heimnetz schickt es nirgendwohin.": "Device names are visible only to those logged in here. In the file they are called “Device 1”, “Device 2” …, without MAC or IP addresses. The log stays local; Heimnetz sends it nowhere."
+  "Gerätenamen sieht nur, wer hier angemeldet ist. In der Datei heißen sie „Gerät 1“, „Gerät 2“ …, ohne MAC- und IP-Adressen. Das Log bleibt lokal, Heimnetz schickt es nirgendwohin.": "Device names are visible only to those logged in here. In the file they are called “Device 1”, “Device 2” …, without MAC or IP addresses. The log stays local; Heimnetz sends it nowhere.",
+  // Wächter (18.11.2026)
+  "Wächter": "Watchdog",
+  "Wächter eingespielt": "Watchdog installed",
+  "Wächter: {fehler}": "Watchdog: {fehler}",
+  "Steckdose {adresse} blinkt": "Plug {adresse} is blinking",
+  "die Geräte, über die das Internet kommt – neu gestartet wird nur das, das hängt": "the devices the internet comes through – only the one that hangs is restarted",
+  "Home Assistant (dieser Pi)": "Home Assistant (this Pi)",
+  "nur Strom aus/ein – prüft die Steckdose selbst": "power cycle only – the plug checks by itself",
+  "Anderes Gerät im Heimnetz": "Other device in the home network",
+  "Repeater, Switch, Kamera … – Strom aus/ein, wenn es nicht mehr antwortet": "repeater, switch, camera … – power cycle when it stops responding",
+  "sanft (TR-064) + Strom": "soft (TR-064) + power",
+  "sanft (Weboberfläche, Beta) + Strom": "soft (web interface, beta) + power",
+  "andere": "others",
+  "nur Strom aus/ein": "power cycle only",
+  "Skript veraltet – neu einspielen": "script outdated – install again",
+  "keine Steckdose": "no plug",
+  "sanft: {weg}": "soft: {weg}",
+  "sanft nach {a} min · Strom {s} s aus nach {b} min · höchstens alle {c} min": "soft after {a} min · power off {s} s after {b} min · at most every {c} min",
+  "Strom {s} s aus nach {b} min · höchstens alle {c} min": "power off {s} s after {b} min · at most every {c} min",
+  "Kein Internet seit {zeit}": "No internet since {zeit}",
+  "{n} Eingriffe": "{n} interventions",
+  "Eingriff abbrechen": "Cancel intervention",
+  "Pause beenden": "End pause",
+  "Bearbeiten": "Edit",
+  "Was ist ein Wächter?": "What is a watchdog?",
+  "Ein Wächter schaut laufend, ob das Internet noch geht oder Home Assistant noch antwortet. Hängt etwas, findet er das Gerät, das schuld ist, und startet es neu: zuerst sanft über seine Schnittstelle (FRITZ!Box, ZTE, Huawei, TP-Link), dann mit einer Shelly-Steckdose Strom aus und wieder ein.": "A watchdog keeps checking whether the internet still works or Home Assistant still responds. If something hangs, it finds the device at fault and restarts it: first softly through its interface (FRITZ!Box, ZTE, Huawei, TP-Link), then with a Shelly plug, power off and back on.",
+  "Gebraucht wird je Gerät eine Shelly-Steckdose der Generation 2 oder neuer (z. B. Plus Plug S, Plug S Gen3). Sie bekommt ein kleines Skript und arbeitet damit selbstständig weiter, auch wenn Home Assistant hängt.": "Each device needs a Shelly plug of generation 2 or newer (e.g. Plus Plug S, Plug S Gen3). It gets a small script and keeps working on its own, even when Home Assistant hangs.",
+  "Wächter einrichten": "Set up watchdog",
+  "Eingriffe": "Interventions",
+  "Noch kein Eingriff.": "No intervention yet.",
+  "Der Wächter sucht zuerst, welches Gerät hängt, und startet nur dieses neu – erst sanft, dann Strom aus und von selbst wieder ein, nie zwei zugleich. Bremse: höchstens einmal je Abstand, nach mehreren Eingriffen ohne Erfolg eine Pause (dann liegt es meist am Anbieter). Strom aus/ein macht die Steckdose selbst, auch wenn Home Assistant hängt.": "The watchdog first finds which device hangs and restarts only that one – softly first, then power off and back on by itself, never two at once. Brake: at most once per interval, a pause after several interventions without success (then it is usually the provider). The plug does the power cycle itself, even when Home Assistant hangs.",
+  "1 Gerät": "1 Device",
+  "2 Steckdose": "2 Plug",
+  "3 Regeln": "3 Rules",
+  "Überwachen": "Watch",
+  "Kette des Internets": "Internet chain",
+  "aus ⚙ → Zugang": "from ⚙ → Access",
+  "sanft möglich": "soft possible",
+  "Keine Kette gefunden – erst ⚙ → Zugang prüfen.": "No chain found – check ⚙ → Access first.",
+  "Stimmt die Kette nicht, ist sie in ⚙ → Zugang zu ändern. Ohne vorgeschaltetes Modem (DSL, Glasfaser, Kabel in der FRITZ!Box) besteht sie nur aus der Box.": "If the chain is wrong, change it in ⚙ → Access. Without an upstream modem (DSL, fibre, cable in the FRITZ!Box) it consists of the box only.",
+  "Welche Geräte gehen wie?": "Which devices work how?",
+  "Sanft heißt: Neustart über die Schnittstelle des Geräts, mit dem dort hinterlegten Kennwort (FRITZ!Box aus FRITZ!Box Tools, Modem aus ⚙ → Zugang). Die Einstellungen des Geräts ändert Heimnetz nie. Geht das nicht, bleibt der Strom-Neustart über die Steckdose.": "Soft means: restart through the device's interface with the password stored there (FRITZ!Box from FRITZ!Box Tools, modem from ⚙ → Access). Heimnetz never changes the device's settings. If that does not work, the power cycle through the plug remains.",
+  "Adresse nicht gefunden": "Address not found",
+  "Name": "Name",
+  "Adresse im Heimnetz": "Address in the home network",
+  "sucht Steckdosen …": "looking for plugs …",
+  "Je Gerät eine Steckdose": "One plug per device",
+  "{n} Shellys gefunden": "{n} Shellys found",
+  "misst jetzt {w} W": "now measures {w} W",
+  "keine Steckdose – nur sanfter Neustart": "no plug – soft restart only",
+  "Gen 1, zu alt": "Gen 1, too old",
+  "schon belegt": "already in use",
+  "LED der Steckdose kurz blinken lassen – der Strom bleibt an": "Let the plug's LED blink briefly – power stays on",
+  "Die gemessene Leistung hilft beim Zuordnen (ein Router braucht meist 6–15 W, ein Pi 3–8 W). 💡 lässt die LED der Steckdose kurz blinken – der Strom bleibt an.": "The measured power helps to match them (a router usually needs 6–15 W, a Pi 3–8 W). 💡 lets the plug's LED blink briefly – power stays on.",
+  "Zugang zu den Steckdosen": "Access to the plugs",
+  "Kennwort der Steckdosen": "Password of the plugs",
+  "hinterlegt – leer lassen, um es zu behalten": "stored – leave empty to keep it",
+  "nur wenn dort eines gesetzt ist": "only if one is set there",
+  "Jede Steckdose bekommt ein kleines Skript von Heimnetz. Es läuft auf der Steckdose und prüft selbst – so wird ein Gerät auch wieder eingeschaltet, wenn mit dem Router das WLAN weg ist. In einer Kette warten die Steckdosen aufeinander. Andere Skripte und Einstellungen der Steckdose bleiben unberührt. Kennwort und feste Adresse (in der FRITZ!Box) sind empfohlen.": "Each plug gets a small script from Heimnetz. It runs on the plug and checks by itself – so a device is switched back on even when the WLAN is gone with the router. In a chain the plugs wait for each other. Other scripts and settings of the plug stay untouched. A password and a fixed address (in the FRITZ!Box) are recommended.",
+  "Prüfen": "Check",
+  "drei Prüfseiten im Internet und die Geräte der Kette": "three check pages on the internet and the devices of the chain",
+  "ob das Gerät antwortet (und der Router, sonst ist das WLAN schuld)": "whether the device responds (and the router, otherwise the WLAN is at fault)",
+  "Eingreifen": "Intervene",
+  "nur beim Gerät, das hängt": "only at the device that hangs",
+  "1 · sanft neu starten nach": "1 · soft restart after",
+  "über die Schnittstelle des Geräts · nur wenn Home Assistant läuft": "through the device's interface · only while Home Assistant runs",
+  "2 · Strom aus/ein nach": "2 · power cycle after",
+  "macht die Steckdose selbst": "done by the plug itself",
+  "Strom aus für": "Power off for",
+  "danach schaltet die Steckdose von selbst wieder ein": "then the plug switches back on by itself",
+  "Bremse": "Brake",
+  "höchstens alle": "at most every",
+  "je Gerät · kein Dauer-Neustart": "per device · no endless restarts",
+  "Pause nach Fehlschlägen": "Pause after failures",
+  "Eingriffe ohne Erfolg in Folge": "interventions without success in a row",
+  "Pause dauert": "Pause lasts",
+  "z. B. bei einer Störung beim Anbieter": "e.g. during an outage at the provider",
+  "Bei Eingriff melden": "Notify on intervention",
+  "über das Ziel aus ⚙ → Warnungen": "via the target from ⚙ → Warnings",
+  "ja": "yes",
+  "nein": "no",
+  "Auf die Steckdosen spielen": "Install on the plugs",
+  "Heimnetz legt das Skript „heimnetz-waechter“ auf den gewählten Steckdosen an und startet es. Auf den Steckdosen wird sonst nichts geändert; Löschen nimmt es wieder herunter.": "Heimnetz creates the script “heimnetz-waechter” on the chosen plugs and starts it. Nothing else is changed on the plugs; deleting removes it again.",
+  "Wächter bearbeiten": "Edit watchdog",
+  "Was soll überwacht und bei Ausfall neu gestartet werden?": "What should be watched and restarted on failure?",
+  "Wirklich löschen?": "Really delete?",
+  "Weiter": "Next",
+  "spielt ein …": "installing …",
+  "Einspielen und starten": "Install and start"
 };
 
 // src/format.js
@@ -6723,8 +6830,152 @@ function protokoll(p4, d3) {
   </div>`;
 }
 
+// src/ansichten/waechter.js
+var ARTEN3 = [
+  ["internet", merke("Internet"), merke("die Geräte, über die das Internet kommt – neu gestartet wird nur das, das hängt")],
+  ["ha", merke("Home Assistant (dieser Pi)"), merke("nur Strom aus/ein – prüft die Steckdose selbst")],
+  ["geraet", merke("Anderes Gerät im Heimnetz"), merke("Repeater, Switch, Kamera … – Strom aus/ein, wenn es nicht mehr antwortet")]
+];
+var SANFT_TABELLE = [
+  ["AVM FRITZ!Box", merke("sanft (TR-064) + Strom"), true],
+  ["ZTE (goform: MC801A, MC888, MF289 …)", merke("sanft (Weboberfläche, Beta) + Strom"), true],
+  ["Huawei (HiLink: B535, B818, 5G CPE …)", merke("sanft (Weboberfläche, Beta) + Strom"), true],
+  ["TP-Link (Archer MR/NX)", merke("sanft (Weboberfläche, Beta) + Strom"), true],
+  [merke("andere"), merke("nur Strom aus/ein"), false]
+];
+var PUNKT3 = { ok: "", amber: "amber", rot: "rot", grau: "grau" };
+var marke = (text, ok) => b2`<span class="leise wa-marke"><span class="vs-st ${ok ? "ok" : "aus"}">${ok ? "✓" : "–"}</span>${text}</span>`;
+function glied(g2) {
+  return b2`<div class="zeile wa-glied">
+    <span class="wa-links"><span class="punkt ${PUNKT3[g2.punkt] ?? "grau"}"></span>
+      <span>${g2.symbol} ${g2.name}<small class="leise">${g2.adresse} · ${g2.zustand}${g2.veraltet ? ` · ${t3("Skript veraltet – neu einspielen")}` : ""}</small></span></span>
+    <span class="leise wa-rechts">${g2.dose ? b2`🔌 ${g2.dose}${g2.leistung != null ? ` · ${zahl(g2.leistung, 1)} W` : ""}` : t3("keine Steckdose")}
+      <small>${g2.sanft ? t3("sanft: {weg}", { weg: g2.sanft }) : t3("nur Strom aus/ein")}</small></span>
+  </div>`;
+}
+function karte2(p4, w2) {
+  const admin = p4.istAdmin;
+  const r5 = w2.regeln;
+  const regel = w2.art === "internet" ? t3("sanft nach {a} min · Strom {s} s aus nach {b} min · höchstens alle {c} min", { a: r5.stufe1_min, b: r5.stufe2_min, s: r5.aus_s, c: r5.abstand_min }) : t3("Strom {s} s aus nach {b} min · höchstens alle {c} min", { b: r5.stufe2_min, s: r5.aus_s, c: r5.abstand_min });
+  const pause = w2.glieder.some((g2) => g2.punkt === "rot" && g2.dose);
+  return b2`<div class="glas-panel block wa-karte">
+    <div class="block-kopf"><h3>${w2.symbol} ${w2.name}</h3>
+      <span class="leise"><span class="punkt ${PUNKT3[w2.punkt] ?? "grau"}" style="margin:0 6px 0 0"></span>${w2.an ? t3("an") : t3("aus")}</span></div>
+    <div class="leise wa-regel">${regel}</div>
+    ${w2.glieder.map((g2, i6) => b2`${i6 ? b2`<div class="leise wa-pfeil">↓</div>` : A}${glied(g2)}`)}
+    ${w2.weg_seit ? b2`<div class="vs-kopf" style="margin-top:8px"><b>${t3("Kein Internet seit {zeit}", { zeit: zeit(w2.weg_seit) })}</b></div>` : A}
+    ${admin ? b2`<div class="leiste" style="margin-top:8px">
+      <span class="leise">${t3("{n} Eingriffe", { n: w2.eingriffe })}</span><span style="flex:1"></span>
+      ${seg([["an", t3("an")], ["aus", t3("aus")]], w2.an ? "an" : "aus", (v2) => p4.waechterAendern(w2.id, v2))}
+      ${w2.weg_seit || w2.punkt === "amber" ? b2`<button class="knopf amber" @click=${() => p4.waechterAendern(w2.id, "ruhe")}>${t3("Eingriff abbrechen")}</button>` : A}
+      ${pause ? b2`<button class="knopf" @click=${() => p4.waechterAendern(w2.id, "weiter")}>${t3("Pause beenden")}</button>` : A}
+      <button class="knopf" @click=${() => p4.waechterEinrichten(w2.roh)}>${t3("Bearbeiten")}</button>
+    </div>` : A}
+  </div>`;
+}
+function waechter(p4, d3) {
+  const liste = d3.waechter || [];
+  const admin = p4.istAdmin;
+  return b2`
+    ${liste.length ? b2`<div class="raster2">${liste.map((w2) => karte2(p4, w2))}</div>` : b2`<div class="glas-panel block">
+      <div class="block-kopf"><h3>${t3("Was ist ein Wächter?")}</h3></div>
+      <p class="hinweis">${t3("Ein Wächter schaut laufend, ob das Internet noch geht oder Home Assistant noch antwortet. Hängt etwas, findet er das Gerät, das schuld ist, und startet es neu: zuerst sanft über seine Schnittstelle (FRITZ!Box, ZTE, Huawei, TP-Link), dann mit einer Shelly-Steckdose Strom aus und wieder ein.")}</p>
+      <p class="hinweis">${t3("Gebraucht wird je Gerät eine Shelly-Steckdose der Generation 2 oder neuer (z. B. Plus Plug S, Plug S Gen3). Sie bekommt ein kleines Skript und arbeitet damit selbstständig weiter, auch wenn Home Assistant hängt.")}</p>
+    </div>`}
+    ${admin ? b2`<div class="leiste"><button class="knopf haupt" @click=${() => p4.waechterEinrichten()}>＋ ${t3("Wächter einrichten")}</button></div>` : A}
+    <div class="glas-panel block">
+      <div class="block-kopf"><h3>${t3("Eingriffe")}</h3><span class="leise">${t3("letzte 30 Tage")}</span></div>
+      ${(d3.eingriffe || []).length ? d3.eingriffe.map((e6) => b2`<div class="ereig"><span class="punkt amber"></span><time>${zeit(e6.t)}</time><span>${e6.text}</span></div>`) : b2`<div class="leer">${t3("Noch kein Eingriff.")}</div>`}
+    </div>
+    <p class="hinweis" style="padding:0 4px">${t3("Der Wächter sucht zuerst, welches Gerät hängt, und startet nur dieses neu – erst sanft, dann Strom aus und von selbst wieder ein, nie zwei zugleich. Bremse: höchstens einmal je Abstand, nach mehreren Eingriffen ohne Erfolg eine Pause (dann liegt es meist am Anbieter). Strom aus/ein macht die Steckdose selbst, auch wenn Home Assistant hängt.")}</p>`;
+}
+function schritte(p4, b3) {
+  return b2`<div class="seg e-reiter">${[merke("1 Gerät"), merke("2 Steckdose"), merke("3 Regeln")].map((name, i6) => b2`<button class=${b3.schritt === i6 + 1 ? "on" : ""} @click=${() => i6 + 1 < b3.schritt && p4.waechterSetze({ schritt: i6 + 1, fehler: "" })}>${i6 + 1 < b3.schritt ? "✓ " : ""}${t3(name)}</button>`)}</div>`;
+}
+function schritt1(p4, b3) {
+  const f3 = b3.form, v2 = b3.vorschlag;
+  return b2`
+    <div class="vs-stufe"><span>${t3("Überwachen")}</span><span></span></div>
+    ${ARTEN3.map(([k2, name, text]) => b2`<button class="zg" @click=${() => p4.waechterArt(k2)}><span class="zg-r ${f3.art === k2 ? "on" : ""}"></span><span>${t3(name)}<small>${t3(text)}</small></span></button>`)}
+    ${f3.art === "internet" ? b2`
+      <div class="vs-stufe"><span>${t3("Kette des Internets")}</span><span class="leise">${t3("aus ⚙ → Zugang")}</span></div>
+      ${f3.glieder.length ? f3.glieder.map((g2, i6) => b2`${i6 ? b2`<div class="leise wa-pfeil">↓</div>` : A}<div class="zeile"><span>${g2.typ === "fritzbox" ? "🛜" : "📡"} ${g2.name}<small class="leise">${g2.adresse}</small></span>${marke(g2.sanft ? t3("sanft möglich") : t3("nur Strom aus/ein"), g2.sanft)}</div>`) : b2`<div class="leer">${t3("Keine Kette gefunden – erst ⚙ → Zugang prüfen.")}</div>`}
+      <p class="hinweis">${t3("Stimmt die Kette nicht, ist sie in ⚙ → Zugang zu ändern. Ohne vorgeschaltetes Modem (DSL, Glasfaser, Kabel in der FRITZ!Box) besteht sie nur aus der Box.")}</p>
+      <div class="glas-panel block" style="margin-top:10px;padding:10px 12px">
+        <div class="block-kopf"><h3 style="font-size:14px">${t3("Welche Geräte gehen wie?")}</h3></div>
+        ${SANFT_TABELLE.map(([name, text, ok]) => b2`<div class="zeile"><span>${t3(name)}</span>${marke(t3(text), ok)}</div>`)}
+        <p class="hinweis">${t3("Sanft heißt: Neustart über die Schnittstelle des Geräts, mit dem dort hinterlegten Kennwort (FRITZ!Box aus FRITZ!Box Tools, Modem aus ⚙ → Zugang). Die Einstellungen des Geräts ändert Heimnetz nie. Geht das nicht, bleibt der Strom-Neustart über die Steckdose.")}</p>
+      </div>` : A}
+    ${f3.art === "ha" ? b2`<div class="zeile"><span>🏠 Home Assistant<small class="leise">${f3.glieder[0]?.adresse || t3("Adresse nicht gefunden")}</small></span>${marke(t3("nur Strom aus/ein"), false)}</div>` : A}
+    ${f3.art === "geraet" ? b2`
+      <label class="feld"><span>${t3("Name")}</span><input .value=${f3.glieder[0]?.name || ""} @input=${(e6) => p4.waechterGlied(0, { name: e6.target.value })}></label>
+      <label class="feld"><span>${t3("Adresse im Heimnetz")}</span><input .value=${f3.glieder[0]?.adresse || ""} placeholder="192.168.178.20" @input=${(e6) => p4.waechterGlied(0, { adresse: e6.target.value.trim() })}></label>` : A}
+    ${v2 ? A : b2`<div class="leer">${t3("sucht Steckdosen …")}</div>`}`;
+}
+function schritt2(p4, b3) {
+  const f3 = b3.form, dosen = b3.vorschlag && b3.vorschlag.dosen || [];
+  const eigene = new Set(f3.glieder.map((g2) => g2.dose).filter(Boolean));
+  return b2`
+    <div class="vs-stufe"><span>${t3("Je Gerät eine Steckdose")}</span><span class="leise">${t3("{n} Shellys gefunden", { n: dosen.length })}</span></div>
+    ${f3.glieder.map((g2, i6) => {
+    const d3 = dosen.find((x2) => x2.adresse === g2.dose);
+    return b2`<div class="zeile wa-dose"><span>${g2.typ === "fritzbox" ? "🛜" : g2.typ === "ha" ? "🏠" : "📡"} ${g2.name || g2.adresse}
+          <small class="leise">${d3 ? d3.leistung != null ? t3("misst jetzt {w} W", { w: zahl(d3.leistung, 1) }) : d3.modell : t3("keine Steckdose – nur sanfter Neustart")}</small></span>
+        <span class="wa-wahl"><select @change=${(e6) => p4.waechterGlied(i6, { dose: e6.target.value || null })}>
+          <option value="" ?selected=${!g2.dose}>${t3("keine")}</option>
+          ${dosen.map((x2) => b2`<option value=${x2.adresse} ?selected=${x2.adresse === g2.dose}
+            ?disabled=${!x2.passt || x2.belegt && x2.belegt !== f3.id || eigene.has(x2.adresse) && x2.adresse !== g2.dose}>${x2.name} · ${x2.adresse}${x2.passt ? x2.leistung != null ? ` (${zahl(x2.leistung, 1)} W)` : "" : ` – ${t3("Gen 1, zu alt")}`}${x2.belegt && x2.belegt !== f3.id ? ` – ${t3("schon belegt")}` : ""}</option>`)}
+        </select>${g2.dose ? b2`<button class="knopf" title=${t3("LED der Steckdose kurz blinken lassen – der Strom bleibt an")} @click=${() => p4.waechterBlinken(g2.dose)}>💡</button>` : A}</span>
+      </div>`;
+  })}
+    <p class="hinweis">${t3("Die gemessene Leistung hilft beim Zuordnen (ein Router braucht meist 6–15 W, ein Pi 3–8 W). 💡 lässt die LED der Steckdose kurz blinken – der Strom bleibt an.")}</p>
+    <div class="vs-stufe" style="margin-top:10px"><span>${t3("Zugang zu den Steckdosen")}</span><span></span></div>
+    <label class="feld"><span>${t3("Kennwort der Steckdosen")} <span class="leise">· ${b3.kennwort_da ? t3("hinterlegt – leer lassen, um es zu behalten") : t3("nur wenn dort eines gesetzt ist")}</span></span>
+      <input type="password" autocomplete="off" .value=${b3.kennwort || ""} @input=${(e6) => p4.waechterSetze({ kennwort: e6.target.value })}></label>
+    <p class="hinweis">${t3("Jede Steckdose bekommt ein kleines Skript von Heimnetz. Es läuft auf der Steckdose und prüft selbst – so wird ein Gerät auch wieder eingeschaltet, wenn mit dem Router das WLAN weg ist. In einer Kette warten die Steckdosen aufeinander. Andere Skripte und Einstellungen der Steckdose bleiben unberührt. Kennwort und feste Adresse (in der FRITZ!Box) sind empfohlen.")}</p>`;
+}
+function zahlFeld(p4, f3, k2, name, einheit, klein) {
+  return b2`<div class="zeile"><span>${t3(name)}<small class="leise">${t3(klein)}</small></span>
+    <span class="wa-zahl"><input type="number" .value=${String(f3.regeln[k2] ?? "")} @change=${(e6) => p4.waechterRegel(k2, Number(e6.target.value))}><span class="leise">${einheit}</span></span></div>`;
+}
+function schritt3(p4, b3) {
+  const f3 = b3.form;
+  return b2`
+    <div class="vs-stufe"><span>${t3("Prüfen")}</span><span></span></div>
+    <div class="zeile"><span>${t3("alle")}<small class="leise">${f3.art === "internet" ? t3("drei Prüfseiten im Internet und die Geräte der Kette") : t3("ob das Gerät antwortet (und der Router, sonst ist das WLAN schuld)")}</small></span>
+      ${seg([[30, "30 s"], [60, "60 s"], [120, "120 s"]], f3.regeln.pruef_s, (v2) => p4.waechterRegel("pruef_s", v2))}</div>
+    <div class="vs-stufe"><span>${t3("Eingreifen")}</span><span class="leise">${f3.art === "internet" ? t3("nur beim Gerät, das hängt") : ""}</span></div>
+    ${f3.art === "internet" ? zahlFeld(p4, f3, "stufe1_min", merke("1 · sanft neu starten nach"), "min", merke("über die Schnittstelle des Geräts · nur wenn Home Assistant läuft")) : A}
+    ${zahlFeld(p4, f3, "stufe2_min", merke("2 · Strom aus/ein nach"), "min", merke("macht die Steckdose selbst"))}
+    ${zahlFeld(p4, f3, "aus_s", merke("Strom aus für"), "s", merke("danach schaltet die Steckdose von selbst wieder ein"))}
+    <div class="vs-stufe"><span>${t3("Bremse")}</span><span></span></div>
+    ${zahlFeld(p4, f3, "abstand_min", merke("höchstens alle"), "min", merke("je Gerät · kein Dauer-Neustart"))}
+    ${zahlFeld(p4, f3, "pause_nach", merke("Pause nach Fehlschlägen"), "×", merke("Eingriffe ohne Erfolg in Folge"))}
+    ${zahlFeld(p4, f3, "pause_h", merke("Pause dauert"), "h", merke("z. B. bei einer Störung beim Anbieter"))}
+    <div class="zeile"><span>🔔 ${t3("Bei Eingriff melden")}<small class="leise">${t3("über das Ziel aus ⚙ → Warnungen")}</small></span>
+      ${seg([[true, t3("ja")], [false, t3("nein")]], f3.regeln.melden !== false, (v2) => p4.waechterRegel("melden", v2))}</div>
+    <div class="vs-kopf" style="margin-top:10px"><b>${t3("Auf die Steckdosen spielen")}</b><br><span class="leise">${t3("Heimnetz legt das Skript „heimnetz-waechter“ auf den gewählten Steckdosen an und startet es. Auf den Steckdosen wird sonst nichts geändert; Löschen nimmt es wieder herunter.")}</span></div>`;
+}
+function waechterBlatt(p4) {
+  const b3 = p4._blatt;
+  const neu = !b3.form.id;
+  const weiterOk = b3.schritt === 1 ? b3.form.glieder.length > 0 && b3.form.glieder.every((g2) => g2.adresse) : b3.schritt === 2 ? b3.form.glieder.some((g2) => g2.dose) || b3.form.art === "internet" && b3.form.glieder.some((g2) => g2.sanft) : true;
+  return b2`<button class="zu" @click=${() => p4.zu()}>✕</button>
+    <h3>${neu ? t3("Wächter einrichten") : t3("Wächter bearbeiten")}</h3>
+    <div class="leise">${b3.schritt === 1 ? t3("Was soll überwacht und bei Ausfall neu gestartet werden?") : b3.form.glieder.map((g2) => g2.name || g2.adresse).join(" → ")}</div>
+    ${schritte(p4, b3)}
+    <div class="ek"><div class="ek-inhalt">
+      ${b3.schritt === 1 ? schritt1(p4, b3) : b3.schritt === 2 ? schritt2(p4, b3) : schritt3(p4, b3)}
+      ${b3.fehler ? b2`<div class="fehler-band glas-panel" style="margin-top:8px">${b3.fehler}</div>` : A}
+      <div class="dg-knoepfe wa-knoepfe">
+        ${b3.schritt > 1 ? b2`<button class="knopf leise-k" @click=${() => p4.waechterSetze({ schritt: b3.schritt - 1, fehler: "" })}>‹ ${t3("Zurück")}</button>` : neu ? b2`<button class="knopf leise-k" @click=${() => p4.zu()}>${t3("Abbrechen")}</button>` : b2`<button class="knopf leise-k" @click=${() => p4.waechterLoeschen()}>${b3.frage ? t3("Wirklich löschen?") : t3("Löschen")}</button>`}
+        ${b3.schritt < 3 ? b2`<button class="knopf haupt" ?disabled=${!weiterOk} @click=${() => p4.waechterSetze({ schritt: b3.schritt + 1, fehler: "" })}>${t3("Weiter")}</button>` : b2`<button class="knopf haupt" ?disabled=${b3.laeuft} @click=${() => p4.waechterSpeichern()}>${b3.laeuft ? t3("spielt ein …") : t3("Einspielen und starten")}</button>`}
+      </div>
+    </div></div>`;
+}
+
 // src/heimnetz-panel.js
-var VERSION = true ? "0.32.0" : "entwicklung";
+var VERSION = true ? "0.33.0" : "entwicklung";
 var REITER = [
   ["uebersicht", merke("Übersicht")],
   ["speedtest", merke("Speedtest")],
@@ -6732,9 +6983,11 @@ var REITER = [
   ["internet", merke("Internet")],
   // WU-0009: vorher „Funk“; WLAN steht jetzt unter Geräte
   ["verbrauch", merke("Verbrauch")],
-  ["protokoll", merke("Protokoll")]
+  ["protokoll", merke("Protokoll")],
+  ["waechter", merke("Wächter")]
+  // 18.11.2026: Neustart hängender Geräte über Shelly-Steckdosen
 ];
-var ANSICHT = { uebersicht, speedtest, geraete: geraeteReiter, internet, verbrauch, protokoll };
+var ANSICHT = { uebersicht, speedtest, geraete: geraeteReiter, internet, verbrauch, protokoll, waechter };
 var NEU_LADEN_MS = 6e4;
 var KACHEL_WARTEN_MS = 150;
 var ENTWURF = "heimnetz-melden-entwurf";
@@ -6748,7 +7001,7 @@ var TITEL = {
   kritisch: merke("Störung"),
   box_fehlt: merke("FRITZ!Box nicht erreichbar")
 };
-var PUNKT3 = { ok: "", warnung: "amber", kritisch: "rot", box_fehlt: "grau" };
+var PUNKT4 = { ok: "", warnung: "amber", kritisch: "rot", box_fehlt: "grau" };
 var standZeit = (s4) => zeit(s4).replace(new RegExp(`^${t3("Heute {uhr}", { uhr: "" })}`), "");
 var HeimnetzPanel = class extends i4 {
   static properties = {
@@ -7020,6 +7273,87 @@ var HeimnetzPanel = class extends i4 {
   }
   zu() {
     this._blatt = null;
+  }
+  // ── Wächter (18.11.2026) ──
+  /** Fenster „Wächter einrichten“ öffnen; `roh` = gespeicherter Wächter zum Bearbeiten. Kette, Home Assistant und die
+   *  Steckdosen kommen von der Integration (die Suche fragt jede Steckdose einmal und dauert ein paar Sekunden). */
+  async waechterEinrichten(roh) {
+    const form = roh ? JSON.parse(JSON.stringify(roh)) : { art: "internet", glieder: [], regeln: {} };
+    const blatt = { art: "waechter", schritt: 1, form, vorschlag: null, kennwort: "", kennwort_da: !!this._daten.waechter?.kennwort, fehler: "" };
+    this._blatt = blatt;
+    try {
+      const vorschlag = await this.ws("waechter/vorschlag");
+      if (this._blatt !== blatt) return;
+      const neu = { ...blatt, vorschlag };
+      if (!roh) neu.form = this._waechterForm("internet", vorschlag);
+      this._blatt = neu;
+    } catch (err) {
+      if (this._blatt === blatt) this._blatt = { ...blatt, fehler: err && err.message || String(err) };
+    }
+  }
+  /** Neues Formular für eine Art: Geräte aus dem Vorschlag, Regeln aus den Vorgaben der Integration. */
+  _waechterForm(art2, v2) {
+    const glieder = art2 === "internet" ? (v2?.kette || []).map((g2) => ({ ...g2, dose: null })) : art2 === "ha" ? v2?.ha ? [{ ...v2.ha, dose: null }] : [{ typ: "ha", name: "Home Assistant", adresse: "", dose: null }] : [{ typ: "geraet", name: "", adresse: "", dose: null }];
+    return { art: art2, glieder, regeln: { ...v2?.vorgabe?.[art2] || {}, pause_nach: 3, pause_h: 6, melden: true } };
+  }
+  waechterSetze(werte) {
+    if (this._blatt?.art === "waechter") this._blatt = { ...this._blatt, ...werte };
+  }
+  waechterArt(art2) {
+    const b3 = this._blatt;
+    if (b3?.art !== "waechter" || b3.form.art === art2) return;
+    this._blatt = { ...b3, form: { ...this._waechterForm(art2, b3.vorschlag), ...b3.form.id ? { id: b3.form.id } : {} } };
+  }
+  waechterGlied(i6, werte) {
+    const b3 = this._blatt;
+    if (b3?.art !== "waechter") return;
+    const glieder = b3.form.glieder.map((g2, n4) => n4 === i6 ? { ...g2, ...werte } : g2);
+    this._blatt = { ...b3, form: { ...b3.form, glieder } };
+  }
+  waechterRegel(k2, v2) {
+    const b3 = this._blatt;
+    if (b3?.art === "waechter") this._blatt = { ...b3, form: { ...b3.form, regeln: { ...b3.form.regeln, [k2]: v2 } } };
+  }
+  async waechterSpeichern() {
+    const b3 = this._blatt;
+    if (b3?.art !== "waechter" || !this.istAdmin) return;
+    const laufend = { ...b3, laeuft: true, fehler: "" };
+    this._blatt = laufend;
+    try {
+      await this.ws("waechter/speichern", { waechter: b3.form, ...b3.kennwort ? { kennwort: b3.kennwort } : {} });
+    } catch (err) {
+      if (this._blatt === laufend) this._blatt = { ...laufend, laeuft: false, fehler: err && err.message || String(err) };
+      return;
+    }
+    if (this._blatt === laufend) this._blatt = null;
+    this.toast(t3("Wächter eingespielt"));
+    this.laden();
+  }
+  async waechterLoeschen() {
+    const b3 = this._blatt;
+    if (b3?.art !== "waechter" || !b3.form.id) return;
+    if (!b3.frage) {
+      this._blatt = { ...b3, frage: true };
+      return;
+    }
+    await this.waechterAendern(b3.form.id, "loeschen");
+    if (this._blatt?.art === "waechter") this._blatt = null;
+  }
+  async waechterAendern(id, was) {
+    try {
+      await this.ws("waechter/aendern", { waechter: id, was });
+      this.laden();
+    } catch (err) {
+      this.toast(t3("Wächter: {fehler}", { fehler: err && err.message || err }));
+    }
+  }
+  async waechterBlinken(adresse) {
+    try {
+      await this.ws("waechter/blinken", { adresse });
+      this.toast(t3("Steckdose {adresse} blinkt", { adresse }));
+    } catch (err) {
+      this.toast(t3("Wächter: {fehler}", { fehler: err && err.message || err }));
+    }
   }
   /** Art eines Geräts selbst wählen oder wieder automatisch (AN-0001, nur Admins). */
   async geraetArt(kennung, art2) {
@@ -7589,7 +7923,7 @@ var HeimnetzPanel = class extends i4 {
         <div>
           <div class="glas-klein">Heimnetz · ${t3("Stand {zeit}", { zeit: standZeit(u3.stand) })}</div>
           <div class="kopf-titel" style="margin-top:6px">
-            <span class="punkt ${PUNKT3[u3.gesamt] ?? "grau"}"></span>
+            <span class="punkt ${PUNKT4[u3.gesamt] ?? "grau"}"></span>
             <span class="glas-kw" style="font-size:30px">${TITEL[u3.gesamt] ? t3(TITEL[u3.gesamt]) : u3.gesamt}</span>
           </div>
           <div class="leise" style="margin-top:6px">${unter}</div>
@@ -7604,7 +7938,7 @@ var HeimnetzPanel = class extends i4 {
   _blattInhalt() {
     const b3 = this._blatt;
     if (!b3) return A;
-    const art2 = { einstellungen: einstellungenBlatt, melden: meldenBlatt, github: githubBlatt, meldungen: meldungenBlatt, bild: bildBlatt, messung: messungBlatt }[b3.art];
+    const art2 = { einstellungen: einstellungenBlatt, melden: meldenBlatt, github: githubBlatt, meldungen: meldungenBlatt, bild: bildBlatt, messung: messungBlatt, waechter: waechterBlatt }[b3.art];
     return art2 ? art2(this) : geraetBlatt(this, b3);
   }
   render() {
@@ -7619,7 +7953,7 @@ var HeimnetzPanel = class extends i4 {
             <i class="k1"></i><i class="k2"></i><i class="k3"></i>
           </div>
           ${this.narrow ? b2`<button class="menue-knopf glas-panel" title=${t3("Menü")} @click=${() => this.dispatchEvent(new Event("hass-toggle-menu", { bubbles: true, composed: true }))}>☰</button>` : A}
-          <nav class="glas-nav glas-panel sechs">
+          <nav class="glas-nav glas-panel sieben">
             ${REITER.map(([k2, name]) => b2`<button class=${k2 === this._reiter ? "on" : ""} @click=${() => this.geh(k2)}>${t3(name)}</button>`)}
           </nav>
           <div class="scroll" @scroll=${() => this.kachelWeg(true)}><div class="seite ${this._laedt ? "laden" : ""}">
@@ -7629,7 +7963,7 @@ var HeimnetzPanel = class extends i4 {
             <div class="leise" style="text-align:center;padding:8px">Heimnetz ${VERSION}</div>
           </div></div>
           <div class="schleier ${this._blatt ? "an" : ""}" @click=${() => this.zu()}></div>
-          <div class="sheet glas-panel ${this._blatt ? "an" : ""} ${this._blatt?.art === "einstellungen" ? "breit" : ""}">${this._blatt && !["melden", "github"].includes(this._blatt.art) ? meldenKnopf(this, true) : A}${this._blattInhalt()}</div>
+          <div class="sheet glas-panel ${this._blatt ? "an" : ""} ${["einstellungen", "waechter"].includes(this._blatt?.art) ? "breit" : ""}">${this._blatt && !["melden", "github"].includes(this._blatt.art) ? meldenKnopf(this, true) : A}${this._blattInhalt()}</div>
           ${this._blatt ? A : meldenKnopf(this)}
           <div class="toast glas-panel ${this._toast ? "an" : ""}" role="status">${this._toast}</div>
           ${this._kachel && this._reiter === "speedtest" ? kachelPopup(this) : A}

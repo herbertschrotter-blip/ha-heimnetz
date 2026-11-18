@@ -7,7 +7,7 @@ WU-0006: Eine neue Installation (nichts gespeichert, nichts übernommen) startet
 
 WU-0010: eigene Arten (`eigene_arten`) und Warnungen (`warnungen`) liegen als weitere Schlüssel im selben Speicher –
 ohne neue Version, damit der Rückweg (`ausliefern.py --zurueck`) weiter lädt (die ältere Fassung kennt die Schlüssel
-nicht und lässt Zuordnungen zu eigenen Arten beim Laden fallen)."""
+nicht und lässt Zuordnungen zu eigenen Arten beim Laden fallen). Ebenso die Wächter (`waechter`, 18.11.2026)."""
 
 from __future__ import annotations
 
@@ -26,6 +26,7 @@ from .const import DOMAIN
 from .logik import arten as ar
 from .logik import einstellungen as es
 from .logik import messplan as mp
+from .logik import waechter as wa
 from .logik import warnungen as wn
 
 LOGGER = logging.getLogger(__package__)
@@ -57,6 +58,7 @@ class Einstellungsdienst:
         self.eigene: dict[str, ar.EigeneArt] = {}  # WU-0010: Kennung „eigen:n“ → Symbol und Name
         self.warnungen = wn.Warneinstellungen()  # WU-0010
         self.letzte_serie: dict[str, Any] | None = None  # WU-0001: Ergebnis der letzten Serie
+        self.waechter: list[wa.Waechter] = []  # Wächter (18.11.2026)
         self._sperre = asyncio.Lock()
 
     async def async_laden(self) -> None:
@@ -67,6 +69,13 @@ class Einstellungsdienst:
                 self.plan = mp.NEU
             return
         self.letzte_serie = gespeichert.get("letzte_serie")
+        roh = gespeichert.get("waechter") or []
+        self.waechter = wa.alle_pruefen(roh)
+        if len(self.waechter) != len(roh):
+            LOGGER.warning(
+                "Heimnetz: %d gespeicherte Wächter ungültig, fallen weg",
+                len(roh) - len(self.waechter),
+            )
         self.eigene = ar.eigene_aus(gespeichert.get("eigene_arten"))
         self.arten = {
             str(k): str(v)
@@ -186,6 +195,13 @@ class Einstellungsdienst:
         await self._speichern(warnungen=neu)
         self.warnungen = neu
 
+    # ── Wächter ──
+    @_gesperrt
+    async def async_waechter_setzen(self, waechter: list[wa.Waechter]) -> None:
+        """Ganze Liste speichern (geprüft vom Aufrufer über logik.waechter)."""
+        await self._speichern(waechter=waechter)
+        self.waechter = waechter
+
     @_gesperrt
     async def async_serie_merken(self, ergebnis: dict[str, Any]) -> None:
         await self._speichern(letzte_serie=ergebnis)
@@ -199,6 +215,7 @@ class Einstellungsdienst:
         letzte_serie: dict[str, Any] | None = None,
         eigene: dict[str, ar.EigeneArt] | None = None,
         warnungen: wn.Warneinstellungen | None = None,
+        waechter: list[wa.Waechter] | None = None,
     ) -> None:
         """Alles zusammen speichern; im Speicher übernimmt der Aufrufer erst danach (Speicher == gespeichert)."""
         await self._store.async_save(
@@ -211,6 +228,9 @@ class Einstellungsdienst:
                     k: e.als_dict() for k, e in (self.eigene if eigene is None else eigene).items()
                 },
                 "warnungen": (warnungen or self.warnungen).als_dict(),
+                "waechter": [
+                    w.als_dict() for w in (self.waechter if waechter is None else waechter)
+                ],
             }
         )
 

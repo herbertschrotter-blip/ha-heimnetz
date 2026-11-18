@@ -157,6 +157,18 @@ class Box:
         self._geschlossen = True
         self.trennen()
 
+    def neustarten(self) -> bool:
+        """Wächter (Stufe 1, 18.11.2026): Neustart der Box über TR-064 (DeviceConfig1 Reboot) – die einzige Aktion, die
+        etwas an der Box auslöst; Einstellungen ändert Heimnetz nie. Blockierend, unter der Sperre des Abrufs."""
+        with self._sperre:
+            try:
+                self._aktion("DeviceConfig1", "Reboot")
+                return True
+            except (*FEHLER, AnmeldungAbgelehnt, NichtErreichbar):
+                return False
+            finally:
+                self.trennen()
+
     def _aktion(self, dienst: str, aktion: str, **args: Any) -> dict[str, Any]:
         try:
             return dict(self.verbinden().call_action(dienst, aktion, arguments=args or None))

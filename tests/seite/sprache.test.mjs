@@ -111,7 +111,7 @@ test('englische Seite: Reiter, Kopf und alle Ansichten ohne deutsche Texte der S
   const w = el.shadowRoot;
   assert.equal(w.querySelector('.wurzel').getAttribute('lang'), 'en');
   const namen = [...w.querySelectorAll('nav button')].map((b) => b.textContent.trim());
-  assert.deepEqual(namen, ['Overview', 'Speedtest', 'Devices', 'Internet', 'Usage', 'Log']);
+  assert.deepEqual(namen, ['Overview', 'Speedtest', 'Devices', 'Internet', 'Usage', 'Log', 'Watchdog']);
   const funde = [];
   for (const [k] of REITER) {
     await klick(el, [...w.querySelectorAll('nav button')][REITER.findIndex(([x]) => x === k)]);
