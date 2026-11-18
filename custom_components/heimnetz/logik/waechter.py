@@ -74,6 +74,7 @@ VORGABE = {
 }
 HOECHSTENS = 10  # Wächter
 HA_PORT = 8123
+BEOBACHTER_PORT = 4357  # Observer des Supervisors – läuft getrennt von Home Assistant
 
 
 @dataclass(frozen=True)
@@ -229,7 +230,7 @@ KVS_MAX = (
 )
 
 
-def kvs(w: Waechter, i: int, router: str | None) -> dict[str, Any]:
+def kvs(w: Waechter, i: int, router: str | None, beobachter: bool = False) -> dict[str, Any]:
     """Regeln für die Steckdose vor Glied `i` (KVS „heimnetz-waechter“), mit kurzen Schlüsseln – ein KVS-Wert darf
     nicht länger als KVS_MAX sein. Das Skript klappt sie aus (`ausklappen` in shelly/waechter.js); die Prüfseiten im
     Internet stehen dort fest (`i: 1`). Adressen ohne „http://“. `router`: Adresse der FRITZ!Box – daran erkennt die
@@ -259,6 +260,9 @@ def kvs(w: Waechter, i: int, router: str | None) -> dict[str, Any]:
         d["r"] = w.art
         if router:
             d["ne"] = router
+        if w.art == "ha" and beobachter:
+            # Beobachter des Supervisors (nur Home Assistant OS / Supervised): lebt der Pi selbst noch?
+            d["ho"] = f"{g.adresse.partition(':')[0]}:{BEOBACHTER_PORT}"
     return d
 
 
@@ -333,6 +337,8 @@ GRUND = {
     "modem_weg": merke("Modem antwortet nicht"),
     "inet_weg": merke("kein Internet"),
     "ha_weg": merke("Home Assistant antwortet nicht"),
+    "ha_weg_pi_lebt": merke("Home Assistant antwortet nicht, der Pi selbst schon"),
+    "pi_weg": merke("weder Home Assistant noch der Pi antworten"),
     "geraet_weg": merke("Gerät antwortet nicht"),
     "keine_regeln": merke("keine Regeln"),
     "regeln_kaputt": merke("Regeln nicht lesbar"),
@@ -397,7 +403,7 @@ def neue_eingriffe(
 def eingriff_text(e: dict[str, Any], g: Glied, w: Waechter, sprache: str = DE) -> str:
     was = str(e.get("was"))
     grund = GRUND.get(str(e.get("grund")), Wort(str(e.get("grund") or "")))
-    return t(
+    text = t(
         EREIGNIS[was],
         sprache,
         geraet=g.name or t(ART_TEXT[w.art], sprache),
@@ -405,6 +411,20 @@ def eingriff_text(e: dict[str, Any], g: Glied, w: Waechter, sprache: str = DE) -
         grund=grund,
         n=e.get("grund") or "",
     )
+    if was == "strom" and isinstance(b := e.get("b"), dict):
+        text += befund_text(b, sprache)
+    return text
+
+
+def befund_text(b: dict[str, Any], sprache: str = DE) -> str:
+    """Was die Steckdose vor dem Schalten sah: seit wann keine Antwort, Leistung des Geräts (viel = rechnet sich fest,
+    wenig = steht)."""
+    teile = []
+    if isinstance(b.get("ok"), int | float):
+        teile.append(t("letzte Antwort vor {n} min", sprache, n=int(b["ok"])))
+    if isinstance(b.get("w"), int | float):
+        teile.append(t("{w} W", sprache, w=str(b["w"]).replace(".", "," if sprache == DE else ".")))
+    return f" ({', '.join(teile)})" if teile else ""
 
 
 # ── Stufe 1: sanft neu starten (Heimnetz) ──

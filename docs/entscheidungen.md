@@ -577,6 +577,23 @@ nachgetragen.
   (Schlüssel `waechter`, ohne neue Version). Beim Entfernen der Integration bleiben Skripte auf den Steckdosen – deshalb
   im README: erst die Wächter löschen.
 
+## Ausfälle des Pi verstehen (Herbert, 18.11.2026)
+
+- Anlass: zwei Ausfälle (10.11. nachts, 16.11. nachmittags), beide ohne Herunterfahren; hinterher war nur zum Teil
+  klar, warum. Am 9.11. hatte der Kernel achtmal ein Programm mit über 10 GB beendet, die Auslagerung war voll – wer es
+  war, schrieb niemand mit. Herbert wählte alle drei Teile:
+- **Feiner fragen:** Der Wächter für Home Assistant fragt zusätzlich den Beobachter des Supervisors (Port 4357, läuft
+  getrennt von Home Assistant). Pi lebt, nur Home Assistant nicht → dreifache Wartezeit (der Supervisor startet Home
+  Assistant meist selbst); beide tot → einfache. Die Steckdose hält vor dem Schalten einen Befund fest (letzte Antwort,
+  mittlere Leistung der letzten Minuten aus ihrem Energiezähler).
+- **Speicher mitschreiben:** alle 5 Minuten je Programm über den Supervisor (nur lesend) und /proc/meminfo, eigene
+  Tabelle `speicherstand`, 8 Tage. Warnung bei weniger als 10 % frei oder mehr als 80 % Auslagerung belegt, höchstens
+  einmal je Stunde.
+- **Ausfallbericht:** Herzschlag jede Minute (meta `lebt`), Marke beim Beenden oder Entladen (meta `sauber`). Fehlt die
+  Marke beim Start, nach 3 Minuten der Bericht (Journal Art `waechter`, Warnung über das Ziel der Warnungen).
+- Grenzen: die Uhr des Pi hat keine Batterie (nach einem Stromausfall erst richtig, wenn das Netz da ist) und das
+  Systemprotokoll ist auf 500 MB begrenzt – beides stellt Home Assistant OS ein, nicht Heimnetz.
+
 ## Offene Entscheidungen
 
 - Keine.

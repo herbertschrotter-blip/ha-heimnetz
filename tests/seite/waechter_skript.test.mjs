@@ -15,7 +15,7 @@ const CODE = readFileSync(QUELLE, 'utf8');
 const ohne = (u) => (u ? u.replace('http://', '') : undefined);
 function kurz(c) {
   const k = { v: c.v, an: c.an === false ? 0 : 1, p: c.pruef_s, s2: c.stufe2_min, a: c.aus_s, ab: c.abstand_min, pn: c.pause_nach,
-    ph: c.pause_h, e: ohne(c.eigen), r: c.rolle, po: c.pos, n: c.anzahl, na: ohne(c.nach), vo: ohne(c.vor), pa: c.partner, ne: ohne(c.netz),
+    ph: c.pause_h, e: ohne(c.eigen), r: c.rolle, po: c.pos, n: c.anzahl, na: ohne(c.nach), vo: ohne(c.vor), pa: c.partner, ne: ohne(c.netz), ho: ohne(c.host),
     i: c.ziele && c.ziele.length ? 1 : undefined };
   const s = JSON.stringify(k);
   assert.ok(s.length <= 254, s);
@@ -35,7 +35,7 @@ function steckdose(regeln, netz = {}) {
     throw new Error(methode);
   };
   const ctx = {
-    Shelly: { call, getComponentStatus: (k) => (k === 'sys' ? { uptime: d.uptime, unixtime: 1_800_000_000 + d.uptime } : { output: d.output }) },
+    Shelly: { call, getComponentStatus: (k) => (k === 'sys' ? { uptime: d.uptime, unixtime: 1_800_000_000 + d.uptime } : { output: d.output, aenergy: { by_minute: [131, 132, 132] } }) },
     Timer: { set: (ms, wiederholt, fn) => d.timer.push({ ms, wiederholt, fn }) },
     HTTPServer: { registerEndpoint: (n, fn) => { d.endpunkte[n] = fn; } },
     JSON, Math,
@@ -197,4 +197,36 @@ test('Grundlage aus dem Einspielen: der erste echte Befehl wirkt', () => {
   d.minuten(20);
   assert.equal(d.schaltungen.length, 0);
   assert.equal(d.status().zustand, 'pause');
+});
+
+test('Home Assistant: lebt der Pi (Beobachter antwortet), erst nach dreifacher Zeit; sonst nach der einfachen – mit Befund', () => {
+  const ha = { ...BOX, rolle: 'ha', eigen: 'http://192.168.178.60:8123', netz: 'http://192.168.178.1', host: 'http://192.168.178.60:4357', ziele: [], stufe2_min: 20, aus_s: 15, abstand_min: 120 };
+  const d = steckdose(ha, { '192.168.178.60:8123': false });
+  d.minuten(21);
+  assert.equal(d.schaltungen.length, 0, 'Pi lebt: der Supervisor startet Home Assistant selbst neu');
+  assert.equal(d.status().grund, 'ha_weg_pi_lebt');
+  d.minuten(40);
+  assert.equal(d.schaltungen.length, 1, 'nach 60 min doch');
+  const e = d.status().letzte.find((x) => x.was === 'strom');
+  assert.equal(e.grund, 'ha_weg_pi_lebt');
+  assert.equal(e.b.h, true);
+  assert.equal(e.b.e, false);
+  const tot = steckdose(ha, { '192.168.178.60:8123': false, '192.168.178.60:4357': false });
+  tot.minuten(21);
+  assert.equal(tot.schaltungen.length, 1);
+  assert.equal(tot.status().letzte.find((x) => x.was === 'strom').grund, 'pi_weg');
+});
+
+test('Home Assistant: ein einzelner Aussetzer des Beobachters kürzt die Wartezeit nicht', () => {
+  const ha = { ...BOX, rolle: 'ha', eigen: 'http://192.168.178.60:8123', netz: 'http://192.168.178.1', host: 'http://192.168.178.60:4357', ziele: [], stufe2_min: 20, aus_s: 15, abstand_min: 120 };
+  const d = steckdose(ha, { '192.168.178.60:8123': false });
+  d.minuten(25);
+  d.netz['192.168.178.60:4357'] = false;
+  d.minuten(1);
+  d.netz['192.168.178.60:4357'] = true;
+  d.minuten(10);
+  assert.equal(d.schaltungen.length, 0, 'Pi lebt weiter – noch 60 min abwarten');
+  d.netz['192.168.178.60:4357'] = false;
+  d.minuten(3);
+  assert.equal(d.schaltungen.length, 1, 'drei Runden ohne Beobachter: der Pi ist weg');
 });

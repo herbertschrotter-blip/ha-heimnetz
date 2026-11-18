@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 import time
 from collections.abc import Callable
 from dataclasses import replace
@@ -37,6 +38,8 @@ LOGGER = logging.getLogger(__package__)
 ABFRAGE_S = 120  # Zustand der Steckdosen so oft lesen
 SUCHE_HOECHSTENS = 24  # so viele Adressen fragt die Suche nach Steckdosen höchstens
 ART = "waechter"  # Journal
+# Beobachter des Supervisors (Port 4357) gibt es nur unter Home Assistant OS / Supervised
+BEOBACHTER = bool(os.environ.get("SUPERVISOR"))
 
 
 class Waechterdienst:
@@ -142,7 +145,7 @@ class Waechterdienst:
         router = self.router()
         for i, adresse in w.dosen:
             dose = Steckdose(async_get_clientsession(self.hass), adresse, kennwort)
-            await dose.einspielen(wa.kvs(w, i, router))
+            await dose.einspielen(wa.kvs(w, i, router, BEOBACHTER))
 
     def _kette_pruefen(self, w: wa.Waechter) -> None:
         """Typ und Adresse der Geräte kommen von der Seite: ein sanfter Neustart (mit dem Kennwort des Modems) nur an
@@ -213,7 +216,7 @@ class Waechterdienst:
             neu = wa.pruefen({**w.als_dict(), "an": an})
             router = self.router()
             for i, d in neu.dosen:
-                await self._dose(d).regeln_setzen(wa.kvs(neu, i, router))
+                await self._dose(d).regeln_setzen(wa.kvs(neu, i, router, BEOBACHTER))
             await self.lz.einstellungen.async_waechter_setzen(
                 [neu if x.id == wid else x for x in self.liste]
             )

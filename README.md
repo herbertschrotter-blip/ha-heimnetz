@@ -94,8 +94,16 @@ Im Reiter **Wächter** (einrichten nur Admins) startet Heimnetz ein Gerät neu, 
   (Beta, ungetestet am Gerät). **Stufe 2** (ab Werk nach 12 min): die Shelly-Steckdose davor schaltet den Strom 30 s
   aus und von selbst wieder ein.
 - **Home Assistant (dieser Pi):** antwortet Home Assistant 20 min nicht (der Router aber schon), schaltet die
-  Steckdose den Pi 15 s stromlos – höchstens einmal in 2 h.
+  Steckdose den Pi 15 s stromlos – höchstens einmal in 2 h. Antwortet dabei der Beobachter des Supervisors (Port 4357),
+  lebt der Pi selbst noch; dann wartet die Steckdose dreimal so lange, weil der Supervisor Home Assistant meist selbst
+  neu startet. Vor dem Schalten hält sie fest, seit wann keine Antwort kam und wie viel Leistung der Pi zog.
 - **Anderes Gerät** (Repeater, Switch, Kamera …): Strom aus/ein, wenn es nicht mehr antwortet.
+
+**Ausfälle verstehen:** Heimnetz schreibt alle 5 Minuten mit, wie viel Speicher Home Assistant, der Supervisor und
+jedes Add-on belegen, und warnt, wenn der Speicher knapp wird. Endete der vorige Lauf nicht sauber, steht nach dem
+Neustart ein **Ausfallbericht** im Journal und kommt als Warnung: wann Home Assistant zuletzt lebte, ob der Pi neu
+gestartet ist und wann sein Systemprotokoll endete, ob der Speicher voll war, wer am meisten Speicher hatte und was die
+Steckdose gesehen hat. Die Werte bleiben 8 Tage lokal.
 
 Stufe 2 macht die **Steckdose selbst**: Heimnetz spielt dafür ein kleines Skript („heimnetz-waechter“) auf die gewählte
 Shelly-Steckdose (Generation 2 oder neuer, z. B. Plus Plug S) und legt die Regeln dort ab. So klappt der Neustart auch,
@@ -205,6 +213,7 @@ Heimnetz arbeitet lokal. Nach außen geht nur:
 | Vorgeschaltetes Gerät im eigenen Heimnetz (nur private Adressen) | Suche: Startseite an wenigen Adressen nacheinander (gespeicherte, Vorschlag der Box, 192.168.0.1, 192.168.1.1, 192.168.8.1, 192.168.18.1, 192.168.100.1) bis ein Gerät erkannt ist; danach nur lesende Abfragen und die Anmeldung mit dem hinterlegten Kennwort (höchstens ein Versuch, abgelehnt: kein weiterer) | nur bei Internet über ein vorgeschaltetes Gerät: alle 10 Minuten, beim Einrichten, bei „↻ Erneut suchen“ und unter ⚙ → Diagnose „Abfragen“ |
 | Shelly-Steckdosen im eigenen Heimnetz (nur private Adressen) | Suche: `GET /shelly` an den Steckdosen aus der Shelly-Integration und der Geräteliste der Box (Name beginnt mit „shelly“); Wächter: Skript „heimnetz-waechter“ und seine Regeln (KVS) anlegen, ändern, löschen, Zustand und Leistung lesen, auf Knopfdruck kurz blinken; mit dem hinterlegten Kennwort der Steckdosen | nur mit eingerichtetem Wächter: alle 2 Minuten lesen; einspielen beim Speichern |
 | FRITZ!Box bzw. vorgeschaltetes Gerät | Wächter Stufe 1: Neustart (TR-064 `Reboot`, goform `REBOOT_DEVICE`, HiLink `device/control`, TP-Link `reboot`) – nie eine Einstellung | nur mit Wächter „Internet“, höchstens einmal je Gerät und Störung |
+| Supervisor von Home Assistant OS (lokal) | lesend: Speicher von Home Assistant, Supervisor und Add-ons, Startzeit des Pi, Systemprotokoll des vorigen Starts | Speicher alle 5 Minuten; das Protokoll nur nach einem Ausfall |
 | Von der **Steckdose** aus: Prüfseiten von Google (`connectivitycheck.gstatic.com`), Mozilla (`detectportal.firefox.com`) und Microsoft (`www.msftconnecttest.com`), dazu die Geräte der Kette im Heimnetz | nur der Abruf der Prüfseite (keine Daten über das Heimnetz) | Wächter „Internet“: jede Minute (einstellbar 30–120 s) |
 
 **Vorgeschaltetes Gerät** (Beta): Kommt das Internet über ein eigenes Modem vor der FRITZ!Box, kennt die Box das
@@ -457,8 +466,16 @@ In the **Watchdog** tab (setup admins only) Heimnetz restarts a device that hang
   a real device). **Stage 2** (default after 12 min): the Shelly plug in front of it switches the power off for 30 s and
   back on by itself.
 - **Home Assistant (this Pi):** if Home Assistant does not respond for 20 min (while the router does), the plug cuts
-  power to the Pi for 15 s – at most once in 2 h.
+  power to the Pi for 15 s – at most once in 2 h. If the supervisor's observer (port 4357) still answers, the Pi itself
+  lives; then the plug waits three times as long, since the supervisor usually restarts Home Assistant itself. Before
+  switching it records since when there was no answer and how much power the Pi drew.
 - **Other device** (repeater, switch, camera …): power cycle when it stops responding.
+
+**Understanding outages:** every 5 minutes Heimnetz records how much memory Home Assistant, the supervisor and each
+add-on use, and warns when memory runs low. If the previous run did not end cleanly, an **outage report** appears in the
+journal after the restart and is sent as an alert: when Home Assistant was last alive, whether the Pi restarted and when
+its system log ended, whether memory was full, who used the most memory and what the plug saw. The values stay local
+for 8 days.
 
 Stage 2 is done **by the plug itself**: Heimnetz installs a small script (“heimnetz-waechter”) on the chosen Shelly plug
 (generation 2 or newer, e.g. Plus Plug S) and stores the rules there. So the restart also works when Home Assistant
@@ -568,6 +585,7 @@ Heimnetz works locally. Only this leaves your network:
 | Upstream device in your own home network (private addresses only) | search: home page at a few addresses (stored one, box suggestion, 192.168.0.1, 192.168.1.1, 192.168.8.1, 192.168.18.1, 192.168.100.1) until a device is recognised; then read-only queries and the login with the stored password (at most one attempt; rejected: no further attempt) | only with internet via an upstream device: every 10 minutes, at setup, on “↻ Search again” and under ⚙ → Diagnostics “Query” |
 | Shelly plugs in your own home network (private addresses only) | search: `GET /shelly` at the plugs from the Shelly integration and the box's device list (name starts with “shelly”); watchdog: create, change, delete the script “heimnetz-waechter” and its rules (KVS), read state and power, blink briefly on request; with the stored password of the plugs | only with a watchdog set up: read every 2 minutes; install on saving |
 | FRITZ!Box or upstream device | watchdog stage 1: restart (TR-064 `Reboot`, goform `REBOOT_DEVICE`, HiLink `device/control`, TP-Link `reboot`) – never a setting | only with an “Internet” watchdog, at most once per device and outage |
+| Supervisor of Home Assistant OS (local) | read-only: memory of Home Assistant, supervisor and add-ons, start time of the Pi, system log of the previous boot | memory every 5 minutes; the log only after an outage |
 | From the **plug**: check pages of Google (`connectivitycheck.gstatic.com`), Mozilla (`detectportal.firefox.com`) and Microsoft (`www.msftconnecttest.com`), plus the devices of the chain in the home network | only fetching the check page (no data about the home network) | “Internet” watchdog: every minute (adjustable 30–120 s) |
 
 **Upstream device** (beta): if the internet comes through an own modem in front of the FRITZ!Box, the box does not

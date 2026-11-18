@@ -18,6 +18,7 @@ from homeassistant.helpers.start import async_at_started
 from homeassistant.helpers.typing import ConfigType
 
 from . import kontext, uebernahme
+from .ausfall import Ausfalldienst
 from .box import Box
 from .const import (
     ALT_DOMAIN,
@@ -64,6 +65,9 @@ class Laufzeit:
     warnungen: Warndienst | None = None  # WU-0010, gesetzt gleich nach dem Anlegen
     diagnoselog: Diagnoselog | None = None  # gesetzt gleich nach dem Anlegen
     waechter: Waechterdienst | None = None  # Wächter (18.11.2026), gesetzt gleich nach dem Anlegen
+    ausfall: Ausfalldienst | None = (
+        None  # Ausfälle des Pi (18.11.2026), gesetzt gleich nach dem Anlegen
+    )
 
     def diagnose(self) -> dict[str, Any]:
         """Zahlen statt Inhalte: keine Gerätenamen, Hardware-Adressen oder Meldungstexte."""
@@ -175,7 +179,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: EintragMitLaufzeit) -> b
         lz.diagnoselog = Diagnoselog(hass, lz)
         abruf.mitschreiben = lz.diagnoselog.abruf
         lz.waechter = Waechterdienst(hass, lz)
-        abruf.waechter = lz.waechter.abruf
+        lz.ausfall = Ausfalldienst(hass, lz)
+        waechter, ausfall = lz.waechter, lz.ausfall
+
+        async def nach_abruf(stand: Any) -> None:
+            # getrennt: ein Fehler im Wächter darf Herzschlag und Speicher nicht kosten
+            try:
+                await waechter.abruf(stand)
+            except Exception:
+                LOGGER.exception("Heimnetz: Wächter")
+            await ausfall.abruf()
+
+        abruf.waechter = nach_abruf
+        await ausfall.start()
         await lz.warnungen.async_bekannt_laden()
         entry.async_on_unload(abruf.speedtest.trennen)
         await abruf.async_config_entry_first_refresh()
@@ -257,6 +273,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: EintragMitLaufzeit) -> 
     ok = await hass.config_entries.async_unload_platforms(entry, PLATTFORMEN)
     if ok:
         laufzeit = entry.runtime_data
+        if laufzeit.ausfall is not None:  # sauberes Ende – vor dem Schließen der Datenbank
+            await hass.async_add_executor_job(laufzeit.ausfall.beenden)
         await laufzeit.abruf.async_schliessen()
         await hass.async_add_executor_job(laufzeit.abruf.box.schliessen)
         await hass.async_add_executor_job(laufzeit.datenbank.schliessen)

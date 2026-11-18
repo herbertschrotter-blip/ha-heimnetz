@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## [0.34.0]
+
+- **Ausfälle des Pi verstehen.** Der Wächter für Home Assistant fragt zusätzlich den Beobachter des Supervisors
+  (Port 4357): Lebt der Pi und hängt nur Home Assistant, wartet er dreimal so lange (der Supervisor startet Home
+  Assistant meist selbst neu); antwortet auch der Pi nicht, schaltet er nach der eingestellten Zeit. Vor dem Schalten
+  hält die Steckdose fest, was sie sah: seit wann keine Antwort, Leistung des Pi in den letzten Minuten.
+- Heimnetz schreibt alle 5 Minuten mit, wie viel Speicher Home Assistant, der Supervisor und jedes Add-on belegen, dazu
+  freien Speicher und Auslagerung, und **warnt, wenn der Speicher knapp wird** (höchstens einmal je Stunde).
+- Nach einem Neustart, dem kein sauberes Beenden voranging, schreibt Heimnetz einen **Ausfallbericht** ins Journal
+  (im Reiter Wächter unter Eingriffe) und schickt ihn als Warnung: wann Home Assistant zuletzt lebte, ob der Pi neu
+  gestartet ist und wann sein Systemprotokoll endete, ob der Speicher voll war, wer zuletzt am meisten Speicher hatte
+  und was die Steckdose gesehen und getan hat.
+
 ## [0.33.2]
 
 - Die **Reiterleiste** zeigt am Handy nur Symbole (🏠 ⚡ 📱 🌐 📊 📋 🛡️), ab 700 px Breite wie bisher die Namen. Der Name

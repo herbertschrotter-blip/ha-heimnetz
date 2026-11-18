@@ -300,3 +300,39 @@ def test_stufe1_ruhe_haelt_an():
     assert i is None and s.weg_seit is None
     s, i = wa.sanft_entscheiden(w, s, 3601, False, {})
     assert i is None and s.weg_seit == 3601, "nach der Ruhe beginnt die Störung neu"
+
+
+def test_kvs_ha_fragt_den_beobachter_des_supervisors():
+    w = wa.pruefen(
+        {
+            "art": "ha",
+            "glieder": [{"typ": "ha", "adresse": "192.168.178.60:8123", "dose": "192.168.178.43"}],
+        }
+    )
+    assert wa.kvs(w, 0, "192.168.178.1", beobachter=True)["ho"] == "192.168.178.60:4357"
+    assert "ho" not in wa.kvs(w, 0, "192.168.178.1"), "ohne Supervisor gibt es keinen Beobachter"
+
+
+def test_eingriff_mit_befund_der_steckdose():
+    w = wa.pruefen(
+        {
+            "art": "ha",
+            "glieder": [
+                {
+                    "typ": "ha",
+                    "name": "Pi",
+                    "adresse": "192.168.178.60:8123",
+                    "dose": "192.168.178.43",
+                }
+            ],
+        }
+    )
+    e = {
+        "t": 9,
+        "was": "strom",
+        "grund": "pi_weg",
+        "b": {"w": 7.9, "ok": 21, "e": False, "h": False},
+    }
+    assert wa.eingriff_text(e, w.glieder[0], w) == (
+        "Pi: Strom 15 s aus und wieder ein – weder Home Assistant noch der Pi antworten (letzte Antwort vor 21 min, 7,9 W)"
+    )

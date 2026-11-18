@@ -22,7 +22,7 @@ function ausklappen(k) {
   if (k.i) z = ZIELE;
   return { v: k.v, an: k.an !== 0, pruef_s: k.p, stufe2_min: k.s2, aus_s: k.a, abstand_min: k.ab, pause_nach: k.pn,
     pause_h: k.ph, eigen: url(k.e), rolle: k.r, pos: k.po, anzahl: k.n, nach: url(k.na), vor: url(k.vo), partner: k.pa,
-    netz: url(k.ne), ziele: z };
+    netz: url(k.ne), host: url(k.ho), ziele: z };
 }
 
 let cfg = null;
@@ -36,6 +36,9 @@ let st = {
   eingriffe: 0,
   befehl_n: null,
   nach_eingriff: false,
+  zuletzt_ok: null,
+  host_weg: 0,
+  pi_lebte: false,
   pruef: {},
   letzte: []
 };
@@ -44,8 +47,10 @@ let laeuft = false;
 function uptime() { return Shelly.getComponentStatus('sys').uptime; }
 function unixzeit() { return Shelly.getComponentStatus('sys').unixtime; }
 
-function merke(was, grund) {
-  st.letzte.push({ t: unixzeit(), was: was, grund: grund || '' });
+function merke(was, grund, befund) {
+  let e = { t: unixzeit(), was: was, grund: grund || '' };
+  if (befund) e.b = befund;
+  st.letzte.push(e);
   if (st.letzte.length > 10) st.letzte.splice(0, 1);
 }
 
@@ -126,8 +131,35 @@ function fehlerbild(p) {
     return null;
   }
   if (p.netz === false) return null;
-  if (p.eigen === false) return { grund: cfg.rolle + '_weg', faktor: 1 };
+  if (p.eigen === false) {
+    // Home Assistant: the supervisor's observer (port 4357) tells whether the Pi itself still lives. If it does, the
+    // supervisor restarts Home Assistant itself, so cut the power only much later.
+    // one missed answer of the observer is no proof: only 3 rounds in a row without it count as 'Pi gone'
+    if (cfg.rolle === 'ha' && (p.host === true || (st.pi_lebte && st.host_weg < 3))) return { grund: 'ha_weg_pi_lebt', faktor: 3 };
+    if (cfg.rolle === 'ha' && p.host === false) return { grund: 'pi_weg', faktor: 1 };
+    return { grund: cfg.rolle + '_weg', faktor: 1 };
+  }
   return null;
+}
+
+// average power of the device in the last minutes (W), from the plug's energy counter (mWh per minute)
+function leistung() {
+  let sw = Shelly.getComponentStatus('switch:0');
+  let m = null;
+  let s = 0;
+  let i = 0;
+  if (!sw || !sw.aenergy || !sw.aenergy.by_minute) return null;
+  m = sw.aenergy.by_minute;
+  for (i = 0; i < m.length; i++) s += m[i];
+  if (m.length === 0) return null;
+  return Math.round(s / m.length * 60 / 100) / 10;
+}
+
+// what the plug saw right before switching - kept with the event, read by Heimnetz after the restart
+function befund() {
+  let b = { w: leistung(), e: st.pruef.eigen, h: st.pruef.host, n: st.pruef.netz, ok: null };
+  if (st.zuletzt_ok !== null) b.ok = Math.round((unixzeit() - st.zuletzt_ok) / 60);
+  return b;
 }
 
 function schalten(grund) {
@@ -143,7 +175,7 @@ function schalten(grund) {
     st.zustand = 'schaltet';
     st.nach_eingriff = true;
     st.stoer_seit = null;
-    merke('strom', grund);
+    merke('strom', grund, befund());
     if (cfg.pause_nach) pn = cfg.pause_nach;
     if (cfg.pause_h) ph = cfg.pause_h;
     if (st.fehl >= pn) {
@@ -205,8 +237,15 @@ function pruefe() {
         p.vor = c;
         irgendeins(cfg.ziele, 0, function (d) {
           p.inet = d;
-          urteile(p);
-          laeuft = false;
+          erreichbar(cfg.host, function (h) {
+            p.host = h;
+            if (p.eigen === true) st.zuletzt_ok = unixzeit();
+            if (h === false) { st.host_weg++; } else { st.host_weg = 0; }
+            if (h === true && p.eigen === false) st.pi_lebte = true;
+            if (p.eigen === true) st.pi_lebte = false;
+            urteile(p);
+            laeuft = false;
+          });
         });
       });
     });

@@ -6982,7 +6982,7 @@ function waechterBlatt(p4) {
 }
 
 // src/heimnetz-panel.js
-var VERSION = true ? "0.33.2" : "entwicklung";
+var VERSION = true ? "0.34.0" : "entwicklung";
 var REITER = [
   ["uebersicht", merke("Übersicht")],
   ["speedtest", merke("Speedtest")],

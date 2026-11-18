@@ -19,6 +19,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from .logik import ausfall as af
 from .logik import diagnoselog as dl
 from .logik import messung as ms
 from .logik.ereignis import Ereignis
@@ -55,6 +56,8 @@ ZUSATZ = (
     """CREATE TABLE IF NOT EXISTS diagnoselog (
         id INTEGER PRIMARY KEY, t REAL NOT NULL, art TEXT NOT NULL, mac TEXT NOT NULL, daten TEXT NOT NULL)""",
     "CREATE INDEX IF NOT EXISTS diagnoselog_t ON diagnoselog (t)",
+    # Ausfälle des Pi (18.11.2026): Speicher je Programm alle 5 min, 8 Tage (logik.ausfall)
+    "CREATE TABLE IF NOT EXISTS speicherstand (t REAL PRIMARY KEY, daten TEXT NOT NULL)",
 )
 
 DIAGNOSELOG = "INSERT INTO diagnoselog (t, art, mac, daten) VALUES (?, ?, ?, ?)"
@@ -295,6 +298,9 @@ class Datenbank:
                 db.execute(
                     "DELETE FROM diagnoselog WHERE t < ?", (jetzt - dl.AUFBEWAHREN_S,)
                 )  # eigene Frist, zählt nicht mit
+                db.execute(
+                    "DELETE FROM speicherstand WHERE t < ?", (jetzt - af.SPEICHER_AUFBEWAHREN_S,)
+                )
                 n += db.execute(
                     "DELETE FROM protokoll WHERE COALESCE(t, eingetragen) < ?", (grenze,)
                 ).rowcount
@@ -333,6 +339,26 @@ class Datenbank:
     def _lesen(self, befehl: str, werte: tuple[Any, ...] = ()) -> list[tuple[Any, ...]]:
         with self._sperre:
             return list(self._verbindung.execute(befehl, werte).fetchall())
+
+    # ── Ausfälle des Pi ──
+    def speicherstand_schreiben(self, s: af.Speicherstand) -> int:
+        return self._schreiben(
+            (
+                "INSERT OR REPLACE INTO speicherstand VALUES (?, ?)",
+                [(s.t, json.dumps(s.als_dict()))],
+            )
+        )
+
+    def speicherstand_vor(self, t: float) -> af.Speicherstand | None:
+        """Letzter Speicherstand bis zum Zeitpunkt t."""
+        zeilen = self._lesen(
+            "SELECT t, daten FROM speicherstand WHERE t <= ? ORDER BY t DESC LIMIT 1", (t,)
+        )
+        return (
+            af.Speicherstand.aus_dict(float(zeilen[0][0]), json.loads(zeilen[0][1]))
+            if zeilen
+            else None
+        )
 
     def meta(self, schluessel: str) -> str | None:
         zeilen = self._lesen("SELECT wert FROM meta WHERE schluessel = ?", (schluessel,))
