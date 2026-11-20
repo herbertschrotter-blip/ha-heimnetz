@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [0.36.0]
+
+- **Netzkarte mit VPN:** Geräte, die sich von unterwegs per WireGuard einwählen, hängen an einem eigenen Tunnel-Knoten
+  🔐 oben links, gestrichelt mit dem Internet verbunden. Maus darüber zeigt Name, Tunnel-Adresse und seit wann
+  verbunden, Tippen öffnet die Infokarte.
+
 ## [0.35.0]
 
 - **Übersicht neu als „Lagebild“** – am Handy ohne Scrollen: eine Zeile mit dem Gesamtstand, die **Leitung**

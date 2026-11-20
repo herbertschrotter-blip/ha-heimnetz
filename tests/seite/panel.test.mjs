@@ -75,10 +75,10 @@ test('Netzkarte (1.9): aus der Übersicht, Punkte, Filter, Tipp zeigt Infokarte,
   assert.equal(el._reiter, 'geraete');
   assert.ok(hass.aufrufe.some((a) => a.type === 'heimnetz/netzkarte'));
   const d = DATEN.netzkarte;
-  assert.equal(w.querySelectorAll('.nk-g').length, d.geraete.length);
+  assert.equal(w.querySelectorAll('.nk-g:not(.z-vpn)').length, d.geraete.length);
   assert.equal(w.querySelectorAll('.nk-aus').length, d.aus.length);
   assert.equal(w.querySelectorAll('.nk-ring').length >= d.ringe.length, true);
-  assert.equal(w.querySelectorAll('.nk-tip').length, d.geraete.length);
+  assert.equal(w.querySelectorAll('.nk-tip:not([data-i^="v"])').length, d.geraete.length);
   assert.match(w.querySelector('.nk-port').textContent, /LAN 1/);
   assert.match(w.querySelector('.nk-zahlen').textContent, new RegExp(`${d.zahlen.online}`));
   assert.ok(!/undefined|NaN/.test(text(el)), text(el));
@@ -99,6 +99,14 @@ test('Netzkarte (1.9): aus der Übersicht, Punkte, Filter, Tipp zeigt Infokarte,
   assert.ok(hass.aufrufe.some((a) => a.type === 'heimnetz/geraet' && a.geraet === d.geraete[tab].id));
   el.zu();
   await el.updateComplete;
+  // VPN: Tunnel-Knoten mit seinen Geräten, Tipp zeigt „verbunden seit“
+  assert.ok(w.querySelector('.nk-vpn'));
+  assert.equal(w.querySelectorAll('.nk-g.z-vpn').length, d.vpn.geraete.length);
+  assert.ok(w.querySelector('.nk-tip[data-i="v0"]'));
+  w.querySelector('.nk-g.z-vpn').dispatchEvent(new Event('click'));
+  await el.updateComplete;
+  assert.match(w.querySelector('.nk-info').textContent, /10\.0\.8\.2/);
+  assert.match(w.querySelector('.nk-info').textContent, /verbunden seit/);
   w.querySelector('.nk-zurueck').click();
   await warten(10);
   await el.updateComplete;

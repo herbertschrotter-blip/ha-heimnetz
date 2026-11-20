@@ -30,6 +30,7 @@ R_SEKTOR = 200.0
 R_SWITCH = 48.0
 R_HINTER_SWITCH = 86.0
 R_UM_REPEATER = 38.0
+VPN = (84.0, 56.0)  # Tunnel-Knoten oben links, neben der Leitung ins Internet
 WINKEL = (-62.0, 242.0)  # oben (−90°) bleibt frei für die Leitung ins Internet
 LUECKE = 4.0
 STREUUNG = 22.0  # so viel weiter draußen bei 0 % Empfang
@@ -237,6 +238,7 @@ class Punkt:
     signal: int | None = None
     mbit: int | None = None
     schwach: bool = False
+    seit: float | None = None  # zuletzt online gegangen (VPN-Geräte)
 
 
 def _p(r: float, w: float, um: tuple[float, float] = MITTE) -> tuple[float, float]:
@@ -267,6 +269,7 @@ def zeichnen(
     netz: Netz,
     kategorien: list[tuple[str, str]],
     sprache: str = DE,
+    vpn: Iterable[Punkt] = (),
 ) -> dict[str, Any]:
     """Lage aller Punkte, Ringe, Sektoren, Switches und Repeater in einem Feld von BREITE × HOEHE."""
     rep_macs = {m: r.id for r in netz.repeater for m in r.macs}
@@ -477,6 +480,36 @@ def zeichnen(
             )
             geraete.append(eintrag(p, x, y, (rx, ry), "repeater", text_))
 
+    # VPN (WireGuard): eigener Tunnel-Knoten oben links, die Geräte rundherum (nur die verbundenen)
+    tunnel = sorted((p for p in vpn if p.aktiv), key=lambda p: p.name.lower())
+    vpn_geraete = []
+    for i, p in enumerate(tunnel):
+        reihe_, pos = divmod(i, 5)
+        n_reihe = min(5, len(tunnel) - reihe_ * 5)
+        wi = 150 + (pos - (n_reihe - 1) / 2) * (55 if n_reihe < 3 else 110 / (n_reihe - 1))
+        x, y = _p(R_UM_REPEATER + reihe_ * 22, wi, VPN)
+        vpn_geraete.append(
+            {
+                "id": p.id,
+                "name": p.name,
+                "symbol": p.symbol,
+                "ip": p.ip,
+                "kat": p.kat,
+                "x": x,
+                "y": y,
+                "vx": VPN[0],
+                "vy": VPN[1],
+                "kabel": False,
+                "ueber": "vpn",
+                "zustand": p.zustand,
+                "anbindung": t("VPN (WireGuard) · über das Internet", sprache),
+                "signal": None,
+                "mbit": None,
+                "gast": False,
+                "seit": p.seit,
+            }
+        )
+
     ringe = [{"r": R_KABEL, "name": t("Kabel", sprache)}]
     ringe += [{"r": round(r_band[b], 1), "name": f"{_band_text(b, sprache)} GHz"} for b in baender]
     ringe.append({"r": R_AUS, "name": t("offline", sprache)})
@@ -492,10 +525,12 @@ def zeichnen(
         "repeater": repeater,
         "geraete": geraete,
         "aus": aus,
+        "vpn": {"x": VPN[0], "y": VPN[1], "geraete": vpn_geraete} if vpn_geraete else None,
         "zahlen": {
             "online": len(geraete),
             "offline": len(aus),
             "auffaellig": auff,
             "neu": sum(1 for g in geraete if g["zustand"] == "neu"),
+            "vpn": len(vpn_geraete),
         },
     }

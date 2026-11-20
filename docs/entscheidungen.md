@@ -604,7 +604,7 @@ nachgetragen.
   Einen einfachen Switch sieht die Box nicht – mehrere Geräte an derselben Buchse gelten als Switch. Welches Gerät an
   welchem Anschluss eines Switches hängt, bleibt unbekannt.
 - Lage der Punkte, Texte und Zustände rechnet die Integration (`logik/netzkarte.py`, `logik/lagebild.py`), die Seite
-  zeichnet nur. VPN-Geräte (WireGuard) stehen nicht auf der Karte, nur ihre Anzahl. VLANs kennt die FRITZ!Box nicht
+  zeichnet nur. VPN-Geräte (WireGuard) hängen an einem eigenen Tunnel-Knoten oben links (Nachtrag 1.9 0.3, abgenommen 20.11.2026). VLANs kennt die FRITZ!Box nicht
   (nur das Gastnetz, als „Gast“ in der Infokarte).
 
 ## Offene Entscheidungen

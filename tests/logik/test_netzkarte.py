@@ -201,7 +201,7 @@ def test_karte_ringe_nach_band_und_empfang():
     assert g["Gast"]["gast"] is True and g["Gast"]["zustand"] == "neu"
     (uhr,) = k["aus"]
     assert uhr["name"] == "Uhr" and round(r(uhr)) == nk.R_AUS
-    assert k["zahlen"] == {"online": 7, "offline": 1, "auffaellig": 1, "neu": 1}
+    assert k["zahlen"] == {"online": 7, "offline": 1, "auffaellig": 1, "neu": 1, "vpn": 0}
 
 
 def test_karte_repeater_mit_seinen_geraeten():
@@ -269,3 +269,43 @@ def test_diagnose_ohne_adressen():
     assert d["repeater"] == [{"name": "FRITZ!Repeater 1200 AX", "uplink": "wlan:5"}]
     assert "LAN:3" in d["schnittstellen"] and "AP:5G:0" in d["schnittstellen"]
     assert not any("AA:" in k or "00:00" in k for k in d["anschluesse"])
+
+
+def test_vpn_am_tunnel():
+    unterwegs = [
+        nk.Punkt(
+            id="v1",
+            mac="cc:01",
+            name="Laptop",
+            symbol="💻",
+            kat="computer",
+            ip="10.0.8.2",
+            aktiv=True,
+            zustand="an",
+            art="VPN",
+            seit=100.0,
+        ),
+        nk.Punkt(
+            id="v2",
+            mac="cc:02",
+            name="Alt",
+            symbol="📱",
+            kat="mobil",
+            ip="10.0.8.3",
+            aktiv=False,
+            zustand="aus",
+            art="VPN",
+        ),
+    ]
+    k = nk.zeichnen(punkte(), nk.mesh_lesen(MESH), KAT, vpn=unterwegs)
+    (g,) = k["vpn"]["geraete"]
+    assert (k["vpn"]["x"], k["vpn"]["y"]) == nk.VPN and (g["vx"], g["vy"]) == nk.VPN
+    assert (
+        g["ueber"] == "vpn"
+        and g["seit"] == 100.0
+        and g["anbindung"] == "VPN (WireGuard) · über das Internet"
+    )
+    assert round(math.hypot(g["x"] - nk.VPN[0], g["y"] - nk.VPN[1])) == nk.R_UM_REPEATER
+    assert 0 <= g["x"] <= nk.BREITE and 0 <= g["y"] <= nk.HOEHE
+    assert k["zahlen"]["vpn"] == 1 and all(x["id"] != "v1" for x in k["geraete"])
+    assert nk.zeichnen(punkte(), nk.Netz(), KAT)["vpn"] is None

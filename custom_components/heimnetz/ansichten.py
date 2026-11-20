@@ -275,6 +275,8 @@ def _geraete_liste(
                     "band": f"{wl.band_text(b, sprache_)} GHz" if (b := baender.get(mac)) else "",
                     "kat": art.kat,
                     "art_quelle": art.quelle,
+                    # nur für die Netzkarte (geraete_daten lässt es weg): zuletzt online gegangen
+                    "_seit": max((t_ for t_, a in arten if a == "online"), default=None),
                 },
             )
         )
@@ -287,7 +289,10 @@ def geraete_daten(
     """Blockierend: Geräte mit Ereignissen der letzten 24 h, Streifen und Einstufung."""
     stand = lz.abruf.data
     ab_ = jetzt - TAG_S
-    liste = [x for _, x in _geraete_liste(lz, jetzt, ha, sprache_)]
+    liste = [
+        {k: v for k, v in x.items() if not k.startswith("_")}
+        for _, x in _geraete_liste(lz, jetzt, ha, sprache_)
+    ]
     liste.sort(
         key=lambda x: (x["einstufung"] not in ("neu", "wackelt"), not x["aktiv"], x["name"].lower())
     )
@@ -322,13 +327,23 @@ def netzkarte_daten(
     kategorien = ar.alle(sprache_, lz.einstellungen.eigene)
     symbol = {k: text.split(" ")[0] for k, text in kategorien}
     namen = [(k, text.split(" ", 1)[-1]) for k, text in kategorien]
-    punkte = []
-    vpn = 0
+    punkte, vpn = [], []
     for mac, x in _geraete_liste(lz, jetzt, ha, sprache_):
-        if (
-            x["verbindung"] == gr.VPN
-        ):  # von unterwegs über den Tunnel: nicht im Heimnetz verkabelt oder gefunkt
-            vpn += x["aktiv"]
+        if x["verbindung"] == gr.VPN:  # von unterwegs über den Tunnel (1.9 0.3: eigener Knoten)
+            vpn.append(
+                nk.Punkt(
+                    id=x["id"],
+                    mac=mac,
+                    name=x["name"],
+                    symbol=symbol.get(x["kat"], "•"),
+                    kat=x["kat"],
+                    ip=x["ip"],
+                    aktiv=x["aktiv"],
+                    zustand=x["einstufung"],
+                    art="VPN",
+                    seit=x["_seit"],
+                )
+            )
             continue
         f = funk.get(mac)
         punkte.append(
@@ -348,10 +363,9 @@ def netzkarte_daten(
                 schwach=bool(f and f.signal is not None and f.signal < grenze),
             )
         )
-    karte = nk.zeichnen(punkte, stand.netz, namen, sprache_)
+    karte = nk.zeichnen(punkte, stand.netz, namen, sprache_, vpn)
     return {
         **karte,
-        "vpn": vpn,
         "box_erreichbar": stand.box_erreichbar,
         "stand": stand.zeit,
         "mesh": bool(stand.netz.geraete),

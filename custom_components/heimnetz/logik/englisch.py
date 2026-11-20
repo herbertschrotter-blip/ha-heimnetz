@@ -605,6 +605,7 @@ EN: dict[str, str] = {
     "Repeater": "Repeater",
     "{n} Gbit/s": "{n} Gbit/s",
     "Switch an LAN {port}": "Switch on LAN {port}",
+    "VPN (WireGuard) · über das Internet": "VPN (WireGuard) · via the internet",
     # Übersicht „Lagebild“ (1.1)
     "FRITZ!Box antwortet nicht": "FRITZ!Box does not respond",
     "Kein Internet": "No internet",

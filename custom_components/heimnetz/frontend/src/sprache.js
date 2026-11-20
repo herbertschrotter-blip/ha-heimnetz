@@ -894,7 +894,9 @@ export const EN = {
   'spielt ein …': 'installing …',
   'Einspielen und starten': 'Install and start',
   // 1.1 Lagebild, 1.9 Netzkarte
-  '{n} über VPN verbunden – nicht auf der Karte': '{n} connected via VPN – not on the map',
+  '{n} über VPN verbunden (oben links)': '{n} connected via VPN (top left)',
+  'verbunden seit {zeit}': 'connected since {zeit}',
+  'verbunden seit': 'connected since',
   'Karte': 'Map',
   '⚠ Auffällig': '⚠ Unusual',
   'online': 'online',

@@ -3776,7 +3776,7 @@
   "repeater": [],
   "geraete": [
    {
-    "id": "6e453ea211a735b7",
+    "id": "e0fd00363e738ce0",
     "name": "Pi",
     "symbol": "❓",
     "ip": "192.168.170.60",
@@ -3797,7 +3797,7 @@
     "py": 271.9
    },
    {
-    "id": "3eca3f551055137c",
+    "id": "89513b27d260e4e0",
     "name": "fernseher",
     "symbol": "🏗️",
     "ip": "192.168.170.60",
@@ -3815,7 +3815,7 @@
     "gast": false
    },
    {
-    "id": "2baf1cef4e0ac08d",
+    "id": "7a2c97ef58e1a7f3",
     "name": "Tab",
     "symbol": "📱",
     "ip": "192.168.1.23",
@@ -3833,7 +3833,7 @@
     "gast": false
    },
    {
-    "id": "cc5de14a4e162ee1",
+    "id": "5709ce3aa5d1e84b",
     "name": "kind",
     "symbol": "❓",
     "ip": "192.168.170.40",
@@ -3851,7 +3851,7 @@
     "gast": false
    },
    {
-    "id": "71fc0f881fd91d16",
+    "id": "85d1b0d771d3d8fa",
     "name": "Switch",
     "symbol": "🛜",
     "ip": "",
@@ -3870,15 +3870,40 @@
    }
   ],
   "aus": [],
+  "vpn": {
+   "x": 84.0,
+   "y": 56.0,
+   "geraete": [
+    {
+     "id": "vpn0000000000001",
+     "name": "Laptop unterwegs",
+     "symbol": "💻",
+     "ip": "10.0.8.2",
+     "kat": "computer",
+     "x": 51.1,
+     "y": 75.0,
+     "vx": 84.0,
+     "vy": 56.0,
+     "kabel": false,
+     "ueber": "vpn",
+     "zustand": "an",
+     "anbindung": "VPN (WireGuard) · über das Internet",
+     "signal": null,
+     "mbit": null,
+     "gast": false,
+     "seit": 1791980000.0
+    }
+   ]
+  },
   "zahlen": {
    "online": 5,
    "offline": 0,
    "auffaellig": 1,
-   "neu": 0
+   "neu": 0,
+   "vpn": 1
   },
   "box_erreichbar": true,
-  "stand": 1795210006.0221577,
-  "mesh": true,
-  "vpn": 0
+  "stand": 1795211343.796995,
+  "mesh": true
  }
 }

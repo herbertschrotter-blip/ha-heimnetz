@@ -3681,7 +3681,7 @@ select.w-ziel { max-width: 58%; } .ga-warnen .seg { flex: none; }
 .lb-meldezeile .text { flex: 1; min-width: 0; font-size: 13px; line-height: 1.3; }
 .lb-meldezeile .text b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .lb-meldezeile .text span { color: var(--ink2); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
-@media (prefers-reduced-motion: reduce) { .lb-draht i::after, .nk-fluss, .nk-uplink-fluss { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { .lb-draht i::after, .nk-fluss, .nk-uplink-fluss, .nk-vpn-fluss { animation: none !important; } }
 
 /* ── 1.9 Netzkarte (Mockup mockups/seiten/netzkarte.html 0.2) ── */
 .nk-buehne { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 104px 6px 178px; box-sizing: border-box; }
@@ -3736,6 +3736,11 @@ select.w-ziel { max-width: 58%; } .ga-warnen .seg { flex: none; }
 .nk-rep-draht { stroke: var(--s3); stroke-width: 3; opacity: .7; stroke-dasharray: 5 3; } .nk-rep-draht.kabel { stroke-dasharray: none; }
 .grau .nk-dot, .grau .nk-sw-kern { stroke: var(--ink2); } .grau .nk-lan, .grau .nk-wlan, .grau .nk-fluss, .grau .nk-uplink-fluss, .grau .nk-sw-draht { display: none; }
 .grau .nk-g, .grau .nk-sw { opacity: .45; }
+.nk-vpn-draht { stroke: var(--s5); stroke-width: 2.4; stroke-dasharray: 6 4; opacity: .75; } .nk-vpn-draht.duenn { stroke-width: 1.4; }
+.nk-vpn-fluss { stroke: #fff; stroke-width: 2.4; stroke-dasharray: 2 12; stroke-linecap: round; animation: nk-fl 1.6s linear infinite; opacity: .7; }
+.nk-vpn { fill: var(--sheet); stroke: var(--s5); stroke-width: 2.2; } .nk-vpn-halo { fill: var(--s5); opacity: .12; }
+.z-vpn .nk-dot { stroke: var(--s5); }
+.grau .nk-vpn-fluss { display: none; }
 .nk-tip { opacity: 0; pointer-events: none; transition: opacity .12s; } .nk-tip.an { opacity: 1; }
 .nk-tip rect { fill: var(--sheet); stroke: var(--panel-rand); stroke-width: 1; filter: drop-shadow(0 4px 10px rgba(0,0,0,.35)); }
 .nk-tip .t1 { font-size: 10px; font-weight: 700; fill: var(--ink); } .nk-tip .t2 { font-size: 8.5px; fill: var(--ink2); font-variant-numeric: tabular-nums; }
@@ -4604,7 +4609,9 @@ var EN = {
   "spielt ein …": "installing …",
   "Einspielen und starten": "Install and start",
   // 1.1 Lagebild, 1.9 Netzkarte
-  "{n} über VPN verbunden – nicht auf der Karte": "{n} connected via VPN – not on the map",
+  "{n} über VPN verbunden (oben links)": "{n} connected via VPN (top left)",
+  "verbunden seit {zeit}": "connected since {zeit}",
+  "verbunden seit": "connected since",
   "Karte": "Map",
   "⚠ Auffällig": "⚠ Unusual",
   "online": "online",
@@ -4852,18 +4859,19 @@ var FARBE = { an: "var(--nk-gruen)", wackelt: "var(--amber)", schwach: "var(--am
 var AUFF = ["wackelt", "schwach", "neu"];
 function passt(g2, filter) {
   if (filter === "kabel") return g2.kabel;
-  if (filter === "wlan") return !g2.kabel;
+  if (filter === "wlan") return !g2.kabel && g2.ueber !== "vpn";
   if (filter === "auff") return AUFF.includes(g2.zustand);
   return true;
 }
-function tip(g2, i6, d3, an) {
+function tip(g2, i6, d3, an, kennung = i6) {
   const b3 = 140, h3 = 56;
   const x2 = g2.x < d3.breite * 0.66 ? g2.x + 16 : g2.x - 16 - b3;
   const y4 = Math.max(4, Math.min(d3.hoehe - h3 - 4, g2.y - h3 / 2));
-  return w`<g class="nk-tip ${an ? "an" : ""}" data-i=${i6}><rect x=${x2} y=${y4} width=${b3} height=${h3} rx="9"></rect>
+  const z2 = g2.ueber === "vpn" && g2.seit ? t3("verbunden seit {zeit}", { zeit: zeit(g2.seit) }) : t3(ZUSTAND[g2.zustand] || g2.zustand);
+  return w`<g class="nk-tip ${an ? "an" : ""}" data-i=${kennung}><rect x=${x2} y=${y4} width=${b3} height=${h3} rx="9"></rect>
     <text class="t1" x=${x2 + 10} y=${y4 + 15}>${g2.symbol} ${g2.name}</text><text class="t2" x=${x2 + 10} y=${y4 + 27}>${g2.ip}</text>
     <text class="t3" x=${x2 + 10} y=${y4 + 39}>${g2.anbindung}</text>
-    <text class="t4" x=${x2 + 10} y=${y4 + 50} style="fill:${FARBE[g2.zustand] || "var(--ink2)"}">● ${t3(ZUSTAND[g2.zustand] || g2.zustand)}${g2.gast ? ` · ${t3("Gast")}` : ""}</text></g>`;
+    <text class="t4" x=${x2 + 10} y=${y4 + 50} style="fill:${g2.ueber === "vpn" ? "var(--s5)" : FARBE[g2.zustand] || "var(--ink2)"}">● ${z2}${g2.gast ? ` · ${t3("Gast")}` : ""}</text></g>`;
 }
 function karte(p4, d3, u3, o7) {
   const m3 = d3.mitte;
@@ -4877,7 +4885,8 @@ function karte(p4, d3, u3, o7) {
   const s4 = u3 && u3.speedtest;
   const r5 = d3.dot;
   const auswaehlen = (id) => p4.setze("geraete", { karte: { ...o7, wahl: id === wahl ? null : id } }, false);
-  const hover = d3.geraete.map((_2, i6) => `svg:has(.nk-g[data-i="${i6}"]:hover) .nk-tip[data-i="${i6}"]{opacity:1}`).join("");
+  const vpn = d3.vpn ? d3.vpn.geraete : [];
+  const hover = [...d3.geraete.map((_2, i6) => `${i6}`), ...vpn.map((_2, i6) => `v${i6}`)].map((k2) => `svg:has(.nk-g[data-i="${k2}"]:hover) .nk-tip[data-i="${k2}"]{opacity:1}`).join("");
   return b2`<svg viewBox="0 0 ${d3.breite} ${d3.hoehe}" preserveAspectRatio="xMidYMid meet" role="img" aria-label=${t3("Netzkarte")}
       class="nk-svg ${dimm ? "dimm" : ""} ${o7.namen ? "namen" : ""} ${weg ? "grau" : ""}">${w`
     ${d3.ringe.map((x2, i6) => w`<circle class="nk-ring ${i6 ? "gestr" : ""}" cx=${m3.x} cy=${m3.y} r=${x2.r}></circle>
@@ -4918,12 +4927,22 @@ function karte(p4, d3, u3, o7) {
         <circle class="nk-dot" cx=${g2.x} cy=${g2.y} r=${gr}></circle><text class="nk-sym" x=${g2.x} y=${g2.y + 0.5} style="font-size:${gr}px">${g2.symbol}</text>
         <text class="nk-name" x=${g2.x} y=${g2.y + gr + 10}>${g2.name}</text></g>`;
   })}</g>
+    ${d3.vpn ? w`<g class="nk-klick"><line class="nk-vpn-draht" x1=${m3.x - 14} y1="28" x2=${d3.vpn.x + 14} y2=${d3.vpn.y - 6}></line>
+      <line class="nk-vpn-fluss" x1=${m3.x - 14} y1="28" x2=${d3.vpn.x + 14} y2=${d3.vpn.y - 6}></line>
+      <circle class="nk-vpn-halo" cx=${d3.vpn.x} cy=${d3.vpn.y} r="40"></circle><circle class="nk-vpn" cx=${d3.vpn.x} cy=${d3.vpn.y} r="15"></circle>
+      <text class="nk-sym" style="font-size:13px" x=${d3.vpn.x} y=${d3.vpn.y + 0.5}>🔐</text>
+      <text class="nk-name an" style="font-weight:700" x=${d3.vpn.x} y=${d3.vpn.y - 21}>VPN · WireGuard</text></g>
+      ${vpn.map((g2, i6) => w`<g class="nk-g z-vpn ${hebt(g2) ? "gew" : ""}" data-i="v${i6}" @click=${() => auswaehlen(g2.id)}>
+        <line class="nk-vpn-draht duenn" x1=${g2.vx} y1=${g2.vy} x2=${g2.x} y2=${g2.y}></line>
+        <circle class="nk-dot" cx=${g2.x} cy=${g2.y} r=${wahl === g2.id ? r5 + 4 : r5}></circle><text class="nk-sym" x=${g2.x} y=${g2.y + 0.5} style="font-size:${r5}px">${g2.symbol}</text>
+        <text class="nk-name" x=${g2.x} y=${g2.y + r5 + 10}>${g2.name}</text></g>`)}` : A}
     ${d3.geraete.map((g2, i6) => tip(g2, i6, d3, false))}
+    ${vpn.map((g2, i6) => tip(g2, i6, d3, false, `v${i6}`))}
     ${o6(`<style>${hover}</style>`)}`}
   </svg>`;
 }
 function info(p4, d3, o7) {
-  const g2 = d3.geraete.find((x2) => x2.id === o7.wahl);
+  const g2 = [...d3.geraete, ...d3.vpn ? d3.vpn.geraete : []].find((x2) => x2.id === o7.wahl);
   const sw = d3.switche.find((x2) => x2.id === o7.wahl);
   const zu = () => p4.setze("geraete", { karte: { ...o7, wahl: null } }, false);
   if (sw) {
@@ -4937,8 +4956,8 @@ function info(p4, d3, o7) {
   const rand = FARBE[g2.zustand] || "var(--ink2)";
   return b2`<div class="glas-panel nk-info">
     <div class="nk-info-kopf"><span class="gross" style="border-color:${rand}">${g2.symbol}</span><div><b>${g2.name}</b><small>${g2.ip} · ${g2.anbindung}</small></div><button class="nk-zu" title=${t3("Schließen")} @click=${zu}>✕</button></div>
-    <div class="nk-werte"><div><b style="color:${rand}">${g2.signal != null ? `${g2.signal} %` : "–"}</b><small>${t3("Empfang")}</small></div>
-      <div><b>${g2.mbit ?? "–"}</b><small>Mbit/s</small></div><div><b style="color:${rand}">${t3(ZUSTAND[g2.zustand] || g2.zustand)}</b><small>${t3("Zustand")}</small></div></div>
+    <div class="nk-werte">${g2.ueber === "vpn" ? b2`<div><b>🔐</b><small>WireGuard</small></div><div><b>${g2.seit ? zeit(g2.seit) : "–"}</b><small>${t3("verbunden seit")}</small></div>` : b2`<div><b style="color:${rand}">${g2.signal != null ? `${g2.signal} %` : "–"}</b><small>${t3("Empfang")}</small></div>`}
+      ${g2.ueber === "vpn" ? A : b2`<div><b>${g2.mbit ?? "–"}</b><small>Mbit/s</small></div>`}<div><b style="color:${rand}">${t3(ZUSTAND[g2.zustand] || g2.zustand)}</b><small>${t3("Zustand")}</small></div></div>
     <button class="chip glas-panel" @click=${() => p4.geraetOeffnen(g2.id)}>${t3("Verlauf öffnen ›")}</button></div>`;
 }
 function netzkarte(p4, d3, u3, fehler = "") {
@@ -4961,7 +4980,7 @@ function netzkarte(p4, d3, u3, fehler = "") {
     <div class="nk-unten">
       ${o7.wahl && d3 ? info(p4, d3, o7) : z2 ? b2`<div class="glas-panel nk-zahlen"><div><b>${z2.online}</b><small>${t3("ONLINE")}</small></div><div><b>${z2.offline}</b><small>${t3("OFFLINE")}</small></div>
           <div><b class="amber">${z2.auffaellig}</b><small>${t3("AUFFÄLLIG")}</small></div><div><b class="blau">${z2.neu}</b><small>${t3("NEU")}</small></div></div>${legende}
-          ${d3 && d3.vpn ? b2`<div class="nk-legende">🔐 ${t3("{n} über VPN verbunden – nicht auf der Karte", { n: d3.vpn })}</div>` : A}
+          ${z2 && z2.vpn ? b2`<div class="nk-legende">🔐 ${t3("{n} über VPN verbunden (oben links)", { n: z2.vpn })}</div>` : A}
           ${d3 && !d3.mesh ? b2`<div class="nk-legende">${t3("Die Box hat noch keine Mesh-Liste geliefert – Buchsen, Switch und Repeater folgen (alle 10 Minuten).")}</div>` : A}
           ${d3 && !d3.box_erreichbar ? b2`<div class="nk-legende">${t3("Die Karte zeigt den letzten bekannten Stand.")}</div>` : A}
           <div class="nk-legende nk-nur-breit">${t3("Maus über einen Punkt: Name, IP, Anbindung · Tippen hebt den Weg hervor · Kreise = Anbindung, weiter draußen = schwächerer Empfang · Sektor = Art")}</div>` : A}
@@ -7294,7 +7313,7 @@ function waechterBlatt(p4) {
 }
 
 // src/heimnetz-panel.js
-var VERSION = true ? "0.35.0" : "entwicklung";
+var VERSION = true ? "0.36.0" : "entwicklung";
 var REITER = [
   ["uebersicht", merke("Übersicht")],
   ["speedtest", merke("Speedtest")],

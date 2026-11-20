@@ -771,7 +771,12 @@ async def test_netzkarte_aus_mesh_liste(hass, geladen, hass_ws_client):
     assert g["Pi"]["kabel"] and g["Pi"]["port"] == 1 and g["Pi"]["anbindung"] == "LAN 1 · 1 Gbit/s"
     assert g["Tab"]["zustand"] == "schwach" and g["Tab"]["anbindung"].startswith("WLAN 2,4 GHz")
     assert g["fernseher"]["anbindung"] == "WLAN 5 GHz · 92 % · 866 Mbit/s"
-    assert d["mesh"] and d["vpn"] == 0 and d["zahlen"]["online"] == len(d["geraete"])
+    assert (
+        d["mesh"]
+        and d["vpn"] is None
+        and d["zahlen"]["vpn"] == 0
+        and d["zahlen"]["online"] == len(d["geraete"])
+    )
     assert "00:11:22" not in str(d) and "02:11:22" not in str(d)
 
 

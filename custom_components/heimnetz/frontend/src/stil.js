@@ -387,7 +387,7 @@ select.w-ziel { max-width: 58%; } .ga-warnen .seg { flex: none; }
 .lb-meldezeile .text { flex: 1; min-width: 0; font-size: 13px; line-height: 1.3; }
 .lb-meldezeile .text b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .lb-meldezeile .text span { color: var(--ink2); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
-@media (prefers-reduced-motion: reduce) { .lb-draht i::after, .nk-fluss, .nk-uplink-fluss { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { .lb-draht i::after, .nk-fluss, .nk-uplink-fluss, .nk-vpn-fluss { animation: none !important; } }
 
 /* ── 1.9 Netzkarte (Mockup mockups/seiten/netzkarte.html 0.2) ── */
 .nk-buehne { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 104px 6px 178px; box-sizing: border-box; }
@@ -442,6 +442,11 @@ select.w-ziel { max-width: 58%; } .ga-warnen .seg { flex: none; }
 .nk-rep-draht { stroke: var(--s3); stroke-width: 3; opacity: .7; stroke-dasharray: 5 3; } .nk-rep-draht.kabel { stroke-dasharray: none; }
 .grau .nk-dot, .grau .nk-sw-kern { stroke: var(--ink2); } .grau .nk-lan, .grau .nk-wlan, .grau .nk-fluss, .grau .nk-uplink-fluss, .grau .nk-sw-draht { display: none; }
 .grau .nk-g, .grau .nk-sw { opacity: .45; }
+.nk-vpn-draht { stroke: var(--s5); stroke-width: 2.4; stroke-dasharray: 6 4; opacity: .75; } .nk-vpn-draht.duenn { stroke-width: 1.4; }
+.nk-vpn-fluss { stroke: #fff; stroke-width: 2.4; stroke-dasharray: 2 12; stroke-linecap: round; animation: nk-fl 1.6s linear infinite; opacity: .7; }
+.nk-vpn { fill: var(--sheet); stroke: var(--s5); stroke-width: 2.2; } .nk-vpn-halo { fill: var(--s5); opacity: .12; }
+.z-vpn .nk-dot { stroke: var(--s5); }
+.grau .nk-vpn-fluss { display: none; }
 .nk-tip { opacity: 0; pointer-events: none; transition: opacity .12s; } .nk-tip.an { opacity: 1; }
 .nk-tip rect { fill: var(--sheet); stroke: var(--panel-rand); stroke-width: 1; filter: drop-shadow(0 4px 10px rgba(0,0,0,.35)); }
 .nk-tip .t1 { font-size: 10px; font-weight: 700; fill: var(--ink); } .nk-tip .t2 { font-size: 8.5px; fill: var(--ink2); font-variant-numeric: tabular-nums; }
