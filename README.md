@@ -47,9 +47,9 @@ Home Assistant oder HACS an der richtigen Stelle öffnen.
 
 | Reiter | Inhalt |
 |--------|--------|
-| **Übersicht** | Gesamtstand (In Ordnung / Hinweise / Störung / FRITZ!Box nicht erreichbar), offene Befunde (z. B. doppelte IP-Adresse, zweiter DHCP-Server, kein Internet), Prüfungen vom Home-Assistant-Rechner aus (Box, Internet, Namensauflösung, DHCP-Test) |
+| **Übersicht** | Lagebild auf einen Blick: Gesamtstand, Leitung Pi → FRITZ!Box → Zugang → Internet mit Empfang und Tempo, Geräte als Punktfeld, Verbrauch heute, Wächter, wichtigste Meldung; dahinter offene Befunde (z. B. doppelte IP-Adresse, zweiter DHCP-Server, kein Internet), Prüfungen vom Home-Assistant-Rechner aus (Box, Internet, Namensauflösung, DHCP-Test) und wichtige Ereignisse |
 | **Speedtest** | Messungen der Ookla-Integration mit Grundlast im Netz, Raster nach Wochentag und Stunde, Tagesverlauf, Vergleich mit dem Tarif, Messplan und Serien-Messungen |
-| **Geräte** | Geräte im Heimnetz nach Verbindung oder Art (feste und eigene Arten), neu / online / offline, IP-Wechsel, Verlauf je Gerät; Umschalter **WLAN** (Bänder, Empfang je Gerät, Kanalwechsel, Hinweise) |
+| **Geräte** | Geräte im Heimnetz nach Verbindung oder Art (feste und eigene Arten), neu / online / offline, IP-Wechsel, Verlauf je Gerät; Umschalter **WLAN** (Bänder, Empfang je Gerät, Kanalwechsel, Hinweise) und **Karte** (Netzkarte: Anbindung je Gerät, LAN-Buchse, Switch, Repeater, Empfang – aus der Mesh-Liste der Box) |
 | **Internet** | Woher das Internet kommt (erkannt oder unter ⚙ → 🌐 Zugang festgelegt) und die Werte dazu: **Mobilfunk** (Technik, Zellen, Signal, Neueinwahlen, Karte zum Mast), **DSL** (Synchronrate, Störabstandsmarge, Dämpfung, Fehler, Neusynchronisierungen), **Glasfaser** (Lichtleistung mit dem guten Bereich laut Box), **Kabel** (nur die Geschwindigkeit – Kanäle und Pegel gibt die Box über TR-064 nicht heraus), **Ersatzzugang** über einen Mobilfunk-Stick; bei einem **vorgeschalteten Modem** (ZTE, Huawei, TP-Link, Beta) dessen Funkwerte mit Herkunft „vom vorgeschalteten Modem“ |
 | **Verbrauch** | Datenmenge je Tag aus den Zählern von FRITZ!Box Tools |
 | **Protokoll** | Journal der Integration und Ereignisprotokoll der Box, mit Suche und Filter |
@@ -418,9 +418,9 @@ Home Assistant or HACS at the right place.
 
 | Tab | Content |
 |-----|---------|
-| **Overview** | Overall state (OK / warnings / problem / FRITZ!Box unreachable), open findings (e.g. duplicate IP address, second DHCP server, no internet), checks from the Home Assistant host (box, internet, name resolution, DHCP test) |
+| **Overview** | Situation at a glance: overall state, line Pi → FRITZ!Box → access → internet with signal and speed, devices as a dot field, usage today, watchdog, most important message; behind it open findings (e.g. duplicate IP address, second DHCP server, no internet), checks from the Home Assistant host (box, internet, name resolution, DHCP test) and important events |
 | **Speed test** | Ookla measurements with background load, grid by weekday and hour, daily curve, comparison with your plan, test schedule and series |
-| **Devices** | Devices by connection or type (built-in and custom types), new / online / offline, IP changes, history per device; switch **Wi-Fi** (bands, signal per device, channel changes, hints) |
+| **Devices** | Devices by connection or type (built-in and custom types), new / online / offline, IP changes, history per device; switch **Wi-Fi** (bands, signal per device, channel changes, hints) and **Map** (network map: connection per device, LAN port, switch, repeater, signal – from the box mesh list) |
 | **Internet** | Where the internet comes from (detected or set under ⚙ → 🌐 Access) and its values: **mobile** (technology, cells, signal, reconnects, map to the mast), **DSL** (sync rate, noise margin, attenuation, errors, resyncs), **fibre** (optical power with the good range reported by the box), **cable** (speed only – the box does not provide channels and levels via TR-064), **backup access** via a mobile stick; with an **upstream modem** (ZTE, Huawei, TP-Link, beta) its radio values, marked “from the upstream modem” |
 | **Usage** | Data per day from the FRITZ!Box Tools counters |
 | **Log** | Journal of the integration and the box event log, with search and filter |

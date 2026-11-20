@@ -5,7 +5,8 @@ import { LitElement, html, nothing } from 'lit';
 import { stil } from './stil.js';
 import { phase, zeit } from './format.js';
 import { merke, sprache, t, waehle } from './sprache.js';
-import { uebersicht } from './ansichten/uebersicht.js';
+import { uebersicht, befundeBlatt } from './ansichten/uebersicht.js';
+import { netzkarte } from './ansichten/netzkarte.js';
 import { speedtest, kachelPopup, messungBlatt } from './ansichten/speedtest.js';
 import { geraeteReiter, geraetBlatt } from './ansichten/geraete.js';
 import { internet } from './ansichten/internet.js';
@@ -190,7 +191,13 @@ export class HeimnetzPanel extends LitElement {
 
   /** Welche Daten der gewählte Reiter braucht; „Geräte“ lädt nur den gewählten Teil (Geräte oder WLAN). */
   get _datenReiter() {
-    return this._reiter === 'geraete' && this._opt.geraete.teil === 'wlan' ? 'wlan' : this._reiter;
+    if (this._reiter !== 'geraete') return this._reiter;
+    return { wlan: 'wlan', karte: 'netzkarte' }[this._opt.geraete.teil] || 'geraete';
+  }
+
+  /** 1.1: Fenster „Befunde und Ereignisse“ (Tipp auf die Meldezeile der Übersicht). */
+  befundeOeffnen() {
+    this._blatt = { art: 'befunde' };
   }
 
   _parameter(reiter) {
@@ -709,6 +716,7 @@ export class HeimnetzPanel extends LitElement {
   /** Gewählter Teil des Reiters in Worten (für den Kontext einer Meldung). */
   _teilText() {
     if (this._reiter === 'geraete' && this._opt.geraete.teil === 'wlan') return t('WLAN');
+    if (this._reiter === 'geraete' && this._opt.geraete.teil === 'karte') return t('Netzkarte');
     if (this._reiter !== 'internet') return '';
     if (this._opt.internet.sicht === 'ersatz') return t('Ersatz');
     const z = this._daten.internet && this._daten.internet.zugang;
@@ -1015,8 +1023,8 @@ export class HeimnetzPanel extends LitElement {
           <div class="leise" style="margin-top:6px">${unter}</div>
         </div>
         <div class="chips">
-          ${kritisch ? html`<button class="chip glas-panel rot" @click=${() => this.geh('uebersicht')}>● ${t(kritisch > 1 ? '{n} Störungen' : '{n} Störung', { n: kritisch })}</button>` : nothing}
-          ${warnung ? html`<button class="chip glas-panel amber" @click=${() => this.geh('uebersicht')}>⚠ ${t(warnung > 1 ? '{n} Hinweise' : '{n} Hinweis', { n: warnung })}</button>` : nothing}
+          ${kritisch ? html`<button class="chip glas-panel rot" @click=${() => { this.geh('uebersicht'); this.befundeOeffnen(); }}>● ${t(kritisch > 1 ? '{n} Störungen' : '{n} Störung', { n: kritisch })}</button>` : nothing}
+          ${warnung ? html`<button class="chip glas-panel amber" @click=${() => { this.geh('uebersicht'); this.befundeOeffnen(); }}>⚠ ${t(warnung > 1 ? '{n} Hinweise' : '{n} Hinweis', { n: warnung })}</button>` : nothing}
           <button class="chip glas-panel" title=${t('Einstellungen')} @click=${() => this.einstellungenOeffnen()}>⚙</button>
         </div>
       </div>`;
@@ -1025,7 +1033,7 @@ export class HeimnetzPanel extends LitElement {
   _blattInhalt() {
     const b = this._blatt;
     if (!b) return nothing;
-    const art = { einstellungen: einstellungenBlatt, melden: meldenBlatt, github: githubBlatt, meldungen: meldungenBlatt, bild: bildBlatt, messung: messungBlatt, waechter: waechterBlatt }[b.art];
+    const art = { einstellungen: einstellungenBlatt, melden: meldenBlatt, github: githubBlatt, meldungen: meldungenBlatt, bild: bildBlatt, messung: messungBlatt, waechter: waechterBlatt, befunde: befundeBlatt }[b.art];
     return art ? art(this) : geraetBlatt(this, b);
   }
 
@@ -1034,6 +1042,7 @@ export class HeimnetzPanel extends LitElement {
     const u = this._daten.uebersicht;
     const ansicht = ANSICHT[this._reiter];
     const daten = this._reiter === 'uebersicht' ? u : this._daten[this._datenReiter];
+    const karte = this._reiter === 'geraete' && this._opt.geraete.teil === 'karte';
     return html`
       <div class="wurzel ${hell ? 'hell' : ''}" lang=${sprache()}>
         <div class="ui"><div class="app">
@@ -1046,12 +1055,12 @@ export class HeimnetzPanel extends LitElement {
           <nav class="glas-nav glas-panel sieben">
             ${REITER.map(([k, name]) => html`<button class=${k === this._reiter ? 'on' : ''} data-symbol=${SYMBOL[k]} title=${t(name)} aria-label=${t(name)} @click=${() => this.geh(k)}><span class="nt">${t(name)}</span></button>`)}
           </nav>
-          <div class="scroll" @scroll=${() => this.kachelWeg(true)}><div class="seite ${this._laedt ? 'laden' : ''}">
-            ${this._kopf(u)}
+          ${karte ? netzkarte(this, this._daten.netzkarte, u, this._fehler) : html`<div class="scroll" @scroll=${() => this.kachelWeg(true)}><div class="seite ${this._laedt ? 'laden' : ''}">
+            ${this._reiter === 'uebersicht' && u ? nothing : this._kopf(u)}
             ${this._fehler ? html`<div class="glas-panel fehler-band">${t('Daten nicht abrufbar: {fehler}', { fehler: this._fehler })}</div>` : nothing}
             ${daten || this._reiter === 'geraete' ? ansicht(this, daten) : html`<div class="glas-panel block"><div class="leer">${t('lädt …')}</div></div>`}
             <div class="leise" style="text-align:center;padding:8px">Heimnetz ${VERSION}</div>
-          </div></div>
+          </div></div>`}
           <div class="schleier ${this._blatt ? 'an' : ''}" @click=${() => this.zu()}></div>
           <div class="sheet glas-panel ${this._blatt ? 'an' : ''} ${['einstellungen', 'waechter'].includes(this._blatt?.art) ? 'breit' : ''}">${this._blatt && !['melden', 'github'].includes(this._blatt.art) ? meldenKnopf(this, true) : nothing}${this._blattInhalt()}</div>
           ${this._blatt ? nothing : meldenKnopf(this)}

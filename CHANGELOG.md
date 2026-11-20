@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## [0.35.0]
+
+- **Übersicht neu als „Lagebild“** – am Handy ohne Scrollen: eine Zeile mit dem Gesamtstand, die **Leitung**
+  Pi → FRITZ!Box → Zugang (beim Mobilfunk mit Empfangsbalken) → Internet mit fließender Verbindung (wo es hakt: rot
+  gestrichelt) und dem letzten Tempo, ein **Punktfeld** der Geräte (grün online, amber wackelt, blau neu), Kacheln
+  Heute und **Wächter**, eine **Meldezeile** mit der wichtigsten Meldung. Befunde, Prüfungen und wichtige Ereignisse
+  stehen im Fenster dahinter. Die Kacheln und Listen von bisher entfallen.
+- **Netzkarte** (Geräte › Karte, oder „🗺️ Netzkarte ›“ in der Übersicht): FRITZ!Box in der Mitte, Ringe nach
+  Anbindung (Kabel, 5 GHz, 2,4 GHz, offline; 6 GHz, wenn die Box es hat), weiter draußen = schwächerer Empfang,
+  Sektoren nach Art. Aus der Mesh-Liste der Box: Buchse (LAN 1–4) und Geschwindigkeit je Kabelgerät, ein **Switch**,
+  wo mehrere Geräte an derselben Buchse hängen, **Repeater** mit ihren Geräten. Maus über einem Punkt zeigt Name, IP,
+  Anbindung und Zustand, Tippen hebt den Weg hervor und öffnet eine Infokarte. Geräte über VPN stehen nicht auf der
+  Karte (Hinweis mit Anzahl).
+- Diagnose-Download: Zählung der Anschlüsse und Namen der Schnittstellen aus der Mesh-Liste (ohne Adressen).
+
 ## [0.34.1]
 
 - **Wächter:** Das Skript auf den Steckdosen blieb nach 0.34.0 auf dem alten Stand (ohne Beobachter und Befund), weil

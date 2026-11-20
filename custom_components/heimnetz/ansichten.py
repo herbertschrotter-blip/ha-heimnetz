@@ -29,9 +29,11 @@ from .logik import diagnose as dg
 from .logik import geraete as gr
 from .logik import github as gh
 from .logik import karte as ka
+from .logik import lagebild as lb
 from .logik import leitung as ln
 from .logik import messplan as mp
 from .logik import mobil as mb
+from .logik import netzkarte as nk
 from .logik import ocid as lc
 from .logik import osm as lo
 from .logik import verbrauch as vb
@@ -229,10 +231,10 @@ def art_von(
     )
 
 
-def geraete_daten(
+def _geraete_liste(
     lz: Laufzeit, jetzt: float, ha: dict[str, tuple[str, str]], sprache_: str
-) -> dict[str, Any]:
-    """Blockierend: Geräte mit Ereignissen der letzten 24 h, Streifen und Einstufung."""
+) -> list[tuple[str, dict[str, Any]]]:
+    """Blockierend: (MAC, Eintrag) je Gerät, das online ist oder in den letzten 24 h etwas erlebt hat."""
     stand = lz.abruf.data
     ab_ = jetzt - TAG_S
     w = stand.wlan
@@ -241,7 +243,7 @@ def geraete_daten(
     for z in reversed(lz.datenbank.journal_lesen(ab_, grenze=20_000)):
         if z.ereignis.mac:
             je_mac.setdefault(z.ereignis.mac, []).append((z.t, z.ereignis))
-    liste = []
+    liste: list[tuple[str, dict[str, Any]]] = []
     for mac, g in stand.geraete.items():
         ev = je_mac.get(mac, [])
         if not g.aktiv and not ev:
@@ -256,21 +258,36 @@ def geraete_daten(
         kennung = vl.geraete_id(mac, lz.salz)
         art = art_von(lz, g, kennung, ha, sprache_)
         liste.append(
-            {
-                "id": kennung,
-                "name": ohne_mac(gr.anzeigename(g.name, sprache_)),
-                "ip": g.ip,
-                "art": g.art,
-                "aktiv": g.aktiv,
-                "einstufung": vl.einstufung(g.aktiv, abbrueche, any(a == "neu" for _, a in arten)),
-                "abbrueche": abbrueche,
-                "streifen": vl.streifen(vl.abschnitte(start, arten, ab_, jetzt), ab_, jetzt),
-                "verbindung": gr.verbindung(g.art, g.aktiv, baender.get(mac), g.vpn),
-                "band": f"{wl.band_text(b, sprache_)} GHz" if (b := baender.get(mac)) else "",
-                "kat": art.kat,
-                "art_quelle": art.quelle,
-            }
+            (
+                mac,
+                {
+                    "id": kennung,
+                    "name": ohne_mac(gr.anzeigename(g.name, sprache_)),
+                    "ip": g.ip,
+                    "art": g.art,
+                    "aktiv": g.aktiv,
+                    "einstufung": vl.einstufung(
+                        g.aktiv, abbrueche, any(a == "neu" for _, a in arten)
+                    ),
+                    "abbrueche": abbrueche,
+                    "streifen": vl.streifen(vl.abschnitte(start, arten, ab_, jetzt), ab_, jetzt),
+                    "verbindung": gr.verbindung(g.art, g.aktiv, baender.get(mac), g.vpn),
+                    "band": f"{wl.band_text(b, sprache_)} GHz" if (b := baender.get(mac)) else "",
+                    "kat": art.kat,
+                    "art_quelle": art.quelle,
+                },
+            )
         )
+    return liste
+
+
+def geraete_daten(
+    lz: Laufzeit, jetzt: float, ha: dict[str, tuple[str, str]], sprache_: str
+) -> dict[str, Any]:
+    """Blockierend: Geräte mit Ereignissen der letzten 24 h, Streifen und Einstufung."""
+    stand = lz.abruf.data
+    ab_ = jetzt - TAG_S
+    liste = [x for _, x in _geraete_liste(lz, jetzt, ha, sprache_)]
     liste.sort(
         key=lambda x: (x["einstufung"] not in ("neu", "wackelt"), not x["aktiv"], x["name"].lower())
     )
@@ -291,6 +308,59 @@ def geraete_daten(
 async def geraete(hass: HomeAssistant, lz: Laufzeit) -> dict[str, Any]:
     return await hass.async_add_executor_job(
         geraete_daten, lz, _jetzt(), ha_geraete(hass), sprache(hass)
+    )
+
+
+def netzkarte_daten(
+    lz: Laufzeit, jetzt: float, ha: dict[str, tuple[str, str]], sprache_: str
+) -> dict[str, Any]:
+    """Blockierend: Lage aller Punkte der Netzkarte (1.9) – Anschluss aus der Mesh-Liste, Empfang aus der WLAN-Tabelle."""
+    stand = lz.abruf.data
+    w = stand.wlan
+    funk = {f.mac: f for f in w.geraete} if w else {}
+    grenze = lz.einstellungen.wert.wlan_schwach
+    kategorien = ar.alle(sprache_, lz.einstellungen.eigene)
+    symbol = {k: text.split(" ")[0] for k, text in kategorien}
+    namen = [(k, text.split(" ", 1)[-1]) for k, text in kategorien]
+    punkte = []
+    vpn = 0
+    for mac, x in _geraete_liste(lz, jetzt, ha, sprache_):
+        if (
+            x["verbindung"] == gr.VPN
+        ):  # von unterwegs über den Tunnel: nicht im Heimnetz verkabelt oder gefunkt
+            vpn += x["aktiv"]
+            continue
+        f = funk.get(mac)
+        punkte.append(
+            nk.Punkt(
+                id=x["id"],
+                mac=mac,
+                name=x["name"],
+                symbol=symbol.get(x["kat"], "•"),
+                kat=x["kat"],
+                ip=x["ip"],
+                aktiv=x["aktiv"],
+                zustand=x["einstufung"],
+                art=x["art"],
+                band=wl.band_von(f, w.baender) if f and w else None,
+                signal=f.signal if f else None,
+                mbit=f.mbit if f else None,
+                schwach=bool(f and f.signal is not None and f.signal < grenze),
+            )
+        )
+    karte = nk.zeichnen(punkte, stand.netz, namen, sprache_)
+    return {
+        **karte,
+        "vpn": vpn,
+        "box_erreichbar": stand.box_erreichbar,
+        "stand": stand.zeit,
+        "mesh": bool(stand.netz.geraete),
+    }
+
+
+async def netzkarte(hass: HomeAssistant, lz: Laufzeit) -> dict[str, Any]:
+    return await hass.async_add_executor_job(
+        netzkarte_daten, lz, _jetzt(), ha_geraete(hass), sprache(hass)
     )
 
 
@@ -1215,8 +1285,10 @@ async def uebersicht(hass: HomeAssistant, lz: Laufzeit) -> dict[str, Any]:
     jetzt = _jetzt()
     wichtig, zaehlung, messungen = await hass.async_add_executor_job(_uebersicht_db, lz, jetzt)
     heute = (await verbrauch(hass, lz, 1, ganzer_monat=False))["kacheln"]
-    stufen = [
-        vl.einstufung(g.aktiv, *zaehlung.get(mac, (0, False))) for mac, g in s.geraete.items()
+    stufen = [  # nur Geräte, die gerade online sind: das Punktfeld färbt Online-Punkte
+        vl.einstufung(g.aktiv, *zaehlung.get(mac, (0, False)))
+        for mac, g in s.geraete.items()
+        if g.aktiv
     ]
     m = s.mobil
     dhcp_ok, dhcp_text = bf.dhcp_pruefung(s.dhcp, s.lan.router, sp_)
@@ -1239,23 +1311,43 @@ async def uebersicht(hass: HomeAssistant, lz: Laufzeit) -> dict[str, Any]:
         },
         {"name": t("DHCP-Test", sp_), "ok": dhcp_ok, "wert": dhcp_text},
     ]
+    zugang_ = zugang_jetzt(lz, sp_)
+    befunde = [
+        {
+            "key": b.key.split(":")[0],
+            "stufe": b.stufe,
+            "titel": ohne_mac(b.titel),
+            "text": ohne_mac(b.text),
+        }
+        for b in s.befunde
+    ]
+    wichtig_ = [
+        {"t": z.t, "stufe": z.ereignis.stufe, "text": ohne_mac(z.ereignis.text)} for z in wichtig
+    ]
+    info = lz.abruf.box_info
     return {
         "stand": s.zeit,
         "gesamt": s.gesamt,
         "box_erreichbar": s.box_erreichbar,
+        # 1.1 „Lagebild“: fertig für die Seite
+        "kopf": lb.kopf(s.box_erreichbar, s.pi.internet, [b.stufe for b in s.befunde], sp_),
+        "leitung": lb.leitung(
+            s.box_erreichbar,
+            s.pi.box,
+            s.pi.internet,
+            _lage_zugang(zugang_, m, s.pi.internet, sp_),
+            info.modell if info else "",
+            sp_,
+        ),
+        "meldung": lb.meldung(befunde, wichtig_[0] if wichtig_ else None, sp_),
+        "waechter": lb.waechter(
+            lz.waechter.zustaende() if lz.waechter is not None else [], jetzt, sp_
+        ),
         "fehler": [ohne_mac(f) for f in s.fehler],
-        "befunde": [
-            {
-                "key": b.key.split(":")[0],
-                "stufe": b.stufe,
-                "titel": ohne_mac(b.titel),
-                "text": ohne_mac(b.text),
-            }
-            for b in s.befunde
-        ],
+        "befunde": befunde,
         "pruefungen": pruefungen,
         "internet": {"ok": s.pi.internet, "technik": m.technik if m else None},
-        "zugang": _zugang_kurz(zugang_jetzt(lz, sp_)),
+        "zugang": _zugang_kurz(zugang_),
         "geraete": {
             "online": s.online,
             "bekannt": len(s.geraete),
@@ -1272,11 +1364,38 @@ async def uebersicht(hass: HomeAssistant, lz: Laufzeit) -> dict[str, Any]:
         },
         "speedtest": asdict(aw.aus_messungen(messungen[-1:])[0]) if messungen else None,
         "verbrauch_heute": None if heute is None else heute["heute"],
-        "wichtig": [
-            {"t": z.t, "stufe": z.ereignis.stufe, "text": ohne_mac(z.ereignis.text)}
-            for z in wichtig
-        ],
+        "wichtig": wichtig_,
     }
+
+
+ZUGANG_NAME = {
+    "dsl": "DSL",
+    "glasfaser": merke("Glasfaser"),
+    "kabel": merke("Kabel"),
+    "extern": merke("Zugang"),
+}
+
+
+def _lage_zugang(
+    z: zg.Internetzugang, m: mb.Mobilfunk | None, internet: bool | None, sp_: str
+) -> lb.Zugang | None:
+    """Dritter Knoten der Leitung: beim Mobilfunk Technik und Empfang, sonst die Art des Zugangs."""
+    if z.art == "mobilfunk" or (not z.art and m is not None):
+        rsrp = m.haupt.rsrp if m and m.haupt else None
+        return lb.Zugang(
+            "mobilfunk",
+            (m.technik if m and m.technik else None) or t("Mobilfunk", sp_),
+            True
+            if internet
+            else None
+            if m is None or (internet is None and not m.technik)
+            else bool(m.technik),
+            mb.lage_rsrp(mb.schwaechster(m)),
+            f"{rsrp} dBm".replace("-", "−") if rsrp is not None else "",
+        )
+    if not z.art:
+        return None
+    return lb.Zugang(z.art, t(ZUGANG_NAME.get(z.art, z.art), sp_), True if internet else None)
 
 
 def einstellungen(hass: HomeAssistant, lz: Laufzeit) -> dict[str, Any]:

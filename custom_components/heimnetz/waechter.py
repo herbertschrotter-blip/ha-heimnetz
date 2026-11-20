@@ -22,11 +22,12 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .const import CONF_MODEM_KENNWORT, CONF_SHELLY_KENNWORT, sprache_system
+from .logik import lagebild as lb
 from .logik import sammeln as sm
 from .logik import waechter as wa
 from .logik.ereignis import INFO, WARNUNG, Ereignis
 from .logik.modem import adresse_erlaubt
-from .logik.sprache import Ungueltig, t
+from .logik.sprache import DE, Ungueltig, t
 from .shelly import Info, ShellyFehler, Steckdose
 from .vorgeschaltet import baustein_neustarten
 from .vorgeschaltet.netz import Lauf, neue_session
@@ -424,6 +425,34 @@ class Waechterdienst:
             "gelesen": self._gelesen or None,
             "kennwort": bool(self._kennwort()),
         }
+
+    def zustaende(self) -> list[lb.Waechterzustand]:
+        """Je Wächter: an, schlechtester Punkt seiner Steckdosen, laufender Ausfall, Zeiten der Eingriffe (Übersicht)."""
+        aus = []
+        for w in self.liste:
+            punkte, eingriffe = [], []
+            for i, g in enumerate(w.glieder):
+                stand = self.staende.get((w.id, i))
+                k = wa.glied_karte(g, stand, DE)
+                if k["dose"]:
+                    punkte.append(k["punkt"])
+                eingriffe += [
+                    float(e.get("t") or 0)
+                    for e in (stand.letzte if stand else ())
+                    if e.get("was") == "strom" and e.get("t")
+                ]
+            punkt = (
+                "rot"
+                if "rot" in punkte
+                else "amber"
+                if "amber" in punkte
+                else "grau"
+                if not punkte or "grau" in punkte
+                else "ok"
+            )
+            s = self.sanft.get(w.id)
+            aus.append(lb.Waechterzustand(w.an, punkt, s.weg_seit if s else None, tuple(eingriffe)))
+        return aus
 
     async def vorschlag(self) -> dict[str, Any]:
         """Für „Wächter einrichten“: Kette, Home Assistant, Steckdosen."""

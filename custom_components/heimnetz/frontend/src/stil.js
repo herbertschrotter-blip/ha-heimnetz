@@ -337,6 +337,141 @@ select.w-ziel { max-width: 58%; } .ga-warnen .seg { flex: none; }
   .ereig { grid-template-columns: 12px 70px 1fr; }
   .wr { grid-template-columns: 22px repeat(24, minmax(0, 1fr)); gap: 1px; font-size: 9px; }
 }
+
+/* ── 1.1 Übersicht „Lagebild“ (Mockup mockups/seiten/uebersicht.html 0.3) ── */
+.app { --nk-gruen: #30d158; }
+.lb { display: flex; flex-direction: column; gap: 10px; }
+.lb-kopf { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.menue-knopf ~ .scroll .lb-kopf { padding-left: 40px; } .menue-knopf ~ .nk-oben { left: 58px; }
+.lb-titel { font-size: 24px; font-weight: 300; letter-spacing: -.3px; display: flex; align-items: center; gap: 10px; min-width: 0; }
+.lb-titel .punkt { width: 12px; height: 12px; margin: 0; flex: none; }
+.lb-stand { font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--ink2); display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.lb-leitung { position: relative; padding: 14px 12px 12px; }
+.lb-reihe { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: start; position: relative; z-index: 1; }
+.lb-knoten { display: flex; flex-direction: column; align-items: center; gap: 5px; text-align: center; color: var(--ink2); }
+.lb-knoten .rund { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; font-size: 24px;
+  background: var(--panel); border: 1px solid var(--panel-rand); box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 18%, transparent); }
+.lb-knoten.gut { color: var(--nk-gruen); } .lb-knoten.warn { color: var(--amber); } .lb-knoten.weg { color: var(--rot); }
+.lb-knoten b { font-size: 12px; color: var(--ink); font-weight: 600; }
+.lb-knoten small { font-size: 11px; color: var(--ink2); line-height: 1.25; }
+.lb-draht { position: absolute; left: 12.5%; right: 12.5%; top: 40px; height: 4px; display: grid; grid-template-columns: repeat(3, 1fr); z-index: 0; }
+.lb-draht i { display: block; height: 4px; margin: 0 28px; border-radius: 2px; position: relative; overflow: hidden; background: color-mix(in srgb, var(--nk-gruen) 35%, transparent); }
+.lb-draht i::after { content: ''; position: absolute; inset: 0; width: 40%; background: linear-gradient(90deg, transparent, var(--nk-gruen), transparent); animation: lb-fluss 1.8s linear infinite; }
+.lb-draht i.weg { background: repeating-linear-gradient(90deg, var(--rot) 0 6px, transparent 6px 11px); }
+.lb-draht i.weg::after { display: none; }
+@keyframes lb-fluss { from { transform: translateX(-100%); } to { transform: translateX(260%); } }
+.lb-tempo { display: flex; justify-content: center; gap: 14px; margin-top: 10px; font-size: 13px; color: var(--ink2); width: 100%; flex-wrap: wrap; }
+.lb-tempo b { color: var(--ink); font-size: 18px; font-weight: 600; }
+.lb-balken { display: inline-flex; gap: 2px; align-items: flex-end; height: 12px; margin-left: 4px; vertical-align: -1px; }
+.lb-balken i { width: 3px; border-radius: 1px; background: color-mix(in srgb, var(--ink2) 35%, transparent); }
+.lb-balken i.an { background: currentColor; }
+.lb-balken i:nth-child(1) { height: 4px; } .lb-balken i:nth-child(2) { height: 7px; } .lb-balken i:nth-child(3) { height: 10px; } .lb-balken i:nth-child(4) { height: 12px; }
+.lb-punktfeld { padding: 12px 14px; cursor: pointer; }
+.lb-pf-kopf { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.lb-pf-zahl { font-size: 22px; font-weight: 600; } .lb-pf-zahl small { font-size: 13px; color: var(--ink2); font-weight: 400; }
+.lb-pf-punkte { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
+.lb-pf-punkte i { width: 9px; height: 9px; border-radius: 50%; background: color-mix(in srgb, var(--ink2) 25%, transparent); }
+.lb-pf-punkte i.an { background: var(--nk-gruen); box-shadow: 0 0 6px var(--nk-gruen); }
+.lb-pf-punkte i.wa { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
+.lb-pf-punkte i.neu { background: var(--blau); box-shadow: 0 0 6px var(--blau); }
+.lb-pf-fuss { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+.lb-pf-fuss .chip { font-size: 12px; padding: 4px 11px; }
+.lb-mini { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.lb-mini .glas-k { padding: 10px 12px; }
+.lb-wort { font-size: 20px; display: flex; align-items: center; gap: 8px; } .lb-wort .punkt { margin: 0; }
+.lb-meldezeile { display: flex; align-items: center; gap: 10px; padding: 11px 14px; width: 100%; box-sizing: border-box; }
+.lb-meldezeile .anzahl { min-width: 26px; height: 26px; border-radius: 13px; display: grid; place-items: center; font-weight: 700; font-size: 13px; flex: none; }
+.lb-meldezeile .anzahl.rot { background: color-mix(in srgb, var(--rot) 22%, transparent); color: var(--rot); }
+.lb-meldezeile .anzahl.amber { background: color-mix(in srgb, var(--amber) 22%, transparent); color: var(--amber); }
+.lb-meldezeile .anzahl.ok { background: color-mix(in srgb, var(--nk-gruen) 20%, transparent); color: var(--nk-gruen); }
+.lb-meldezeile .text { flex: 1; min-width: 0; font-size: 13px; line-height: 1.3; }
+.lb-meldezeile .text b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lb-meldezeile .text span { color: var(--ink2); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+@media (prefers-reduced-motion: reduce) { .lb-draht i::after, .nk-fluss, .nk-uplink-fluss { animation: none !important; } }
+
+/* ── 1.9 Netzkarte (Mockup mockups/seiten/netzkarte.html 0.2) ── */
+.nk-buehne { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 104px 6px 178px; box-sizing: border-box; }
+.nk-buehne svg { width: 100%; height: 100%; display: block; }
+.nk-oben { position: absolute; top: 12px; left: 12px; right: 12px; z-index: 4; display: flex; flex-direction: column; gap: 8px; }
+.nk-leiste { display: flex; align-items: center; gap: 10px; padding: 7px 12px 7px 8px; }
+.nk-zurueck { font-size: 20px; width: 32px; height: 32px; border-radius: 50% !important; display: grid; place-items: center; color: var(--ink); background: rgba(120,120,128,.18) !important; flex: none; text-align: center !important; }
+.nk-titel { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.nk-titel b { font-size: 17px; font-weight: 600; display: flex; align-items: center; gap: 7px; }
+.nk-titel b .punkt { width: 9px; height: 9px; margin: 0; }
+.nk-titel small { font-size: 11px; color: var(--ink2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nk-filter { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+.nk-filter .chip { padding: 5px 11px; font-size: 12px; white-space: nowrap; }
+.nk-filter .chip.on { background: rgba(255,255,255,.24); color: var(--ink); font-weight: 600; }
+.hell .nk-filter .chip.on { background: #fff; }
+.nk-unten { position: absolute; left: 12px; right: 12px; bottom: 86px; z-index: 4; display: flex; flex-direction: column; gap: 8px; }
+.nk-ring { fill: none; stroke: var(--gridc); stroke-width: 1; } .nk-ring.gestr { stroke-dasharray: 2 4; }
+.nk-ringname { font-size: 8px; letter-spacing: 1.4px; fill: var(--ink2); text-transform: uppercase; }
+.nk-sektor { font-size: 8.5px; letter-spacing: 1.8px; fill: var(--ink2); text-transform: uppercase; font-weight: 600; opacity: .8; }
+.nk-lan { stroke: var(--nk-gruen); stroke-width: 2.2; opacity: .55; }
+.nk-wlan { stroke: var(--nk-gruen); stroke-width: 1.4; stroke-dasharray: 2 5; opacity: .6; }
+.nk-fluss { stroke: #b8ffcb; stroke-dasharray: 2 12; stroke-width: 2.6; stroke-linecap: round; animation: nk-fl 1.3s linear infinite; }
+.nk-fluss.wlan { stroke-width: 2; animation-duration: 2.2s; }
+@keyframes nk-fl { to { stroke-dashoffset: -14; } }
+.z-schwach .nk-wlan, .z-schwach .nk-fluss, .z-wackelt .nk-wlan, .z-wackelt .nk-lan, .z-wackelt .nk-fluss { stroke: var(--amber); }
+.z-neu .nk-wlan, .z-neu .nk-fluss { stroke: var(--blau); }
+.nk-dot { fill: var(--sheet); stroke-width: 2; stroke: var(--nk-gruen); }
+.z-wackelt .nk-dot, .z-schwach .nk-dot { stroke: var(--amber); } .z-neu .nk-dot { stroke: var(--blau); }
+.nk-sym { text-anchor: middle; dominant-baseline: central; }
+.nk-name { font-size: 8.5px; fill: var(--ink); text-anchor: middle; opacity: 0; }
+.nk-name.an, .namen .nk-name, .nk-g.gew .nk-name { opacity: .92; }
+.dimm .nk-g:not(.gew) .nk-name { opacity: 0; }
+.nk-port { font-size: 7px; fill: var(--ink2); text-anchor: middle; dominant-baseline: central; letter-spacing: .5px; font-weight: 600; }
+.nk-port-bg { fill: var(--sheet); stroke: var(--gridc); }
+.nk-g, .nk-draht, .nk-sw { transition: opacity .25s; } .nk-g, .nk-klick { cursor: pointer; }
+.dimm .nk-g:not(.gew), .dimm .nk-draht:not(.gew), .dimm .nk-sw:not(.gew) { opacity: .2; }
+.nk-g.gew .nk-dot { stroke-width: 3; }
+.nk-aus { fill: none; stroke: var(--ink2); stroke-width: 1.2; opacity: .55; }
+.nk-box { fill: var(--sheet); stroke: var(--nk-gruen); stroke-width: 2.5; }
+.nk-box-halo { fill: var(--nk-gruen); opacity: .14; }
+.nk-weg .nk-box { stroke: var(--rot); stroke-dasharray: 4 3; } .nk-weg .nk-box-halo { fill: var(--rot); }
+.nk-uplink { stroke: var(--nk-gruen); stroke-width: 3; opacity: .55; }
+.nk-uplink-fluss { stroke: #b8ffcb; stroke-width: 3; stroke-dasharray: 2 12; stroke-linecap: round; animation: nk-fl 1s linear infinite reverse; }
+.nk-knoten { fill: var(--sheet); stroke: var(--ink2); stroke-width: 2; }
+.nk-knoten.gut { stroke: var(--nk-gruen); } .nk-knoten.warn { stroke: var(--amber); } .nk-knoten.weg { stroke: var(--rot); }
+.nk-kt { font-size: 9px; fill: var(--ink2); } .nk-kb { font-size: 10px; fill: var(--ink); font-weight: 600; }
+.nk-sw-kern { fill: var(--sheet); stroke: var(--s1); stroke-width: 2; } .nk-sw.gew .nk-sw-kern { stroke-width: 3; }
+.nk-sw-draht { stroke: var(--s1); stroke-width: 3; opacity: .7; }
+.nk-sw-name { font-size: 7.5px; fill: var(--ink); text-anchor: middle; font-weight: 700; }
+.nk-rep { fill: var(--sheet); stroke: var(--s3); stroke-width: 2.2; }
+.nk-rep-halo { fill: var(--s3); opacity: .12; }
+.nk-rep-draht { stroke: var(--s3); stroke-width: 3; opacity: .7; stroke-dasharray: 5 3; } .nk-rep-draht.kabel { stroke-dasharray: none; }
+.grau .nk-dot, .grau .nk-sw-kern { stroke: var(--ink2); } .grau .nk-lan, .grau .nk-wlan, .grau .nk-fluss, .grau .nk-uplink-fluss, .grau .nk-sw-draht { display: none; }
+.grau .nk-g, .grau .nk-sw { opacity: .45; }
+.nk-tip { opacity: 0; pointer-events: none; transition: opacity .12s; } .nk-tip.an { opacity: 1; }
+.nk-tip rect { fill: var(--sheet); stroke: var(--panel-rand); stroke-width: 1; filter: drop-shadow(0 4px 10px rgba(0,0,0,.35)); }
+.nk-tip .t1 { font-size: 10px; font-weight: 700; fill: var(--ink); } .nk-tip .t2 { font-size: 8.5px; fill: var(--ink2); font-variant-numeric: tabular-nums; }
+.nk-tip .t3 { font-size: 8.5px; fill: var(--ink); } .nk-tip .t4 { font-size: 8.5px; }
+.nk-zahlen { display: grid; grid-template-columns: repeat(4, 1fr); padding: 8px 4px; text-align: center; }
+.nk-zahlen b { display: block; font-size: 19px; font-weight: 300; }
+.nk-zahlen small { font-size: 9.5px; letter-spacing: .8px; color: var(--ink2); }
+.nk-legende { display: flex; flex-wrap: wrap; gap: 3px 11px; font-size: 10.5px; color: var(--ink2); justify-content: center; padding: 0 4px; text-align: center; }
+.nk-legende i { display: inline-block; vertical-align: middle; margin-right: 4px; }
+.nk-legende .lg-lan { width: 14px; height: 2.5px; background: var(--nk-gruen); border-radius: 2px; }
+.nk-legende .lg-wlan { width: 14px; height: 0; border-top: 2px dotted var(--nk-gruen); }
+.nk-legende .lg-p { width: 8px; height: 8px; border-radius: 50%; border: 2px solid; }
+.nk-legende .lg-sw { width: 9px; height: 9px; border-radius: 3px; border: 2px solid var(--s1); }
+.nk-info { padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.nk-info-kopf { display: flex; align-items: center; gap: 10px; }
+.nk-info-kopf .gross { font-size: 22px; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--sheet); border: 2px solid var(--amber); flex: none; }
+.nk-info-kopf div { flex: 1; min-width: 0; }
+.nk-info-kopf b { font-size: 15px; } .nk-info-kopf small { display: block; font-size: 11.5px; color: var(--ink2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nk-zu { font-size: 16px; color: var(--ink2); padding: 4px 6px; }
+.nk-werte { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; text-align: center; }
+.nk-werte div { background: rgba(120,120,128,.14); border-radius: 10px; padding: 5px 4px; min-width: 0; }
+.nk-werte b { display: block; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .nk-werte small { font-size: 10px; color: var(--ink2); }
+.nk-info p { margin: 0; font-size: 12px; color: var(--ink2); }
+.nk-info .chip { align-self: flex-start; font-size: 12px; padding: 5px 12px; }
+@container (max-width: 699px) { .nk-nur-breit { display: none; } }
+@container (min-width: 700px) {
+  .nk-buehne { padding: 150px 372px 20px 20px; }
+  .nk-oben { top: 80px; left: 24px; right: 380px; }
+  .nk-unten { top: 80px; right: 24px; left: auto; bottom: auto; width: 330px; }
+}
 `;
 
 export const stil = css`${unsafeCSS(GLAS)}`;

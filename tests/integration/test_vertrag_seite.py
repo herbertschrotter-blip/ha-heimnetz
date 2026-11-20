@@ -41,6 +41,7 @@ BEFEHLE = {
     "arten": {},  # WU-0010
     "warnungen": {},  # WU-0010
     "waechter": {},  # Wächter (18.11.2026)
+    "netzkarte": {},  # Netzkarte (1.9, 20.11.2026)
 }
 # WU-0009: Reiter „Internet“ je Zugangsart – DSL, Glasfaser und Kabel mit erfundenen Werten in der Form der FRITZ!-Doku
 ANDERE_ZUGAENGE = {

@@ -5,6 +5,7 @@ DHCP-Test werden ersetzt; die Beispieldaten sind dieselben wie in den Tests der 
 """
 
 import asyncio
+import json
 from unittest.mock import patch
 
 import pytest
@@ -17,6 +18,7 @@ from custom_components.heimnetz.logik import befunde as bf
 from custom_components.heimnetz.logik import geraete as gr
 from custom_components.heimnetz.logik import messplan as mp
 from custom_components.heimnetz.logik import mobil as mb
+from custom_components.heimnetz.logik import netzkarte as nk
 from custom_components.heimnetz.logik import protokoll as pr
 from custom_components.heimnetz.logik import wlan as wl
 from custom_components.heimnetz.logik import zugang as zg
@@ -78,6 +80,57 @@ def plan_aus():
         yield
 
 
+def _mesh() -> str:
+    """Mesh-Liste in der Form der FRITZ!Box (Netzkarte): Pi an LAN 1, Fernseher auf 5 GHz, Tab und kind auf 2,4 GHz."""
+
+    def client(uid: str, mac: str, typ: str, an: str, kbit: int) -> dict:
+        return {
+            "uid": uid,
+            "is_meshed": False,
+            "device_mac_address": mac,
+            "node_interfaces": [
+                {
+                    "uid": f"{uid}-i",
+                    "type": typ,
+                    "mac_address": mac,
+                    "node_links": [
+                        {
+                            "state": "CONNECTED",
+                            "node_1_uid": "box",
+                            "node_interface_1_uid": an,
+                            "node_2_uid": uid,
+                            "node_interface_2_uid": f"{uid}-i",
+                            "cur_data_rate_rx": kbit,
+                            "cur_data_rate_tx": kbit,
+                        }
+                    ],
+                }
+            ],
+        }
+
+    box = {
+        "uid": "box",
+        "is_meshed": True,
+        "mesh_role": "master",
+        "node_interfaces": [
+            {"uid": "lan1", "name": "LAN:1", "type": "LAN"},
+            {"uid": "w2", "name": "AP:2G:0", "type": "WLAN"},
+            {"uid": "w5", "name": "AP:5G:0", "type": "WLAN"},
+        ],
+    }
+    return json.dumps(
+        {
+            "nodes": [
+                box,
+                client("pi", "00:11:22:33:44:01", "LAN", "lan1", 1_000_000),
+                client("tv", "00:11:22:33:44:02", "WLAN", "w5", 866_000),
+                client("tab", "02:11:22:33:44:03", "WLAN", "w2", 6_000),
+                client("kind", "00:11:22:33:44:04", "WLAN", "w2", 144_000),
+            ]
+        }
+    )
+
+
 def box_daten(**kw) -> BoxDaten:
     werte = {
         "protokoll": pr.aus_xml(GERAETELOG),
@@ -97,6 +150,7 @@ def box_daten(**kw) -> BoxDaten:
         "wlan_baender": (wl.Band("2,4", True, 6, True, "ax"), wl.Band("5", True, 44, True, "ax")),
         "wlan_gast": False,
         "wlan_geraete": wl.geraete_aus(WLANLISTE),
+        "netz": nk.mesh_lesen(_mesh()),  # Netzkarte (1.9)
         # WU-0009: Mobilfunk über das eingebaute Modem wie bei der FRITZ!Box 6860 5G
         "zugang": zg.Meldung(
             zugangsart="X_AVM-DE_LTE",

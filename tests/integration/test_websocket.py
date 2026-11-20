@@ -760,3 +760,28 @@ async def test_diagnoselog(hass, geladen, hass_ws_client, hass_read_only_access_
 
     d = (await _frage(hass_ws_client, hass, type="heimnetz/diagnoselog/loeschen"))["result"]
     assert d["eintraege"] == 0 and d["an"] is True
+
+
+async def test_netzkarte_aus_mesh_liste(hass, geladen, hass_ws_client):
+    """1.9: Buchse und Band aus der Mesh-Liste, Empfang aus der WLAN-Tabelle, keine Hardware-Adressen."""
+    antwort = await _frage(hass_ws_client, hass, type="heimnetz/netzkarte")
+    assert antwort["success"], antwort
+    d = antwort["result"]
+    g = {x["name"]: x for x in d["geraete"]}
+    assert g["Pi"]["kabel"] and g["Pi"]["port"] == 1 and g["Pi"]["anbindung"] == "LAN 1 · 1 Gbit/s"
+    assert g["Tab"]["zustand"] == "schwach" and g["Tab"]["anbindung"].startswith("WLAN 2,4 GHz")
+    assert g["fernseher"]["anbindung"] == "WLAN 5 GHz · 92 % · 866 Mbit/s"
+    assert d["mesh"] and d["vpn"] == 0 and d["zahlen"]["online"] == len(d["geraete"])
+    assert "00:11:22" not in str(d) and "02:11:22" not in str(d)
+
+
+async def test_uebersicht_lagebild(hass, geladen, hass_ws_client):
+    """1.1: Kopfzeile, Leitung, Meldezeile und Wächter kommen fertig von der Integration."""
+    d = (await _frage(hass_ws_client, hass, type="heimnetz/uebersicht"))["result"]
+    assert d["kopf"]["punkt"] == "rot" and d["kopf"]["titel"].endswith("Hinweise")
+    assert [k["teil"] for k in d["leitung"]["knoten"]] == ["pi", "box", "zugang", "internet"]
+    assert (
+        d["leitung"]["knoten"][2]["name"] == "5G-NSA" and d["leitung"]["knoten"][2]["balken"] == 2
+    )
+    assert d["meldung"]["n"] == len(d["befunde"]) and d["meldung"]["art"] == "rot"
+    assert d["waechter"]["wort"] == "keiner"

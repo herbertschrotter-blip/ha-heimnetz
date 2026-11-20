@@ -26,6 +26,7 @@ from .logik import befunde as bf
 from .logik import geraete as gr
 from .logik import leitung as ln
 from .logik import mobil as mb
+from .logik import netzkarte as nk
 from .logik import protokoll as pr
 from .logik import verkehr as vk
 from .logik import wlan as wl
@@ -94,6 +95,7 @@ class BoxDaten:
     wlan_geraete: tuple[wl.Funkgeraet, ...] | None = None
     mesh: dict[str, str] | None = None  # MAC → Modell der Mesh-Geräte (langsam, AN-0001)
     anbindung: dict[str, str] | None = None  # MAC → Box oder Repeater (langsam, Diagnose-Log)
+    netz: nk.Netz | None = None  # Buchse, Band, Rate, Repeater je Gerät (langsam, Netzkarte)
     info: BoxInfo | None = None  # langsam (WU-0005)
     zugang: zg.Meldung | None = None  # langsam (WU-0009)
     dsl: ln.Dsl | None = None  # langsam, nur mit DSL-Dienst
@@ -448,6 +450,7 @@ class Box:
             )
             roh = self._datei(pfad)
             d.mesh, d.anbindung = ar.mesh_aus(roh), ar.anbindung_aus(roh)
+            d.netz = nk.mesh_lesen(roh)
 
         try:
             teil(merke("Ereignisprotokoll"), protokoll)

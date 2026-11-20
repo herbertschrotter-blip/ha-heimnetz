@@ -175,6 +175,7 @@ class Abruf(DataUpdateCoordinator[sm.Stand]):
             wlan_geraete=daten.wlan_geraete,
             mesh=daten.mesh,
             anbindung=daten.anbindung,
+            netz=daten.netz,
             zugang=daten.zugang,
             dsl=daten.dsl,
             faser=daten.faser,

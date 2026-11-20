@@ -10,7 +10,7 @@ import { seg, streifen } from './teile.js';
 import { wlan } from './wlan.js';
 import { artFormular } from './warnungen.js';
 
-export const TEILE = [['geraete', merke('Geräte')], ['wlan', merke('WLAN')]];
+export const TEILE = [['geraete', merke('Geräte')], ['wlan', merke('WLAN')], ['karte', merke('Karte')]];
 
 /** Reiter „Geräte“ mit Umschalter; geladen wird nur der gewählte Teil (heimnetz/geraete oder heimnetz/wlan). */
 export function geraeteReiter(p, d) {

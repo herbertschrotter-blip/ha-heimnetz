@@ -17,7 +17,7 @@ async function reiter(el, name) {
 }
 
 async function einstellungen(el) {
-  const knopf = [...el.shadowRoot.querySelectorAll('.glas-kopf button')].find((b) => b.textContent.trim() === '⚙');
+  const knopf = [...el.shadowRoot.querySelectorAll('.glas-kopf button, .lb-kopf button')].find((b) => b.textContent.trim() === '⚙');
   assert.ok(knopf, '⚙ im Kopf');
   knopf.click();
   await warten(10);
@@ -37,17 +37,73 @@ async function einTab(el, name) {
 }
 const knoepfe = (wurzel) => [...wurzel.querySelectorAll('button')];
 
-test('Übersicht: Kopf, Kacheln, Befunde, Prüfungen', async () => {
+test('Übersicht (1.1 Lagebild): Kopfzeile, Leitung, Punktfeld, Mini-Kacheln, Meldezeile öffnet Befunde', async () => {
   const hass = machHass();
   const el = await seite(hass);
+  const w = el.shadowRoot;
   const t = text(el);
+  const u = DATEN.uebersicht;
   assert.equal(hass.aufrufe[0].type, 'heimnetz/uebersicht');
-  assert.match(t, /Störung|Hinweise|Alles in Ordnung/);
+  assert.ok(!w.querySelector('.glas-kopf'), 'kein großer Kopf auf der Übersicht');
+  assert.match(w.querySelector('.lb-kopf').textContent, new RegExp(u.kopf.titel));
+  const knoten = [...w.querySelectorAll('.lb-knoten')];
+  assert.deepEqual(knoten.map((k) => k.className.split(' ').pop()), u.leitung.knoten.map((k) => k.zustand));
+  assert.match(knoten[2].textContent, /5G-NSA/);
+  assert.equal(w.querySelectorAll('.lb-balken i.an').length, u.leitung.knoten[2].balken);
+  assert.equal(w.querySelectorAll('.lb-pf-punkte i').length, u.geraete.bekannt);
   assert.match(t, /Geräte online/);
-  assert.match(t, /Pi → FRITZ!Box/);
-  assert.match(t, /Wichtige Ereignisse/);
+  assert.match(w.querySelector('.lb-mini').textContent, /Wächter/);
+  assert.match(w.querySelector('.lb-meldezeile').textContent, new RegExp(u.meldung.titel.replace(/[.]/g, '\\.')));
+  assert.ok(!/Pi → FRITZ!Box/.test(t), 'Prüfungen erst im Fenster');
+  w.querySelector('.lb-meldezeile').click();
+  await el.updateComplete;
+  const blatt = w.querySelector('.sheet').textContent;
+  assert.match(blatt, /Befunde und Ereignisse/);
+  assert.match(blatt, /Pi → FRITZ!Box/);
+  assert.match(blatt, /Wichtige Ereignisse/);
   assert.equal(el.shadowRoot.querySelectorAll('nav button').length, REITER.length);
   assert.ok(!/undefined|NaN/.test(t), t);
+});
+
+test('Netzkarte (1.9): aus der Übersicht, Punkte, Filter, Tipp zeigt Infokarte, zurück zu Geräte', async () => {
+  const hass = machHass();
+  const el = await seite(hass);
+  const w = el.shadowRoot;
+  [...w.querySelectorAll('.lb-pf-fuss button')].find((b) => b.textContent.includes('Netzkarte')).click();
+  await warten(10);
+  await el.updateComplete;
+  assert.equal(el._reiter, 'geraete');
+  assert.ok(hass.aufrufe.some((a) => a.type === 'heimnetz/netzkarte'));
+  const d = DATEN.netzkarte;
+  assert.equal(w.querySelectorAll('.nk-g').length, d.geraete.length);
+  assert.equal(w.querySelectorAll('.nk-aus').length, d.aus.length);
+  assert.equal(w.querySelectorAll('.nk-ring').length >= d.ringe.length, true);
+  assert.equal(w.querySelectorAll('.nk-tip').length, d.geraete.length);
+  assert.match(w.querySelector('.nk-port').textContent, /LAN 1/);
+  assert.match(w.querySelector('.nk-zahlen').textContent, new RegExp(`${d.zahlen.online}`));
+  assert.ok(!/undefined|NaN/.test(text(el)), text(el));
+  // Filter Kabel: nur Kabelgeräte hervorgehoben
+  [...w.querySelectorAll('.nk-filter button')].find((b) => b.textContent === 'Kabel').click();
+  await el.updateComplete;
+  assert.ok(w.querySelector('.nk-svg').classList.contains('dimm'));
+  assert.equal(w.querySelectorAll('.nk-g.gew').length, d.geraete.filter((g) => g.kabel).length);
+  // Tipp auf ein Gerät: Infokarte mit IP und Anbindung, Verlauf öffnet das Gerät
+  const tab = d.geraete.findIndex((g) => g.name === 'Tab');
+  w.querySelectorAll('.nk-g')[tab].dispatchEvent(new Event('click'));
+  await el.updateComplete;
+  const info = w.querySelector('.nk-info').textContent;
+  assert.match(info, /192\.168\.1\.23/);
+  assert.match(info, /WLAN 2,4 GHz/);
+  [...w.querySelectorAll('.nk-info button')].find((b) => b.textContent.includes('Verlauf')).click();
+  await warten(10);
+  assert.ok(hass.aufrufe.some((a) => a.type === 'heimnetz/geraet' && a.geraet === d.geraete[tab].id));
+  el.zu();
+  await el.updateComplete;
+  w.querySelector('.nk-zurueck').click();
+  await warten(10);
+  await el.updateComplete;
+  assert.equal(el._opt.geraete.teil, 'geraete');
+  assert.ok(w.querySelector('.scroll'));
 });
 
 test('alle Reiter rendern ohne Fehler und ohne „undefined“', async () => {
@@ -642,10 +698,10 @@ test('Karte: Grundlage automatisch nach Design, Wahl bleibt im Browser', async (
   localStorage.removeItem('heimnetz.karte.grundlage');
 });
 
-test('Übersicht: Kachel Empfang springt zu Internet (Mobilfunk)', async () => {
+test('Übersicht: Zugang in der Leitung springt zu Internet (Mobilfunk)', async () => {
   const hass = machHass();
   const el = await seite(hass);
-  [...el.shadowRoot.querySelectorAll('.glas-k')].find((k) => k.textContent.includes('Empfang')).click();
+  [...el.shadowRoot.querySelectorAll('.lb-knoten')].find((k) => k.textContent.includes('5G-NSA')).click();
   await warten(10);
   await el.updateComplete;
   assert.equal(el._reiter, 'internet');
@@ -1190,6 +1246,7 @@ async function mitInternet(daten, fn) {
 test('WU-0009: Kopf zeigt Box und Zugang; Internet über Mobilfunk mit Herkunftszeile', async () => {
   const hass = machHass();
   const el = await seite(hass);
+  await reiter(el, 'Speedtest'); // der große Kopf steht auf allen Reitern außer der Übersicht
   assert.match(el.shadowRoot.querySelector('.glas-kopf').textContent, new RegExp(DATEN.uebersicht.zugang.kopf));
   assert.deepEqual(REITER.map(([k]) => k), ['uebersicht', 'speedtest', 'geraete', 'internet', 'verbrauch', 'protokoll', 'waechter']);
   await reiter(el, 'Internet');

@@ -154,6 +154,15 @@ async def _geraete(
         connection.send_result(msg["id"], await ansichten.geraete(hass, lz))
 
 
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/netzkarte"})
+@websocket_api.async_response
+async def _netzkarte(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
+) -> None:
+    if lz := _laufzeit(hass, connection, msg):
+        connection.send_result(msg["id"], await ansichten.netzkarte(hass, lz))
+
+
 @websocket_api.websocket_command(
     {
         vol.Required("type"): f"{DOMAIN}/geraet",
@@ -867,6 +876,7 @@ BEFEHLE = (
     _speedtest_kachel,
     _messung_loeschen,
     _geraete,
+    _netzkarte,
     _geraet,
     _geraet_art,
     _mobilfunk,

@@ -3631,6 +3631,141 @@ select.w-ziel { max-width: 58%; } .ga-warnen .seg { flex: none; }
   .ereig { grid-template-columns: 12px 70px 1fr; }
   .wr { grid-template-columns: 22px repeat(24, minmax(0, 1fr)); gap: 1px; font-size: 9px; }
 }
+
+/* ── 1.1 Übersicht „Lagebild“ (Mockup mockups/seiten/uebersicht.html 0.3) ── */
+.app { --nk-gruen: #30d158; }
+.lb { display: flex; flex-direction: column; gap: 10px; }
+.lb-kopf { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.menue-knopf ~ .scroll .lb-kopf { padding-left: 40px; } .menue-knopf ~ .nk-oben { left: 58px; }
+.lb-titel { font-size: 24px; font-weight: 300; letter-spacing: -.3px; display: flex; align-items: center; gap: 10px; min-width: 0; }
+.lb-titel .punkt { width: 12px; height: 12px; margin: 0; flex: none; }
+.lb-stand { font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--ink2); display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.lb-leitung { position: relative; padding: 14px 12px 12px; }
+.lb-reihe { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: start; position: relative; z-index: 1; }
+.lb-knoten { display: flex; flex-direction: column; align-items: center; gap: 5px; text-align: center; color: var(--ink2); }
+.lb-knoten .rund { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; font-size: 24px;
+  background: var(--panel); border: 1px solid var(--panel-rand); box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 18%, transparent); }
+.lb-knoten.gut { color: var(--nk-gruen); } .lb-knoten.warn { color: var(--amber); } .lb-knoten.weg { color: var(--rot); }
+.lb-knoten b { font-size: 12px; color: var(--ink); font-weight: 600; }
+.lb-knoten small { font-size: 11px; color: var(--ink2); line-height: 1.25; }
+.lb-draht { position: absolute; left: 12.5%; right: 12.5%; top: 40px; height: 4px; display: grid; grid-template-columns: repeat(3, 1fr); z-index: 0; }
+.lb-draht i { display: block; height: 4px; margin: 0 28px; border-radius: 2px; position: relative; overflow: hidden; background: color-mix(in srgb, var(--nk-gruen) 35%, transparent); }
+.lb-draht i::after { content: ''; position: absolute; inset: 0; width: 40%; background: linear-gradient(90deg, transparent, var(--nk-gruen), transparent); animation: lb-fluss 1.8s linear infinite; }
+.lb-draht i.weg { background: repeating-linear-gradient(90deg, var(--rot) 0 6px, transparent 6px 11px); }
+.lb-draht i.weg::after { display: none; }
+@keyframes lb-fluss { from { transform: translateX(-100%); } to { transform: translateX(260%); } }
+.lb-tempo { display: flex; justify-content: center; gap: 14px; margin-top: 10px; font-size: 13px; color: var(--ink2); width: 100%; flex-wrap: wrap; }
+.lb-tempo b { color: var(--ink); font-size: 18px; font-weight: 600; }
+.lb-balken { display: inline-flex; gap: 2px; align-items: flex-end; height: 12px; margin-left: 4px; vertical-align: -1px; }
+.lb-balken i { width: 3px; border-radius: 1px; background: color-mix(in srgb, var(--ink2) 35%, transparent); }
+.lb-balken i.an { background: currentColor; }
+.lb-balken i:nth-child(1) { height: 4px; } .lb-balken i:nth-child(2) { height: 7px; } .lb-balken i:nth-child(3) { height: 10px; } .lb-balken i:nth-child(4) { height: 12px; }
+.lb-punktfeld { padding: 12px 14px; cursor: pointer; }
+.lb-pf-kopf { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.lb-pf-zahl { font-size: 22px; font-weight: 600; } .lb-pf-zahl small { font-size: 13px; color: var(--ink2); font-weight: 400; }
+.lb-pf-punkte { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
+.lb-pf-punkte i { width: 9px; height: 9px; border-radius: 50%; background: color-mix(in srgb, var(--ink2) 25%, transparent); }
+.lb-pf-punkte i.an { background: var(--nk-gruen); box-shadow: 0 0 6px var(--nk-gruen); }
+.lb-pf-punkte i.wa { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
+.lb-pf-punkte i.neu { background: var(--blau); box-shadow: 0 0 6px var(--blau); }
+.lb-pf-fuss { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+.lb-pf-fuss .chip { font-size: 12px; padding: 4px 11px; }
+.lb-mini { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.lb-mini .glas-k { padding: 10px 12px; }
+.lb-wort { font-size: 20px; display: flex; align-items: center; gap: 8px; } .lb-wort .punkt { margin: 0; }
+.lb-meldezeile { display: flex; align-items: center; gap: 10px; padding: 11px 14px; width: 100%; box-sizing: border-box; }
+.lb-meldezeile .anzahl { min-width: 26px; height: 26px; border-radius: 13px; display: grid; place-items: center; font-weight: 700; font-size: 13px; flex: none; }
+.lb-meldezeile .anzahl.rot { background: color-mix(in srgb, var(--rot) 22%, transparent); color: var(--rot); }
+.lb-meldezeile .anzahl.amber { background: color-mix(in srgb, var(--amber) 22%, transparent); color: var(--amber); }
+.lb-meldezeile .anzahl.ok { background: color-mix(in srgb, var(--nk-gruen) 20%, transparent); color: var(--nk-gruen); }
+.lb-meldezeile .text { flex: 1; min-width: 0; font-size: 13px; line-height: 1.3; }
+.lb-meldezeile .text b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lb-meldezeile .text span { color: var(--ink2); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+@media (prefers-reduced-motion: reduce) { .lb-draht i::after, .nk-fluss, .nk-uplink-fluss { animation: none !important; } }
+
+/* ── 1.9 Netzkarte (Mockup mockups/seiten/netzkarte.html 0.2) ── */
+.nk-buehne { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 104px 6px 178px; box-sizing: border-box; }
+.nk-buehne svg { width: 100%; height: 100%; display: block; }
+.nk-oben { position: absolute; top: 12px; left: 12px; right: 12px; z-index: 4; display: flex; flex-direction: column; gap: 8px; }
+.nk-leiste { display: flex; align-items: center; gap: 10px; padding: 7px 12px 7px 8px; }
+.nk-zurueck { font-size: 20px; width: 32px; height: 32px; border-radius: 50% !important; display: grid; place-items: center; color: var(--ink); background: rgba(120,120,128,.18) !important; flex: none; text-align: center !important; }
+.nk-titel { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.nk-titel b { font-size: 17px; font-weight: 600; display: flex; align-items: center; gap: 7px; }
+.nk-titel b .punkt { width: 9px; height: 9px; margin: 0; }
+.nk-titel small { font-size: 11px; color: var(--ink2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nk-filter { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+.nk-filter .chip { padding: 5px 11px; font-size: 12px; white-space: nowrap; }
+.nk-filter .chip.on { background: rgba(255,255,255,.24); color: var(--ink); font-weight: 600; }
+.hell .nk-filter .chip.on { background: #fff; }
+.nk-unten { position: absolute; left: 12px; right: 12px; bottom: 86px; z-index: 4; display: flex; flex-direction: column; gap: 8px; }
+.nk-ring { fill: none; stroke: var(--gridc); stroke-width: 1; } .nk-ring.gestr { stroke-dasharray: 2 4; }
+.nk-ringname { font-size: 8px; letter-spacing: 1.4px; fill: var(--ink2); text-transform: uppercase; }
+.nk-sektor { font-size: 8.5px; letter-spacing: 1.8px; fill: var(--ink2); text-transform: uppercase; font-weight: 600; opacity: .8; }
+.nk-lan { stroke: var(--nk-gruen); stroke-width: 2.2; opacity: .55; }
+.nk-wlan { stroke: var(--nk-gruen); stroke-width: 1.4; stroke-dasharray: 2 5; opacity: .6; }
+.nk-fluss { stroke: #b8ffcb; stroke-dasharray: 2 12; stroke-width: 2.6; stroke-linecap: round; animation: nk-fl 1.3s linear infinite; }
+.nk-fluss.wlan { stroke-width: 2; animation-duration: 2.2s; }
+@keyframes nk-fl { to { stroke-dashoffset: -14; } }
+.z-schwach .nk-wlan, .z-schwach .nk-fluss, .z-wackelt .nk-wlan, .z-wackelt .nk-lan, .z-wackelt .nk-fluss { stroke: var(--amber); }
+.z-neu .nk-wlan, .z-neu .nk-fluss { stroke: var(--blau); }
+.nk-dot { fill: var(--sheet); stroke-width: 2; stroke: var(--nk-gruen); }
+.z-wackelt .nk-dot, .z-schwach .nk-dot { stroke: var(--amber); } .z-neu .nk-dot { stroke: var(--blau); }
+.nk-sym { text-anchor: middle; dominant-baseline: central; }
+.nk-name { font-size: 8.5px; fill: var(--ink); text-anchor: middle; opacity: 0; }
+.nk-name.an, .namen .nk-name, .nk-g.gew .nk-name { opacity: .92; }
+.dimm .nk-g:not(.gew) .nk-name { opacity: 0; }
+.nk-port { font-size: 7px; fill: var(--ink2); text-anchor: middle; dominant-baseline: central; letter-spacing: .5px; font-weight: 600; }
+.nk-port-bg { fill: var(--sheet); stroke: var(--gridc); }
+.nk-g, .nk-draht, .nk-sw { transition: opacity .25s; } .nk-g, .nk-klick { cursor: pointer; }
+.dimm .nk-g:not(.gew), .dimm .nk-draht:not(.gew), .dimm .nk-sw:not(.gew) { opacity: .2; }
+.nk-g.gew .nk-dot { stroke-width: 3; }
+.nk-aus { fill: none; stroke: var(--ink2); stroke-width: 1.2; opacity: .55; }
+.nk-box { fill: var(--sheet); stroke: var(--nk-gruen); stroke-width: 2.5; }
+.nk-box-halo { fill: var(--nk-gruen); opacity: .14; }
+.nk-weg .nk-box { stroke: var(--rot); stroke-dasharray: 4 3; } .nk-weg .nk-box-halo { fill: var(--rot); }
+.nk-uplink { stroke: var(--nk-gruen); stroke-width: 3; opacity: .55; }
+.nk-uplink-fluss { stroke: #b8ffcb; stroke-width: 3; stroke-dasharray: 2 12; stroke-linecap: round; animation: nk-fl 1s linear infinite reverse; }
+.nk-knoten { fill: var(--sheet); stroke: var(--ink2); stroke-width: 2; }
+.nk-knoten.gut { stroke: var(--nk-gruen); } .nk-knoten.warn { stroke: var(--amber); } .nk-knoten.weg { stroke: var(--rot); }
+.nk-kt { font-size: 9px; fill: var(--ink2); } .nk-kb { font-size: 10px; fill: var(--ink); font-weight: 600; }
+.nk-sw-kern { fill: var(--sheet); stroke: var(--s1); stroke-width: 2; } .nk-sw.gew .nk-sw-kern { stroke-width: 3; }
+.nk-sw-draht { stroke: var(--s1); stroke-width: 3; opacity: .7; }
+.nk-sw-name { font-size: 7.5px; fill: var(--ink); text-anchor: middle; font-weight: 700; }
+.nk-rep { fill: var(--sheet); stroke: var(--s3); stroke-width: 2.2; }
+.nk-rep-halo { fill: var(--s3); opacity: .12; }
+.nk-rep-draht { stroke: var(--s3); stroke-width: 3; opacity: .7; stroke-dasharray: 5 3; } .nk-rep-draht.kabel { stroke-dasharray: none; }
+.grau .nk-dot, .grau .nk-sw-kern { stroke: var(--ink2); } .grau .nk-lan, .grau .nk-wlan, .grau .nk-fluss, .grau .nk-uplink-fluss, .grau .nk-sw-draht { display: none; }
+.grau .nk-g, .grau .nk-sw { opacity: .45; }
+.nk-tip { opacity: 0; pointer-events: none; transition: opacity .12s; } .nk-tip.an { opacity: 1; }
+.nk-tip rect { fill: var(--sheet); stroke: var(--panel-rand); stroke-width: 1; filter: drop-shadow(0 4px 10px rgba(0,0,0,.35)); }
+.nk-tip .t1 { font-size: 10px; font-weight: 700; fill: var(--ink); } .nk-tip .t2 { font-size: 8.5px; fill: var(--ink2); font-variant-numeric: tabular-nums; }
+.nk-tip .t3 { font-size: 8.5px; fill: var(--ink); } .nk-tip .t4 { font-size: 8.5px; }
+.nk-zahlen { display: grid; grid-template-columns: repeat(4, 1fr); padding: 8px 4px; text-align: center; }
+.nk-zahlen b { display: block; font-size: 19px; font-weight: 300; }
+.nk-zahlen small { font-size: 9.5px; letter-spacing: .8px; color: var(--ink2); }
+.nk-legende { display: flex; flex-wrap: wrap; gap: 3px 11px; font-size: 10.5px; color: var(--ink2); justify-content: center; padding: 0 4px; text-align: center; }
+.nk-legende i { display: inline-block; vertical-align: middle; margin-right: 4px; }
+.nk-legende .lg-lan { width: 14px; height: 2.5px; background: var(--nk-gruen); border-radius: 2px; }
+.nk-legende .lg-wlan { width: 14px; height: 0; border-top: 2px dotted var(--nk-gruen); }
+.nk-legende .lg-p { width: 8px; height: 8px; border-radius: 50%; border: 2px solid; }
+.nk-legende .lg-sw { width: 9px; height: 9px; border-radius: 3px; border: 2px solid var(--s1); }
+.nk-info { padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.nk-info-kopf { display: flex; align-items: center; gap: 10px; }
+.nk-info-kopf .gross { font-size: 22px; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--sheet); border: 2px solid var(--amber); flex: none; }
+.nk-info-kopf div { flex: 1; min-width: 0; }
+.nk-info-kopf b { font-size: 15px; } .nk-info-kopf small { display: block; font-size: 11.5px; color: var(--ink2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nk-zu { font-size: 16px; color: var(--ink2); padding: 4px 6px; }
+.nk-werte { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; text-align: center; }
+.nk-werte div { background: rgba(120,120,128,.14); border-radius: 10px; padding: 5px 4px; min-width: 0; }
+.nk-werte b { display: block; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .nk-werte small { font-size: 10px; color: var(--ink2); }
+.nk-info p { margin: 0; font-size: 12px; color: var(--ink2); }
+.nk-info .chip { align-self: flex-start; font-size: 12px; padding: 5px 12px; }
+@container (max-width: 699px) { .nk-nur-breit { display: none; } }
+@container (min-width: 700px) {
+  .nk-buehne { padding: 150px 372px 20px 20px; }
+  .nk-oben { top: 80px; left: 24px; right: 380px; }
+  .nk-unten { top: 80px; right: 24px; left: auto; bottom: auto; width: 330px; }
+}
 `;
 var stil = i`${r(GLAS)}`;
 
@@ -3690,15 +3825,12 @@ var EN = {
   // Übersicht
   "verbunden": "connected",
   "getrennt": "disconnected",
-  "Geräte online": "Devices online",
-  "nicht verfügbar": "not available",
   "{n} neu": "{n} new",
   "{n} wackelt": "{n} flaky",
   "alles ruhig": "all quiet",
   "Empfang": "Signal",
   "noch keine Messung": "no measurement yet",
   "Heute": "Today",
-  "Speedtests {gb}": "speed tests {gb}",
   "keine Zählerdaten": "no counter data",
   "Befunde": "Findings",
   "offen": "open",
@@ -3706,7 +3838,6 @@ var EN = {
   "Im Moment nichts Auffälliges.": "Nothing unusual right now.",
   "Abfrage unvollständig: {fehler}": "Query incomplete: {fehler}",
   "Prüfungen": "Checks",
-  "jede Minute": "every minute",
   "Wichtige Ereignisse": "Important events",
   "ganzes Journal ›": "full journal ›",
   "Noch keine.": "None yet.",
@@ -4471,7 +4602,38 @@ var EN = {
   "Wirklich löschen?": "Really delete?",
   "Weiter": "Next",
   "spielt ein …": "installing …",
-  "Einspielen und starten": "Install and start"
+  "Einspielen und starten": "Install and start",
+  // 1.1 Lagebild, 1.9 Netzkarte
+  "{n} über VPN verbunden – nicht auf der Karte": "{n} connected via VPN – not on the map",
+  "Karte": "Map",
+  "⚠ Auffällig": "⚠ Unusual",
+  "online": "online",
+  "schwacher Empfang": "weak signal",
+  "offline": "offline",
+  "Netzkarte": "Network map",
+  "erkannt: mehrere Geräte an derselben Buchse": "detected: several devices on the same port",
+  "Buchse": "Port",
+  "Die FRITZ!Box sieht einen einfachen Switch selbst nicht – nur, dass mehrere Geräte an derselben Buchse hängen.": "The FRITZ!Box does not see a simple switch itself – only that several devices share the same port.",
+  "Zustand": "State",
+  "Verlauf öffnen ›": "Open history ›",
+  "FRITZ!Box antwortet nicht": "FRITZ!Box does not respond",
+  "gut": "good",
+  "Zurück zu Geräte": "Back to devices",
+  "Namen": "Names",
+  "ONLINE": "ONLINE",
+  "OFFLINE": "OFFLINE",
+  "AUFFÄLLIG": "UNUSUAL",
+  "NEU": "NEW",
+  "Die Box hat noch keine Mesh-Liste geliefert – Buchsen, Switch und Repeater folgen (alle 10 Minuten).": "The box has not delivered a mesh list yet – ports, switch and repeater follow (every 10 minutes).",
+  "Die Karte zeigt den letzten bekannten Stand.": "The map shows the last known state.",
+  "Maus über einen Punkt: Name, IP, Anbindung · Tippen hebt den Weg hervor · Kreise = Anbindung, weiter draußen = schwächerer Empfang · Sektor = Art": "Hover a dot: name, IP, connection · tap highlights the path · rings = connection, further out = weaker signal · sector = type",
+  "Die FRITZ!Box antwortet, das Internet nicht.": "The FRITZ!Box responds, the internet does not.",
+  "{n} Geräte online": "{n} devices online",
+  "Tippen: Geräteliste": "Tap: device list",
+  "Netzkarte ›": "Network map ›",
+  "zuletzt:": "last:",
+  "Befunde und Ereignisse": "Findings and events",
+  "aus den Prüfungen jede Minute": "from the checks every minute"
 };
 
 // src/format.js
@@ -4532,6 +4694,280 @@ function phase(sonne) {
   return "tag";
 }
 
+// src/ansichten/uebersicht.js
+var standZeit = (s4) => zeit(s4).replace(new RegExp(`^${t3("Heute {uhr}", { uhr: "" })}`), "");
+var ZIEL = { pi: "geraete", box: "geraete", zugang: "internet", internet: "protokoll" };
+var SYMBOL = { pi: "🍓", box: "🛜", internet: "🌐" };
+function gehe(p4, reiter) {
+  if (reiter === "geraete") p4.setze("geraete", { teil: "geraete" }, false);
+  p4.geh(reiter);
+}
+var balken = (n4) => b2`<span class="lb-balken">${[1, 2, 3, 4].map((i6) => b2`<i class=${i6 <= n4 ? "an" : ""}></i>`)}</span>`;
+function leitung(p4, u3) {
+  const l4 = u3.leitung;
+  if (!l4) return A;
+  const s4 = u3.speedtest;
+  const inetWeg = l4.knoten[3].zustand === "weg";
+  return b2`<div class="glas-panel lb-leitung">
+    <div class="lb-draht">${l4.draehte.map((d3) => b2`<i class=${d3}></i>`)}</div>
+    <div class="lb-reihe">${l4.knoten.map((k2) => b2`
+      <button class="lb-knoten ${k2.zustand}" @click=${() => gehe(p4, ZIEL[k2.teil])}>
+        <span class="rund">${k2.symbol || SYMBOL[k2.teil]}</span><b>${k2.name}</b><small>${k2.text}${k2.balken != null ? balken(k2.balken) : A}</small>
+      </button>`)}</div>
+    ${inetWeg ? b2`<div class="lb-tempo"><span class="rot-t">${t3("Die FRITZ!Box antwortet, das Internet nicht.")}</span></div>` : s4 && s4.down != null ? b2`<button class="lb-tempo" @click=${() => p4.geh("speedtest")}><span>↓ <b>${zahl(s4.down)}</b> Mbit/s</span><span>↑ <b>${zahl(s4.up)}</b></span><span><b>${zahl(s4.ping)}</b> ms</span><span class="leise">${vor(s4.t)}</span></button>` : A}
+  </div>`;
+}
+function punktfeld(p4, u3) {
+  const g2 = u3.geraete || {};
+  const aus = !u3.box_erreichbar;
+  const online = aus ? 0 : g2.online || 0;
+  const neu = aus ? 0 : g2.neu || 0;
+  const wackelt = aus ? 0 : g2.wackelt || 0;
+  const punkte = [];
+  for (let i6 = 0; i6 < (g2.bekannt || 0); i6++) punkte.push(i6 < online - wackelt - neu ? "an" : i6 < online - neu ? "wa" : i6 < online ? "neu" : "");
+  return b2`<div class="glas-panel lb-punktfeld" @click=${() => gehe(p4, "geraete")}>
+    <div class="lb-pf-kopf"><span class="lb-pf-zahl">${aus ? "–" : online}<small> / ${t3("{n} Geräte online", { n: g2.bekannt || 0 })}</small></span>
+      <span class="leise">${wackelt ? b2`<span class="amber">● ${t3("{n} wackelt", { n: wackelt })}</span>` : t3("alles ruhig")}${neu ? b2` · <span class="blau">● ${t3("{n} neu", { n: neu })}</span>` : A}</span></div>
+    <div class="lb-pf-punkte">${punkte.map((c4) => b2`<i class=${c4}></i>`)}</div>
+    <div class="lb-pf-fuss"><span class="leise">${t3("Tippen: Geräteliste")}</span>
+      <button class="chip glas-panel" @click=${(e6) => {
+    e6.stopPropagation();
+    p4.setze("geraete", { teil: "karte" }, false);
+    p4.geh("geraete");
+  }}>🗺️ ${t3("Netzkarte ›")}</button></div>
+  </div>`;
+}
+function mini(p4, u3) {
+  const h3 = u3.verbrauch_heute;
+  const w2 = u3.waechter || {};
+  return b2`<div class="lb-mini">
+    <button class="glas-k glas-panel" @click=${() => p4.geh("verbrauch")}><span class="glas-klein">${t3("Heute")}</span>
+      <span class="glas-wert">${h3 ? b2`${zahl(h3.down + h3.up, 1)}<small> GB</small>` : "–"}</span>
+      <span class="glas-kwk">${h3 ? `↓ ${zahl(h3.down, 1)} · ↑ ${zahl(h3.up, 1)}` : t3("keine Zählerdaten")}</span></button>
+    <button class="glas-k glas-panel" @click=${() => p4.geh("waechter")}><span class="glas-klein">🛡️ ${t3("Wächter")}</span>
+      <span class="glas-wert lb-wort"><span class="punkt ${w2.punkt === "ok" ? "" : w2.punkt || "grau"}"></span>${w2.wort || "–"}</span>
+      <span class="glas-kwk">${w2.text || ""}${w2.t ? ` ${vor(w2.t)}` : ""}</span></button>
+  </div>`;
+}
+function meldezeile(p4, u3) {
+  const m3 = u3.meldung;
+  if (!m3) return A;
+  return b2`<button class="glas-panel lb-meldezeile" @click=${() => p4.befundeOeffnen()}>
+    <span class="anzahl ${m3.art}">${m3.n}</span>
+    <span class="text"><b>${m3.titel}</b><span>${m3.t ? `${t3("zuletzt:")} ${m3.text} · ${zeit(m3.t)}` : m3.text}</span></span>
+    <span class="leise">›</span></button>`;
+}
+function uebersicht(p4, u3) {
+  const k2 = u3.kopf || { punkt: "grau", titel: "" };
+  return b2`<div class="lb">
+    <div class="lb-kopf"><span class="lb-titel"><span class="punkt ${k2.punkt}"></span>${k2.titel}</span>
+      <span class="lb-stand">${t3("Stand {zeit}", { zeit: standZeit(u3.stand) })}
+        <button class="chip glas-panel" title=${t3("Einstellungen")} @click=${() => p4.einstellungenOeffnen()}>⚙</button></span></div>
+    ${(u3.fehler || []).length ? b2`<p class="fein">${t3("Abfrage unvollständig: {fehler}", { fehler: u3.fehler.join(" · ") })}</p>` : A}
+    ${leitung(p4, u3)}${punktfeld(p4, u3)}${mini(p4, u3)}${meldezeile(p4, u3)}
+  </div>`;
+}
+function befundeBlatt(p4) {
+  const u3 = p4._daten.uebersicht || {};
+  const befunde = u3.befunde || [];
+  return b2`<div class="griff"></div><button class="zu" @click=${() => p4.zu()}>✕</button>
+    <h3>${t3("Befunde und Ereignisse")}</h3><div class="leise">${t3("{n} offen", { n: befunde.length })} · ${t3("aus den Prüfungen jede Minute")}</div>
+    <div class="gruppe">${t3("Befunde")}</div>
+    ${befunde.length ? befunde.map((b3) => b2`<div class="befund"><span class="punkt ${punkt(b3.stufe)}"></span><div><b>${b3.titel}</b><p>${b3.text}</p></div></div>`) : b2`<div class="leer">${t3("Im Moment nichts Auffälliges.")}</div>`}
+    <div class="gruppe">${t3("Prüfungen")}</div>
+    ${(u3.pruefungen || []).map((x2) => b2`<div class="zeile">
+      <span style="display:flex;gap:10px;align-items:center"><span class="punkt ${x2.ok === true ? "" : x2.ok === false ? "rot" : "grau"}"></span>${x2.name}</span>
+      <span class="leise" style="text-align:right">${x2.wert}</span></div>`)}
+    <div class="gruppe">${t3("Wichtige Ereignisse")}</div>
+    ${(u3.wichtig || []).length ? u3.wichtig.map((z2) => b2`<div class="ereig"><span class="punkt ${punkt(z2.stufe)}"></span><time>${zeit(z2.t)}</time><span>${z2.text}</span></div>`) : b2`<div class="leer">${t3("Noch keine.")}</div>`}
+    <div class="leiste" style="margin-top:6px"><button class="knopf" @click=${() => {
+    p4.zu();
+    p4.geh("protokoll");
+  }}>${t3("ganzes Journal ›")}</button></div>`;
+}
+
+// ../../../../../../data/entwicklung/ha-heimnetz/custom_components/heimnetz/frontend/node_modules/lit-html/directive.js
+/**
+ * @license
+ * Copyright 2017 Google LLC
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+var t4 = { ATTRIBUTE: 1, CHILD: 2, PROPERTY: 3, BOOLEAN_ATTRIBUTE: 4, EVENT: 5, ELEMENT: 6 };
+var e4 = (t7) => (...e6) => ({ _$litDirective$: t7, values: e6 });
+var i5 = class {
+  constructor(t7) {
+  }
+  get _$AU() {
+    return this._$AM._$AU;
+  }
+  _$AT(t7, e6, i6) {
+    this._$Ct = t7, this._$AM = e6, this._$Ci = i6;
+  }
+  _$AS(t7, e6) {
+    return this.update(t7, e6);
+  }
+  update(t7, e6) {
+    return this.render(...e6);
+  }
+};
+
+// ../../../../../../data/entwicklung/ha-heimnetz/custom_components/heimnetz/frontend/node_modules/lit-html/directives/unsafe-html.js
+/**
+ * @license
+ * Copyright 2017 Google LLC
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+var e5 = class extends i5 {
+  constructor(i6) {
+    if (super(i6), this.it = A, i6.type !== t4.CHILD) throw Error(this.constructor.directiveName + "() can only be used in child bindings");
+  }
+  render(r5) {
+    if (r5 === A || null == r5) return this._t = void 0, this.it = r5;
+    if (r5 === E) return r5;
+    if ("string" != typeof r5) throw Error(this.constructor.directiveName + "() called with a non-string value");
+    if (r5 === this.it) return this._t;
+    this.it = r5;
+    const s4 = [r5];
+    return s4.raw = s4, this._t = { _$litType$: this.constructor.resultType, strings: s4, values: [] };
+  }
+};
+e5.directiveName = "unsafeHTML", e5.resultType = 1;
+var o5 = e4(e5);
+
+// ../../../../../../data/entwicklung/ha-heimnetz/custom_components/heimnetz/frontend/node_modules/lit-html/directives/unsafe-svg.js
+/**
+ * @license
+ * Copyright 2017 Google LLC
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+var t5 = class extends e5 {
+};
+t5.directiveName = "unsafeSVG", t5.resultType = 2;
+var o6 = e4(t5);
+
+// src/ansichten/netzkarte.js
+var FILTER = [["alle", merke("Alle")], ["kabel", merke("Kabel")], ["wlan", "WLAN"], ["auff", merke("⚠ Auffällig")]];
+var ZUSTAND = { an: merke("online"), wackelt: merke("wackelt"), schwach: merke("schwacher Empfang"), neu: merke("neu"), aus: merke("offline") };
+var FARBE = { an: "var(--nk-gruen)", wackelt: "var(--amber)", schwach: "var(--amber)", neu: "var(--blau)" };
+var AUFF = ["wackelt", "schwach", "neu"];
+function passt(g2, filter) {
+  if (filter === "kabel") return g2.kabel;
+  if (filter === "wlan") return !g2.kabel;
+  if (filter === "auff") return AUFF.includes(g2.zustand);
+  return true;
+}
+function tip(g2, i6, d3, an) {
+  const b3 = 140, h3 = 56;
+  const x2 = g2.x < d3.breite * 0.66 ? g2.x + 16 : g2.x - 16 - b3;
+  const y4 = Math.max(4, Math.min(d3.hoehe - h3 - 4, g2.y - h3 / 2));
+  return w`<g class="nk-tip ${an ? "an" : ""}" data-i=${i6}><rect x=${x2} y=${y4} width=${b3} height=${h3} rx="9"></rect>
+    <text class="t1" x=${x2 + 10} y=${y4 + 15}>${g2.symbol} ${g2.name}</text><text class="t2" x=${x2 + 10} y=${y4 + 27}>${g2.ip}</text>
+    <text class="t3" x=${x2 + 10} y=${y4 + 39}>${g2.anbindung}</text>
+    <text class="t4" x=${x2 + 10} y=${y4 + 50} style="fill:${FARBE[g2.zustand] || "var(--ink2)"}">● ${t3(ZUSTAND[g2.zustand] || g2.zustand)}${g2.gast ? ` · ${t3("Gast")}` : ""}</text></g>`;
+}
+function karte(p4, d3, u3, o7) {
+  const m3 = d3.mitte;
+  const wahl = o7.wahl;
+  const dimm = !!wahl || o7.filter !== "alle";
+  const hebt = (g2) => wahl ? g2.id === wahl || g2.switch === wahl : passt(g2, o7.filter);
+  const weg = !d3.box_erreichbar;
+  const inet = u3 && u3.leitung ? u3.leitung.knoten : null;
+  const zg = inet ? inet[2] : null;
+  const netzOk = inet ? inet[3].zustand === "gut" : false;
+  const s4 = u3 && u3.speedtest;
+  const r5 = d3.dot;
+  const auswaehlen = (id) => p4.setze("geraete", { karte: { ...o7, wahl: id === wahl ? null : id } }, false);
+  const hover = d3.geraete.map((_2, i6) => `svg:has(.nk-g[data-i="${i6}"]:hover) .nk-tip[data-i="${i6}"]{opacity:1}`).join("");
+  return b2`<svg viewBox="0 0 ${d3.breite} ${d3.hoehe}" preserveAspectRatio="xMidYMid meet" role="img" aria-label=${t3("Netzkarte")}
+      class="nk-svg ${dimm ? "dimm" : ""} ${o7.namen ? "namen" : ""} ${weg ? "grau" : ""}">${w`
+    ${d3.ringe.map((x2, i6) => w`<circle class="nk-ring ${i6 ? "gestr" : ""}" cx=${m3.x} cy=${m3.y} r=${x2.r}></circle>
+      <text class="nk-ringname" x=${m3.x + 9} y=${m3.y - x2.r + 11}>${x2.name}</text>`)}
+    ${d3.sektoren.map((x2) => w`<text class="nk-sektor" x=${x2.x} y=${x2.y} text-anchor="middle" dominant-baseline="central">${x2.name}</text>`)}
+    ${netzOk && !weg ? w`<line class="nk-uplink" x1=${m3.x} y1=${m3.y - 30} x2=${m3.x} y2="38"></line><line class="nk-uplink-fluss" x1=${m3.x} y1=${m3.y - 30} x2=${m3.x} y2="38"></line>` : w`<line class="nk-ring gestr" x1=${m3.x} y1=${m3.y - 30} x2=${m3.x} y2="38"></line>`}
+    ${zg ? w`<g class="nk-klick" @click=${() => p4.geh("internet")}><circle class="nk-knoten ${zg.zustand}" cx=${m3.x} cy="74" r="13"></circle>
+      <text class="nk-sym" x=${m3.x} y="74.5" style="font-size:13px">${zg.symbol}</text>
+      <text class="nk-kb" x=${m3.x + 20} y="72">${zg.name}</text><text class="nk-kt" x=${m3.x + 20} y="84">${zg.text}</text></g>` : A}
+    <g class="nk-klick" @click=${() => p4.geh("speedtest")}><circle class="nk-knoten ${netzOk ? "gut" : "weg"}" cx=${m3.x} cy="24" r="14"></circle>
+      <text class="nk-sym" x=${m3.x} y="24.5" style="font-size:14px">🌐</text>
+      <text class="nk-kb" x=${m3.x + 21} y="22">Internet</text>
+      <text class="nk-kt" x=${m3.x + 21} y="34">${s4 && s4.down != null ? `↓ ${Math.round(s4.down)} · ↑ ${Math.round(s4.up)} Mbit/s · ${Math.round(s4.ping)} ms` : inet ? inet[3].text : ""}</text></g>
+    ${d3.repeater.map((x2) => w`<g class="nk-klick">
+      <line class="nk-rep-draht ${x2.kabel ? "kabel" : ""}" x1=${m3.x} y1=${m3.y} x2=${x2.x} y2=${x2.y}></line><line class="nk-fluss" x1=${m3.x} y1=${m3.y} x2=${x2.x} y2=${x2.y}></line>
+      <circle class="nk-rep-halo" cx=${x2.x} cy=${x2.y} r="46"></circle><circle class="nk-rep" cx=${x2.x} cy=${x2.y} r="16"></circle>
+      <text class="nk-sym" x=${x2.x} y=${x2.y + 0.5} style="font-size:14px">📶</text>
+      <text class="nk-name an" x=${x2.x} y=${x2.y + 28}>${x2.name}</text><title>${x2.name} · ${x2.text}</title></g>`)}
+    <g>${d3.geraete.map((g2) => w`<g class="nk-draht z-${g2.zustand} ${hebt(g2) ? "gew" : ""}">
+      <line class=${g2.kabel ? "nk-lan" : "nk-wlan"} x1=${g2.vx} y1=${g2.vy} x2=${g2.x} y2=${g2.y}></line>
+      <line class="nk-fluss ${g2.kabel ? "" : "wlan"}" x1=${g2.vx} y1=${g2.vy} x2=${g2.x} y2=${g2.y} style="opacity:${(0.35 + Math.min(1, (g2.mbit || 50) / 600) * 0.6).toFixed(2)}"></line></g>`)}</g>
+    ${d3.switche.map((x2) => w`<g class="nk-sw nk-klick ${wahl === x2.id ? "gew" : ""}" @click=${() => auswaehlen(x2.id)}>
+      <line class="nk-sw-draht" x1=${m3.x} y1=${m3.y} x2=${x2.x} y2=${x2.y}></line><line class="nk-fluss" x1=${m3.x} y1=${m3.y} x2=${x2.x} y2=${x2.y}></line>
+      <rect class="nk-sw-kern" x=${x2.x - 13} y=${x2.y - 10} width="26" height="20" rx="5"></rect>
+      <text class="nk-sym" x=${x2.x} y=${x2.y - 2} style="font-size:8px">⇄</text><text class="nk-sw-name" x=${x2.x} y=${x2.y + 6}>LAN ${x2.port}</text></g>`)}
+    ${d3.geraete.filter((g2) => g2.px != null).map((g2) => w`<g class="nk-draht ${hebt(g2) ? "gew" : ""}"><rect class="nk-port-bg" x=${g2.px - 11} y=${g2.py - 5.5} width="22" height="11" rx="5.5"></rect>
+      <text class="nk-port" x=${g2.px} y=${g2.py + 0.5}>LAN ${g2.port}</text></g>`)}
+    ${d3.aus.map((x2) => w`<circle class="nk-aus" cx=${x2.x} cy=${x2.y} r="4.5"><title>${x2.name} · ${t3("offline")}</title></circle>`)}
+    <g class=${weg ? "nk-weg" : ""} @click=${() => p4.geh("internet")}>
+      <circle class="nk-box-halo" cx=${m3.x} cy=${m3.y} r="30">${weg ? A : w`<animate attributeName="r" values="30;54" dur="2.6s" repeatCount="indefinite"></animate><animate attributeName="opacity" values=".22;0" dur="2.6s" repeatCount="indefinite"></animate>`}</circle>
+      <circle class="nk-box-halo" cx=${m3.x} cy=${m3.y} r="34" style="opacity:.1"></circle>
+      <circle class="nk-box" cx=${m3.x} cy=${m3.y} r="27"></circle><text class="nk-sym" style="font-size:20px" x=${m3.x} y=${m3.y - 4}>🛜</text>
+      <text class="nk-name an" x=${m3.x} y=${m3.y + 15} style="font-weight:700">FRITZ!Box</text></g>
+    <g>${d3.geraete.map((g2, i6) => {
+    const gr = wahl === g2.id ? r5 + 4 : r5;
+    const puls = g2.zustand === "schwach" || g2.zustand === "neu" ? w`<circle cx=${g2.x} cy=${g2.y} r=${gr} fill="none" stroke=${g2.zustand === "neu" ? "var(--blau)" : "var(--amber)"} stroke-width="1.5"><animate attributeName="r" values="${gr};${gr + 9}" dur="1.8s" repeatCount="indefinite"></animate><animate attributeName="opacity" values=".8;0" dur="1.8s" repeatCount="indefinite"></animate></circle>` : A;
+    return w`<g class="nk-g z-${g2.zustand} ${hebt(g2) ? "gew" : ""}" data-i=${i6} @click=${() => auswaehlen(g2.id)}>${puls}
+        <circle class="nk-dot" cx=${g2.x} cy=${g2.y} r=${gr}></circle><text class="nk-sym" x=${g2.x} y=${g2.y + 0.5} style="font-size:${gr}px">${g2.symbol}</text>
+        <text class="nk-name" x=${g2.x} y=${g2.y + gr + 10}>${g2.name}</text></g>`;
+  })}</g>
+    ${d3.geraete.map((g2, i6) => tip(g2, i6, d3, false))}
+    ${o6(`<style>${hover}</style>`)}`}
+  </svg>`;
+}
+function info(p4, d3, o7) {
+  const g2 = d3.geraete.find((x2) => x2.id === o7.wahl);
+  const sw = d3.switche.find((x2) => x2.id === o7.wahl);
+  const zu = () => p4.setze("geraete", { karte: { ...o7, wahl: null } }, false);
+  if (sw) {
+    const dran = d3.geraete.filter((x2) => x2.switch === sw.id);
+    return b2`<div class="glas-panel nk-info">
+      <div class="nk-info-kopf"><span class="gross" style="border-color:var(--s1)">⇄</span><div><b>${sw.text}</b><small>${t3("erkannt: mehrere Geräte an derselben Buchse")}</small></div><button class="nk-zu" title=${t3("Schließen")} @click=${zu}>✕</button></div>
+      <div class="nk-werte"><div><b>${sw.n}</b><small>${t3("Geräte")}</small></div><div><b>${dran.map((x2) => x2.name).join(", ") || "–"}</b><small>${t3("online")}</small></div><div><b>${sw.mbit ? sw.mbit >= 1e3 ? `${sw.mbit / 1e3} Gbit/s` : `${sw.mbit} Mbit/s` : "–"}</b><small>${t3("Buchse")}</small></div></div>
+      <p>${t3("Die FRITZ!Box sieht einen einfachen Switch selbst nicht – nur, dass mehrere Geräte an derselben Buchse hängen.")}</p></div>`;
+  }
+  if (!g2) return A;
+  const rand = FARBE[g2.zustand] || "var(--ink2)";
+  return b2`<div class="glas-panel nk-info">
+    <div class="nk-info-kopf"><span class="gross" style="border-color:${rand}">${g2.symbol}</span><div><b>${g2.name}</b><small>${g2.ip} · ${g2.anbindung}</small></div><button class="nk-zu" title=${t3("Schließen")} @click=${zu}>✕</button></div>
+    <div class="nk-werte"><div><b style="color:${rand}">${g2.signal != null ? `${g2.signal} %` : "–"}</b><small>${t3("Empfang")}</small></div>
+      <div><b>${g2.mbit ?? "–"}</b><small>Mbit/s</small></div><div><b style="color:${rand}">${t3(ZUSTAND[g2.zustand] || g2.zustand)}</b><small>${t3("Zustand")}</small></div></div>
+    <button class="chip glas-panel" @click=${() => p4.geraetOeffnen(g2.id)}>${t3("Verlauf öffnen ›")}</button></div>`;
+}
+function netzkarte(p4, d3, u3, fehler = "") {
+  const o7 = { filter: "alle", namen: false, wahl: null, ...p4._opt.geraete.karte || {} };
+  const setz = (w2) => p4.setze("geraete", { karte: { ...o7, ...w2 } }, false);
+  const z2 = d3 ? d3.zahlen : null;
+  const titel = !d3 ? t3("Netzkarte") : !d3.box_erreichbar ? t3("FRITZ!Box antwortet nicht") : t3("Netzkarte");
+  const zeile2 = !d3 ? fehler ? "" : t3("lädt …") : [t3("Stand {zeit}", { zeit: zeit(d3.stand) }), u3 && u3.zugang ? u3.zugang.kopf : ""].filter(Boolean).join(" · ");
+  const legende = b2`<div class="nk-legende"><span><i class="lg-lan"></i>${t3("Kabel")}</span><span><i class="lg-wlan"></i>WLAN</span><span><i class="lg-sw"></i>Switch</span>
+    <span><i class="lg-p" style="border-color:var(--nk-gruen)"></i>${t3("gut")}</span><span><i class="lg-p" style="border-color:var(--amber)"></i>${t3("schwach")}</span>
+    <span><i class="lg-p" style="border-color:var(--blau)"></i>${t3("neu")}</span><span><i class="lg-p" style="border-color:var(--ink2);opacity:.6"></i>${t3("offline")}</span></div>`;
+  return b2`<div class="nk-buehne">${d3 ? karte(p4, d3, u3, o7) : A}</div>
+    <div class="nk-oben">
+      <div class="glas-panel nk-leiste"><button class="nk-zurueck" title=${t3("Zurück zu Geräte")} @click=${() => p4.setze("geraete", { teil: "geraete" })}>‹</button>
+        <div class="nk-titel"><b><span class="punkt ${d3 && !d3.box_erreichbar ? "rot" : ""}"></span>${titel}</b><small>${zeile2}</small></div></div>
+      ${fehler ? b2`<div class="glas-panel fehler-band">${t3("Daten nicht abrufbar: {fehler}", { fehler })}</div>` : A}
+      <div class="nk-filter">${tl(FILTER).map(([k2, n4]) => b2`<button class="chip glas-panel ${o7.filter === k2 ? "on" : ""}" @click=${() => setz({ filter: k2, wahl: null })}>${n4}</button>`)}
+        <button class="chip glas-panel ${o7.namen ? "on" : ""}" @click=${() => setz({ namen: !o7.namen })}>Aa ${t3("Namen")}</button></div>
+    </div>
+    <div class="nk-unten">
+      ${o7.wahl && d3 ? info(p4, d3, o7) : z2 ? b2`<div class="glas-panel nk-zahlen"><div><b>${z2.online}</b><small>${t3("ONLINE")}</small></div><div><b>${z2.offline}</b><small>${t3("OFFLINE")}</small></div>
+          <div><b class="amber">${z2.auffaellig}</b><small>${t3("AUFFÄLLIG")}</small></div><div><b class="blau">${z2.neu}</b><small>${t3("NEU")}</small></div></div>${legende}
+          ${d3 && d3.vpn ? b2`<div class="nk-legende">🔐 ${t3("{n} über VPN verbunden – nicht auf der Karte", { n: d3.vpn })}</div>` : A}
+          ${d3 && !d3.mesh ? b2`<div class="nk-legende">${t3("Die Box hat noch keine Mesh-Liste geliefert – Buchsen, Switch und Repeater folgen (alle 10 Minuten).")}</div>` : A}
+          ${d3 && !d3.box_erreichbar ? b2`<div class="nk-legende">${t3("Die Karte zeigt den letzten bekannten Stand.")}</div>` : A}
+          <div class="nk-legende nk-nur-breit">${t3("Maus über einen Punkt: Name, IP, Anbindung · Tippen hebt den Weg hervor · Kreise = Anbindung, weiter draußen = schwächerer Empfang · Sektor = Art")}</div>` : A}
+    </div>`;
+}
+
 // src/ansichten/teile.js
 function seg(liste, wert2, wahl, klein = true) {
   return b2`<div class="seg ${klein ? "klein" : ""}">
@@ -4547,71 +4983,6 @@ function kachel(titel, wert2, unter, klick) {
 function streifen(felder) {
   const breite = 100 / Math.max(1, felder.length);
   return b2`<span class="streifen">${felder.map((f3) => b2`<i class=${f3} style="width:${breite}%"></i>`)}</span>`;
-}
-
-// src/ansichten/uebersicht.js
-function uebersicht(p4, u3) {
-  const aus = !u3.box_erreichbar;
-  const g2 = u3.geraete || {};
-  const e6 = u3.empfang;
-  const s4 = u3.speedtest;
-  const h3 = u3.verbrauch_heute;
-  const kacheln = [
-    kachel(
-      "Internet",
-      b2`<span class=${u3.internet.ok ? "ok" : "rot-t"}>${u3.internet.ok ? t3("verbunden") : t3("getrennt")}</span>`,
-      u3.internet.technik || "",
-      () => p4.geh("protokoll")
-    ),
-    kachel(
-      t3("Geräte online"),
-      aus ? "–" : b2`${g2.online}<small> / ${g2.bekannt}</small>`,
-      aus ? t3("nicht verfügbar") : [g2.neu ? t3("{n} neu", { n: g2.neu }) : "", g2.wackelt ? t3("{n} wackelt", { n: g2.wackelt }) : ""].filter(Boolean).join(" · ") || t3("alles ruhig"),
-      () => p4.geh("geraete")
-    ),
-    kachel(
-      t3("Empfang"),
-      e6 ? b2`${e6.rsrp_anker ?? "–"}<small> dBm</small>` : "–",
-      e6 ? `${e6.wort ?? ""}${e6.rsrp_5g != null ? ` · 5G ${e6.rsrp_5g} dBm` : ""}` : t3("nicht verfügbar"),
-      () => {
-        p4.setze("internet", { sicht: "haupt" }, false);
-        p4.geh("internet");
-      }
-    ),
-    kachel(
-      "Speedtest",
-      s4 && s4.down != null ? b2`${zahl(s4.down)}<small> Mbit/s</small>` : "–",
-      s4 ? `↑ ${zahl(s4.up)} · ${zahl(s4.ping)} ms · ${vor(s4.t)}` : t3("noch keine Messung"),
-      () => p4.geh("speedtest")
-    ),
-    kachel(
-      t3("Heute"),
-      h3 ? b2`${zahl(h3.down + h3.up, 1)}<small> GB</small>` : "–",
-      h3 ? `↓ ${zahl(h3.down, 1)} · ↑ ${zahl(h3.up, 1)} · ${t3("Speedtests {gb}", { gb: zahl(h3.speedtest, 1) })}` : t3("keine Zählerdaten"),
-      () => p4.geh("verbrauch")
-    ),
-    kachel(t3("Befunde"), b2`${(u3.befunde || []).length}`, t3("offen"), () => {
-    })
-  ];
-  return b2`
-    <div class="glas-raster">${kacheln}</div>
-    <div class="raster2">
-      <div class="glas-panel block">
-        <div class="block-kopf"><h3>${t3("Befunde")}</h3><span class="leise">${t3("{n} offen", { n: (u3.befunde || []).length })}</span></div>
-        ${(u3.befunde || []).length ? u3.befunde.map((b3) => b2`<div class="befund"><span class="punkt ${punkt(b3.stufe)}"></span><div><b>${b3.titel}</b><p>${b3.text}</p></div></div>`) : b2`<div class="leer">${t3("Im Moment nichts Auffälliges.")}</div>`}
-        ${(u3.fehler || []).length ? b2`<p class="fein">${t3("Abfrage unvollständig: {fehler}", { fehler: u3.fehler.join(" · ") })}</p>` : A}
-      </div>
-      <div class="glas-panel block">
-        <div class="block-kopf"><h3>${t3("Prüfungen")}</h3><span class="leise">${t3("jede Minute")}</span></div>
-        ${u3.pruefungen.map((x2) => b2`<div class="zeile">
-          <span style="display:flex;gap:10px;align-items:center"><span class="punkt ${x2.ok === true ? "" : x2.ok === false ? "rot" : "grau"}"></span>${x2.name}</span>
-          <span class="leise" style="text-align:right">${x2.wert}</span></div>`)}
-      </div>
-    </div>
-    <div class="glas-panel block">
-      <div class="block-kopf"><h3>${t3("Wichtige Ereignisse")}</h3><button class="leise blau" @click=${() => p4.geh("protokoll")}>${t3("ganzes Journal ›")}</button></div>
-      ${(u3.wichtig || []).length ? u3.wichtig.map((z2) => b2`<div class="ereig"><span class="punkt ${punkt(z2.stufe)}"></span><time>${zeit(z2.t)}</time><span>${z2.text}</span></div>`) : b2`<div class="leer">${t3("Noch keine.")}</div>`}
-    </div>`;
 }
 
 // src/ansichten/speedtest.js
@@ -4876,7 +5247,7 @@ function tagesverlauf(p4, d3) {
   const linien = stuecke(() => true).filter((st2) => st2.length > 1).map((st2) => w`<polyline class="med" points=${st2.map((h3) => `${x2(h3)},${y4(s4[h3].median)}`).join(" ")}></polyline>`);
   const st = o7.stunde, gew = st != null ? s4[st] : null;
   const anzahl2 = (n4) => t3(n4 === 1 ? "{n} Messung" : "{n} Messungen", { n: n4 });
-  const info = st != null ? gew.anzahl ? b2`<b>${stunden(st)}:</b> Median <b>${zahl(gew.median)} ${ein}</b>${gew.anzahl > 1 ? ` · ${t3("niedrigste {min} · höchste {max}", { min: zahl(gew.min), max: zahl(gew.max) })}` : ""} · ${anzahl2(gew.anzahl)}${gew.glatt != null ? ` · ${t3("geglättet {wert}", { wert: zahl(gew.glatt) })}` : ""}` : b2`<b>${stunden(st)}:</b> ${t3("keine Messung")}` : b2`<span class="leise">${v2.beste != null ? `${t3("Beste Stunde {stunde} ({wert})", { stunde: stunden(v2.beste), wert: `${zahl(s4[v2.beste].median)} ${ein}` })} · ${t3("schwächste {stunde} ({wert})", { stunde: stunden(v2.schwaechste), wert: `${zahl(s4[v2.schwaechste].median)} ${ein}` })} · ` : ""}${t3("Tipp auf eine Stunde zeigt die Werte")}</span>`;
+  const info2 = st != null ? gew.anzahl ? b2`<b>${stunden(st)}:</b> Median <b>${zahl(gew.median)} ${ein}</b>${gew.anzahl > 1 ? ` · ${t3("niedrigste {min} · höchste {max}", { min: zahl(gew.min), max: zahl(gew.max) })}` : ""} · ${anzahl2(gew.anzahl)}${gew.glatt != null ? ` · ${t3("geglättet {wert}", { wert: zahl(gew.glatt) })}` : ""}` : b2`<b>${stunden(st)}:</b> ${t3("keine Messung")}` : b2`<span class="leise">${v2.beste != null ? `${t3("Beste Stunde {stunde} ({wert})", { stunde: stunden(v2.beste), wert: `${zahl(s4[v2.beste].median)} ${ein}` })} · ${t3("schwächste {stunde} ({wert})", { stunde: stunden(v2.schwaechste), wert: `${zahl(s4[v2.schwaechste].median)} ${ein}` })} · ` : ""}${t3("Tipp auf eine Stunde zeigt die Werte")}</span>`;
   return b2`<div class="tv">${kopf}${wahl}
     <svg viewBox="0 0 ${W3} ${H4}" role="img" aria-label=${`${t3("Tagesverlauf")} ${GROESSE_NAME[d3.groesse]}`}>
       ${[0, 0.25, 0.5, 0.75, 1].map((f3) => w`<line class="gitter" x1=${L4} x2=${W3 - R2} y1=${y4(ymax * f3)} y2=${y4(ymax * f3)}></line><text x=${L4 - 6} y=${y4(ymax * f3) + 4} text-anchor="end">${zahl(ymax * f3)}</text>`)}
@@ -4891,36 +5262,11 @@ function tagesverlauf(p4, d3) {
       ${w`<text x=${W3 - R2} y=${H4 - 8} text-anchor="end">${t3("{n} Uhr", { n: 24 })}</text>`}
       ${s4.map((w2, h3) => w`<rect class="h" x=${L4 + h3 * sw} y=${O} width=${sw} height=${HH} @click=${() => p4.setze("speedtest", { stunde: st === h3 ? null : h3 }, false)}><title>${stunden(h3)}: ${w2.anzahl ? `Median ${zahl(w2.median)} ${ein} · ${zahl(w2.min)}–${zahl(w2.max)} · ${anzahl2(w2.anzahl)}` : t3("keine Messung")}</title></rect>`)}
     </svg>
-    <div class="info">${info}</div>
+    <div class="info">${info2}</div>
     <div class="legende"><span><i class="l-med"></i>${t3("Median je Stunde")}</span><span><i class="l-glatt"></i>${t3("Mittelwert geglättet (3 h)")}</span><span><i class="l-band"></i>${t3("niedrigste bis höchste Messung")}</span><span><i class="l-luecke"></i>${t3("Stunden ohne Messung überbrückt")}</span>${tarif ? b2`<span><i class="l-tarif"></i>${t3("Tarif")}</span>` : A}<span>${ein}</span></div>
     ${o7.datum ? b2`<p class="hinweis">${t3("Ein einzelner Tag hat meist nur wenige Messungen (Messplan) – Stunden ohne Messung bleiben leer, bei einer Messung gibt es kein Band.")}</p>` : A}
   </div>`;
 }
-
-// ../../../../../../data/entwicklung/ha-heimnetz/custom_components/heimnetz/frontend/node_modules/lit-html/directive.js
-/**
- * @license
- * Copyright 2017 Google LLC
- * SPDX-License-Identifier: BSD-3-Clause
- */
-var t4 = { ATTRIBUTE: 1, CHILD: 2, PROPERTY: 3, BOOLEAN_ATTRIBUTE: 4, EVENT: 5, ELEMENT: 6 };
-var e4 = (t7) => (...e6) => ({ _$litDirective$: t7, values: e6 });
-var i5 = class {
-  constructor(t7) {
-  }
-  get _$AU() {
-    return this._$AM._$AU;
-  }
-  _$AT(t7, e6, i6) {
-    this._$Ct = t7, this._$AM = e6, this._$Ci = i6;
-  }
-  _$AS(t7, e6) {
-    return this.update(t7, e6);
-  }
-  update(t7, e6) {
-    return this.render(...e6);
-  }
-};
 
 // ../../../../../../data/entwicklung/ha-heimnetz/custom_components/heimnetz/frontend/node_modules/lit-html/directive-helpers.js
 /**
@@ -4928,7 +5274,7 @@ var i5 = class {
  * Copyright 2020 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
  */
-var { I: t5 } = j;
+var { I: t6 } = j;
 var r4 = (o7) => void 0 === o7.strings;
 var m2 = {};
 var p3 = (o7, t7 = m2) => o7._$AH = t7;
@@ -5055,20 +5401,20 @@ function warnungenTeil(p4) {
 }
 
 // src/ansichten/geraete.js
-var TEILE = [["geraete", merke("Geräte")], ["wlan", merke("WLAN")]];
+var TEILE = [["geraete", merke("Geräte")], ["wlan", merke("WLAN")], ["karte", merke("Karte")]];
 function geraeteReiter(p4, d3) {
   const teil = p4._opt.geraete.teil;
   return b2`<div class="leiste">${seg(tl(TEILE), teil, (v2) => p4.setze("geraete", { teil: v2 }), false)}</div>
     ${!d3 ? b2`<div class="glas-panel block"><div class="leer">${t3("lädt …")}</div></div>` : teil === "wlan" ? wlan(p4, d3) : geraete(p4, d3)}`;
 }
-var FILTER = [["alle", merke("Alle")], ["online", "Online"], ["offline", "Offline"], ["auff", merke("Auffällig")]];
+var FILTER2 = [["alle", merke("Alle")], ["online", "Online"], ["offline", "Offline"], ["auff", merke("Auffällig")]];
 var PUNKT = { an: ["", "online"], aus: ["grau", "offline"], neu: ["blau", merke("neu")], wackelt: ["amber", merke("wackelt")] };
 var ZU = "WLAN, nicht verbunden";
 var NACH = [["verb", merke("nach Verbindung")], ["art", merke("nach Art")]];
-var SYMBOL = { LAN: "🔌", WLAN: "📶", Powerline: "⚡" };
+var SYMBOL2 = { LAN: "🔌", WLAN: "📶", Powerline: "⚡" };
 var WARNEN = [["gruppe", merke("wie Gruppe")], ["immer", merke("immer")], ["nie", merke("nie")]];
 var NEU = "neu";
-function passt(g2, filter, suche) {
+function passt2(g2, filter, suche) {
   if (filter === "online" && !g2.aktiv) return false;
   if (filter === "offline" && g2.aktiv) return false;
   if (filter === "auff" && !["neu", "wackelt"].includes(g2.einstufung)) return false;
@@ -5076,12 +5422,12 @@ function passt(g2, filter, suche) {
 }
 function geraete(p4, d3) {
   const o7 = p4._opt.geraete;
-  const liste = d3.geraete.filter((g2) => passt(g2, o7.filter, o7.suche));
+  const liste = d3.geraete.filter((g2) => passt2(g2, o7.filter, o7.suche));
   const nachArt = o7.nach === "art";
   return b2`<div class="glas-panel block">
     <div class="block-kopf"><h3>${t3("Geräte im Heimnetz")}</h3><span class="leise">${t3("{n} von {gesamt} online · letzte 24 h", { n: d3.online, gesamt: d3.bekannt })}</span></div>
     <div class="leiste">${seg(tl(NACH), o7.nach || "verb", (v2) => p4.setze("geraete", { nach: v2 }, false))}</div>
-    <div class="leiste">${seg(tl(FILTER), o7.filter, (v2) => p4.setze("geraete", { filter: v2 }, false))}
+    <div class="leiste">${seg(tl(FILTER2), o7.filter, (v2) => p4.setze("geraete", { filter: v2 }, false))}
       <input class="suche" placeholder=${t3("Suchen (Name oder IP)")} .value=${o7.suche} @input=${(e6) => p4.setze("geraete", { suche: e6.target.value }, false)}></div>
     ${!d3.box_erreichbar ? b2`<p class="fein">${t3("Die FRITZ!Box antwortet nicht – die Liste zeigt den letzten bekannten Stand.")}</p>` : A}
     ${liste.length ? (nachArt ? d3.gruppen_art || [] : d3.gruppen || []).map((gr) => gruppe(p4, gr, liste.filter((g2) => (nachArt ? g2.kat : g2.verbindung) === gr.name), nachArt)) : b2`<div class="leer">${t3("Kein Gerät passt.")}</div>`}
@@ -5105,7 +5451,7 @@ function zeile(p4, g2, nachArt) {
   const wort = t3(schluessel);
   const zusatz = nachArt ? g2.band || g2.art : g2.band;
   return b2`<div class="geraet gk" @click=${() => p4.geraetOeffnen(g2.id)}>
-    <span>${SYMBOL[g2.art.split(" ")[0]] ?? "•"}</span>
+    <span>${SYMBOL2[g2.art.split(" ")[0]] ?? "•"}</span>
     <span class="n">${g2.name}<small>${g2.ip || "–"}${zusatz ? ` · ${zusatz}` : ""}</small></span>
     ${streifen(g2.streifen)}<span class="punkt ${farbe2}" title=${wort} aria-label=${wort}></span></div>`;
 }
@@ -5901,7 +6247,7 @@ var HeimnetzKarte = class extends i4 {
     this._gezeigt = false;
   }
   render() {
-    const info = this._osm && this._info !== null ? this.daten?.osm?.[this._info] : null;
+    const info2 = this._osm && this._info !== null ? this.daten?.osm?.[this._info] : null;
     return b2`<div class="rahmen ${this._voll ? "voll" : ""}">
       ${this._voll ? b2`<button class="k-voll-zu" title=${t3("Vollbild schließen")} @click=${() => this._vollbild(false)}>✕</button>` : ""}
       <div id="karte" role="img" aria-label=${t3("Karte: Wohnung, Zellen und geschätzter Mast")}></div>
@@ -5912,7 +6258,7 @@ var HeimnetzKarte = class extends i4 {
         <button title=${this._voll ? t3("Vollbild schließen") : t3("Vollbild")} aria-label=${t3("Vollbild")} @click=${() => this._vollbild(!this._voll)}>⛶</button>
       </div>
       ${this.daten?.osm?.length ? b2`<button class="k-osm ${this._osm ? "an" : ""}" title=${t3("Funkmasten aus OpenStreetMap ein/aus")} aria-pressed=${this._osm ? "true" : "false"} @click=${() => this._osmUmschalten()}>📡 ${t3("Masten (OSM)")}</button>` : ""}
-      ${info ? this._infofeld(info) : ""}
+      ${info2 ? this._infofeld(info2) : ""}
       <select class="k-lage" title=${t3("Kartengrundlage")} @change=${(e6) => this._waehlen(e6.target.value)}>
         ${Object.entries(WAHL).map(([k2, name]) => b2`<option value=${k2} ?selected=${k2 === this._wahl}>🗺️ ${t3(name)}</option>`)}
       </select>
@@ -6144,7 +6490,7 @@ function mobilfunk(p4, d3) {
       <details class="klapp"><summary><span class="leise">ⓘ ${t3("Was zeigt die Liste?")}</span></summary>
         <p class="hinweis">${d3.zellen.length > 1 ? `${t3("Die Box hält gleichzeitig mehrere Zellen: die Ankerzelle trägt die Verbindung, die übrigen bündeln dazu.")} ` : ""}${t3("Balken = Signalstärke (RSRP), daneben die Signalqualität (RSRQ).")}</p></details>
     </div>` : A}
-    ${d3.karte && d3.karte.rahmen ? karte(p4, d3.karte, !!(p4.hass && p4.hass.themes && p4.hass.themes.darkMode)) : A}
+    ${d3.karte && d3.karte.rahmen ? karte2(p4, d3.karte, !!(p4.hass && p4.hass.themes && p4.hass.themes.darkMode)) : A}
     <div class="glas-raster">
       ${kachel(t3("Verbunden seit"), d3.laufzeit ?? "–", d3.letzter_abbruch ? t3("Neueinwahl {zeit}", { zeit: zeit(d3.letzter_abbruch) }) : d3.modem && d3.laufzeit ? t3("laut Modem") : t3("ohne Neueinwahl (7 Tage)"))}
       ${kachel(t3("Abbrüche"), b2`${d3.abbrueche_7}`, t3("Neueinwahlen, letzte 7 Tage"))}
@@ -6219,7 +6565,7 @@ var STAND = {
   schluessel_ungueltig: merke("OpenCellID lehnt den Schlüssel ab – unter Geräte & Dienste → Heimnetz → Konfigurieren prüfen."),
   ohne_kennung: merke("Die Box nennt für keine Zelle eine vollständige Kennung – die Karte zeigt nur die Entfernung.")
 };
-function karte(p4, k2, dunkel) {
+function karte2(p4, k2, dunkel) {
   return b2`<div class="glas-panel block">
     <div class="block-kopf"><h3>${t3("Wo steht der Mast?")} <span class="leise" title=${t3(SCHLUESSEL_ORT)}>ⓘ</span></h3><span class="leise">${k2.gefunden ? t3("geschätzt · {n} von {gesamt} Zellen gefunden", { n: k2.gefunden, gesamt: k2.zellen }) : !k2.ring ? t3("Funkmasten der Umgebung") : t3("Entfernung laut Box")}</span></div>
     <heimnetz-karte .daten=${k2} ?dunkel=${dunkel} .sprache=${sprache()} @osm-umgeschaltet=${() => p4.requestUpdate()}></heimnetz-karte>
@@ -6236,7 +6582,7 @@ function karte(p4, k2, dunkel) {
 var WOHER = merke("Die Box meldet nur die Entfernung (Ring), nicht die Richtung. Jede Zelle mit voller Kennung schlägt die Integration bei BeaconDB (ohne Schlüssel) und – mit eigenem Schlüssel – bei OpenCellID nach und merkt sich das Ergebnis; es zählt der genauere Fund. Hinaus geht nur die Kennung der Zelle, nie dein Standort. Beide Dienste kennen nicht den Mast selbst, sondern die Orte, an denen Nutzer die Zelle empfangen haben – daher der Kreis für die Genauigkeit. Zellen derselben Sendeanlage (Kennung vor dem Bindestrich) hängen am selben Mast; sein Standort ist das Mittel ihrer Punkte, genauere zählen mehr. Zellen, von denen die Box nur die PCI nennt, lassen sich nicht nachschlagen – auch 5G nicht: Die Box nennt für 5G nur diese Nummer. Bei 5G-NSA hängt die 5G-Zelle aber meist am selben Mast wie die LTE-Ankerzelle, deshalb steht dort „4G + 5G (vermutlich)“, solange 5G mitläuft. Die Namen der Zellen erscheinen beim Hineinzoomen. Zoomen mit ＋/−, Mausrad oder zwei Fingern, ziehen zum Verschieben, ⌖ zeigt wieder alles. Die Kartenkacheln lädt dein Browser von basemap.at (Server der Stadt Wien) oder OpenStreetMap; der Anbieter sieht dabei den Kartenausschnitt, nicht mehr. Die gewählte Grundlage merkt sich dein Browser. „📡 Masten (OSM)“ zeigt Funkmasten, die in OpenStreetMap eingetragen sind – echte Bauwerke, aber meist ohne Betreiber. Orange umrandet ist der Mast, der am nächsten am geschätzten Mast der Zellen steht (höchstens 1,5 km daneben); ist der nicht bekannt, der Mast, dessen Entfernung am besten zur Entfernung laut Box passt – die schwankt je Zelle aber stark. Ein Hinweis, kein Beweis. Zellen einer Sendeanlage, die einmal gefunden wurden, zählen einen Monat lang mit – auch wenn die Box gerade an einem Sektor hängt, den keine Datenbank kennt. Antippen eines Masts zeigt Entfernung und Richtung und – mit OpenCellID-Schlüssel – Anbieter und Technik der Zellen, die OpenCellID in höchstens 500 m Abstand kennt (aus dem Datenabzug für ganz Österreich, einmal im Monat geladen und hier ausgewertet). ⛶ öffnet die Karte über die ganze Seite. Die Integration fragt dafür einmal im Monat einen großen Ausschnitt auf festem Raster bei OpenStreetMap ab; daraus lässt sich deine Wohnung nur auf etwa 22 × 15 km eingrenzen.");
 
 // src/ansichten/internet.js
-var SYMBOL2 = { mobilfunk: "📶", dsl: "☎️", glasfaser: "💡", kabel: "📺", extern: "📶" };
+var SYMBOL3 = { mobilfunk: "📶", dsl: "☎️", glasfaser: "💡", kabel: "📺", extern: "📶" };
 var ABZEICHEN = { gut: "gruen", knapp: "amber-b", schlecht: "rot-b" };
 var QUELLE = { automatisch: merke("automatisch erkannt"), festgelegt: merke("festgelegt") };
 var lade = () => b2`<div class="glas-panel block"><div class="leer">${t3("lädt …")}</div></div>`;
@@ -6249,7 +6595,7 @@ function iz(name, w2, unter = "") {
 }
 function zugangZeile(p4, z2) {
   return b2`<div class="glas-panel block iq">
-    <span class="iq-ic">${SYMBOL2[z2.art] ?? "🌐"}</span>
+    <span class="iq-ic">${SYMBOL3[z2.art] ?? "🌐"}</span>
     <span><b>${z2.titel}</b><small>${[z2.geraet, z2.weg_text, z2.ersatz_text ? t3("Ersatz: {text}", { text: z2.ersatz_text }) : ""].filter(Boolean).join(" · ")}</small>
       ${z2.abweichung ? b2`<small class="amber-t">${t3("Die FRITZ!Box meldet etwas anderes: {vorschlag}", { vorschlag: z2.abweichung })}</small>` : A}</span>
     <span class="iq-r"><span class="badge">${t3(QUELLE[z2.quelle] ?? z2.quelle)}</span>
@@ -6260,7 +6606,7 @@ function internet(p4, d3) {
   if (!d3) return lade();
   const z2 = d3.zugang;
   const sicht = p4._opt.internet.sicht === "ersatz" && d3.ersatz ? "ersatz" : "haupt";
-  const knoepfe = [["haupt", `${SYMBOL2[z2.art] ?? "🌐"} ${art(z2)}`], ...d3.ersatz ? [["ersatz", t3("📶 Ersatz")]] : []];
+  const knoepfe = [["haupt", `${SYMBOL3[z2.art] ?? "🌐"} ${art(z2)}`], ...d3.ersatz ? [["ersatz", t3("📶 Ersatz")]] : []];
   const inhalt = sicht === "ersatz" ? ersatz(d3.ersatz) : z2.art === "dsl" ? dsl(d3.dsl) : z2.art === "glasfaser" ? glasfaser(d3.glasfaser) : z2.art === "kabel" ? kabel(d3.kabel) : z2.art === "extern" ? extern(p4, d3) : z2.art === "mobilfunk" && d3.mobilfunk ? mobilfunk(p4, d3.mobilfunk) : b2`<div class="glas-panel block"><div class="leer">${t3("Die Box meldet noch nicht, woher das Internet kommt – sie wird alle 10 Minuten gefragt.")}</div></div>`;
   return b2`${zugangZeile(p4, z2)}
     ${knoepfe.length > 1 ? b2`<div class="leiste">${seg(knoepfe, sicht, (v2) => p4.setze("internet", { sicht: v2 }, false), false)}</div>` : A}
@@ -6377,40 +6723,6 @@ function verlauf(titel, unter, linien, marken = [], band = null) {
       <div class="legende">${linien.map((l4) => b2`<span><i style="background:${l4.farbe}"></i>${l4.name}</span>`)}${marken.length ? b2`<span><i style="background:var(--rot)"></i>${t3("Neusynchronisierung")}</span>` : A}</div>` : b2`<div class="leer">${t3("Noch kein Verlauf aufgezeichnet.")}</div>`}
   </div>`;
 }
-
-// ../../../../../../data/entwicklung/ha-heimnetz/custom_components/heimnetz/frontend/node_modules/lit-html/directives/unsafe-html.js
-/**
- * @license
- * Copyright 2017 Google LLC
- * SPDX-License-Identifier: BSD-3-Clause
- */
-var e5 = class extends i5 {
-  constructor(i6) {
-    if (super(i6), this.it = A, i6.type !== t4.CHILD) throw Error(this.constructor.directiveName + "() can only be used in child bindings");
-  }
-  render(r5) {
-    if (r5 === A || null == r5) return this._t = void 0, this.it = r5;
-    if (r5 === E) return r5;
-    if ("string" != typeof r5) throw Error(this.constructor.directiveName + "() called with a non-string value");
-    if (r5 === this.it) return this._t;
-    this.it = r5;
-    const s4 = [r5];
-    return s4.raw = s4, this._t = { _$litType$: this.constructor.resultType, strings: s4, values: [] };
-  }
-};
-e5.directiveName = "unsafeHTML", e5.resultType = 1;
-var o5 = e4(e5);
-
-// ../../../../../../data/entwicklung/ha-heimnetz/custom_components/heimnetz/frontend/node_modules/lit-html/directives/unsafe-svg.js
-/**
- * @license
- * Copyright 2017 Google LLC
- * SPDX-License-Identifier: BSD-3-Clause
- */
-var t6 = class extends e5 {
-};
-t6.directiveName = "unsafeSVG", t6.resultType = 2;
-var o6 = e4(t6);
 
 // src/ansichten/melden.js
 var MB_MAX = 3;
@@ -6703,9 +7015,9 @@ function diagnoseLog(p4) {
     <button class="sw ${d3 && d3.an ? "on" : ""}" role="switch" aria-checked=${d3 && d3.an ? "true" : "false"} aria-label=${t3("Diagnose-Log")} ?disabled=${!d3} @click=${() => p4.dlogBefehl("diagnoselog/setzen", { an: !d3.an })}><i></i></button></div>`;
   const fein = fehler ? b2`<p class="fein">${fehler}</p>` : A;
   if (!d3 || !d3.an && !d3.eintraege) return b2`<div class="dl">${schalter2}${fein}</div>`;
-  const passt2 = (z2) => filter === "alle" || (filter === "auffaellig" ? z2.auffaellig : z2.kat === filter);
+  const passt3 = (z2) => filter === "alle" || (filter === "auffaellig" ? z2.auffaellig : z2.kat === filter);
   let letzter = "";
-  const zeilen = d3.zeilen.filter(passt2).flatMap((z2) => {
+  const zeilen = d3.zeilen.filter(passt3).flatMap((z2) => {
     const kopf = tag(z2.t);
     const neu = kopf !== letzter;
     letzter = kopf;
@@ -6783,7 +7095,7 @@ function verbrauch(p4, d3) {
   const tage = d3.tage;
   const max = Math.max(0.1, ...tage.map((x2) => x2.down + x2.up)) * 1.1;
   const bw = W2 / Math.max(1, tage.length);
-  const balken = tage.map((x2, i6) => {
+  const balken2 = tage.map((x2, i6) => {
     const h1 = x2.down / max * H3, h22 = x2.up / max * H3, h3 = Math.min(x2.speedtest, x2.down + x2.up) / max * H3;
     const d0 = /* @__PURE__ */ new Date(`${x2.tag}T12:00`);
     return w`<g><title>${datum(d0)}: ↓ ${zahl(x2.down, 1)} GB, ↑ ${zahl(x2.up, 1)} GB, ${t3("davon Speedtests {gb} GB", { gb: zahl(x2.speedtest, 2) })}</title>
@@ -6803,7 +7115,7 @@ function verbrauch(p4, d3) {
       <div class="block-kopf"><h3>${t3("Datenverbrauch der ganzen Box")}</h3>${seg([[7, t3("{n} Tage", { n: 7 })], [30, t3("{n} Tage", { n: 30 })]], o7.tage, (v2) => p4.setze("verbrauch", { tage: v2 }))}</div>
       <svg class="dia" viewBox="-30 -6 ${W2 + 36} ${H3 + 24}">
         ${[0, 0.25, 0.5, 0.75, 1].map((f3) => w`<line class="gitter" x1="0" x2=${W2} y1=${H3 - f3 * H3} y2=${H3 - f3 * H3}></line><text x="-4" y=${H3 - f3 * H3 + 3} text-anchor="end">${zahl(f3 * max)}</text>`)}
-        ${balken}
+        ${balken2}
         ${w`<text x="0" y=${H3 + 16}>${t3("vor {n} Tagen", { n: tage.length - 1 })}</text><text x=${W2} y=${H3 + 16} text-anchor="end">${t3("heute")}</text>`}
       </svg>
       <div class="legende"><span><i style="background:var(--s1)"></i>Download</span><span><i style="background:var(--s2)"></i>Upload</span><span><i style="background:var(--s4)"></i>${t3("davon Speedtests")}</span><span>${t3("GB je Tag")}</span></div>
@@ -6860,7 +7172,7 @@ function glied(g2) {
       <small>${g2.sanft ? t3("sanft: {weg}", { weg: g2.sanft }) : t3("nur Strom aus/ein")}</small></span>
   </div>`;
 }
-function karte2(p4, w2) {
+function karte3(p4, w2) {
   const admin = p4.istAdmin;
   const r5 = w2.regeln;
   const regel = w2.art === "internet" ? t3("sanft nach {a} min · Strom {s} s aus nach {b} min · höchstens alle {c} min", { a: r5.stufe1_min, b: r5.stufe2_min, s: r5.aus_s, c: r5.abstand_min }) : t3("Strom {s} s aus nach {b} min · höchstens alle {c} min", { b: r5.stufe2_min, s: r5.aus_s, c: r5.abstand_min });
@@ -6884,7 +7196,7 @@ function waechter(p4, d3) {
   const liste = d3.waechter || [];
   const admin = p4.istAdmin;
   return b2`
-    ${liste.length ? b2`<div class="raster2">${liste.map((w2) => karte2(p4, w2))}</div>` : b2`<div class="glas-panel block">
+    ${liste.length ? b2`<div class="raster2">${liste.map((w2) => karte3(p4, w2))}</div>` : b2`<div class="glas-panel block">
       <div class="block-kopf"><h3>${t3("Was ist ein Wächter?")}</h3></div>
       <p class="hinweis">${t3("Ein Wächter schaut laufend, ob das Internet noch geht oder Home Assistant noch antwortet. Hängt etwas, findet er das Gerät, das schuld ist, und startet es neu: zuerst sanft über seine Schnittstelle (FRITZ!Box, ZTE, Huawei, TP-Link), dann mit einer Shelly-Steckdose Strom aus und wieder ein.")}</p>
       <p class="hinweis">${t3("Gebraucht wird je Gerät eine Shelly-Steckdose der Generation 2 oder neuer (z. B. Plus Plug S, Plug S Gen3). Sie bekommt ein kleines Skript und arbeitet damit selbstständig weiter, auch wenn Home Assistant hängt.")}</p>
@@ -6982,7 +7294,7 @@ function waechterBlatt(p4) {
 }
 
 // src/heimnetz-panel.js
-var VERSION = true ? "0.34.1" : "entwicklung";
+var VERSION = true ? "0.35.0" : "entwicklung";
 var REITER = [
   ["uebersicht", merke("Übersicht")],
   ["speedtest", merke("Speedtest")],
@@ -6994,7 +7306,7 @@ var REITER = [
   ["waechter", merke("Wächter")]
   // 18.11.2026: Neustart hängender Geräte über Shelly-Steckdosen
 ];
-var SYMBOL3 = { uebersicht: "🏠", speedtest: "⚡", geraete: "📱", internet: "🌐", verbrauch: "📊", protokoll: "📋", waechter: "🛡️" };
+var SYMBOL4 = { uebersicht: "🏠", speedtest: "⚡", geraete: "📱", internet: "🌐", verbrauch: "📊", protokoll: "📋", waechter: "🛡️" };
 var ANSICHT = { uebersicht, speedtest, geraete: geraeteReiter, internet, verbrauch, protokoll, waechter };
 var NEU_LADEN_MS = 6e4;
 var KACHEL_WARTEN_MS = 150;
@@ -7010,7 +7322,7 @@ var TITEL = {
   box_fehlt: merke("FRITZ!Box nicht erreichbar")
 };
 var PUNKT4 = { ok: "", warnung: "amber", kritisch: "rot", box_fehlt: "grau" };
-var standZeit = (s4) => zeit(s4).replace(new RegExp(`^${t3("Heute {uhr}", { uhr: "" })}`), "");
+var standZeit2 = (s4) => zeit(s4).replace(new RegExp(`^${t3("Heute {uhr}", { uhr: "" })}`), "");
 var HeimnetzPanel = class extends i4 {
   static properties = {
     hass: { attribute: false },
@@ -7143,7 +7455,12 @@ var HeimnetzPanel = class extends i4 {
   }
   /** Welche Daten der gewählte Reiter braucht; „Geräte“ lädt nur den gewählten Teil (Geräte oder WLAN). */
   get _datenReiter() {
-    return this._reiter === "geraete" && this._opt.geraete.teil === "wlan" ? "wlan" : this._reiter;
+    if (this._reiter !== "geraete") return this._reiter;
+    return { wlan: "wlan", karte: "netzkarte" }[this._opt.geraete.teil] || "geraete";
+  }
+  /** 1.1: Fenster „Befunde und Ereignisse“ (Tipp auf die Meldezeile der Übersicht). */
+  befundeOeffnen() {
+    this._blatt = { art: "befunde" };
   }
   _parameter(reiter) {
     const o7 = this._opt[reiter];
@@ -7631,6 +7948,7 @@ var HeimnetzPanel = class extends i4 {
   /** Gewählter Teil des Reiters in Worten (für den Kontext einer Meldung). */
   _teilText() {
     if (this._reiter === "geraete" && this._opt.geraete.teil === "wlan") return t3("WLAN");
+    if (this._reiter === "geraete" && this._opt.geraete.teil === "karte") return t3("Netzkarte");
     if (this._reiter !== "internet") return "";
     if (this._opt.internet.sicht === "ersatz") return t3("Ersatz");
     const z2 = this._daten.internet && this._daten.internet.zugang;
@@ -7929,7 +8247,7 @@ var HeimnetzPanel = class extends i4 {
     return b2`
       <div class="glas-panel glas-kopf">
         <div>
-          <div class="glas-klein">Heimnetz · ${t3("Stand {zeit}", { zeit: standZeit(u3.stand) })}</div>
+          <div class="glas-klein">Heimnetz · ${t3("Stand {zeit}", { zeit: standZeit2(u3.stand) })}</div>
           <div class="kopf-titel" style="margin-top:6px">
             <span class="punkt ${PUNKT4[u3.gesamt] ?? "grau"}"></span>
             <span class="glas-kw" style="font-size:30px">${TITEL[u3.gesamt] ? t3(TITEL[u3.gesamt]) : u3.gesamt}</span>
@@ -7937,8 +8255,14 @@ var HeimnetzPanel = class extends i4 {
           <div class="leise" style="margin-top:6px">${unter}</div>
         </div>
         <div class="chips">
-          ${kritisch ? b2`<button class="chip glas-panel rot" @click=${() => this.geh("uebersicht")}>● ${t3(kritisch > 1 ? "{n} Störungen" : "{n} Störung", { n: kritisch })}</button>` : A}
-          ${warnung ? b2`<button class="chip glas-panel amber" @click=${() => this.geh("uebersicht")}>⚠ ${t3(warnung > 1 ? "{n} Hinweise" : "{n} Hinweis", { n: warnung })}</button>` : A}
+          ${kritisch ? b2`<button class="chip glas-panel rot" @click=${() => {
+      this.geh("uebersicht");
+      this.befundeOeffnen();
+    }}>● ${t3(kritisch > 1 ? "{n} Störungen" : "{n} Störung", { n: kritisch })}</button>` : A}
+          ${warnung ? b2`<button class="chip glas-panel amber" @click=${() => {
+      this.geh("uebersicht");
+      this.befundeOeffnen();
+    }}>⚠ ${t3(warnung > 1 ? "{n} Hinweise" : "{n} Hinweis", { n: warnung })}</button>` : A}
           <button class="chip glas-panel" title=${t3("Einstellungen")} @click=${() => this.einstellungenOeffnen()}>⚙</button>
         </div>
       </div>`;
@@ -7946,7 +8270,7 @@ var HeimnetzPanel = class extends i4 {
   _blattInhalt() {
     const b3 = this._blatt;
     if (!b3) return A;
-    const art2 = { einstellungen: einstellungenBlatt, melden: meldenBlatt, github: githubBlatt, meldungen: meldungenBlatt, bild: bildBlatt, messung: messungBlatt, waechter: waechterBlatt }[b3.art];
+    const art2 = { einstellungen: einstellungenBlatt, melden: meldenBlatt, github: githubBlatt, meldungen: meldungenBlatt, bild: bildBlatt, messung: messungBlatt, waechter: waechterBlatt, befunde: befundeBlatt }[b3.art];
     return art2 ? art2(this) : geraetBlatt(this, b3);
   }
   render() {
@@ -7954,6 +8278,7 @@ var HeimnetzPanel = class extends i4 {
     const u3 = this._daten.uebersicht;
     const ansicht = ANSICHT[this._reiter];
     const daten = this._reiter === "uebersicht" ? u3 : this._daten[this._datenReiter];
+    const karte4 = this._reiter === "geraete" && this._opt.geraete.teil === "karte";
     return b2`
       <div class="wurzel ${hell ? "hell" : ""}" lang=${sprache()}>
         <div class="ui"><div class="app">
@@ -7962,14 +8287,14 @@ var HeimnetzPanel = class extends i4 {
           </div>
           ${this.narrow ? b2`<button class="menue-knopf glas-panel" title=${t3("Menü")} @click=${() => this.dispatchEvent(new Event("hass-toggle-menu", { bubbles: true, composed: true }))}>☰</button>` : A}
           <nav class="glas-nav glas-panel sieben">
-            ${REITER.map(([k2, name]) => b2`<button class=${k2 === this._reiter ? "on" : ""} data-symbol=${SYMBOL3[k2]} title=${t3(name)} aria-label=${t3(name)} @click=${() => this.geh(k2)}><span class="nt">${t3(name)}</span></button>`)}
+            ${REITER.map(([k2, name]) => b2`<button class=${k2 === this._reiter ? "on" : ""} data-symbol=${SYMBOL4[k2]} title=${t3(name)} aria-label=${t3(name)} @click=${() => this.geh(k2)}><span class="nt">${t3(name)}</span></button>`)}
           </nav>
-          <div class="scroll" @scroll=${() => this.kachelWeg(true)}><div class="seite ${this._laedt ? "laden" : ""}">
-            ${this._kopf(u3)}
+          ${karte4 ? netzkarte(this, this._daten.netzkarte, u3, this._fehler) : b2`<div class="scroll" @scroll=${() => this.kachelWeg(true)}><div class="seite ${this._laedt ? "laden" : ""}">
+            ${this._reiter === "uebersicht" && u3 ? A : this._kopf(u3)}
             ${this._fehler ? b2`<div class="glas-panel fehler-band">${t3("Daten nicht abrufbar: {fehler}", { fehler: this._fehler })}</div>` : A}
             ${daten || this._reiter === "geraete" ? ansicht(this, daten) : b2`<div class="glas-panel block"><div class="leer">${t3("lädt …")}</div></div>`}
             <div class="leise" style="text-align:center;padding:8px">Heimnetz ${VERSION}</div>
-          </div></div>
+          </div></div>`}
           <div class="schleier ${this._blatt ? "an" : ""}" @click=${() => this.zu()}></div>
           <div class="sheet glas-panel ${this._blatt ? "an" : ""} ${["einstellungen", "waechter"].includes(this._blatt?.art) ? "breit" : ""}">${this._blatt && !["melden", "github"].includes(this._blatt.art) ? meldenKnopf(this, true) : A}${this._blattInhalt()}</div>
           ${this._blatt ? A : meldenKnopf(this)}
@@ -7983,7 +8308,7 @@ if (!customElements.get("heimnetz-panel")) customElements.define("heimnetz-panel
 export {
   HeimnetzPanel,
   REITER,
-  SYMBOL3 as SYMBOL,
+  SYMBOL4 as SYMBOL,
   VERSION,
   istBildDatei
 };

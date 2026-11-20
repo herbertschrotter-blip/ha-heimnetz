@@ -17,6 +17,7 @@ from . import EintragMitLaufzeit
 from .ansichten import diagnose_namen
 from .const import CONF_MODEM_KENNWORT, CONF_SHELLY_KENNWORT, DOMAIN, sprache
 from .logik import diagnose as dg
+from .logik import netzkarte as nk
 from .speedtest import ookla_einstellung
 
 
@@ -61,6 +62,7 @@ async def async_get_config_entry_diagnostics(
             "messplan": lz.einstellungen.plan.als_dict(),
         },
         "datenbank": datenbank,
+        "netzkarte": nk.diagnose(stand.netz) if stand else None,
     }
     ergebnis: dict[str, Any] = dg.schwaerzen(roh, diagnose_namen(hass, lz))
     return ergebnis

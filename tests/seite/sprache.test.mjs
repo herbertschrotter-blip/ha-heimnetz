@@ -128,8 +128,13 @@ test('englische Seite: Reiter, Kopf und alle Ansichten ohne deutsche Texte der S
   assert.deepEqual(funde, []);
   // Übersicht und Speedtest mit englischen Wörtern
   await klick(el, w.querySelectorAll('nav button')[0]);
-  assert.match(text(el), /Devices online/);
-  assert.match(text(el), /Important events/);
+  assert.match(text(el), /devices online/);
+  assert.match(text(el), /Network map ›/);
+  await klick(el, w.querySelector('.lb-meldezeile'));
+  assert.match(w.querySelector('.sheet').textContent, /Findings and events/);
+  assert.match(w.querySelector('.sheet').textContent, /Important events/);
+  el.zu();
+  await el.updateComplete;
   await klick(el, w.querySelectorAll('nav button')[1]);
   assert.match(text(el), /When is the internet fast\?/);
   assert.match(text(el), /Recent measurements/);
@@ -153,7 +158,7 @@ test('englische Seite: Tagesverlauf, Einstellungen, Melden und Meldungen', async
   assert.deepEqual(durchsuchen('Messung', w.querySelector('.sheet').textContent), []);
   el.zu();
   // Einstellungen, alle Reiter
-  await klick(el, [...w.querySelectorAll('.glas-kopf button')].find((b) => b.textContent.trim() === '⚙'));
+  await klick(el, [...w.querySelectorAll('.glas-kopf button, .lb-kopf button')].find((b) => b.textContent.trim() === '⚙'));
   const sheet = w.querySelector('.sheet');
   assert.match(sheet.textContent, /Settings/);
   for (const b of [...sheet.querySelectorAll('.e-reiter button')]) {
@@ -206,7 +211,7 @@ test('Sprache wechselt mit dem Profil in HA, ohne die Seite neu zu laden', async
   assert.equal(el.shadowRoot.querySelector('nav button').textContent.trim(), 'Overview');
   // fertige Texte der Integration in der neuen Sprache neu holen
   assert.ok(hass.aufrufe.slice(vorher).some((a) => a.type === 'heimnetz/uebersicht' && a.sprache === 'en'));
-  assert.match(text(el), /Devices online/);
+  assert.match(text(el), /devices online/);
   el.hass = hass;
   await el.updateComplete;
   assert.equal(el.shadowRoot.querySelector('nav button').textContent.trim(), 'Übersicht');

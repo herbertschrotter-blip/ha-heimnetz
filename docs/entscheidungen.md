@@ -594,6 +594,19 @@ nachgetragen.
 - Grenzen: die Uhr des Pi hat keine Batterie (nach einem Stromausfall erst richtig, wenn das Netz da ist) und das
   Systemprotokoll ist auf 500 MB begrenzt – beides stellt Home Assistant OS ein, nicht Heimnetz.
 
+## Lagebild und Netzkarte (Herbert, 20.11.2026)
+
+- Übersicht 1.1 „intuitiv, übersichtlich, am Handy ohne Scrollen“: Lagebild statt sechs Kacheln und drei Listen;
+  Befunde, Prüfungen und Ereignisse ins Fenster hinter der Meldezeile. Eine kleine Karte in der Übersicht hat Herbert
+  abgelehnt („schlichter halten, mit Hinweis auf Karte“).
+- Netzkarte 1.9 als eigene Seite unter Geräte, ohne Kacheln. Quelle ist die Mesh-Liste der Box (dieselbe Abfrage wie
+  bisher, nur lesend, alle 10 Minuten): Buchse und Rate je Kabelgerät, Band und Rate je WLAN-Gerät, Repeater je Gerät.
+  Einen einfachen Switch sieht die Box nicht – mehrere Geräte an derselben Buchse gelten als Switch. Welches Gerät an
+  welchem Anschluss eines Switches hängt, bleibt unbekannt.
+- Lage der Punkte, Texte und Zustände rechnet die Integration (`logik/netzkarte.py`, `logik/lagebild.py`), die Seite
+  zeichnet nur. VPN-Geräte (WireGuard) stehen nicht auf der Karte, nur ihre Anzahl. VLANs kennt die FRITZ!Box nicht
+  (nur das Gastnetz, als „Gast“ in der Infokarte).
+
 ## Offene Entscheidungen
 
 - Keine.

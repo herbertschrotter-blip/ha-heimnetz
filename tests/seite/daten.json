@@ -1,8 +1,60 @@
 {
  "uebersicht": {
-  "stand": 1791989456.8715518,
+  "stand": 1795210006.0221577,
   "gesamt": "kritisch",
   "box_erreichbar": true,
+  "kopf": {
+   "punkt": "rot",
+   "titel": "4 Hinweise"
+  },
+  "leitung": {
+   "knoten": [
+    {
+     "teil": "pi",
+     "zustand": "gut",
+     "name": "Pi",
+     "text": "Home Assistant"
+    },
+    {
+     "teil": "box",
+     "zustand": "gut",
+     "name": "FRITZ!Box",
+     "text": ""
+    },
+    {
+     "teil": "zugang",
+     "zustand": "gut",
+     "symbol": "📡",
+     "name": "5G-NSA",
+     "text": "−100 dBm",
+     "balken": 2
+    },
+    {
+     "teil": "internet",
+     "zustand": "gut",
+     "name": "Internet",
+     "text": "erreichbar"
+    }
+   ],
+   "draehte": [
+    "",
+    "",
+    ""
+   ]
+  },
+  "meldung": {
+   "n": 4,
+   "art": "rot",
+   "titel": "IP-Adresse 192.168.170.60 doppelt in Benutzung",
+   "text": "+3 weitere: Tab hat eine Adresse außerhalb des Heimnetzes",
+   "t": null
+  },
+  "waechter": {
+   "wort": "greift ein",
+   "text": "1 an · kein Eingriff",
+   "punkt": "amber",
+   "t": null
+  },
   "fehler": [],
   "befunde": [
    {
@@ -93,7 +145,7 @@
    "wort": "mittel"
   },
   "speedtest": {
-   "t": 1791989456.913667,
+   "t": 1795210006.109831,
    "down": 120.0,
    "up": 30.0,
    "ping": 21.0,
@@ -105,28 +157,33 @@
   "verbrauch_heute": {
    "down": 0.0,
    "up": 0.0,
-   "speedtest": 0.67
+   "speedtest": 0.0
   },
   "wichtig": [
    {
-    "t": 1791989456.8715518,
+    "t": 1795210006.0221577,
     "stufe": "warnung",
     "text": "Befund: Kein DHCP-Server hat geantwortet – Auf die Test-Anfrage kam keine Antwort. Geräte, die sich neu verbinden, bekommen dann keine Adresse."
    },
    {
-    "t": 1791989456.8715518,
+    "t": 1795210006.0221577,
     "stufe": "warnung",
     "text": "Befund: kind: Internet durch die FRITZ!Box gesperrt – kind ist online, aber ein Zugangsprofil (Kindersicherung/Zeitbudget/Sperre) lässt es nicht ins Internet."
    },
    {
-    "t": 1791989456.8715518,
+    "t": 1795210006.0221577,
     "stufe": "kritisch",
     "text": "Befund: Tab hat eine Adresse außerhalb des Heimnetzes – Tab hat 192.168.1.23, das Heimnetz ist 192.168.170.0/24. Das Gerät hat seine Adresse nicht von der FRITZ!Box bekommen – entweder fest falsch eingestellt oder ein zweiter DHCP-Server (anderer Router, Repeater im Router-Modus) verteilt Adressen."
    },
    {
-    "t": 1791989456.8715518,
+    "t": 1795210006.0221577,
     "stufe": "kritisch",
     "text": "Befund: IP-Adresse 192.168.170.60 doppelt in Benutzung – Zwei Geräte sind gleichzeitig mit derselben Adresse online: Pi – online, fernseher – online. Beide verlieren abwechselnd die Verbindung."
+   },
+   {
+    "t": 1795206406.1123142,
+    "stufe": "warnung",
+    "text": "FRITZ!Box 6860 5G: Strom 30 s aus und wieder ein"
    }
   ]
  },
@@ -3666,5 +3723,162 @@
   ],
   "gelesen": 1794981136.7537906,
   "kennwort": false
+ },
+ "netzkarte": {
+  "breite": 440,
+  "hoehe": 462,
+  "mitte": {
+   "x": 220.0,
+   "y": 252.0
+  },
+  "dot": 11,
+  "ringe": [
+   {
+    "r": 62.0,
+    "name": "Kabel"
+   },
+   {
+    "r": 108.0,
+    "name": "5 GHz"
+   },
+   {
+    "r": 150.0,
+    "name": "2,4 GHz"
+   },
+   {
+    "r": 178.0,
+    "name": "offline"
+   }
+  ],
+  "sektoren": [
+   {
+    "name": "Netzwerk",
+    "x": 391.7,
+    "y": 149.4
+   },
+   {
+    "name": "Handy & Tablet",
+    "x": 383.0,
+    "y": 367.9
+   },
+   {
+    "name": "Unbekannt",
+    "x": 116.6,
+    "y": 423.2
+   },
+   {
+    "name": "Baustelle",
+    "x": 41.6,
+    "y": 161.6
+   }
+  ],
+  "switche": [],
+  "repeater": [],
+  "geraete": [
+   {
+    "id": "6e453ea211a735b7",
+    "name": "Pi",
+    "symbol": "❓",
+    "ip": "192.168.170.60",
+    "kat": "unbekannt",
+    "x": 168.3,
+    "y": 286.3,
+    "vx": 220.0,
+    "vy": 252.0,
+    "kabel": true,
+    "ueber": "box",
+    "zustand": "an",
+    "anbindung": "LAN 1 · 1 Gbit/s",
+    "signal": null,
+    "mbit": 1000,
+    "gast": false,
+    "port": 1,
+    "px": 190.0,
+    "py": 271.9
+   },
+   {
+    "id": "3eca3f551055137c",
+    "name": "fernseher",
+    "symbol": "🏗️",
+    "ip": "192.168.170.60",
+    "kat": "eigen:1",
+    "x": 122.1,
+    "y": 202.4,
+    "vx": 220.0,
+    "vy": 252.0,
+    "kabel": false,
+    "ueber": "box",
+    "zustand": "an",
+    "anbindung": "WLAN 5 GHz · 92 % · 866 Mbit/s",
+    "signal": 92,
+    "mbit": 866,
+    "gast": false
+   },
+   {
+    "id": "2baf1cef4e0ac08d",
+    "name": "Tab",
+    "symbol": "📱",
+    "ip": "192.168.1.23",
+    "kat": "mobil",
+    "x": 357.0,
+    "y": 349.4,
+    "vx": 220.0,
+    "vy": 252.0,
+    "kabel": false,
+    "ueber": "box",
+    "zustand": "schwach",
+    "anbindung": "WLAN 2,4 GHz · 18 % · 6 Mbit/s",
+    "signal": 18,
+    "mbit": 6,
+    "gast": false
+   },
+   {
+    "id": "cc5de14a4e162ee1",
+    "name": "kind",
+    "symbol": "❓",
+    "ip": "192.168.170.40",
+    "kat": "unbekannt",
+    "x": 203.7,
+    "y": 411.1,
+    "vx": 220.0,
+    "vy": 252.0,
+    "kabel": false,
+    "ueber": "box",
+    "zustand": "an",
+    "anbindung": "WLAN 2,4 GHz · 55 % · 144 Mbit/s",
+    "signal": 55,
+    "mbit": 144,
+    "gast": false
+   },
+   {
+    "id": "71fc0f881fd91d16",
+    "name": "Switch",
+    "symbol": "🛜",
+    "ip": "",
+    "kat": "netz",
+    "x": 312.7,
+    "y": 196.6,
+    "vx": 220.0,
+    "vy": 252.0,
+    "kabel": false,
+    "ueber": "box",
+    "zustand": "an",
+    "anbindung": "WLAN",
+    "signal": null,
+    "mbit": null,
+    "gast": false
+   }
+  ],
+  "aus": [],
+  "zahlen": {
+   "online": 5,
+   "offline": 0,
+   "auffaellig": 1,
+   "neu": 0
+  },
+  "box_erreichbar": true,
+  "stand": 1795210006.0221577,
+  "mesh": true,
+  "vpn": 0
  }
 }
