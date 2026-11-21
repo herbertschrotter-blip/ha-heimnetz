@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, replace
+from typing import Any
 
 from .ereignis import INFO, WARNUNG, Ereignis
 from .sprache import DE, merke, t
@@ -35,6 +36,35 @@ class Geraet:
         return self.name
 
 
+VPN_SCHLUESSEL = (
+    "VPN:"  # Schlüssel statt MAC für Geräte im WireGuard-Tunnel (die Box nennt keine MAC)
+)
+
+
+def hostliste_zahlen(roh: str | bytes) -> dict[str, Any]:
+    """Diagnose ohne Namen und Adressen: wie viele Einträge, mit/ohne MAC, mit VPN-Kennung, je Anschlussart."""
+    z: dict[str, Any] = {
+        "eintraege": 0,
+        "ohne_mac": 0,
+        "vpn": 0,
+        "vpn_aktiv": 0,
+        "vpn_ohne_mac": 0,
+        "arten": {},
+    }
+    for item in ET.fromstring(roh):
+        d = {c.tag: text(c.text) for c in item}
+        vpn = d.get("X_AVM-DE_VPN") == "1"
+        ohne = not d.get("MACAddress")
+        z["eintraege"] += 1
+        z["ohne_mac"] += ohne
+        z["vpn"] += vpn
+        z["vpn_aktiv"] += vpn and d.get("Active") == "1"
+        z["vpn_ohne_mac"] += vpn and ohne
+        art = d.get("InterfaceType") or "-"
+        z["arten"][art] = z["arten"].get(art, 0) + 1
+    return z
+
+
 def aus_hostliste(roh: str | bytes) -> dict[str, Geraet]:
     """XML aus X_AVM-DE_GetHostListPath → {mac: Geraet}. Ein Gerät ohne Namen heißt OHNE_NAMEN – ein gemerkter Text:
     in Journal und Befunden übersetzt t() ihn mit, für die Seite `anzeigename`."""
@@ -42,7 +72,14 @@ def aus_hostliste(roh: str | bytes) -> dict[str, Geraet]:
     for item in ET.fromstring(roh):
         d = {c.tag: text(c.text) for c in item}
         mac = d.get("MACAddress", "").upper()
-        if not mac:
+        vpn = d.get("X_AVM-DE_VPN") == "1"
+        if (
+            not mac and vpn
+        ):  # WireGuard hat keine MAC: Schlüssel aus der festen Tunnel-Adresse (sonst dem Namen)
+            mac = VPN_SCHLUESSEL + (
+                d.get("IPAddress") or d.get("X_AVM-DE_FriendlyName") or d.get("HostName") or ""
+            )
+        if not mac or mac == VPN_SCHLUESSEL:
             continue
         art = d.get("InterfaceType", "")
         geraete[mac] = Geraet(
@@ -52,7 +89,7 @@ def aus_hostliste(roh: str | bytes) -> dict[str, Geraet]:
             name=d.get("X_AVM-DE_FriendlyName") or d.get("HostName") or OHNE_NAMEN,
             art=ANSCHLUSS.get(art, art or UNBEKANNT),
             gast=d.get("X_AVM-DE_Guest") == "1",
-            vpn=d.get("X_AVM-DE_VPN") == "1",
+            vpn=vpn,
             gesperrt=d.get("X_AVM-DE_Disallow") == "1",
             wan=d.get("X_AVM-DE_WANAccess", ""),
         )

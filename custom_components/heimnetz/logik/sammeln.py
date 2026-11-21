@@ -62,6 +62,9 @@ class Gedaechtnis:
         default_factory=dict
     )  # MAC → Box oder Repeater (nur im Speicher)
     netz: nk.Netz = field(default_factory=nk.Netz)  # Netzkarte (nur im Speicher)
+    hostliste: dict[str, Any] = field(
+        default_factory=dict
+    )  # Zahlen für die Diagnose (nur im Speicher)
     stoerung: sg.Stoerung | None = None  # offene Internet-Störung (AN-0003)
     pi: bf.PiVerbindung | None = None
     gw_mac_bekannt: str = ""
@@ -116,6 +119,7 @@ class Rohdaten:
     mesh: dict[str, str] | None = None  # Mesh-Geräte (langsam)
     anbindung: dict[str, str] | None = None  # wo ein Gerät hängt (langsam)
     netz: nk.Netz | None = None  # Netzkarte: Buchse, Band, Rate, Repeater (langsam)
+    hostliste: dict[str, Any] | None = None  # Zahlen der Hostliste (Diagnose)
     zugang: zg.Meldung | None = None  # WU-0009: Zugang (langsam)
     dsl: ln.Dsl | None = None  # nur mit DSL-Dienst (langsam)
     faser: ln.Faser | None = None  # nur mit Glasfaser-Dienst (langsam)
@@ -148,6 +152,7 @@ class Stand:
     mesh: dict[str, str] = field(default_factory=dict)
     anbindung: dict[str, str] = field(default_factory=dict)  # MAC → Box oder Repeater
     netz: nk.Netz = field(default_factory=nk.Netz)  # Netzkarte
+    hostliste: dict[str, Any] = field(default_factory=dict)  # Zahlen der Hostliste (Diagnose)
     # WU-0009: Zugang (zuletzt gelesen) und Werte der Leitung; None = noch nicht gelesen oder nicht vorhanden
     zugang: zg.Meldung | None = None
     zugang_art: str = ""  # erkannt, ohne Wahl des Admins
@@ -247,6 +252,8 @@ def auswerten(g: Gedaechtnis, roh: Rohdaten) -> Stand:
         g.anbindung = roh.anbindung
     if roh.netz is not None:
         g.netz = roh.netz
+    if roh.hostliste is not None:
+        g.hostliste = roh.hostliste
 
     if roh.wlan_baender is not None:
         neu_kanal, g.wlan_kanaele = wl.abgleich(g.wlan_kanaele, roh.wlan_baender, sprache)
@@ -329,6 +336,7 @@ def auswerten(g: Gedaechtnis, roh: Rohdaten) -> Stand:
         mesh=dict(g.mesh),
         anbindung=dict(g.anbindung),
         netz=g.netz,
+        hostliste=dict(g.hostliste),
         zugang=g.zugang,
         zugang_art=g.zugang_art,
         ersatz_aktiv=g.ersatz_seit is not None,

@@ -96,6 +96,9 @@ class BoxDaten:
     mesh: dict[str, str] | None = None  # MAC → Modell der Mesh-Geräte (langsam, AN-0001)
     anbindung: dict[str, str] | None = None  # MAC → Box oder Repeater (langsam, Diagnose-Log)
     netz: nk.Netz | None = None  # Buchse, Band, Rate, Repeater je Gerät (langsam, Netzkarte)
+    hostliste: dict[str, Any] | None = (
+        None  # Zahlen der Hostliste für die Diagnose (ohne Namen und Adressen)
+    )
     info: BoxInfo | None = None  # langsam (WU-0005)
     zugang: zg.Meldung | None = None  # langsam (WU-0009)
     dsl: ln.Dsl | None = None  # langsam, nur mit DSL-Dienst
@@ -274,11 +277,13 @@ class Box:
             pfad = text(
                 self._aktion("Hosts1", "X_AVM-DE_GetHostListPath")["NewX_AVM-DE_HostListPath"]
             )
-            d.geraete = gr.aus_hostliste(self._datei(pfad))
+            roh = self._datei(pfad)
+            d.geraete = gr.aus_hostliste(roh)
+            d.hostliste = gr.hostliste_zahlen(roh)
             if langsam:
                 quellen = {}
                 for mac, g in d.geraete.items():
-                    if g.aktiv and g.ip:
+                    if g.aktiv and g.ip and not mac.startswith(gr.VPN_SCHLUESSEL):
                         try:
                             antwort = self._aktion(
                                 "Hosts1", "GetSpecificHostEntry", NewMACAddress=mac

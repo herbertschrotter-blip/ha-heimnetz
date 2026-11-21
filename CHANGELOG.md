@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## [0.36.1]
+
+- **VPN-Geräte erkannt:** Geräte im WireGuard-Tunnel nennt die FRITZ!Box ohne MAC-Adresse – Heimnetz hat sie deshalb
+  verworfen; jetzt stehen sie in der Geräteliste (Gruppe VPN) und am Tunnel-Knoten der Netzkarte. Die Diagnose zählt
+  die Einträge der Hostliste (ohne Namen und Adressen).
+- **Netzkarte am Handy:** lange Sektor-Namen werden nicht mehr am Rand abgeschnitten; die Namen der Ringe stehen links
+  der Leitung und überdecken den Zugang (z. B. 5G) nicht mehr.
+
 ## [0.36.0]
 
 - **Netzkarte mit VPN:** Geräte, die sich von unterwegs per WireGuard einwählen, hängen an einem eigenen Tunnel-Knoten

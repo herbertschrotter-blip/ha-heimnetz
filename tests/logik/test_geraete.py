@@ -81,3 +81,40 @@ def test_vpn_eigene_gruppe():
     assert gr.verbindung("LAN", True, None) == "LAN"
     g = gr.gruppen([("LAN", True), (gr.VPN, True), (gr.VPN, False)])
     assert g[0] == {"name": gr.VPN, "text": gr.VPN, "online": 1, "gesamt": 2}
+
+
+VPN_LISTE = (
+    "<List>"
+    "<Item><MACAddress></MACAddress><IPAddress>192.168.178.201</IPAddress><Active>1</Active>"
+    "<HostName>handy-tunnel</HostName><InterfaceType></InterfaceType><X_AVM-DE_VPN>1</X_AVM-DE_VPN></Item>"
+    "<Item><MACAddress></MACAddress><IPAddress></IPAddress><Active>0</Active><X_AVM-DE_VPN>1</X_AVM-DE_VPN></Item>"
+    "<Item><MACAddress></MACAddress><IPAddress>192.168.178.9</IPAddress><Active>1</Active></Item>"
+    "<Item><MACAddress>02:11:22:33:44:09</MACAddress><IPAddress>1.2.3.4</IPAddress><Active>1</Active>"
+    "<InterfaceType>Ethernet</InterfaceType></Item>"
+    "</List>"
+)
+
+
+def test_vpn_ohne_mac_bleibt():
+    """WireGuard-Geräte nennt die Box ohne MAC – sie dürfen nicht verloren gehen (Schlüssel aus der Tunnel-Adresse)."""
+    g = gr.aus_hostliste(VPN_LISTE)
+    assert set(g) == {
+        "VPN:192.168.178.201",
+        "02:11:22:33:44:09",
+    }  # ohne MAC und ohne VPN bleibt weg, ebenso ganz leer
+    v = g["VPN:192.168.178.201"]
+    assert v.vpn and v.aktiv and v.name == "handy-tunnel"
+    assert gr.verbindung(v.art, v.aktiv, None, v.vpn) == gr.VPN
+
+
+def test_hostliste_zahlen_ohne_namen():
+    z = gr.hostliste_zahlen(VPN_LISTE)
+    assert z == {
+        "eintraege": 4,
+        "ohne_mac": 3,
+        "vpn": 2,
+        "vpn_aktiv": 1,
+        "vpn_ohne_mac": 2,
+        "arten": {"-": 3, "Ethernet": 1},
+    }
+    assert "handy" not in str(z) and "192.168" not in str(z)

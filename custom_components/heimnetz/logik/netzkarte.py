@@ -264,6 +264,19 @@ def _baender(punkte: Iterable[Punkt], netz: Netz) -> list[str]:
     return [b for b in ("6", "5", "2,4") if b in da] or ["5", "2,4"]
 
 
+ZEICHEN_SEKTOR = (
+    7.6  # Breite eines Großbuchstabens der Sektor-Schrift samt Sperrung (8,5 px, 1,8 px Abstand)
+)
+
+
+def _im_bild(x: float, name: str) -> float:
+    """Mitte einer Sektor-Beschriftung so schieben, dass der Text ganz in der Karte bleibt (am Handy nichts abgeschnitten)."""
+    halb = len(name) * ZEICHEN_SEKTOR / 2 + 4
+    if 2 * halb >= BREITE:  # breiter als die Karte: mittig
+        return BREITE / 2
+    return round(min(max(x, halb), BREITE - halb), 1)
+
+
 def zeichnen(
     punkte: list[Punkt],
     netz: Netz,
@@ -319,7 +332,8 @@ def zeichnen(
             winkel[p.id] = start + (i + 0.5) * breite / len(drin)
         mitte = start + breite / 2
         x, y = _p(R_SEKTOR, mitte)
-        sektoren.append({"kat": k, "name": text.get(k, k), "x": x, "y": y, "w": mitte})
+        name = text.get(k, k)
+        sektoren.append({"kat": k, "name": name, "x": _im_bild(x, name), "y": y, "w": mitte})
         start += breite + LUECKE
 
     n_online = sum(1 for p in liste if p.aktiv)

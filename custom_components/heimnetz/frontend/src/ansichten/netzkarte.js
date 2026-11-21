@@ -49,7 +49,7 @@ function karte(p, d, u, o) {
   return html`<svg viewBox="0 0 ${d.breite} ${d.hoehe}" preserveAspectRatio="xMidYMid meet" role="img" aria-label=${t('Netzkarte')}
       class="nk-svg ${dimm ? 'dimm' : ''} ${o.namen ? 'namen' : ''} ${weg ? 'grau' : ''}">${svg`
     ${d.ringe.map((x, i) => svg`<circle class="nk-ring ${i ? 'gestr' : ''}" cx=${m.x} cy=${m.y} r=${x.r}></circle>
-      <text class="nk-ringname" x=${m.x + 9} y=${m.y - x.r + 11}>${x.name}</text>`)}
+      <text class="nk-ringname" x=${m.x - 9} y=${m.y - x.r + 11} text-anchor="end">${x.name}</text>`)}
     ${d.sektoren.map((x) => svg`<text class="nk-sektor" x=${x.x} y=${x.y} text-anchor="middle" dominant-baseline="central">${x.name}</text>`)}
     ${netzOk && !weg
       ? svg`<line class="nk-uplink" x1=${m.x} y1=${m.y - 30} x2=${m.x} y2="38"></line><line class="nk-uplink-fluss" x1=${m.x} y1=${m.y - 30} x2=${m.x} y2="38"></line>`

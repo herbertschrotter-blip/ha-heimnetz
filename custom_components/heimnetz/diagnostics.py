@@ -63,6 +63,7 @@ async def async_get_config_entry_diagnostics(
         },
         "datenbank": datenbank,
         "netzkarte": nk.diagnose(stand.netz) if stand else None,
+        "hostliste": stand.hostliste if stand else None,
     }
     ergebnis: dict[str, Any] = dg.schwaerzen(roh, diagnose_namen(hass, lz))
     return ergebnis

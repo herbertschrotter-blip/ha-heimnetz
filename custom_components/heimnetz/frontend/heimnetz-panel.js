@@ -4890,7 +4890,7 @@ function karte(p4, d3, u3, o7) {
   return b2`<svg viewBox="0 0 ${d3.breite} ${d3.hoehe}" preserveAspectRatio="xMidYMid meet" role="img" aria-label=${t3("Netzkarte")}
       class="nk-svg ${dimm ? "dimm" : ""} ${o7.namen ? "namen" : ""} ${weg ? "grau" : ""}">${w`
     ${d3.ringe.map((x2, i6) => w`<circle class="nk-ring ${i6 ? "gestr" : ""}" cx=${m3.x} cy=${m3.y} r=${x2.r}></circle>
-      <text class="nk-ringname" x=${m3.x + 9} y=${m3.y - x2.r + 11}>${x2.name}</text>`)}
+      <text class="nk-ringname" x=${m3.x - 9} y=${m3.y - x2.r + 11} text-anchor="end">${x2.name}</text>`)}
     ${d3.sektoren.map((x2) => w`<text class="nk-sektor" x=${x2.x} y=${x2.y} text-anchor="middle" dominant-baseline="central">${x2.name}</text>`)}
     ${netzOk && !weg ? w`<line class="nk-uplink" x1=${m3.x} y1=${m3.y - 30} x2=${m3.x} y2="38"></line><line class="nk-uplink-fluss" x1=${m3.x} y1=${m3.y - 30} x2=${m3.x} y2="38"></line>` : w`<line class="nk-ring gestr" x1=${m3.x} y1=${m3.y - 30} x2=${m3.x} y2="38"></line>`}
     ${zg ? w`<g class="nk-klick" @click=${() => p4.geh("internet")}><circle class="nk-knoten ${zg.zustand}" cx=${m3.x} cy="74" r="13"></circle>
@@ -7313,7 +7313,7 @@ function waechterBlatt(p4) {
 }
 
 // src/heimnetz-panel.js
-var VERSION = true ? "0.36.0" : "entwicklung";
+var VERSION = true ? "0.36.1" : "entwicklung";
 var REITER = [
   ["uebersicht", merke("Übersicht")],
   ["speedtest", merke("Speedtest")],

@@ -309,3 +309,15 @@ def test_vpn_am_tunnel():
     assert 0 <= g["x"] <= nk.BREITE and 0 <= g["y"] <= nk.HOEHE
     assert k["zahlen"]["vpn"] == 1 and all(x["id"] != "v1" for x in k["geraete"])
     assert nk.zeichnen(punkte(), nk.Netz(), KAT)["vpn"] is None
+
+
+def test_sektor_beschriftung_bleibt_im_bild():
+    """Am Handy schnitt die Karte lange Sektor-Namen am Rand ab: die Mitte rückt so weit ein, dass der Text passt."""
+    lang = "Fernseher & Musik"
+    halb = len(lang) * nk.ZEICHEN_SEKTOR / 2
+    assert nk._im_bild(20.0, lang) >= halb
+    assert nk._im_bild(nk.BREITE - 20.0, lang) <= nk.BREITE - halb
+    assert nk._im_bild(220.0, lang) == 220.0  # in der Mitte bleibt alles, wie es ist
+    assert (
+        nk._im_bild(20.0, "X" * 80) == nk.BREITE / 2
+    )  # breiter als die Karte: mittig statt links hinaus

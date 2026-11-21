@@ -176,6 +176,7 @@ class Abruf(DataUpdateCoordinator[sm.Stand]):
             mesh=daten.mesh,
             anbindung=daten.anbindung,
             netz=daten.netz,
+            hostliste=daten.hostliste,
             zugang=daten.zugang,
             dsl=daten.dsl,
             faser=daten.faser,
