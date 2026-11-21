@@ -3794,7 +3794,8 @@
     "gast": false,
     "port": 1,
     "px": 190.0,
-    "py": 271.9
+    "py": 271.9,
+    "band": null
    },
    {
     "id": "89513b27d260e4e0",
@@ -3812,7 +3813,8 @@
     "anbindung": "WLAN 5 GHz · 92 % · 866 Mbit/s",
     "signal": 92,
     "mbit": 866,
-    "gast": false
+    "gast": false,
+    "band": "5"
    },
    {
     "id": "7a2c97ef58e1a7f3",
@@ -3830,7 +3832,8 @@
     "anbindung": "WLAN 2,4 GHz · 18 % · 6 Mbit/s",
     "signal": 18,
     "mbit": 6,
-    "gast": false
+    "gast": false,
+    "band": "2,4"
    },
    {
     "id": "5709ce3aa5d1e84b",
@@ -3848,7 +3851,8 @@
     "anbindung": "WLAN 2,4 GHz · 55 % · 144 Mbit/s",
     "signal": 55,
     "mbit": 144,
-    "gast": false
+    "gast": false,
+    "band": "2,4"
    },
    {
     "id": "85d1b0d771d3d8fa",
@@ -3866,7 +3870,8 @@
     "anbindung": "WLAN",
     "signal": null,
     "mbit": null,
-    "gast": false
+    "gast": false,
+    "band": null
    }
   ],
   "aus": [],
@@ -3904,6 +3909,232 @@
   },
   "box_erreichbar": true,
   "stand": 1795211343.796995,
-  "mesh": true
+  "mesh": true,
+  "fluss": {
+   "breite": 440.0,
+   "hoehe": 320.0,
+   "x": {
+    "internet": 26.0,
+    "box": 112.0,
+    "gruppe": 214.0,
+    "geraet": 300.0
+   },
+   "mitte": 160.0,
+   "internet": {
+    "down": 84.2,
+    "tarif": 168.0,
+    "anteil": 50,
+    "breite": 20.2
+   },
+   "gruppen": [
+    {
+     "id": "kabel",
+     "name": "Kabel",
+     "farbe": "kabel",
+     "y": 37.0,
+     "breite": 21.6,
+     "n": 1
+    },
+    {
+     "id": "wlan:5",
+     "name": "5 GHz",
+     "farbe": "5",
+     "y": 79.0,
+     "breite": 20.0,
+     "n": 1
+    },
+    {
+     "id": "wlan:2,4",
+     "name": "2,4 GHz",
+     "farbe": "2,4",
+     "y": 134.0,
+     "breite": 8.4,
+     "n": 2
+    },
+    {
+     "id": "wlan:",
+     "name": "WLAN",
+     "farbe": "wlan",
+     "y": 189.0,
+     "breite": 1.8,
+     "n": 1
+    },
+    {
+     "id": "vpn",
+     "name": "VPN",
+     "farbe": "vpn",
+     "y": 231.0,
+     "breite": 1.8,
+     "n": 1
+    }
+   ],
+   "geraete": [
+    {
+     "id": "e0fd00363e738ce0",
+     "name": "Pi",
+     "symbol": "❓",
+     "mbit": 1000,
+     "zustand": "an",
+     "y": 37.0,
+     "breite": 19.6,
+     "gruppe": "kabel",
+     "kabel": true
+    },
+    {
+     "id": "89513b27d260e4e0",
+     "name": "fernseher",
+     "symbol": "🏗️",
+     "mbit": 866,
+     "zustand": "an",
+     "y": 79.0,
+     "breite": 18.2,
+     "gruppe": "wlan:5",
+     "kabel": false
+    },
+    {
+     "id": "5709ce3aa5d1e84b",
+     "name": "kind",
+     "symbol": "❓",
+     "mbit": 144,
+     "zustand": "an",
+     "y": 121.0,
+     "breite": 7.4,
+     "gruppe": "wlan:2,4",
+     "kabel": false
+    },
+    {
+     "id": "7a2c97ef58e1a7f3",
+     "name": "Tab",
+     "symbol": "📱",
+     "mbit": 6,
+     "zustand": "schwach",
+     "y": 147.0,
+     "breite": 1.6,
+     "gruppe": "wlan:2,4",
+     "kabel": false
+    },
+    {
+     "id": "85d1b0d771d3d8fa",
+     "name": "Switch",
+     "symbol": "🛜",
+     "mbit": null,
+     "zustand": "an",
+     "y": 189.0,
+     "breite": 1.6,
+     "gruppe": "wlan:",
+     "kabel": false
+    },
+    {
+     "id": "vpn0000000000001",
+     "name": "Laptop unterwegs",
+     "symbol": "💻",
+     "mbit": null,
+     "zustand": "an",
+     "y": 231.0,
+     "breite": 1.6,
+     "gruppe": "vpn",
+     "kabel": false
+    }
+   ],
+   "langsam": 1,
+   "duennster": {
+    "name": "Tab",
+    "mbit": 6,
+    "wo": "2,4 GHz"
+   }
+  },
+  "radar": {
+   "breite": 440.0,
+   "hoehe": 480.0,
+   "mitte": {
+    "x": 220.0,
+    "y": 240.0
+   },
+   "radius": 190.0,
+   "umlauf": 6.0,
+   "ringe": [
+    {
+     "r": 55.5,
+     "name": "sehr gut"
+    },
+    {
+     "r": 88.2,
+     "name": "gut"
+    },
+    {
+     "r": 120.8,
+     "name": "mäßig"
+    },
+    {
+     "r": 186.2,
+     "name": "schwach"
+    }
+   ],
+   "geraete": [
+    {
+     "id": "89513b27d260e4e0",
+     "name": "fernseher",
+     "symbol": "🏗️",
+     "signal": 92,
+     "band": "5",
+     "zustand": "an",
+     "farbe": "5",
+     "neu": false,
+     "x": 188.0,
+     "y": 223.8,
+     "links": false,
+     "takt": -2.55
+    },
+    {
+     "id": "7a2c97ef58e1a7f3",
+     "name": "Tab",
+     "symbol": "📱",
+     "signal": 18,
+     "band": "2,4",
+     "zustand": "schwach",
+     "farbe": "schwach",
+     "neu": false,
+     "x": 347.8,
+     "y": 330.8,
+     "links": true,
+     "takt": -5.41
+    },
+    {
+     "id": "5709ce3aa5d1e84b",
+     "name": "kind",
+     "symbol": "❓",
+     "signal": 55,
+     "band": "2,4",
+     "zustand": "an",
+     "farbe": "2,4",
+     "neu": false,
+     "x": 210.2,
+     "y": 335.8,
+     "links": false,
+     "takt": -4.4
+    }
+   ],
+   "ohne_empfang": 1,
+   "kanaele": [
+    {
+     "band": "2,4 GHz",
+     "kanal": 6,
+     "auto": false,
+     "n": 2
+    },
+    {
+     "band": "5 GHz",
+     "kanal": 44,
+     "auto": false,
+     "n": 1
+    }
+   ],
+   "rand": [
+    {
+     "name": "Tab",
+     "signal": 18
+    }
+   ]
+  }
  }
 }

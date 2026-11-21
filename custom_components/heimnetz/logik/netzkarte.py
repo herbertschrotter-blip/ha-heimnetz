@@ -359,6 +359,7 @@ def zeichnen(
             "zustand": "schwach" if p.schwach and p.zustand == "an" else p.zustand,
             "anbindung": text_,
             "signal": p.signal,
+            "band": None if kabel(p) else band(p),
             "mbit": (a.mbit if a and a.mbit else None) or p.mbit,
             "gast": bool(a and a.gast),
         }
@@ -492,7 +493,7 @@ def zeichnen(
                 if kabel(p)
                 else wlan_text(p, True)
             )
-            geraete.append(eintrag(p, x, y, (rx, ry), "repeater", text_))
+            geraete.append({"rep": rep.id} | eintrag(p, x, y, (rx, ry), "repeater", text_))
 
     # VPN (WireGuard): eigener Tunnel-Knoten oben links, die Geräte rundherum (nur die verbundenen)
     tunnel = sorted((p for p in vpn if p.aktiv), key=lambda p: p.name.lower())

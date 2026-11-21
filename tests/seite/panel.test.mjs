@@ -114,6 +114,44 @@ test('Netzkarte (1.9): aus der Übersicht, Punkte, Filter, Tipp zeigt Infokarte,
   assert.ok(w.querySelector('.scroll'));
 });
 
+test('Netzkarte 1.10: Ansicht Fluss und Radar, Tipp öffnet die Infokarte, zurück zur Karte', async () => {
+  const hass = machHass();
+  const el = await seite(hass);
+  const w = el.shadowRoot;
+  [...w.querySelectorAll('.lb-pf-fuss button')].find((b) => b.textContent.includes('Netzkarte')).click();
+  await warten(10);
+  await el.updateComplete;
+  const d = DATEN.netzkarte;
+  const ansicht = (n) => [...w.querySelectorAll('.nk-ansicht button')].find((b) => b.textContent.includes(n)).click();
+  // Fluss: je Gerät ein Band, Zahlen und der dünnste Faden; keine Filter der Karte
+  ansicht('Fluss');
+  await el.updateComplete;
+  assert.match(w.querySelector('.nk-titel').textContent, /Datenfluss/);
+  assert.equal(w.querySelectorAll('.ni-svg .nk-g').length, d.fluss.geraete.length);
+  assert.equal(w.querySelectorAll('.ni-zug').length, 1 + d.fluss.gruppen.length + d.fluss.geraete.length);
+  assert.match(w.querySelector('.ni-zahlen').textContent, /50 %/);
+  assert.match(w.querySelector('.ni-karte').textContent, new RegExp(`${d.fluss.duennster.name} hängt mit ${d.fluss.duennster.mbit} Mbit/s`));
+  assert.equal(w.querySelectorAll('.nk-filter:not(.nk-ansicht)').length, 0);
+  assert.ok(!/undefined|NaN/.test(text(el)), text(el));
+  w.querySelector('.ni-svg .nk-g').dispatchEvent(new Event('click'));
+  await el.updateComplete;
+  assert.match(w.querySelector('.nk-info').textContent, new RegExp(d.fluss.geraete[0].name));
+  // Radar: je Funkgerät ein Punkt im Takt des Strahls, Kanäle, Rand
+  ansicht('Radar');
+  await el.updateComplete;
+  assert.match(w.querySelector('.nk-titel').textContent, /WLAN-Radar/);
+  assert.ok(!w.querySelector('.nk-info'));  // Wechsel der Ansicht schließt die Infokarte
+  assert.equal(w.querySelectorAll('.ni-blip').length, d.radar.geraete.length);
+  assert.ok(w.querySelector('.ni-strahl'));
+  assert.match(w.querySelector('.ni-zahlen').textContent, /Kanal 6/);
+  assert.match(w.querySelector('.ni-karte').textContent, new RegExp(`${d.radar.rand[0].name} \\(${d.radar.rand[0].signal} %\\)`));
+  assert.ok(!/undefined|NaN/.test(text(el)), text(el));
+  ansicht('Karte');
+  await el.updateComplete;
+  assert.equal(w.querySelectorAll('.nk-g:not(.z-vpn)').length, d.geraete.length);
+  assert.ok(w.querySelector('.nk-filter:not(.nk-ansicht)'));
+});
+
 test('alle Reiter rendern ohne Fehler und ohne „undefined“', async () => {
   const hass = machHass();
   const el = await seite(hass);

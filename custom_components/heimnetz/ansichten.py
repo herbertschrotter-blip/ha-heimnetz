@@ -33,6 +33,7 @@ from .logik import lagebild as lb
 from .logik import leitung as ln
 from .logik import messplan as mp
 from .logik import mobil as mb
+from .logik import netzansichten as na
 from .logik import netzkarte as nk
 from .logik import ocid as lc
 from .logik import osm as lo
@@ -364,8 +365,16 @@ def netzkarte_daten(
             )
         )
     karte = nk.zeichnen(punkte, stand.netz, namen, sprache_, vpn)
+    kanaele = [(b.band, b.kanal, b.auto) for b in (w.baender if w else ()) if b.an]
     return {
         **karte,
+        "fluss": na.fluss(
+            karte,
+            stand.rate.down if stand.rate else None,
+            lz.einstellungen.wert.tarif_down,
+            sprache_,
+        ),
+        "radar": na.radar(karte, kanaele, grenze, sprache_),
         "box_erreichbar": stand.box_erreichbar,
         "stand": stand.zeit,
         "mesh": bool(stand.netz.geraete),

@@ -3,7 +3,11 @@
 // Internet kommt von oben; Ringe = Anbindung, Sektoren = Art, Switch an einer Buchse mit mehreren Geräten, Repeater mit
 // seinen Geräten. Lage, Texte und Zahlen liefert die Integration (heimnetz/netzkarte); die Seite zeichnet nur.
 // Maus über einem Punkt: Name, IP, Anbindung, Zustand; Tipp: Weg hervorgehoben, Infokarte mit „Verlauf öffnen ›“.
+// Dazu zwei Ansichten (1.10, abgenommen 21.11.2026, Mockup mockups/seiten/netz-ideen.html 0.1): „Fluss“ – Internet →
+// Box → Anbindung → Gerät als fließende Bänder (Breite = Geschwindigkeit der Verbindung) – und „Radar“ – ein Strahl
+// kreist, Geräte leuchten auf; Abstand = Empfang. Lage und Zahlen liefert die Integration (fluss, radar).
 import { html, svg, nothing } from 'lit';
+import { keyed } from 'lit/directives/keyed.js';
 import { unsafeSVG } from 'lit/directives/unsafe-svg.js';
 import { zeit } from '../format.js';
 import { merke, t, tl } from '../sprache.js';
@@ -12,6 +16,9 @@ const FILTER = [['alle', merke('Alle')], ['kabel', merke('Kabel')], ['wlan', 'WL
 const ZUSTAND = { an: merke('online'), wackelt: merke('wackelt'), schwach: merke('schwacher Empfang'), neu: merke('neu'), aus: merke('offline') };
 const FARBE = { an: 'var(--nk-gruen)', wackelt: 'var(--amber)', schwach: 'var(--amber)', neu: 'var(--blau)' };
 const AUFF = ['wackelt', 'schwach', 'neu'];
+const ANSICHTEN = [['karte', merke('🗺️ Karte')], ['fluss', merke('〰️ Fluss')], ['radar', merke('📡 Radar')]];
+// Farbe je Gruppe bzw. Band (amber bleibt „schwach/wackelt“)
+const FB = { kabel: 'var(--nk-gruen)', 5: 'var(--blau)', '2,4': 'var(--s5)', 6: 'var(--s3)', wlan: 'var(--ink2)', rep: 'var(--ink)', vpn: 'var(--ink2)', schwach: 'var(--amber)' };
 
 function passt(g, filter) {
   if (filter === 'kabel') return g.kabel;
@@ -105,6 +112,100 @@ function karte(p, d, u, o) {
   </svg>`;
 }
 
+const kurve = (x1, y1, x2, y2) => `M${x1},${y1} C${(x1 + x2) / 2},${y1} ${(x1 + x2) / 2},${y2} ${x2},${y2}`;
+function zug(d, w, farbe, dauer, an = true) {
+  return svg`<path class="ni-band" d=${d} stroke=${farbe} stroke-width=${w}></path>${an ? svg`<path class="ni-funke" d=${d} stroke-width=${Math.min(3.2, w * 0.5)} style="animation-duration:${dauer}s"></path>` : nothing}`;
+}
+
+/** 1.10 A Datenfluss: Internet → FRITZ!Box → Gruppe → Gerät. */
+function fluss(p, d, u, o) {
+  const f = d.fluss;
+  const { x } = f;
+  const y0 = f.mitte;
+  const weg = !d.box_erreichbar;
+  const farbe = Object.fromEntries(f.gruppen.map((g) => [g.id, FB[g.farbe] || 'var(--ink2)']));
+  const gy = Object.fromEntries(f.gruppen.map((g) => [g.id, g.y]));
+  const auswaehlen = (id) => p.setze('geraete', { karte: { ...o, wahl: id === o.wahl ? null : id } }, false);
+  const zg = u && u.leitung ? u.leitung.knoten[2] : null;
+  const i = f.internet;
+  return html`<svg viewBox="0 0 ${f.breite} ${f.hoehe}" preserveAspectRatio="xMidYMid meet" role="img" aria-label=${t('Datenfluss')}
+      class="ni-svg ${o.wahl ? 'dimm' : ''} ${weg ? 'grau' : ''}">${svg`
+    <g class="ni-zug">${zug(kurve(x.internet + 14, y0, x.box - 22, y0), i.breite, 'var(--ink)', 0.9, !weg && i.down > 0)}</g>
+    ${f.gruppen.map((g) => svg`<g class="ni-zug">${zug(kurve(x.box + 22, y0, x.gruppe - 14, g.y), g.breite, farbe[g.id], 1.2, !weg)}</g>`)}
+    ${f.geraete.map((g) => svg`<g class="ni-zug ${o.wahl === g.id ? 'gew' : ''}">${zug(kurve(x.gruppe + 14, gy[g.gruppe], x.geraet - 9, g.y), g.breite,
+      AUFF.slice(0, 2).includes(g.zustand) ? 'var(--amber)' : farbe[g.gruppe], (2.6 - Math.min(1.6, (g.mbit || 0) / 600)).toFixed(2), !weg)}</g>`)}
+    <circle class="ni-knoten" cx=${x.internet} cy=${y0} r="15" stroke="var(--ink)"></circle><text class="nk-sym" x=${x.internet} y=${y0 + 0.5} style="font-size:14px">🌐</text>
+    <text class="ni-tb" x=${x.internet - 12} y=${y0 - 46}>Internet</text>
+    <text class="ni-t2" x=${x.internet - 12} y=${y0 - 34}>${i.down != null ? `↓ ${Math.round(i.down)}${i.tarif ? ` ${t('von')} ${Math.round(i.tarif)}` : ''} Mbit/s` : ''}</text>
+    <text class="ni-t2" x=${x.internet - 12} y=${y0 - 24}>${zg ? zg.name : ''}</text>
+    <g @click=${() => p.geh('internet')} class="nk-klick"><rect class="ni-knoten" x=${x.box - 22} y=${y0 - 24} width="44" height="48" rx="12" stroke=${weg ? 'var(--rot)' : 'var(--nk-gruen)'}></rect>
+      <text class="nk-sym" x=${x.box} y=${y0 - 4} style="font-size:17px">🛜</text><text class="ni-t" x=${x.box} y=${y0 + 14} text-anchor="middle" font-weight="700">FRITZ!Box</text></g>
+    ${f.gruppen.map((g) => svg`<circle class="ni-knoten" cx=${x.gruppe} cy=${g.y} r="13" stroke=${farbe[g.id]}></circle>
+      <text class="nk-sym" x=${x.gruppe} y=${g.y + 0.5} style="font-size:11px">${g.farbe === 'kabel' ? '⇄' : g.farbe === 'vpn' ? '🔐' : g.farbe === 'rep' ? '📶' : '📡'}</text>
+      <text class="ni-t" x=${x.gruppe} y=${g.y - 18} text-anchor="middle" font-weight="700">${g.name}</text>`)}
+    ${f.geraete.map((g) => {
+      const auff = AUFF.slice(0, 2).includes(g.zustand);
+      return svg`<g class="nk-g ${o.wahl === g.id ? 'gew' : ''}" @click=${() => auswaehlen(g.id)}>
+        <circle class="ni-knoten" cx=${x.geraet} cy=${g.y} r="8" stroke=${auff ? 'var(--amber)' : farbe[g.gruppe]}></circle><text class="nk-sym" x=${x.geraet} y=${g.y + 0.5} style="font-size:8px">${g.symbol}</text>
+        <text class="ni-t" x=${x.geraet + 14} y=${g.y - 1}>${g.name}</text>
+        <text class="ni-t2" x=${x.geraet + 14} y=${g.y + 9}>${g.mbit ? `${g.mbit} Mbit/s` : '–'}${auff ? ` · ${t(ZUSTAND[g.zustand])}` : ''}</text></g>`;
+    })}`}
+  </svg>`;
+}
+
+/** 1.10 C WLAN-Radar: Abstand = Empfang, der Strahl kreist; ein Gerät leuchtet auf, wenn er es trifft. */
+function radar(p, d, o) {
+  const r = d.radar;
+  const m = r.mitte;
+  const R = r.radius;
+  const auswaehlen = (id) => p.setze('geraete', { karte: { ...o, wahl: id === o.wahl ? null : id } }, false);
+  const hinten = { x: m.x + R * Math.cos(-0.7), y: m.y + R * Math.sin(-0.7) };
+  const strahlen = Array.from({ length: 12 }, (_, i) => i * 30);
+  return html`<svg viewBox="0 0 ${r.breite} ${r.hoehe}" preserveAspectRatio="xMidYMid meet" role="img" aria-label=${t('WLAN-Radar')}
+      class="ni-svg ${o.wahl ? 'dimm' : ''} ${d.box_erreichbar ? '' : 'grau'}">${svg`
+    <defs><radialGradient id="ni-grund"><stop offset="0" stop-color="var(--nk-gruen)" stop-opacity=".16"></stop><stop offset="1" stop-color="var(--nk-gruen)" stop-opacity="0"></stop></radialGradient>
+      <linearGradient id="ni-keil" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="var(--nk-gruen)" stop-opacity="0"></stop><stop offset="1" stop-color="var(--nk-gruen)" stop-opacity=".55"></stop></linearGradient></defs>
+    <circle cx=${m.x} cy=${m.y} r=${R} fill="url(#ni-grund)"></circle>
+    ${r.ringe.map((x) => svg`<circle class="ni-ring" cx=${m.x} cy=${m.y} r=${x.r}></circle><text class="ni-ringname" x=${m.x + 4} y=${m.y - x.r + 10}>${x.name}</text>`)}
+    ${strahlen.map((a) => svg`<line class="ni-kreuz" x1=${m.x} y1=${m.y} x2=${(m.x + R * Math.cos((a * Math.PI) / 180)).toFixed(1)} y2=${(m.y + R * Math.sin((a * Math.PI) / 180)).toFixed(1)}></line>`)}
+    <g class="ni-strahl" style="transform-origin:${m.x}px ${m.y}px;animation-duration:${r.umlauf}s">
+      <path d="M${m.x},${m.y} L${hinten.x.toFixed(1)},${hinten.y.toFixed(1)} A${R},${R} 0 0 1 ${m.x + R},${m.y} Z" fill="url(#ni-keil)" opacity=".55"></path>
+      <line class="ni-kante" x1=${m.x} y1=${m.y} x2=${m.x + R} y2=${m.y}></line></g>
+    ${r.geraete.map((g) => {
+      const c = FB[g.farbe] || 'var(--ink2)';
+      const gr = o.wahl === g.id ? 7 : 4.6;
+      const takt = `animation-delay:${g.takt}s;animation-duration:${r.umlauf}s`;
+      return svg`<g class="nk-g ${o.wahl === g.id ? 'gew' : ''}" @click=${() => auswaehlen(g.id)}>
+        <circle class="ni-blip-hof" cx=${g.x} cy=${g.y} r="6" fill="none" stroke=${c} style=${takt}></circle>
+        <circle class="ni-blip" cx=${g.x} cy=${g.y} r=${gr} fill=${c} style="${takt};filter:drop-shadow(0 0 5px ${c})"></circle>
+        ${g.neu ? svg`<circle class="ni-neu" cx=${g.x} cy=${g.y} r=${gr + 4}></circle>` : nothing}
+        <circle cx=${g.x} cy=${g.y} r="12" fill="transparent"></circle>
+        <text class="ni-t" x=${g.links ? g.x - 8 : g.x + 8} y=${g.y + 3} text-anchor=${g.links ? 'end' : 'start'}>${g.name} <tspan class="ni-t2">${g.signal} %</tspan></text></g>`;
+    })}
+    <circle class="ni-knoten" cx=${m.x} cy=${m.y} r="17" stroke="var(--nk-gruen)"></circle><text class="nk-sym" x=${m.x} y=${m.y + 0.5} style="font-size:15px">🛜</text>`}
+  </svg>`;
+}
+
+function zahlenFluss(f) {
+  const i = f.internet;
+  return html`<div class="glas-panel ni-zahlen"><div><b>${i.down != null ? Math.round(i.down) : '–'}</b><small>${t('MBIT/S JETZT')}</small></div>
+    <div><b>${i.anteil != null ? `${i.anteil} %` : '–'}</b><small>${t('VOM TARIF')}</small></div>
+    <div><b class="amber">${f.langsam}</b><small>${t('LANGSAM')}</small></div></div>
+    <div class="glas-panel ni-karte"><b>${t('Wo es eng wird')}</b><span>${f.duennster
+      ? t('{name} hängt mit {n} Mbit/s an {wo} – der dünnste Faden im Bild.', { name: f.duennster.name, n: f.duennster.mbit, wo: f.duennster.wo })
+      : t('Keine Funkverbindung mit bekannter Geschwindigkeit.')}</span></div>
+    <div class="nk-legende nk-nur-breit">${t('Breite = Geschwindigkeit der Verbindung. Wie viel ein einzelnes Gerät gerade lädt, meldet die FRITZ!Box nicht – nur der ganze Anschluss (oben links).')}</div>`;
+}
+
+function zahlenRadar(r) {
+  const rand = r.rand.map((x) => `${x.name} (${x.signal} %)`).join(` ${t('und')} `);
+  return html`<div class="glas-panel ni-zahlen" style="grid-template-columns:repeat(${1 + r.kanaele.length},minmax(0,1fr))"><div><b>${r.geraete.length}</b><small>${t('IM FUNK')}</small></div>
+    ${r.kanaele.map((k) => html`<div><b>${t('Kanal')} ${k.kanal ?? (k.auto ? 'auto' : '–')}</b><small>${k.band} · ${k.n}</small></div>`)}</div>
+    <div class="glas-panel ni-karte"><b>${t('Am Rand des Radars')}</b><span>${rand
+      ? t('{liste}: am weitesten draußen – dort lohnt ein Repeater. Je näher an der Mitte, desto besser der Empfang.', { liste: rand })
+      : t('Kein Gerät im WLAN mit Empfangswert.')}${r.ohne_empfang ? ` ${t('{n} ohne Empfangswert (z. B. am Repeater) – nicht auf dem Radar.', { n: r.ohne_empfang })}` : ''}</span></div>`;
+}
+
 function info(p, d, o) {
   const g = [...d.geraete, ...(d.vpn ? d.vpn.geraete : [])].find((x) => x.id === o.wahl);
   const sw = d.switche.find((x) => x.id === o.wahl);
@@ -129,24 +230,28 @@ function info(p, d, o) {
 
 /** Ganze Seite (statt der Liste unter Geräte). `d` = heimnetz/netzkarte, `u` = Übersicht (Leitung, Speedtest). */
 export function netzkarte(p, d, u, fehler = '') {
-  const o = { filter: 'alle', namen: false, wahl: null, ...(p._opt.geraete.karte || {}) };
+  const o = { ansicht: 'karte', filter: 'alle', namen: false, wahl: null, ...(p._opt.geraete.karte || {}) };
+  const ans = d && d[o.ansicht] ? o.ansicht : 'karte';
   const setz = (w) => p.setze('geraete', { karte: { ...o, ...w } }, false);
   const z = d ? d.zahlen : null;
-  const titel = !d ? t('Netzkarte') : !d.box_erreichbar ? t('FRITZ!Box antwortet nicht') : t('Netzkarte');
+  const name = { karte: t('Netzkarte'), fluss: t('Datenfluss'), radar: t('WLAN-Radar') }[ans];
+  const titel = !d ? t('Netzkarte') : !d.box_erreichbar ? t('FRITZ!Box antwortet nicht') : name;
   const zeile = !d ? (fehler ? '' : t('lädt …')) : [t('Stand {zeit}', { zeit: zeit(d.stand) }), u && u.zugang ? u.zugang.kopf : ''].filter(Boolean).join(' · ');
   const legende = html`<div class="nk-legende"><span><i class="lg-lan"></i>${t('Kabel')}</span><span><i class="lg-wlan"></i>WLAN</span><span><i class="lg-sw"></i>Switch</span>
     <span><i class="lg-p" style="border-color:var(--nk-gruen)"></i>${t('gut')}</span><span><i class="lg-p" style="border-color:var(--amber)"></i>${t('schwach')}</span>
     <span><i class="lg-p" style="border-color:var(--blau)"></i>${t('neu')}</span><span><i class="lg-p" style="border-color:var(--ink2);opacity:.6"></i>${t('offline')}</span></div>`;
-  return html`<div class="nk-buehne">${d ? karte(p, d, u, o) : nothing}</div>
+  const bild = !d ? nothing : ans === 'fluss' ? fluss(p, d, u, o) : ans === 'radar' ? keyed(`${d.stand}|${d.box_erreichbar}`, radar(p, d, o)) : karte(p, d, u, o);
+  return html`<div class="nk-buehne ${ans === 'karte' ? 'zwei' : 'hoch'}">${bild}</div>
     <div class="nk-oben">
       <div class="glas-panel nk-leiste"><button class="nk-zurueck" title=${t('Zurück zu Geräte')} @click=${() => p.setze('geraete', { teil: 'geraete' })}>‹</button>
         <div class="nk-titel"><b><span class="punkt ${d && !d.box_erreichbar ? 'rot' : ''}"></span>${titel}</b><small>${zeile}</small></div></div>
       ${fehler ? html`<div class="glas-panel fehler-band">${t('Daten nicht abrufbar: {fehler}', { fehler })}</div>` : nothing}
-      <div class="nk-filter">${tl(FILTER).map(([k, n]) => html`<button class="chip glas-panel ${o.filter === k ? 'on' : ''}" @click=${() => setz({ filter: k, wahl: null })}>${n}</button>`)}
-        <button class="chip glas-panel ${o.namen ? 'on' : ''}" @click=${() => setz({ namen: !o.namen })}>Aa ${t('Namen')}</button></div>
+      <div class="nk-filter nk-ansicht">${tl(ANSICHTEN).map(([k, n]) => html`<button class="chip glas-panel ${ans === k ? 'on' : ''}" @click=${() => setz({ ansicht: k, wahl: null })}>${n}</button>`)}</div>
+      ${ans !== 'karte' ? nothing : html`<div class="nk-filter">${tl(FILTER).map(([k, n]) => html`<button class="chip glas-panel ${o.filter === k ? 'on' : ''}" @click=${() => setz({ filter: k, wahl: null })}>${n}</button>`)}
+        <button class="chip glas-panel ${o.namen ? 'on' : ''}" @click=${() => setz({ namen: !o.namen })}>Aa ${t('Namen')}</button></div>`}
     </div>
     <div class="nk-unten">
-      ${o.wahl && d ? info(p, d, o) : z
+      ${o.wahl && d ? info(p, d, o) : d && ans === 'fluss' ? zahlenFluss(d.fluss) : d && ans === 'radar' ? zahlenRadar(d.radar) : z
         ? html`<div class="glas-panel nk-zahlen"><div><b>${z.online}</b><small>${t('ONLINE')}</small></div><div><b>${z.offline}</b><small>${t('OFFLINE')}</small></div>
           <div><b class="amber">${z.auffaellig}</b><small>${t('AUFFÄLLIG')}</small></div><div><b class="blau">${z.neu}</b><small>${t('NEU')}</small></div></div>${legende}
           ${z && z.vpn ? html`<div class="nk-legende">🔐 ${t('{n} über VPN verbunden (oben links)', { n: z.vpn })}</div>` : nothing}

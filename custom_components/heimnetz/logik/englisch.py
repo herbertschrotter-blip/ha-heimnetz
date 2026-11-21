@@ -55,6 +55,7 @@ EN: dict[str, str] = {
     "Mobilfunk: Technik gewechselt {alt} → {neu}": "Mobile: technology changed {alt} → {neu}",
     "Mobilfunk: Funkzelle gewechselt {alt} → {neu} (Empfang RSRP {rsrp} dBm)": "Mobile: cell changed {alt} → {neu} (reception RSRP {rsrp} dBm)",
     "sehr gut": "very good",
+    "mäßig": "fair",
     "gut": "good",
     "mittel": "fair",
     "schwach": "weak",

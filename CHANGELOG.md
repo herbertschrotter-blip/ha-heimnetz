@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## [0.37.0]
+
+- **Netzkarte: Fluss und Radar** (1.10) – über der Karte schaltet „🗺️ Karte · 〰️ Fluss · 📡 Radar“ um. **Fluss:**
+  Internet → FRITZ!Box → Kabel / 5 GHz / 2,4 GHz / Repeater / VPN → Gerät als fließende Bänder, die Breite zeigt die
+  Geschwindigkeit der Verbindung; oben der Durchsatz des Anschlusses und sein Anteil am Tarif, unten „Wo es eng wird“
+  (der dünnste Faden). **Radar:** ein Strahl kreist, die WLAN-Geräte leuchten auf, wenn er sie trifft – je weiter
+  draußen, desto schwächer der Empfang; dazu die Kanäle je Band und die Geräte am Rand. Tippen öffnet in beiden die
+  Infokarte des Geräts.
+
 ## [0.36.1]
 
 - **VPN-Geräte erkannt:** Geräte im WireGuard-Tunnel nennt die FRITZ!Box ohne MAC-Adresse – Heimnetz hat sie deshalb

@@ -471,9 +471,38 @@ select.w-ziel { max-width: 58%; } .ga-warnen .seg { flex: none; }
 .nk-werte b { display: block; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .nk-werte small { font-size: 10px; color: var(--ink2); }
 .nk-info p { margin: 0; font-size: 12px; color: var(--ink2); }
 .nk-info .chip { align-self: flex-start; font-size: 12px; padding: 5px 12px; }
-@container (max-width: 699px) { .nk-nur-breit { display: none; } }
+/* ── 1.10 Fluss und Radar (Mockup mockups/seiten/netz-ideen.html 0.1) ── */
+.nk-buehne.zwei { padding-top: 142px; }
+.ni-svg { overflow: visible; }
+.ni-t { fill: var(--ink); font-size: 9px; } .ni-t2 { fill: var(--ink2); font-size: 8px; } .ni-tb { fill: var(--ink); font-size: 11px; font-weight: 700; }
+.ni-knoten { fill: var(--sheet); stroke-width: 2.2; }
+.ni-band { fill: none; opacity: .4; transition: opacity .2s; }
+.ni-funke { fill: none; stroke: var(--ink); stroke-dasharray: 1.5 18.5; stroke-linecap: round; animation: ni-fl 1.4s linear infinite; opacity: .85; }
+@keyframes ni-fl { to { stroke-dashoffset: -40; } }
+.ni-zug.gew .ni-band { opacity: .75; } .dimm .ni-zug:not(.gew) { opacity: .25; }
+.grau .ni-funke { display: none; } .grau .ni-band { opacity: .2; }
+.ni-ring { fill: none; stroke: var(--nk-gruen); stroke-opacity: .22; }
+.ni-ringname { fill: var(--nk-gruen); font-size: 8px; opacity: .7; }
+.ni-kreuz { stroke: var(--nk-gruen); stroke-opacity: .12; }
+.ni-kante { stroke: var(--nk-gruen); stroke-width: 1.6; filter: drop-shadow(0 0 4px var(--nk-gruen)); }
+.ni-strahl { animation: ni-dreh 6s linear infinite; }
+@keyframes ni-dreh { to { transform: rotate(360deg); } }
+.ni-blip { animation: ni-blink 6s linear infinite; }
+@keyframes ni-blink { 0%, 4% { opacity: 1; } 55%, 100% { opacity: .28; } }
+.ni-blip-hof { animation: ni-hof 6s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes ni-hof { 0% { transform: scale(.4); opacity: .9; } 18% { transform: scale(2.8); opacity: 0; } 100% { opacity: 0; } }
+.grau .ni-strahl, .grau .ni-blip-hof { visibility: hidden; }
+.ni-neu { fill: none; stroke: var(--blau); stroke-width: 1.4; stroke-dasharray: 2 2.5; }
+.ni-zahlen { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 8px 4px; text-align: center; }
+.ni-zahlen b { display: block; font-size: 19px; font-weight: 300; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ni-zahlen small { font-size: 9.5px; letter-spacing: .8px; color: var(--ink2); }
+.ni-karte { padding: 11px 14px; display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--ink2); }
+.ni-karte b { color: var(--ink); font-size: 14px; }
+@media (prefers-reduced-motion: reduce) { .ni-funke, .ni-strahl, .ni-blip, .ni-blip-hof { animation: none !important; } }
+@container (max-width: 699px) { .nk-nur-breit { display: none; } .nk-buehne.hoch { padding-bottom: 262px; } }
 @container (min-width: 700px) {
   .nk-buehne { padding: 150px 372px 20px 20px; }
+  .nk-buehne.zwei { padding-top: 188px; }
   .nk-oben { top: 80px; left: 24px; right: 380px; }
   .nk-unten { top: 80px; right: 24px; left: auto; bottom: auto; width: 330px; }
 }
