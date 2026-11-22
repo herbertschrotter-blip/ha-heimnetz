@@ -189,7 +189,16 @@ test('Speedtest: Tagesverlauf für Wochentag und Datum (WU-0004)', async () => {
   await reiter(el, 'Speedtest');
   const w = el.shadowRoot;
   const gezaehlt = DATEN.speedtest.raster.flat().filter((z) => z.anzahl).length;
-  assert.equal(w.querySelectorAll('.wr i b').length, gezaehlt, 'Median-Zahl in jeder Kachel mit Messung');
+  // 1.11: die Zahl zeigt der Tipp, nicht das Feld; Antwortleiste mit vier Antworten, Jetzt/▲/▼ im Raster
+  assert.equal(w.querySelectorAll('.wr i b').length, 0);
+  assert.equal(w.querySelectorAll('.wr i.kachel').length, gezaehlt);
+  const an = DATEN.speedtest.antworten;
+  assert.equal(w.querySelectorAll('.st-antw > div').length, 4);
+  assert.match(w.querySelector('.st-antw').textContent, /Jetzt typisch/);
+  assert.match(w.querySelector('.st-antw').textContent, /Tarif erreicht/);
+  assert.ok(!/undefined|NaN/.test(w.querySelector('.st-antw').textContent), w.querySelector('.st-antw').textContent);
+  if (an.beste) assert.ok(w.querySelector(`.wr i.best[data-k="${an.beste[0]}-${an.beste[1]}"]`));
+  if (an.schwaechste) assert.ok(w.querySelector(`.wr i.schlecht[data-k="${an.schwaechste[0]}-${an.schwaechste[1]}"]`));
   assert.equal(w.querySelector('.tv svg'), null, 'zu, bis ein Tag gewählt ist');
   assert.match(w.querySelector('.tv').textContent, /Tipp auf einen Wochentag/);
   w.querySelectorAll('.wr button.tag')[0].click();

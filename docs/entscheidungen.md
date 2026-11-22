@@ -611,6 +611,14 @@ nachgetragen.
   die Box nur für den ganzen Anschluss) – und **Radar** – Abstand = Empfang aus der WLAN-Tabelle, Winkel wie auf der
   Karte. Beide aus denselben Daten wie die Karte (`logik/netzansichten.py`), keine neue Abfrage der Box.
 
+## Speedtest-Antwortleiste (Herbert, 22.11.2026)
+
+- Das Raster 7 × 24 „passt eigentlich“ und bleibt; die Wochenübersicht soll aber auf einen Blick beantworten: wann ist
+  es schnell, bekomme ich meinen Tarif, wird es besser oder schlechter, wie ist es jetzt und gleich. Dafür eine
+  Antwortleiste darüber (1.11 A, aus neun Vorschlägen in drei Runden). „Tarif erreicht“ zählt Stunden mit Median ≥ 80 %
+  vom Tarif; „gleich“ schaut 12 Stunden im Raster voraus (Wechsel über die grüne Schwelle der Farbskala). Rechnung in
+  `logik/auswertung.py` (`antworten`).
+
 ## Offene Entscheidungen
 
 - Keine.

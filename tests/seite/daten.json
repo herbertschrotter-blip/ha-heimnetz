@@ -1471,6 +1471,40 @@
    ],
    "beste": 23,
    "schwaechste": 2
+  },
+  "antworten": {
+   "tag": 0,
+   "stunde": 22,
+   "jetzt": 109.0,
+   "jetzt_lage": 0.7266666666666667,
+   "gleich_stunde": null,
+   "gleich": null,
+   "gleich_lage": null,
+   "gleich_besser": null,
+   "tarif_quote": 0.083,
+   "wochen": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    150.0,
+    null,
+    148.0,
+    161.5
+   ],
+   "trend": 11.5,
+   "beste": [
+    2,
+    7
+   ],
+   "schwaechste": [
+    0,
+    22
+   ]
   }
  },
  "geraete": {

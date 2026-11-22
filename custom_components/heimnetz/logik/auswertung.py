@@ -166,6 +166,81 @@ class Verlauf:
     schwaechste: int | None
 
 
+GUT = 0.66  # Lage ab der eine Stunde als schnell gilt (grün auf der Skala)
+TARIF_QUOTE = 0.8  # „Tarif erreicht“: Median der Stunde mindestens 80 % vom Tarif
+VORSCHAU_H = 12  # so weit schaut „gleich“ voraus
+WOCHE_S = 7 * 86400
+
+
+@dataclass(frozen=True)
+class Antworten:
+    """1.11 Antwortleiste über dem Raster (abgenommen 22.11.2026): jetzt (typisch für diese Stunde an diesem
+    Wochentag), gleich (nächste Stunde, ab der es wieder schnell bzw. langsamer wird), Tarif erreicht (Anteil der
+    Stunden mit Messung, deren Median mindestens TARIF_QUOTE vom Tarif ist), Trend (Median je Woche, älteste zuerst);
+    dazu die schnellste und langsamste Stunde im Raster."""
+
+    tag: int
+    stunde: int
+    jetzt: float | None
+    jetzt_lage: float | None
+    gleich_stunde: int | None
+    gleich: float | None
+    gleich_lage: float | None
+    gleich_besser: bool | None
+    tarif_quote: float | None
+    wochen: tuple[float | None, ...]
+    trend: float | None  # neueste minus älteste Woche (beim Ping: weniger ist besser)
+    beste: tuple[int, int] | None  # (Wochentag, Stunde)
+    schwaechste: tuple[int, int] | None
+
+
+def antworten(
+    g: Groesse,
+    raster: Sequence[Sequence[Zelle]],
+    wochen: Sequence[float | None],
+    jetzt: datetime,
+    tarif: float | None,
+) -> Antworten:
+    """Antworten aus dem fertigen Raster; `wochen` = Median je Woche (älteste zuerst)."""
+    wd, h = jetzt.weekday(), jetzt.hour
+    z = raster[wd][h]
+    gleich: tuple[int, Zelle] | None = None
+    if z.lage is not None:
+        gut = z.lage >= GUT
+        for i in range(1, VORSCHAU_H + 1):
+            k = raster[(wd + (h + i) // 24) % 7][(h + i) % 24]
+            if k.lage is not None and (k.lage >= GUT) != gut:
+                gleich = ((h + i) % 24, k)
+                break
+    zellen = [(c, (t_, s_)) for t_, reihe in enumerate(raster) for s_, c in enumerate(reihe)]
+    mit = [(c, o) for c, o in zellen if c.lage is not None]
+    quote = (
+        round(
+            sum(1 for c, _ in mit if c.median is not None and c.median >= tarif * TARIF_QUOTE)
+            / len(mit),
+            3,
+        )
+        if tarif and g.mehr_ist_gut and mit
+        else None
+    )
+    da = [w for w in wochen if w is not None]
+    return Antworten(
+        tag=wd,
+        stunde=h,
+        jetzt=z.median,
+        jetzt_lage=z.lage,
+        gleich_stunde=gleich[0] if gleich else None,
+        gleich=gleich[1].median if gleich else None,
+        gleich_lage=gleich[1].lage if gleich else None,
+        gleich_besser=(gleich[1].lage or 0) >= GUT if gleich else None,
+        tarif_quote=quote,
+        wochen=tuple(wochen),
+        trend=round(da[-1] - da[0], 1) if len(da) >= 2 else None,
+        beste=max(mit, key=lambda x: x[0].lage or 0)[1] if mit else None,
+        schwaechste=min(mit, key=lambda x: x[0].lage or 0)[1] if mit else None,
+    )
+
+
 @dataclass(frozen=True)
 class Auswertung:
     groesse: str
@@ -190,6 +265,7 @@ class Auswertung:
         tuple[str, int], ...
     ] = ()  # Tage mit gezählten Messungen (ISO-Datum, Anzahl), neueste zuerst
     verlauf: Verlauf | None = None
+    antworten: Antworten | None = None
 
 
 def anteil(wert: float | None, tarif: float | None) -> float | None:
@@ -420,6 +496,8 @@ def auswerten(
     je_tag: dict[date, int] = {}  # gezählte Messungen je Tag
     am_datum: list[list[tuple[float, float]]] = [[] for _ in range(24)]
     alle: list[tuple[float, float]] = []
+    n_wochen = max(1, min(12, tage // 7))
+    je_woche: list[list[tuple[float, float]]] = [[] for _ in range(n_wochen)]  # 0 = diese Woche
     fehl = 0
     for p in gewaehlt:
         v = p.wert(groesse)
@@ -437,6 +515,9 @@ def auswerten(
         if z.date() == datum:
             am_datum[z.hour].append((v, w))
         alle.append((v, w))
+        woche = int((jetzt - p.t) // WOCHE_S)
+        if 0 <= woche < n_wochen:
+            je_woche[woche].append((v, w))
     median = g_quantil(alle, 0.5)
     raster = tuple(
         tuple(
@@ -474,4 +555,11 @@ def auswerten(
         volumen_mb=round(sum(volumen_mb(p) for p in im), 1),
         tage_liste=tuple((d.isoformat(), je_tag[d]) for d in sorted(je_tag, reverse=True)),
         verlauf=_verlauf_fuer(g, zellen, am_datum, tag, datum),
+        antworten=antworten(
+            g,
+            raster,
+            [g_quantil(w, 0.5) for w in reversed(je_woche)],
+            _zeit(jetzt, tz),
+            tarif,
+        ),
     )

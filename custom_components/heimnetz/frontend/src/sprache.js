@@ -117,8 +117,8 @@ export const EN = {
   'langsam': 'slow',
   'schnell': 'fast',
   'typisch': 'typical',
-  'grau = keine Messung · Zahl = Median der Stunde · Tipp auf einen Tag zeigt den Verlauf · belastete Messungen {wie} (⚙) · {n} ohne Grundlast':
-    'grey = no measurement · number = median of the hour · tap a day for its profile · measurements under load {wie} (⚙) · {n} without base load',
+  'grau = keine Messung · Rahmen = jetzt · ▲ schnellste, ▼ langsamste Stunde · Tipp auf ein Feld zeigt den Median, auf einen Tag den Verlauf · belastete Messungen {wie} (⚙) · {n} ohne Grundlast':
+    'grey = no measurement · frame = now · ▲ fastest, ▼ slowest hour · tap a cell for the median, a day for its profile · measurements under load {wie} (⚙) · {n} without base load',
   'Im gewählten Zeitraum keine Messungen.': 'No measurements in the selected period.',
   'Auffällig:': 'Notable:',
   'Letzte Messungen': 'Recent measurements',
@@ -947,4 +947,19 @@ export const EN = {
   '{liste}: am weitesten draußen – dort lohnt ein Repeater. Je näher an der Mitte, desto besser der Empfang.': '{liste}: furthest out – a repeater pays off there. The closer to the centre, the better the signal.',
   'Kein Gerät im WLAN mit Empfangswert.': 'No Wi-Fi device with a signal value.',
   '{n} ohne Empfangswert (z. B. am Repeater) – nicht auf dem Radar.': '{n} without a signal value (e.g. on the repeater) – not on the radar.',
+  // 1.11 Antwortleiste
+  'Jetzt typisch': 'Typical now',
+  '{h} Uhr': '{h}:00',
+  'Ab {h} Uhr': 'From {h}:00',
+  'Die nächsten 12 Stunden': 'Next 12 hours',
+  'wieder schnell': 'fast again',
+  'langsamer': 'slower',
+  'bleibt so': 'stays like this',
+  'keine Messung um diese Zeit': 'no measurement at this time',
+  'Tarif erreicht': 'Plan reached',
+  'der Stunden mit mindestens 80 %': 'of hours with at least 80 %',
+  'beim Ping ohne Tarif': 'no plan for ping',
+  'Tarif in ⚙ eintragen': 'enter plan in ⚙',
+  'Trend': 'Trend',
+  'ab 2 Wochen': 'from 2 weeks',
 };

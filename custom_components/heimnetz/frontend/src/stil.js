@@ -154,8 +154,19 @@ const GLAS = `
 /* WU-0004: Wochentag antippbar, Median-Zahl in der Kachel nur auf breitem Schirm, Tagesverlauf */
 .wr button.tag { text-align: left; align-self: center; color: var(--blau); font-size: inherit; }
 .wr button.tag.on { color: var(--ink); font-weight: 700; }
-.wr i b { display: none; }
-@container (min-width: 760px) { .wr i b { display: grid; place-items: center; height: 100%; font-size: 9.5px; font-weight: 600; font-style: normal; color: rgba(0,0,0,.72); font-variant-numeric: tabular-nums; } }
+.wr i { position: relative; }
+.wr i.jetzt { outline: 2px solid var(--ink); outline-offset: 1px; z-index: 1; }
+.wr i.best, .wr i.schlecht { z-index: 2; }
+.wr i.best::after, .wr i.schlecht::after { position: absolute; left: 50%; transform: translateX(-50%); font-size: 9px; font-weight: 800; line-height: 1; }
+.wr i.best::after { content: '▲'; color: var(--s3); top: -8px; } .wr i.schlecht::after { content: '▼'; color: var(--rot); bottom: -8px; }
+/* 1.11 Antwortleiste */
+.st-antw { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 4px 0 12px; }
+.st-antw > div { border-radius: 12px; background: rgba(120,120,128,.13); padding: 8px 10px; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.st-antw small { font-size: 10.5px; color: var(--ink2); }
+.st-antw b { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.st-antw b small { font-size: 11px; font-weight: 400; }
+.st-antw span { font-size: 11px; color: var(--ink2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@container (max-width: 699px) { .st-antw { grid-template-columns: repeat(2, minmax(0, 1fr)); } .st-antw span { white-space: normal; } }
 .tv { display: flex; flex-direction: column; gap: 8px; }
 .tv svg { width: 100%; height: auto; display: block; touch-action: manipulation; }
 /* Textfarbe statt Akzentblau: der Glas-Hintergrund ist oft selbst blau (WU-0004, Herbert 23.10.2026) */

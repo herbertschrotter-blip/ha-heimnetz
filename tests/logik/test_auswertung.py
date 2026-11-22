@@ -211,3 +211,65 @@ def test_anteil():
     assert (
         aw.anteil(75, 150) == 0.5 and aw.anteil(None, 150) is None and aw.anteil(75, None) is None
     )
+
+
+# ── 1.11 Antwortleiste ──
+def _raster(wert):
+    """7 × 24 Zellen mit wert(wd, h) als Median (None = keine Messung); Lage = Anteil an 250 Mbit/s."""
+    from logik.auswertung import Zelle
+
+    def z(v):
+        return Zelle(v, 1 if v is not None else 0, None if v is None else min(1.0, v / 250))
+
+    return [[z(wert(wd, h)) for h in range(24)] for wd in range(7)]
+
+
+def test_antworten_jetzt_gleich_tarif_trend():
+    from datetime import datetime
+
+    from logik.auswertung import GROESSEN, antworten
+
+    # abends 19–22 Uhr langsam, sonst schnell; Sa 21 Uhr ohne Messung wäre „unbekannt“ – hier gemessen
+    r = _raster(lambda wd, h: 60 if 19 <= h <= 22 else 230)
+    a = antworten(GROESSEN["down"], r, [186, None, 205, 214], datetime(2026, 11, 21, 21, 15), 250)
+    assert (a.tag, a.stunde, a.jetzt) == (5, 21, 60)
+    assert a.gleich_stunde == 23 and a.gleich == 230 and a.gleich_besser  # ab 23 Uhr wieder schnell
+    assert a.tarif_quote == round(20 / 24, 3)  # 20 von 24 Stunden je Tag über 80 % vom Tarif
+    assert a.trend == 28 and a.wochen == (186, None, 205, 214)
+    assert (
+        r[a.beste[0]][a.beste[1]].median == 230
+        and r[a.schwaechste[0]][a.schwaechste[1]].median == 60
+    )
+
+
+def test_antworten_gleich_ueber_mitternacht_und_ohne_wechsel():
+    from datetime import datetime
+
+    from logik.auswertung import GROESSEN, antworten
+
+    # schnell bis 22 Uhr, ab 23 Uhr langsam (auch über Mitternacht in den nächsten Tag)
+    r = _raster(lambda wd, h: 230 if 6 <= h <= 22 else 60)
+    a = antworten(GROESSEN["down"], r, [], datetime(2026, 11, 22, 20, 0), 250)  # Sonntag
+    assert a.gleich_stunde == 23 and a.gleich_besser is False
+    a = antworten(GROESSEN["down"], r, [], datetime(2026, 11, 22, 23, 30), 250)
+    assert a.gleich_stunde == 6 and a.gleich_besser  # Montag früh
+    # überall gleich: kein Wechsel in 12 Stunden, kein Trend mit nur einer Woche
+    a = antworten(
+        GROESSEN["down"], _raster(lambda wd, h: 230), [200], datetime(2026, 11, 22, 12), 250
+    )
+    assert a.gleich_stunde is None and a.trend is None
+    # keine Messung jetzt: kein „gleich“
+    a = antworten(
+        GROESSEN["down"], _raster(lambda wd, h: None), [], datetime(2026, 11, 22, 12), 250
+    )
+    assert a.jetzt is None and a.gleich_stunde is None and a.beste is None and a.tarif_quote is None
+
+
+def test_antworten_ohne_tarif_und_beim_ping():
+    from datetime import datetime
+
+    from logik.auswertung import GROESSEN, antworten
+
+    r = _raster(lambda wd, h: 230)
+    assert antworten(GROESSEN["down"], r, [], datetime(2026, 11, 22, 12), None).tarif_quote is None
+    assert antworten(GROESSEN["ping"], r, [], datetime(2026, 11, 22, 12), 250).tarif_quote is None

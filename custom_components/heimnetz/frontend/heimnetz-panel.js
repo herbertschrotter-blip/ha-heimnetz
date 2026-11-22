@@ -3448,8 +3448,19 @@ var GLAS = `
 /* WU-0004: Wochentag antippbar, Median-Zahl in der Kachel nur auf breitem Schirm, Tagesverlauf */
 .wr button.tag { text-align: left; align-self: center; color: var(--blau); font-size: inherit; }
 .wr button.tag.on { color: var(--ink); font-weight: 700; }
-.wr i b { display: none; }
-@container (min-width: 760px) { .wr i b { display: grid; place-items: center; height: 100%; font-size: 9.5px; font-weight: 600; font-style: normal; color: rgba(0,0,0,.72); font-variant-numeric: tabular-nums; } }
+.wr i { position: relative; }
+.wr i.jetzt { outline: 2px solid var(--ink); outline-offset: 1px; z-index: 1; }
+.wr i.best, .wr i.schlecht { z-index: 2; }
+.wr i.best::after, .wr i.schlecht::after { position: absolute; left: 50%; transform: translateX(-50%); font-size: 9px; font-weight: 800; line-height: 1; }
+.wr i.best::after { content: '▲'; color: var(--s3); top: -8px; } .wr i.schlecht::after { content: '▼'; color: var(--rot); bottom: -8px; }
+/* 1.11 Antwortleiste */
+.st-antw { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 4px 0 12px; }
+.st-antw > div { border-radius: 12px; background: rgba(120,120,128,.13); padding: 8px 10px; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.st-antw small { font-size: 10.5px; color: var(--ink2); }
+.st-antw b { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.st-antw b small { font-size: 11px; font-weight: 400; }
+.st-antw span { font-size: 11px; color: var(--ink2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@container (max-width: 699px) { .st-antw { grid-template-columns: repeat(2, minmax(0, 1fr)); } .st-antw span { white-space: normal; } }
 .tv { display: flex; flex-direction: column; gap: 8px; }
 .tv svg { width: 100%; height: auto; display: block; touch-action: manipulation; }
 /* Textfarbe statt Akzentblau: der Glas-Hintergrund ist oft selbst blau (WU-0004, Herbert 23.10.2026) */
@@ -3902,7 +3913,7 @@ var EN = {
   "langsam": "slow",
   "schnell": "fast",
   "typisch": "typical",
-  "grau = keine Messung · Zahl = Median der Stunde · Tipp auf einen Tag zeigt den Verlauf · belastete Messungen {wie} (⚙) · {n} ohne Grundlast": "grey = no measurement · number = median of the hour · tap a day for its profile · measurements under load {wie} (⚙) · {n} without base load",
+  "grau = keine Messung · Rahmen = jetzt · ▲ schnellste, ▼ langsamste Stunde · Tipp auf ein Feld zeigt den Median, auf einen Tag den Verlauf · belastete Messungen {wie} (⚙) · {n} ohne Grundlast": "grey = no measurement · frame = now · ▲ fastest, ▼ slowest hour · tap a cell for the median, a day for its profile · measurements under load {wie} (⚙) · {n} without base load",
   "Im gewählten Zeitraum keine Messungen.": "No measurements in the selected period.",
   "Auffällig:": "Notable:",
   "Letzte Messungen": "Recent measurements",
@@ -4690,7 +4701,22 @@ var EN = {
   "Am Rand des Radars": "At the edge of the radar",
   "{liste}: am weitesten draußen – dort lohnt ein Repeater. Je näher an der Mitte, desto besser der Empfang.": "{liste}: furthest out – a repeater pays off there. The closer to the centre, the better the signal.",
   "Kein Gerät im WLAN mit Empfangswert.": "No Wi-Fi device with a signal value.",
-  "{n} ohne Empfangswert (z. B. am Repeater) – nicht auf dem Radar.": "{n} without a signal value (e.g. on the repeater) – not on the radar."
+  "{n} ohne Empfangswert (z. B. am Repeater) – nicht auf dem Radar.": "{n} without a signal value (e.g. on the repeater) – not on the radar.",
+  // 1.11 Antwortleiste
+  "Jetzt typisch": "Typical now",
+  "{h} Uhr": "{h}:00",
+  "Ab {h} Uhr": "From {h}:00",
+  "Die nächsten 12 Stunden": "Next 12 hours",
+  "wieder schnell": "fast again",
+  "langsamer": "slower",
+  "bleibt so": "stays like this",
+  "keine Messung um diese Zeit": "no measurement at this time",
+  "Tarif erreicht": "Plan reached",
+  "der Stunden mit mindestens 80 %": "of hours with at least 80 %",
+  "beim Ping ohne Tarif": "no plan for ping",
+  "Tarif in ⚙ eintragen": "enter plan in ⚙",
+  "Trend": "Trend",
+  "ab 2 Wochen": "from 2 weeks"
 };
 
 // src/format.js
@@ -5183,6 +5209,25 @@ var ZEITRAEUME = [[7, merke("7 Tage")], [28, merke("4 Wochen")], [84, merke("12 
 var BELASTET = { aus: merke("weggelassen"), halb: merke("¼ gezählt"), mit: merke("voll gezählt") };
 var prozent = (a3) => a3 == null ? "" : t3("{n} % vom Tarif", { n: zahl(a3 * 100) });
 var zeitraum = (tage) => t3(ZEITRAEUME.find(([x2]) => x2 === tage)?.[1] ?? "");
+function antwortleiste(d3) {
+  const a3 = d3.antworten;
+  if (!a3 || !d3.gesamt) return A;
+  const e6 = d3.einheit;
+  const TAGE2 = wochentage(true);
+  const da = a3.wochen.filter((w2) => w2 != null);
+  const besser = a3.trend == null || a3.trend === 0 ? null : d3.groesse === "ping" ? a3.trend < 0 : a3.trend > 0;
+  const wert2 = (v2, lage) => b2`<b style=${lage != null ? `color:${farbe(lage)}` : ""}>${v2 != null ? zahl(v2) : "–"}<small> ${e6}</small></b>`;
+  return b2`<div class="st-antw">
+    <div><small>${t3("Jetzt typisch")}</small>${wert2(a3.jetzt, a3.jetzt_lage)}<span>${TAGE2[a3.tag]} ${t3("{h} Uhr", { h: a3.stunde })}</span></div>
+    <div><small>${a3.gleich_stunde != null ? t3("Ab {h} Uhr", { h: a3.gleich_stunde }) : t3("Die nächsten 12 Stunden")}</small>
+      ${a3.gleich_stunde != null ? wert2(a3.gleich, a3.gleich_lage) : b2`<b>${a3.jetzt != null ? "=" : "–"}</b>`}
+      <span>${a3.gleich_stunde != null ? a3.gleich_besser ? t3("wieder schnell") : t3("langsamer") : a3.jetzt != null ? t3("bleibt so") : t3("keine Messung um diese Zeit")}</span></div>
+    <div><small>${t3("Tarif erreicht")}</small><b>${a3.tarif_quote != null ? zahl(a3.tarif_quote * 100) : "–"}<small> %</small></b>
+      <span>${a3.tarif_quote != null ? t3("der Stunden mit mindestens 80 %") : d3.groesse === "ping" ? t3("beim Ping ohne Tarif") : t3("Tarif in ⚙ eintragen")}</span></div>
+    <div><small>${t3("Trend")}</small><b style=${besser == null ? "" : `color:var(${besser ? "--s3" : "--rot"})`}>${a3.trend != null ? `${besser == null ? "±" : besser ? "▲" : "▼"} ${zahl(Math.abs(a3.trend))}` : "–"}<small> ${e6}</small></b>
+      <span>${da.length >= 2 ? da.map((w2) => zahl(w2)).join(" → ") : t3("ab 2 Wochen")}</span></div>
+  </div>`;
+}
 var stunden = (h3) => t3("{von}–{bis} Uhr", { von: h3, bis: h3 + 1 });
 function speedtest(p4, d3) {
   const o7 = p4._opt.speedtest;
@@ -5190,11 +5235,13 @@ function speedtest(p4, d3) {
   const la = d3.letzte_anteil || {};
   const tagWahl = o7.datum ? null : o7.tag;
   const TAGE2 = wochentage(true);
+  const a3 = d3.antworten || {};
+  const ist = (x2, wd, h3) => !!x2 && x2[0] === wd && x2[1] === h3;
   const raster = d3.raster.map((reihe, wd) => b2`<button class="tag ${tagWahl === wd ? "on" : ""}" title=${t3("Tagesverlauf {tag}", { tag: TAGE2[wd] })}
-    @click=${() => p4.setze("speedtest", { tag: wd, datum: null, stunde: null })}>${TAGE2[wd]}</button>${reihe.map((z2, h3) => z2.anzahl ? b2`<i class="kachel ${p4._kachel && p4._kachel.fest && p4._kachel.tag === wd && p4._kachel.stunde === h3 ? "wahl" : ""}" data-k="${wd}-${h3}"
+    @click=${() => p4.setze("speedtest", { tag: wd, datum: null, stunde: null })}>${TAGE2[wd]}</button>${reihe.map((z2, h3) => z2.anzahl ? b2`<i class="kachel ${p4._kachel && p4._kachel.fest && p4._kachel.tag === wd && p4._kachel.stunde === h3 ? "wahl" : ""} ${a3.tag === wd && a3.stunde === h3 ? "jetzt" : ""} ${ist(a3.beste, wd, h3) ? "best" : ""} ${ist(a3.schwaechste, wd, h3) ? "schlecht" : ""}" data-k="${wd}-${h3}"
       style="background:${farbe(z2.lage)}" aria-label=${`${TAGE2[wd]} ${stunden(h3)}: ${t3("Median {wert} ({n} Messungen)", { wert: `${zahl(z2.median, 1)} ${d3.einheit}`, n: z2.anzahl })}`}
       @mouseenter=${() => p4.kachelZeigen(wd, h3, false)} @mouseleave=${() => p4.kachelWeg(false)}
-      @click=${() => p4.kachelZeigen(wd, h3, true)}><b>${zahl(z2.median)}</b></i>` : b2`<i class="ohne" title=${`${TAGE2[wd]} ${stunden(h3)}: ${t3("keine Messung")}`}></i>`)}`);
+      @click=${() => p4.kachelZeigen(wd, h3, true)}></i>` : b2`<i class="ohne" title=${`${TAGE2[wd]} ${stunden(h3)}: ${t3("keine Messung")}`}></i>`)}`);
   return b2`
     <div class="glas-raster">
       ${kachel(t3("Download zuletzt"), l4 ? b2`${zahl(l4.down)}<small> Mbit/s</small>` : "–", l4 ? `${prozent(la.down)} · ${zeit(l4.t)}` : t3("noch keine Messung"))}
@@ -5215,9 +5262,10 @@ function speedtest(p4, d3) {
           ${o7.server && !d3.server.some((s4) => s4.name === o7.server) ? b2`<option value=${o7.server} selected>${o7.server} (${t3("keine Messungen im Zeitraum")})</option>` : A}
         </select>
       </div>
+      ${antwortleiste(d3)}
       ${d3.gesamt ? b2`<div class="wr"><span></span>${Array.from({ length: 24 }, (_2, h3) => b2`<span>${h3 % 3 ? "" : h3}</span>`)}${raster}</div>
         <div class="leiste" style="justify-content:space-between"><div class="skala">${d3.groesse === "ping" ? t3("langsam") : "0 %"}<i></i>${d3.groesse === "ping" ? t3("schnell") : d3.tarif ? t3("{n} % vom Tarif", { n: 100 }) : t3("typisch")}</div>
-        <span class="leise">${t3("grau = keine Messung · Zahl = Median der Stunde · Tipp auf einen Tag zeigt den Verlauf · belastete Messungen {wie} (⚙) · {n} ohne Grundlast", { wie: t3(BELASTET[o7.grundlast]), n: d3.ungeprueft })}</span></div>` : b2`<div class="leer">${t3("Im gewählten Zeitraum keine Messungen.")}</div>`}
+        <span class="leise">${t3("grau = keine Messung · Rahmen = jetzt · ▲ schnellste, ▼ langsamste Stunde · Tipp auf ein Feld zeigt den Median, auf einen Tag den Verlauf · belastete Messungen {wie} (⚙) · {n} ohne Grundlast", { wie: t3(BELASTET[o7.grundlast]), n: d3.ungeprueft })}</span></div>` : b2`<div class="leer">${t3("Im gewählten Zeitraum keine Messungen.")}</div>`}
       ${d3.gesamt ? tagesverlauf(p4, d3) : A}
       ${d3.auffaellig ? b2`<p class="hinweis"><b>${t3("Auffällig:")}</b> ${d3.auffaellig}</p>` : A}
     </div>
@@ -7475,7 +7523,7 @@ function waechterBlatt(p4) {
 }
 
 // src/heimnetz-panel.js
-var VERSION = true ? "0.37.0" : "entwicklung";
+var VERSION = true ? "0.38.0" : "entwicklung";
 var REITER = [
   ["uebersicht", merke("Übersicht")],
   ["speedtest", merke("Speedtest")],

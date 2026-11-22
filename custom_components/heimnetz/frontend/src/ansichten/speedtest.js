@@ -1,4 +1,7 @@
 // Reiter „Speedtest“: letzte Messung, Wochenraster mit Tagesverlauf, Messplan in einer Zeile, letzte Messungen.
+// Über dem Raster die Antwortleiste (1.11 A, abgenommen 22.11.2026, Mockup mockups/seiten/speedtest-ideen.html 0.3):
+// Jetzt typisch · Gleich · Tarif erreicht · Trend; im Raster Rahmen = jetzt, ▲/▼ schnellste und langsamste Stunde, die
+// Zahl zeigt der Tipp. Die Antworten rechnet die Integration (antworten), die Seite zeichnet nur.
 // Eingestellt wird im Fenster ⚙ (ansichten/einstellungen.js).
 import { html, svg, nothing } from 'lit';
 import { datum, uhr, wochentage, zahl, zeit, farbe } from '../format.js';
@@ -11,6 +14,27 @@ const BELASTET = { aus: merke('weggelassen'), halb: merke('¼ gezählt'), mit: m
 const prozent = (a) => (a == null ? '' : t('{n} % vom Tarif', { n: zahl(a * 100) }));
 /** Name des Zeitraums (7 Tage, 4 Wochen, 12 Wochen). */
 const zeitraum = (tage) => t(ZEITRAEUME.find(([x]) => x === tage)?.[1] ?? '');
+/** 1.11 Antwortleiste: vier kleine Antworten über dem Raster. */
+function antwortleiste(d) {
+  const a = d.antworten;
+  if (!a || !d.gesamt) return nothing;
+  const e = d.einheit;
+  const TAGE = wochentage(true);
+  const da = a.wochen.filter((w) => w != null);
+  const besser = a.trend == null || a.trend === 0 ? null : d.groesse === 'ping' ? a.trend < 0 : a.trend > 0;
+  const wert = (v, lage) => html`<b style=${lage != null ? `color:${farbe(lage)}` : ''}>${v != null ? zahl(v) : '–'}<small> ${e}</small></b>`;
+  return html`<div class="st-antw">
+    <div><small>${t('Jetzt typisch')}</small>${wert(a.jetzt, a.jetzt_lage)}<span>${TAGE[a.tag]} ${t('{h} Uhr', { h: a.stunde })}</span></div>
+    <div><small>${a.gleich_stunde != null ? t('Ab {h} Uhr', { h: a.gleich_stunde }) : t('Die nächsten 12 Stunden')}</small>
+      ${a.gleich_stunde != null ? wert(a.gleich, a.gleich_lage) : html`<b>${a.jetzt != null ? '=' : '–'}</b>`}
+      <span>${a.gleich_stunde != null ? (a.gleich_besser ? t('wieder schnell') : t('langsamer')) : a.jetzt != null ? t('bleibt so') : t('keine Messung um diese Zeit')}</span></div>
+    <div><small>${t('Tarif erreicht')}</small><b>${a.tarif_quote != null ? zahl(a.tarif_quote * 100) : '–'}<small> %</small></b>
+      <span>${a.tarif_quote != null ? t('der Stunden mit mindestens 80 %') : d.groesse === 'ping' ? t('beim Ping ohne Tarif') : t('Tarif in ⚙ eintragen')}</span></div>
+    <div><small>${t('Trend')}</small><b style=${besser == null ? '' : `color:var(${besser ? '--s3' : '--rot'})`}>${a.trend != null ? `${besser == null ? '±' : besser ? '▲' : '▼'} ${zahl(Math.abs(a.trend))}` : '–'}<small> ${e}</small></b>
+      <span>${da.length >= 2 ? da.map((w) => zahl(w)).join(' → ') : t('ab 2 Wochen')}</span></div>
+  </div>`;
+}
+
 /** „2–3 Uhr“ bzw. „2–3 h“. */
 const stunden = (h) => t('{von}–{bis} Uhr', { von: h, bis: h + 1 });
 
@@ -20,12 +44,14 @@ export function speedtest(p, d) {
   const la = d.letzte_anteil || {};
   const tagWahl = o.datum ? null : o.tag;
   const TAGE = wochentage(true);
+  const a = d.antworten || {};
+  const ist = (x, wd, h) => !!x && x[0] === wd && x[1] === h;
   const raster = d.raster.map((reihe, wd) => html`<button class="tag ${tagWahl === wd ? 'on' : ''}" title=${t('Tagesverlauf {tag}', { tag: TAGE[wd] })}
     @click=${() => p.setze('speedtest', { tag: wd, datum: null, stunde: null })}>${TAGE[wd]}</button>${reihe.map((z, h) => z.anzahl
-    ? html`<i class="kachel ${p._kachel && p._kachel.fest && p._kachel.tag === wd && p._kachel.stunde === h ? 'wahl' : ''}" data-k="${wd}-${h}"
+    ? html`<i class="kachel ${p._kachel && p._kachel.fest && p._kachel.tag === wd && p._kachel.stunde === h ? 'wahl' : ''} ${a.tag === wd && a.stunde === h ? 'jetzt' : ''} ${ist(a.beste, wd, h) ? 'best' : ''} ${ist(a.schwaechste, wd, h) ? 'schlecht' : ''}" data-k="${wd}-${h}"
       style="background:${farbe(z.lage)}" aria-label=${`${TAGE[wd]} ${stunden(h)}: ${t('Median {wert} ({n} Messungen)', { wert: `${zahl(z.median, 1)} ${d.einheit}`, n: z.anzahl })}`}
       @mouseenter=${() => p.kachelZeigen(wd, h, false)} @mouseleave=${() => p.kachelWeg(false)}
-      @click=${() => p.kachelZeigen(wd, h, true)}><b>${zahl(z.median)}</b></i>`
+      @click=${() => p.kachelZeigen(wd, h, true)}></i>`
     : html`<i class="ohne" title=${`${TAGE[wd]} ${stunden(h)}: ${t('keine Messung')}`}></i>`)}`);
   return html`
     <div class="glas-raster">
@@ -48,9 +74,10 @@ export function speedtest(p, d) {
             ? html`<option value=${o.server} selected>${o.server} (${t('keine Messungen im Zeitraum')})</option>` : nothing}
         </select>
       </div>
+      ${antwortleiste(d)}
       ${d.gesamt ? html`<div class="wr"><span></span>${Array.from({ length: 24 }, (_, h) => html`<span>${h % 3 ? '' : h}</span>`)}${raster}</div>
         <div class="leiste" style="justify-content:space-between"><div class="skala">${d.groesse === 'ping' ? t('langsam') : '0 %'}<i></i>${d.groesse === 'ping' ? t('schnell') : d.tarif ? t('{n} % vom Tarif', { n: 100 }) : t('typisch')}</div>
-        <span class="leise">${t('grau = keine Messung · Zahl = Median der Stunde · Tipp auf einen Tag zeigt den Verlauf · belastete Messungen {wie} (⚙) · {n} ohne Grundlast', { wie: t(BELASTET[o.grundlast]), n: d.ungeprueft })}</span></div>`
+        <span class="leise">${t('grau = keine Messung · Rahmen = jetzt · ▲ schnellste, ▼ langsamste Stunde · Tipp auf ein Feld zeigt den Median, auf einen Tag den Verlauf · belastete Messungen {wie} (⚙) · {n} ohne Grundlast', { wie: t(BELASTET[o.grundlast]), n: d.ungeprueft })}</span></div>`
         : html`<div class="leer">${t('Im gewählten Zeitraum keine Messungen.')}</div>`}
       ${d.gesamt ? tagesverlauf(p, d) : nothing}
       ${d.auffaellig ? html`<p class="hinweis"><b>${t('Auffällig:')}</b> ${d.auffaellig}</p>` : nothing}

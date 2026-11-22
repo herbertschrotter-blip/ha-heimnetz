@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## [0.38.0]
+
+- **Speedtest: Antwortleiste über dem Raster** (1.11) – vier Antworten auf einen Blick: **Jetzt typisch** (Median
+  dieser Stunde an diesem Wochentag), **wann es gleich wieder schnell bzw. langsamer wird** (nächste 12 Stunden),
+  **Tarif erreicht** (Anteil der Stunden mit mindestens 80 % vom Tarif) und **Trend** (Median je Woche). Im Raster
+  markiert ein Rahmen die jetzige Stunde, ▲ und ▼ die schnellste und langsamste; die Zahlen stehen nicht mehr in den
+  Feldern, sondern im Fenster beim Tippen.
+
 ## [0.37.0]
 
 - **Netzkarte: Fluss und Radar** (1.10) – über der Karte schaltet „🗺️ Karte · 〰️ Fluss · 📡 Radar“ um. **Fluss:**
