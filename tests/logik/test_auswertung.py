@@ -273,3 +273,56 @@ def test_antworten_ohne_tarif_und_beim_ping():
     r = _raster(lambda wd, h: 230)
     assert antworten(GROESSEN["down"], r, [], datetime(2026, 11, 22, 12), None).tarif_quote is None
     assert antworten(GROESSEN["ping"], r, [], datetime(2026, 11, 22, 12), 250).tarif_quote is None
+
+
+def _messung(t, down, ping=20.0):
+    return aw.Punkt(t.timestamp(), down, 10, ping, "S", 0, "p")
+
+
+def test_beste_und_schwaechste_nach_median_auch_ueber_dem_tarif():
+    """0.38.0 verglich die auf 0…1 gekappte Lage: über dem Tarif (bzw. ohne Tarif ab +45 % zum Median) waren alle
+    Zellen gleich, „beste“ war die erste und konnte gleich „schwächste“ sein."""
+    jetzt = MONTAG + timedelta(days=6, hours=20)
+    p = [
+        _messung(MONTAG, 150, ping=30),  # Mo 0 Uhr
+        _messung(MONTAG + timedelta(days=2, hours=12), 120, ping=40),  # Mi 12 Uhr
+        _messung(MONTAG + timedelta(days=4, hours=20), 300, ping=10),  # Fr 20 Uhr
+    ]
+    for tarif in (100, None):  # alles über dem Tarif / ohne Tarif weit über dem Median
+        a = aw.auswerten(p, jetzt.timestamp(), 0, 7, "down", "mit", None, tarif, tarif, TZ)
+        assert a.antworten.beste == (4, 20) and a.antworten.schwaechste == (2, 12), tarif
+    a = aw.auswerten(p, jetzt.timestamp(), 0, 7, "ping", "mit", None, None, 100, TZ)
+    assert a.antworten.beste == (4, 20) and a.antworten.schwaechste == (2, 12), (
+        "Ping: weniger ist besser"
+    )
+    a = aw.auswerten(p[:1], jetzt.timestamp(), 0, 7, "down", "mit", None, 100, 100, TZ)
+    assert a.antworten.beste is None and a.antworten.schwaechste is None, "nur eine Zelle"
+    gleich = [_messung(MONTAG, 150), _messung(MONTAG + timedelta(days=1), 150)]
+    a = aw.auswerten(gleich, jetzt.timestamp(), 0, 7, "down", "mit", None, 100, 100, TZ)
+    assert a.antworten.beste is None and a.antworten.schwaechste is None, "kein Unterschied"
+
+
+def test_vorschau_leer_statt_bleibt_so():
+    from logik.auswertung import GROESSEN, antworten
+
+    # nur jetzt (So 12 Uhr) gemessen: die nächsten 12 Stunden sind leer – nicht „bleibt so“
+    r = _raster(lambda wd, h: 230 if (wd, h) == (6, 12) else None)
+    a = antworten(GROESSEN["down"], r, [], datetime(2026, 11, 22, 12), 250)
+    assert a.jetzt == 230 and a.gleich_stunde is None and a.vorschau_leer
+    # Messung in 12 Stunden (Mo 0 Uhr), gleich schnell: bleibt so
+    r = _raster(lambda wd, h: 230 if (wd, h) in ((6, 12), (0, 0)) else None)
+    a = antworten(GROESSEN["down"], r, [], datetime(2026, 11, 22, 12), 250)
+    assert a.gleich_stunde is None and not a.vorschau_leer
+    # in 13 Stunden zählt nicht mehr
+    r = _raster(lambda wd, h: 230 if (wd, h) in ((6, 12), (0, 1)) else None)
+    assert antworten(GROESSEN["down"], r, [], datetime(2026, 11, 22, 12), 250).vorschau_leer
+
+
+def test_messung_kurz_nach_jetzt_zaehlt_zur_woche():
+    """`auswahl` nimmt Messungen bis 60 s nach „jetzt“ (Uhren von Ookla und HA): sie gehören in die neueste Woche."""
+    jetzt = MONTAG + timedelta(days=13, hours=12)
+    p = [_messung(MONTAG + timedelta(days=2), 100), _messung(jetzt + timedelta(seconds=30), 200)]
+    a = aw.auswerten(p, jetzt.timestamp(), 0, 28, "down", "mit", None, None, None, TZ)
+    assert (
+        a.anzahl == 2 and a.antworten.wochen == (None, None, 100, 200) and a.antworten.trend == 100
+    )

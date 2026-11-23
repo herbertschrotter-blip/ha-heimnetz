@@ -41,13 +41,19 @@ const meldeFelder = (f) => ({ art: f.art, text: f.text.trim(), kontext: f.kontex
 export function istBildDatei(datei) {
   return !!datei && (!datei.type || datei.type.startsWith('image/'));
 }
-const TITEL = {
-  ok: merke('Alles in Ordnung'),
-  warnung: merke('Hinweise'),
-  kritisch: merke('Störung'),
-  box_fehlt: merke('FRITZ!Box nicht erreichbar'),
-};
-const PUNKT = { ok: '', warnung: 'amber', kritisch: 'rot', box_fehlt: 'grau' };
+const GRUNDLAST = 'heimnetz.grundlast'; // „belastete Messungen“: Wahl bleibt in diesem Browser (keine Ablage je Nutzer)
+const GRUNDLAST_WERTE = ['aus', 'halb', 'mit'];
+/** Gemerkte Wahl „belastete Messungen“; ohne Speicher (privates Fenster) die Vorgabe. */
+function grundlastGemerkt() {
+  try {
+    const w = localStorage.getItem(GRUNDLAST);
+    return GRUNDLAST_WERTE.includes(w) ? w : 'aus';
+  } catch {
+    return 'aus';
+  }
+}
+/** Entwurf einer Meldung leer (kein Text, kein Bild)? Leere Entwürfe werden nicht gemerkt. */
+const entwurfLeer = (f) => !f || (!String(f.text || '').trim() && !(f.bilder || []).length);
 /** Stand im Kopf: heute nur die Uhrzeit, sonst Tag und Uhrzeit. */
 const standZeit = (s) => zeit(s).replace(new RegExp(`^${t('Heute {uhr}', { uhr: '' })}`), '');
 
@@ -96,7 +102,7 @@ export class HeimnetzPanel extends LitElement {
     // Reiter und Gerät beschreiben die gemeldete Stelle und bleiben; die Version ist die der Seite jetzt
     if (entwurf) this._blatt = { art: 'melden', form: { ...entwurf, version: VERSION }, vorher: null };
     this._opt = {
-      speedtest: { tage: 84, groesse: 'down', grundlast: 'aus', server: '', tag: null, datum: null, stunde: null },
+      speedtest: { tage: 84, groesse: 'down', grundlast: grundlastGemerkt(), server: '', tag: null, datum: null, stunde: null },
       geraete: { filter: 'alle', suche: '', teil: 'geraete' },
       internet: { sicht: 'haupt' }, // haupt = Zugangsart, ersatz = Ersatzzugang
       mobilfunk: { tage: 1 },
@@ -114,7 +120,19 @@ export class HeimnetzPanel extends LitElement {
       if (!pfad.some((x) => x.classList && (x.classList.contains('kpop') || x.classList.contains('kachel')))) this.kachelWeg(true);
     };
     this.addEventListener('click', this._klickDaneben);
-    this._takt = setInterval(() => this.laden(), NEU_LADEN_MS);
+    this._taktStarten();
+    // versteckter Tab: nicht abfragen; zurück: sofort laden und wieder im Takt
+    this._sichtbar = () => {
+      if (document.hidden) { clearInterval(this._takt); this._takt = null; return; }
+      if (!this._takt) { this.laden(); this._taktStarten(); }
+    };
+    document.addEventListener('visibilitychange', this._sichtbar);
+    // Esc schließt das offene Fenster (bzw. das festgehaltene Popup einer Stundenkachel)
+    this._taste = (e) => {
+      if (e.key !== 'Escape') return;
+      if (this._blatt) { e.preventDefault(); this.schliessen(); } else if (this._kachel) this.kachelWeg(true);
+    };
+    window.addEventListener('keydown', this._taste);
     // Screenshot mit Strg+V ins offene Melde-Fenster
     this._einfuegen = (e) => {
       if (!this._blatt || this._blatt.art !== 'melden') return;
@@ -133,6 +151,9 @@ export class HeimnetzPanel extends LitElement {
     clearTimeout(this._kachelTakt);
     this.removeEventListener('click', this._klickDaneben);
     clearInterval(this._takt);
+    this._takt = null;
+    document.removeEventListener('visibilitychange', this._sichtbar);
+    window.removeEventListener('keydown', this._taste);
     window.removeEventListener('paste', this._einfuegen);
     clearTimeout(this._toastZeit);
     clearTimeout(this._serieTakt);
@@ -140,8 +161,26 @@ export class HeimnetzPanel extends LitElement {
     super.disconnectedCallback();
   }
 
+  _taktStarten() {
+    clearInterval(this._takt);
+    this._takt = typeof document !== 'undefined' && document.hidden ? null : setInterval(() => this.laden(), NEU_LADEN_MS);
+  }
+
+  /** hass ändert sich bei jedem Zustand in Home Assistant: neu gezeichnet wird nur, wenn sich etwas ändert, das die
+   *  Seite zeigt – Design (hell/dunkel), Sonne (Hintergrund), Nutzer (Admin) oder Sprache. Die Daten selbst kommen über
+   *  die eigenen WebSocket-Befehle. */
+  shouldUpdate(geaendert) {
+    if (!geaendert.has('hass') || geaendert.size > 1) return true;
+    const alt = geaendert.get('hass'), neu = this.hass;
+    if (!alt || !neu) return true;
+    return alt.themes?.darkMode !== neu.themes?.darkMode || alt.states?.['sun.sun'] !== neu.states?.['sun.sun']
+      || alt.user !== neu.user || alt.language !== neu.language || alt.locale?.language !== neu.locale?.language;
+  }
+
   /** Sprache der Seite nach der Sprache des Nutzers in HA, bevor gezeichnet wird. */
   willUpdate(geaendert) {
+    // Fenster geht auf: merken, wo der Fokus war, damit er beim Schließen dorthin zurückkehrt
+    if (geaendert.has('_blatt') && !geaendert.get('_blatt') && this._blatt) this._fokusVorher = this._fokus();
     if (!geaendert.has('hass')) return;
     const vorher = sprache();
     // Sprache im Profil gewechselt: die fertigen Texte der Integration neu holen (sie kommen in der Sprache der Abfrage)
@@ -149,12 +188,36 @@ export class HeimnetzPanel extends LitElement {
   }
 
   updated(geaendert) {
+    if (geaendert.has('_blatt')) this._fensterFokus(geaendert.get('_blatt'));
     if (this._kachel && (geaendert.has('_kachel') || geaendert.has('_daten'))) this._kachelLage();
     if (geaendert.has('hass') && !geaendert.get('hass') && this.hass) this.laden();
     else if (this._sprachWechsel) { this._sprachWechsel = false; this.laden(); }
     // laufende Serie: alle 10 s neu laden, damit Fortschritt und Ergebnis zügig erscheinen
     const serie = this._daten.einstellungen && this._daten.einstellungen.serie;
     if (serie && !this._serieTakt) this._serieTakt = setTimeout(() => { this._serieTakt = null; this.laden(); }, 10_000);
+  }
+
+  /** Element mit dem Fokus in der Seite (null, wenn keins). */
+  _fokus() {
+    try {
+      return (this.shadowRoot && this.shadowRoot.activeElement) || null;
+    } catch {
+      return null; // happy-dom ohne Fokus
+    }
+  }
+
+  /** Fenster als Dialog: Titel verknüpfen, Fokus hinein beim Öffnen, zurück zum Auslöser beim Schließen. */
+  _fensterFokus(vorher) {
+    const sheet = this.shadowRoot && this.shadowRoot.querySelector('.sheet');
+    if (!sheet) return;
+    const titel = sheet.querySelector('h3');
+    if (titel) titel.id = 'blatt-titel';
+    if (this._blatt && !vorher) sheet.focus({ preventScroll: true });
+    else if (!this._blatt && vorher) {
+      const ziel = this._fokusVorher;
+      this._fokusVorher = null;
+      if (ziel && ziel.isConnected && typeof ziel.focus === 'function') ziel.focus({ preventScroll: true });
+    }
   }
 
   ws(typ, parameter = {}) {
@@ -231,6 +294,9 @@ export class HeimnetzPanel extends LitElement {
   /** Auswahl eines Reiters ändern; `laden` = neu abfragen (Filter, die nur die Anzeige betreffen, nicht). */
   setze(reiter, werte, laden = true) {
     if (reiter === 'speedtest' && laden) this._kachel = null;
+    if (reiter === 'speedtest' && werte.grundlast) {
+      try { localStorage.setItem(GRUNDLAST, werte.grundlast); } catch { /* privates Fenster: nur für jetzt */ }
+    }
     this._opt = { ...this._opt, [reiter]: { ...this._opt[reiter], ...werte } };
     if (laden) this.laden();
   }
@@ -303,6 +369,12 @@ export class HeimnetzPanel extends LitElement {
     this.laden();
   }
 
+  /** Gescrollt: ein überfahrenes Popup schließt, ein festgehaltenes bleibt und wandert mit seiner Kachel. */
+  _gescrollt() {
+    this.kachelWeg(false);
+    if (this._kachel && this._kachel.fest) this._kachelLage();
+  }
+
   kachelWeg(fest) {
     clearTimeout(this._kachelTakt);
     if (!this._kachel || (this._kachel.fest && !fest)) return;
@@ -339,6 +411,22 @@ export class HeimnetzPanel extends LitElement {
 
   zu() {
     this._blatt = null;
+  }
+
+  /** Schließen mit Esc oder Tipp auf den Schleier: ein Melde-Entwurf bleibt gemerkt (verworfen wird er nur mit ✕,
+   *  „Abbrechen“ oder beim Senden), die GitHub-Vorschau führt zurück zum Formular, das große Bild eines Tickets zurück
+   *  zur Liste. */
+  schliessen() {
+    const art = this._blatt && this._blatt.art;
+    if (art === 'github') this.githubZurueck();
+    else if (art === 'melden') {
+      const { sendet, fehler, ...form } = this._blatt.form;
+      this._entwurfZu = entwurfLeer(form) ? null : form; // samt Bildern, auch wenn der Browser-Speicher sie nicht fasst
+      this.entwurfMerken();
+      this._blatt = this._blatt.vorher || null;
+    }
+    else if (art === 'bild') this.meldungenOeffnen();
+    else this.zu();
   }
 
   // ── Wächter (18.11.2026) ──
@@ -708,7 +796,11 @@ export class HeimnetzPanel extends LitElement {
     const reiter = t((REITER.find(([k]) => k === this._reiter) || [, this._reiter])[1]);
     const kontext = [reiter, this._teilText(),
       this._blatt ? t('Dialog „{art}“', { art: this._blatt.art }) : ''].filter(Boolean).join(' · ');
-    const form = { art: 'fehler', text: '', kontext, version: VERSION, geraet: this.narrow ? t('Handy') : 'Desktop', stand: true, zelle: false, bilder: [] };
+    // ein gemerkter (nicht leerer) Entwurf geht weiter, die Version ist die der Seite jetzt
+    const entwurf = this._entwurfZu || this._entwurfLesen();
+    this._entwurfZu = null;
+    const form = entwurf ? { ...entwurf, version: VERSION }
+      : { art: 'fehler', text: '', kontext, version: VERSION, geraet: this.narrow ? t('Handy') : 'Desktop', stand: true, zelle: false, bilder: [] };
     this._blatt = { art: 'melden', form, vorher: this._blatt };
     this.entwurfMerken();
   }
@@ -774,6 +866,7 @@ export class HeimnetzPanel extends LitElement {
     const b = this._blatt && this._blatt.art === 'github' ? this._blatt.vorher : this._blatt;
     if (!b || b.art !== 'melden') return;
     const { sendet, fehler, ...form } = b.form;
+    if (entwurfLeer(form)) { this._entwurfWeg(); return; }
     try {
       sessionStorage.setItem(ENTWURF, JSON.stringify(form));
     } catch {
@@ -785,13 +878,14 @@ export class HeimnetzPanel extends LitElement {
   _entwurfLesen() {
     try {
       const f = JSON.parse(sessionStorage.getItem(ENTWURF) || 'null');
-      return f && typeof f.text === 'string' && Array.isArray(f.bilder) ? f : null;
+      return f && typeof f.text === 'string' && Array.isArray(f.bilder) && !entwurfLeer(f) ? f : null;
     } catch {
       return null;
     }
   }
 
   _entwurfWeg() {
+    this._entwurfZu = null;
     try { sessionStorage.removeItem(ENTWURF); } catch { /* nichts gemerkt */ }
   }
 
@@ -934,7 +1028,13 @@ export class HeimnetzPanel extends LitElement {
     }
   }
 
+  /** Rückfrage vor dem Löschen eines Tickets zeigen (`m`) oder zurücknehmen (null) – wie bei einer Messung. */
+  meldungFrage(m) {
+    if (this._blatt && this._blatt.art === 'meldungen') this._blatt = { ...this._blatt, frage: m ? m.id : null };
+  }
+
   async meldungLoeschen(m) {
+    if (this._blatt && this._blatt.art === 'meldungen') this._blatt = { ...this._blatt, frage: null };
     try {
       await this.ws('meldung/loeschen', { meldung_id: m.id });
       this.toast(t('{ticket} gelöscht', { ticket: m.ticket }));
@@ -1004,30 +1104,38 @@ export class HeimnetzPanel extends LitElement {
   }
 
   _kopf(u) {
-    if (!u) return html`<div class="glas-panel glas-kopf"><div class="glas-klein">Heimnetz</div><div class="leise">${t('lädt …')}</div></div>`;
-    const befunde = u.befunde || [];
-    const kritisch = befunde.filter((b) => b.stufe === 'kritisch').length;
-    const warnung = befunde.filter((b) => b.stufe === 'warnung').length;
+    if (!u) {
+      return html`<div class="glas-panel glas-kopf"><div class="glas-klein">Heimnetz</div>${this._fehler ? nothing : html`<div class="leise">${t('lädt …')}</div>`}</div>`;
+    }
+    // Gesamtstand, Wortlaut und Zahlen liefert die Integration (heimnetz/uebersicht → kopf) – derselbe wie in der Übersicht
+    const k = u.kopf || { punkt: 'grau', wort: '', chips: [] };
     const unter = !u.box_erreichbar
       ? t('Die Box antwortet nicht · Home Assistant versucht es jede Minute')
       : [u.zugang ? u.zugang.kopf : u.internet && u.internet.technik, u.internet && u.internet.ok ? t('Internet erreichbar') : t('kein Internet')]
         .filter(Boolean).join(' · ');
+    const befunde = () => { this.geh('uebersicht'); this.befundeOeffnen(); };
     return html`
       <div class="glas-panel glas-kopf">
         <div>
           <div class="glas-klein">Heimnetz · ${t('Stand {zeit}', { zeit: standZeit(u.stand) })}</div>
           <div class="kopf-titel" style="margin-top:6px">
-            <span class="punkt ${PUNKT[u.gesamt] ?? 'grau'}"></span>
-            <span class="glas-kw" style="font-size:30px">${TITEL[u.gesamt] ? t(TITEL[u.gesamt]) : u.gesamt}</span>
+            <span class="punkt ${k.punkt}"></span>
+            <span class="glas-kw" style="font-size:30px">${k.wort}</span>
           </div>
           <div class="leise" style="margin-top:6px">${unter}</div>
         </div>
         <div class="chips">
-          ${kritisch ? html`<button class="chip glas-panel rot" @click=${() => { this.geh('uebersicht'); this.befundeOeffnen(); }}>● ${t(kritisch > 1 ? '{n} Störungen' : '{n} Störung', { n: kritisch })}</button>` : nothing}
-          ${warnung ? html`<button class="chip glas-panel amber" @click=${() => { this.geh('uebersicht'); this.befundeOeffnen(); }}>⚠ ${t(warnung > 1 ? '{n} Hinweise' : '{n} Hinweis', { n: warnung })}</button>` : nothing}
-          <button class="chip glas-panel" title=${t('Einstellungen')} @click=${() => this.einstellungenOeffnen()}>⚙</button>
+          ${(k.chips || []).map((c) => html`<button class="chip glas-panel ${c.art}" @click=${befunde}>${c.art === 'rot' ? '●' : '⚠'} ${c.text}</button>`)}
+          <button class="chip glas-panel" title=${t('Einstellungen')} aria-label=${t('Einstellungen')} @click=${() => this.einstellungenOeffnen()}>⚙</button>
         </div>
       </div>`;
+  }
+
+  /** Daten nicht abrufbar: Meldung mit „Erneut versuchen“ (statt endlos „lädt …“). */
+  _fehlerBand() {
+    if (!this._fehler) return nothing;
+    return html`<div class="glas-panel fehler-band" role="alert"><span>${t('Daten nicht abrufbar: {fehler}', { fehler: this._fehler })}</span>
+      <button class="knopf" ?disabled=${this._laedt} @click=${() => this.laden()}>${this._laedt ? t('lädt …') : t('Erneut versuchen')}</button></div>`;
   }
 
   _blattInhalt() {
@@ -1052,17 +1160,18 @@ export class HeimnetzPanel extends LitElement {
           ${this.narrow
             ? html`<button class="menue-knopf glas-panel" title=${t('Menü')} @click=${() => this.dispatchEvent(new Event('hass-toggle-menu', { bubbles: true, composed: true }))}>☰</button>`
             : nothing}
-          <nav class="glas-nav glas-panel sieben">
-            ${REITER.map(([k, name]) => html`<button class=${k === this._reiter ? 'on' : ''} data-symbol=${SYMBOL[k]} title=${t(name)} aria-label=${t(name)} @click=${() => this.geh(k)}><span class="nt">${t(name)}</span></button>`)}
+          <nav class="glas-nav glas-panel sieben" aria-label=${t('Reiter')}>
+            ${REITER.map(([k, name]) => html`<button class=${k === this._reiter ? 'on' : ''} aria-current=${k === this._reiter ? 'page' : 'false'} data-symbol=${SYMBOL[k]} title=${t(name)} aria-label=${t(name)} @click=${() => this.geh(k)}><span class="nt">${t(name)}</span></button>`)}
           </nav>
-          ${karte ? netzkarte(this, this._daten.netzkarte, u, this._fehler) : html`<div class="scroll" @scroll=${() => this.kachelWeg(true)}><div class="seite ${this._laedt ? 'laden' : ''}">
+          ${karte ? netzkarte(this, this._daten.netzkarte, u, this._fehler) : html`<div class="scroll" @scroll=${() => this._gescrollt()}><div class="seite ${this._laedt ? 'laden' : ''}">
             ${this._reiter === 'uebersicht' && u ? nothing : this._kopf(u)}
-            ${this._fehler ? html`<div class="glas-panel fehler-band">${t('Daten nicht abrufbar: {fehler}', { fehler: this._fehler })}</div>` : nothing}
-            ${daten || this._reiter === 'geraete' ? ansicht(this, daten) : html`<div class="glas-panel block"><div class="leer">${t('lädt …')}</div></div>`}
+            ${this._fehlerBand()}
+            ${daten || (this._reiter === 'geraete' && !this._fehler) ? ansicht(this, daten) : this._fehler ? nothing : html`<div class="glas-panel block"><div class="leer">${t('lädt …')}</div></div>`}
             <div class="leise" style="text-align:center;padding:8px">Heimnetz ${VERSION}</div>
           </div></div>`}
-          <div class="schleier ${this._blatt ? 'an' : ''}" @click=${() => this.zu()}></div>
-          <div class="sheet glas-panel ${this._blatt ? 'an' : ''} ${['einstellungen', 'waechter'].includes(this._blatt?.art) ? 'breit' : ''}">${this._blatt && !['melden', 'github'].includes(this._blatt.art) ? meldenKnopf(this, true) : nothing}${this._blattInhalt()}</div>
+          <div class="schleier ${this._blatt ? 'an' : ''}" @click=${() => this.schliessen()}></div>
+          <div class="sheet glas-panel ${this._blatt ? 'an' : ''} ${['einstellungen', 'waechter'].includes(this._blatt?.art) ? 'breit' : ''}" role="dialog" aria-modal="true"
+            aria-labelledby="blatt-titel" tabindex="-1" ?inert=${!this._blatt} aria-hidden=${this._blatt ? 'false' : 'true'}>${this._blatt && !['melden', 'github'].includes(this._blatt.art) ? meldenKnopf(this, true) : nothing}${this._blattInhalt()}</div>
           ${this._blatt ? nothing : meldenKnopf(this)}
           <div class="toast glas-panel ${this._toast ? 'an' : ''}" role="status">${this._toast}</div>
           ${this._kachel && this._reiter === 'speedtest' ? kachelPopup(this) : nothing}

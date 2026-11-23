@@ -12,6 +12,13 @@ from tests.logik.daten import GERAETELOG, HOSTLISTE, MESH, WLANLISTE, ZELLEN
 ZUGANG = bx.Zugang("192.0.2.1", 49000, "u", "geheim", False)
 
 
+@pytest.fixture(autouse=True)
+def box_antwortet():
+    """Die TCP-Prüfung vor dem Verbinden gelingt – außer ein Test stellt `side_effect` anders ein."""
+    with patch.object(bx, "_tcp_pruefen") as tcp:
+        yield tcp
+
+
 class Antwort:
     def __init__(self, inhalt: bytes | Exception) -> None:
         self.inhalt = inhalt
@@ -329,7 +336,7 @@ DSL_ANTWORTEN = {
     ("Layer3Forwarding1", "GetDefaultConnectionService"): {
         "NewDefaultConnectionService": "1.WANPPPConnection.1"
     },
-    ("WANPPPConnection1", "GetExternalIPAddress"): {"NewExternalIPAddress": "84.115.20.7"},
+    ("WANPPPConnection1", "GetExternalIPAddress"): {"NewExternalIPAddress": "203.0.113.7"},
 }
 FASER_ANTWORTEN = {
     ("WANCommonInterfaceConfig1", "GetCommonLinkProperties"): {
@@ -417,3 +424,93 @@ def test_zugang_glasfaser_ohne_seriennummer():
     f = d.faser
     assert (f.rx, f.rx_min, f.rx_max, f.tx, f.minuten) == (-19_400, -28_000, -8_000, 2_100, 30_240)
     assert "SN-NIE-ZEIGEN" not in repr(d)
+
+
+def test_box_weg_tcp_pruefung_statt_fritzconnection(box_antwortet):
+    """Box nicht erreichbar: jedes Mal nur die billige TCP-Prüfung – fritzconnection (protokolliert ERROR) wird gar
+    nicht gefragt. Kommt die Box zurück (z. B. nach einem Neustart), wird sofort verbunden, ohne Pause."""
+    box_antwortet.side_effect = ConnectionRefusedError("refused 192.0.2.1")
+    b = bx.Box(ZUGANG)
+    jetzt = [1000.0]
+    with (
+        patch.object(bx, "FritzConnection") as fc,
+        patch.object(bx.time, "monotonic", side_effect=lambda: jetzt[0]),
+    ):
+        for _ in range(5):
+            with pytest.raises(bx.NichtErreichbar) as fehler:
+                b.verbinden()
+            assert "192.0.2.1" not in str(fehler.value)
+            jetzt[0] += 60
+        assert box_antwortet.call_count == 5, "TCP-Prüfung jedes Mal erlaubt"
+        fc.assert_not_called()
+        box_antwortet.side_effect = None  # wieder da: beim nächsten Abruf verbinden
+        b.verbinden()
+        fc.assert_called_once()
+        assert b._fehlversuche == 0  # noqa: SLF001
+
+
+def test_pause_nur_nach_gescheitertem_aufbau_von_fritzconnection(box_antwortet):
+    """TCP gelingt, fritzconnection scheitert: Pausen von 1, 2 und 5 Minuten ohne neuen Aufbau (kein ERROR jede
+    Minute). Ist die Box dazwischen ganz weg (TCP scheitert), beginnt nach ihrer Rückkehr alles von vorn."""
+    b = bx.Box(ZUGANG)
+    jetzt = [1000.0]
+    with (
+        patch.object(bx, "FritzConnection", side_effect=ConnectTimeout("weg")) as fc,
+        patch.object(bx.time, "monotonic", side_effect=lambda: jetzt[0]),
+    ):
+        for n, pause in enumerate(bx.PAUSEN_S + (bx.PAUSEN_S[-1],), start=1):
+            with pytest.raises(bx.NichtErreichbar):
+                b.verbinden()
+            assert fc.call_count == n
+            jetzt[0] += pause - 1  # in der Pause: kein neuer Aufbau
+            with pytest.raises(bx.NichtErreichbar):
+                b.verbinden()
+            assert fc.call_count == n
+            jetzt[0] += 1
+        # Box startet neu: TCP scheitert, danach ist sie gleich wieder da – kein Warten auf die alte Pause
+        with pytest.raises(bx.NichtErreichbar):
+            b.verbinden()  # Aufbau scheitert noch einmal → 5 Minuten Pause
+        box_antwortet.side_effect = ConnectionRefusedError("weg")
+        jetzt[0] += 60
+        with pytest.raises(bx.NichtErreichbar):
+            b.verbinden()
+        box_antwortet.side_effect = None
+        fc.side_effect = None
+        jetzt[0] += 60
+        vorher = fc.call_count
+        b.verbinden()
+        assert fc.call_count == vorher + 1, "nach der Rückkehr sofort verbunden"
+
+
+def test_teilausfall_baut_frische_verbindung_nicht_gleich_neu_auf():
+    b = bx.Box(ZUGANG)
+    jetzt = [1000.0]
+    with (
+        patch.object(bx, "FritzConnection") as fc,
+        patch.object(bx.time, "monotonic", side_effect=lambda: jetzt[0]),
+    ):
+        b.verbinden()
+        b.trennen_nach_fehler()  # eben erst verbunden: behalten
+        b.verbinden()
+        assert fc.call_count == 1
+        jetzt[0] += bx.VERBINDUNG_HALTEN_S
+        b.trennen_nach_fehler()  # alte Verbindung: neu aufbauen
+        b.verbinden()
+        assert fc.call_count == 2
+
+
+def test_nach_schliessen_mitten_im_abruf_kein_fehler_nach_aussen():
+    """Entladen während des Abrufs: die übrigen Teile fallen weg, `holen` wirft nicht (NichtErreichbar in `teil`)."""
+    b = bx.Box(ZUGANG)
+    fc = fake_box(AKTIONEN, DATEIEN)
+    original = fc.call_action.side_effect
+
+    def schliessen_dann_antworten(dienst, aktion, arguments=None):
+        if (dienst, aktion) == ("Hosts1", "X_AVM-DE_GetHostListPath"):
+            b.schliessen()
+        return original(dienst, aktion, arguments)
+
+    fc.call_action.side_effect = schliessen_dann_antworten
+    with patch.object(bx, "FritzConnection", return_value=fc):
+        d = b.holen(langsam=False, mobil_fragen=True, router="192.0.2.1", sprache="de")
+    assert d.protokoll is not None and d.zaehler is None and d.fehler

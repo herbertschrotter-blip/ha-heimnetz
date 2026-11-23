@@ -64,19 +64,24 @@ async def erkennen_aus(lauf: Lauf, hass: HomeAssistant, startseite: str) -> ve.E
 
 
 async def baustein_neustarten(
-    hass: HomeAssistant, lauf: Lauf, baustein: str, kennwort: str | None
-) -> bool:
-    """Wächter (Stufe 1): das vorgeschaltete Gerät sanft neu starten (logik.waechter.SANFT). Nie eine Einstellung."""
+    hass: HomeAssistant, lauf: Lauf, erkennung: ve.Erkennung, kennwort: str | None
+) -> str:
+    """Wächter (Stufe 1): das vorgeschaltete Gerät sanft neu starten (logik.waechter.SANFT). Nie eine Einstellung.
+    Zurück: „ok“ (angenommen), „abgelehnt“ (Kennwort – kein weiterer Versuch), „fehler“, „integration“ (eine
+    HA-Integration ist für das Gerät eingerichtet: nicht selbst anmelden, das stört deren Sitzung)."""
+    b = erkennung.b
+    if b.integration and integrationen.eingerichtet(hass, b.integration):
+        return "integration"
     try:
-        if baustein == "zte_goform":
+        if erkennung.baustein == "zte_goform":
             return await zte.goform_neustarten(lauf, kennwort)
-        if baustein == "huawei_hilink":
+        if erkennung.baustein == "huawei_hilink":
             return await hass.async_add_executor_job(huawei.neustarten, lauf, kennwort)
-        if baustein == "tplink":
+        if erkennung.baustein == "tplink":
             return await hass.async_add_executor_job(tplink.neustarten, lauf, kennwort)
     except ImportError:
         LOGGER.warning("Heimnetz: Bibliothek für den Neustart fehlt")
-    return False
+    return "fehler"
 
 
 async def baustein_lesen(
@@ -128,6 +133,12 @@ class Dienst:
     lesen_noetig: bool = False  # neue Wahl oder neues Kennwort: gleich lesen
     aufgabe: asyncio.Task[None] | None = None
     _abgelehnt: str | None = None  # Hash von Adresse und abgelehntem Kennwort (nur im Speicher)
+    # Adresse, an der das hinterlegte Kennwort zuerst angenommen wurde (ohne gespeicherte Adresse gilt es nur dort;
+    # die Adresse merkt sich der Abruf im Gedächtnis, das Kennwort nie)
+    kennwort_bei: str | None = None
+    # Hash des zuletzt gesehenen hinterlegten Kennworts (nur im Speicher): ändert es sich, gilt die Bindung nicht mehr
+    _kennwort_zuletzt: str | None = None
+    _kennwort_gesehen: bool = False
     _fehlt_seit: int = 0  # so viele Takte hintereinander nicht erreichbar
 
     def faellig(self, jetzt: float) -> bool:
@@ -146,6 +157,40 @@ class Dienst:
     def kennwort_abgelehnt(self, adresse: str, kennwort: str | None) -> bool:
         """Wurde genau dieses Kennwort an dieser Adresse schon abgelehnt? (für die 🔬 Diagnose)"""
         return bool(kennwort) and _kennwort_marke(adresse, kennwort or "") == self._abgelehnt
+
+    def bindung_loesen(self) -> None:
+        """Neues Kennwort oder neue Adresse unter ⚙ › Zugang: das Kennwort ist an keine Adresse mehr gebunden (es gilt
+        dann an der gespeicherten bzw. wird an der ersten Adresse, die es annimmt, neu gebunden)."""
+        self.kennwort_bei = None
+
+    def _kennwort_sehen(self, kennwort: str | None) -> None:
+        """Hat sich das hinterlegte Kennwort geändert (auch ohne ⚙ › Zugang), gilt die alte Bindung nicht mehr. Gemerkt
+        wird nur ein Hash, nie das Kennwort; nach dem Start gilt die gemerkte Bindung weiter."""
+        marke = hashlib.sha256(f"kennwort\0{kennwort}".encode()).hexdigest() if kennwort else None
+        if self._kennwort_gesehen and marke != self._kennwort_zuletzt:
+            self.kennwort_bei = None
+        self._kennwort_zuletzt, self._kennwort_gesehen = marke, True
+
+    def kennwort_fuer(
+        self, adresse: str, kennwort: str | None, gespeichert: str | None
+    ) -> str | None:
+        """Das hinterlegte Kennwort, wenn es an diese Adresse darf: nur an die gespeicherte bzw. die, an der es schon
+        angenommen wurde, und nie eines, das das Gerät an dieser Adresse schon abgelehnt hat. Sonst None."""
+        self._kennwort_sehen(kennwort)
+        if not kennwort or self.kennwort_abgelehnt(adresse, kennwort):
+            return None
+        return kennwort if ve.kennwort_erlaubt(adresse, gespeichert, self.kennwort_bei) else None
+
+    def anmeldung_gesehen(self, adresse: str, kennwort: str | None, ergebnis: str) -> None:
+        """Ergebnis einer Anmeldung merken: abgelehnt → nicht wieder (bis ein anderes Kennwort eingetragen ist);
+        angenommen → das Kennwort gilt für diese Adresse."""
+        if not kennwort:
+            return
+        if ergebnis == "abgelehnt":
+            self._abgelehnt = _kennwort_marke(adresse, kennwort)
+        elif ergebnis == "ok":
+            self._abgelehnt = None
+            self.kennwort_bei = self.kennwort_bei or adresse
 
     def anstossen(self, *, suchen: bool = False) -> None:
         self.lesen_noetig = True
@@ -216,7 +261,9 @@ class Dienst:
                 befund = "nicht_gefunden" if self.treffer else "nicht_gesucht"
                 self.stand = ve.Modemstand("", None, None, befund, jetzt)
                 return self.stand
-            self.stand = await self._lesen(self.adresse, self.gemerkt, kennwort, sprache, jetzt)
+            self.stand = await self._lesen(
+                self.adresse, self.gemerkt, kennwort, sprache, jetzt, gespeichert
+            )
             return self.stand
 
     async def _lesen(
@@ -226,14 +273,19 @@ class Dienst:
         kennwort: str | None,
         sprache: str,
         jetzt: float,
+        gespeichert: str | None = None,
     ) -> ve.Modemstand:
+        self._kennwort_sehen(kennwort)
         marke = _kennwort_marke(adresse, kennwort) if kennwort else None
         abgelehnt = marke is not None and marke == self._abgelehnt
+        # das Kennwort nur an die Adresse, für die es gilt – an anderen nur ohne Anmeldung lesen
+        fremd = bool(kennwort) and not ve.kennwort_erlaubt(adresse, gespeichert, self.kennwort_bei)
         async with netz.neue_session(aiohttp.ClientTimeout(total=GESAMT_S)) as session:
             lauf = Lauf(session, adresse, sprache, roh=False)
             try:
                 lesung, quelle, erkennung = await asyncio.wait_for(
-                    self._mit_startseite(lauf, erkennung, None if abgelehnt else kennwort), GESAMT_S
+                    self._mit_startseite(lauf, erkennung, None if abgelehnt or fremd else kennwort),
+                    GESAMT_S,
                 )
             except TimeoutError:
                 lesung, quelle = zte.Lesung(befund="nicht_erreichbar"), "geraet"
@@ -246,8 +298,10 @@ class Dienst:
         elif abgelehnt and lesung.befund in (None, "ohne_kennwort", "keine_werte"):
             # bleibt, bis ein anderes Kennwort eingetragen ist
             lesung.befund = "anmeldung_abgelehnt"
+        elif fremd and lesung.befund in (None, "ohne_kennwort", "keine_werte"):
+            lesung.befund = "kennwort_andere_adresse"
         elif lesung.angemeldet:
-            self._abgelehnt = None
+            self.anmeldung_gesehen(adresse, kennwort, "ok")
         self._fehlt_seit = self._fehlt_seit + 1 if lesung.befund == "nicht_erreichbar" else 0
         return ve.Modemstand(
             adresse,

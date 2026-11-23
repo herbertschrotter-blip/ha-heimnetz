@@ -57,7 +57,7 @@ test('alles gut: bereit, kein Schalten', () => {
   d.minuten(30);
   assert.equal(d.status().zustand, 'bereit');
   assert.equal(d.schaltungen.length, 0);
-  assert.equal(d.status().wv, 2);
+  assert.equal(d.status().wv, 3);
 });
 
 test('Internet weg: erst nach 12 min Strom aus mit von selbst wieder ein', () => {
@@ -229,4 +229,102 @@ test('Home Assistant: ein einzelner Aussetzer des Beobachters kürzt die Warteze
   d.netz['192.168.178.60:4357'] = false;
   d.minuten(3);
   assert.equal(d.schaltungen.length, 1, 'drei Runden ohne Beobachter: der Pi ist weg');
+});
+
+// ── Stufe 1 (Heimnetz, sanft) und Stufe 2 (Steckdose) zusammen (Herbert, 23.11.2026: „Pause + nur hängendes Gerät“) ──
+
+const MODEM = '192.168.0.1';
+const ROUTER = '192.168.178.1';
+const DOSE_MODEM = '192.168.178.41';
+
+// Kette Modem → Router mit je einer Steckdose; beide sehen dasselbe Netz und dieselbe Uhr
+function kette(netz) {
+  const basis = { ...BOX, anzahl: 2 };
+  const m = steckdose({ ...basis, pos: 0, eigen: `http://${MODEM}`, nach: `http://${ROUTER}` }, netz);
+  const r = steckdose({ ...basis, pos: 1, eigen: `http://${ROUTER}`, vor: `http://${MODEM}`, partner: DOSE_MODEM }, netz);
+  for (const d of [m, r]) d.befehl('keiner', 0); // Grundlage wie nach dem Einspielen
+  let n = 0;
+  const k = {
+    m, r, minute: 0, schaltet: [],
+    // Heimnetz meldet einen sanften Neustart an alle Steckdosen der Kette (waechter.py:_halt)
+    sanft(min = 5) { n += 1; for (const d of [m, r]) d.befehl('sanft', n, { min, grund: 'x' }); },
+    minuten(z, jeMinute = () => {}) {
+      for (let i = 0; i < z; i++) {
+        k.minute += 1;
+        jeMinute(k.minute);
+        for (const [name, d] of [['modem', m], ['router', r]]) {
+          const vorher = d.schaltungen.length;
+          d.minuten(1);
+          if (d.schaltungen.length > vorher) k.schaltet.push([name, k.minute]);
+          d.output = true; // schaltet von selbst wieder ein
+        }
+        r.partner = true;
+      }
+    },
+  };
+  return k;
+}
+
+test('Kette: Internet weg, beide antworten – sanfte Neustarts halten die Steckdosen an, die Modem-Steckdose schaltet nach der Pause', () => {
+  const netz = { ...ALLE_WEG };
+  const k = kette(netz);
+  k.minuten(30, (t) => {
+    if (t === 5) k.sanft(); // Stufe 1: Modem
+    netz[MODEM] = !(t >= 5 && t < 8); // Modem startet neu
+    if (t === 10) k.sanft(); // Stufe 1: Router
+    netz[ROUTER] = !(t >= 10 && t < 13); // Router startet neu
+  });
+  const router = k.schaltet.filter(([n]) => n === 'router').map(([, t]) => t);
+  const modem = k.schaltet.filter(([n]) => n === 'modem').map(([, t]) => t);
+  assert.ok(!router.some((t) => t < 24), `Router-Steckdose nie mitten in den sanften Neustart (${router})`);
+  assert.equal(modem[0], 15, 'Modem-Steckdose gleich nach der Pause, nicht erst nach 25 min (kein falsches „ok“)');
+  assert.ok(!k.m.status().letzte.some((e) => e.was === 'ok'), 'ein Nachbar im Neustart ist kein „wieder in Ordnung“');
+  assert.ok(k.m.status().letzte.some((e) => e.was === 'sanft'));
+});
+
+test('Pause: Zustand „sanft“, Startzeit der Störung bleibt, kein Schalten; min 0 beendet sie', () => {
+  const d = steckdose(BOX, { ...ALLE_WEG });
+  d.befehl('keiner', 0);
+  d.minuten(10);
+  const seit = d.status().stoer_s;
+  d.befehl('sanft', 1, { min: 5, grund: 'fritzbox' });
+  d.minuten(4);
+  assert.equal(d.status().zustand, 'sanft');
+  assert.equal(d.status().stoer_s, seit + 4 * 60, 'Startzeit der Störung behalten');
+  assert.equal(d.schaltungen.length, 0, 'in der Pause nicht schalten, auch nach mehr als 12 min');
+  d.befehl('sanft', 2, { min: 0 });
+  d.minuten(1);
+  assert.equal(d.schaltungen.length, 1, 'Pause beendet: gleich schalten, die Störung läuft ja schon');
+});
+
+test('Pause endet von selbst nach der gemeldeten Zeit; höchstens 30 min', () => {
+  const d = steckdose(BOX, { ...ALLE_WEG });
+  d.befehl('keiner', 0);
+  d.minuten(1);
+  d.befehl('sanft', 1, { min: 600 });
+  d.minuten(30);
+  assert.equal(d.schaltungen.length, 0);
+  d.minuten(2);
+  assert.equal(d.schaltungen.length, 1);
+});
+
+test('Wechsel des Grunds: der größere Faktor bleibt (Router startet sanft neu, nachdem das Internet weg war)', () => {
+  const netz = { ...ALLE_WEG };
+  const router = { ...BOX, pos: 1, anzahl: 2, eigen: `http://${ROUTER}`, vor: `http://${MODEM}` };
+  const d = steckdose(router, netz);
+  d.minuten(10); // inet_weg, Faktor 2 → 24 min
+  netz[ROUTER] = false; // Router antwortet nicht mehr: router_weg (Faktor 1)
+  d.minuten(10);
+  assert.equal(d.status().grund, 'router_weg');
+  assert.equal(d.schaltungen.length, 0, 'nicht nach 12 min, die längere Wartezeit gilt weiter');
+  d.minuten(5);
+  assert.equal(d.schaltungen.length, 1);
+});
+
+test('Router antwortet nicht, bevor eine Störung lief: die Modem-Steckdose bleibt bereit (Sache der Router-Steckdose)', () => {
+  const k = kette({ ...ALLE_WEG, [ROUTER]: false });
+  k.minuten(30);
+  assert.equal(k.m.status().zustand, 'bereit');
+  assert.ok(!k.schaltet.some(([n]) => n === 'modem'));
+  assert.ok(k.schaltet.some(([n]) => n === 'router'));
 });

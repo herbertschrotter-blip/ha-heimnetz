@@ -239,8 +239,10 @@ def test_neues_geraet_hoechstens_einmal():
     lauf(b("Pi", True))  # Box vergisst Fremd …
     lauf(b("Pi", True))
     lauf(b("Pi", True))
-    assert "Fremd" not in lauf.w.geraete and "Fremd" in lauf.w.bekannt
+    assert lauf.w.geraete["Fremd"].stand == wn.WEG and "Fremd" in lauf.w.bekannt
     assert lauf(b("Pi", True), b("Fremd", True)).neu == (), "… und kennt es wieder: nicht neu"
+    lauf.w.geraete.clear()  # auch vergessen (nach HA-Neustart) bleibt es bekannt
+    assert lauf(b("Pi", True), b("Fremd", True)).neu == ()
     assert Lauf(einst(neu=False))(b("Fremd", True)).neu == ()
 
 
@@ -267,12 +269,17 @@ def test_leere_oder_geschrumpfte_tabelle_gilt_als_luecke():
         assert lauf(*alle[:3]).neu == ()  # stark geschrumpft
     assert len(lauf.w.geraete) == 10, "Zustände bleiben"
     assert lauf(*alle).neu == (), "keine Welle „neu“ oder „offline“"
-    teil = alle[:6]  # 60 %: brauchbar, die fehlenden vergisst er erst nach drei vollen Abrufen
-    lauf(*teil)
-    lauf(*teil)
-    assert len(lauf.w.geraete) == 10
-    lauf(*teil)
-    assert len(lauf.w.geraete) == 6
+    teil = alle[
+        :6
+    ]  # 60 %: brauchbar, die fehlenden gelten als offline (die Box hat sie herausgenommen)
+    assert lauf(*teil).neu == ()
+    assert lauf(*teil).neu == ()
+    erg = lauf(*teil)  # nach der Verzögerung (2 min)
+    assert sorted(arten(erg)) == [("offline", f"G{i}") for i in range(6, 10)]
+    for _ in range(5):
+        assert lauf(*teil).neu == ()
+    assert len(lauf.w.geraete) == 10, "gemeldete bleiben, bis sie zurückkommen"
+    assert arten(lauf(*alle[:7])) == [("online", "G6")]
 
 
 def test_schonfrist_nach_box_ausfall():
@@ -323,3 +330,90 @@ def test_dauer_und_ereignis_ohne_adresse():
     d = m.ereignis("de", UTC)
     assert "00:11:22" not in str(d) and d["geraet"].startswith("Gerät") and d["dauer"] == 300
     assert wn.test(T0).text("en", UTC).startswith("Test message")
+
+
+def test_aufgeraeumte_tabelle_gilt_nach_dauerhaft_kleiner():
+    """Räumt der Besitzer die Geräteliste der Box auf (100 → 40), gilt die neue Größe nach DAUERHAFT_S – vorher waren
+    alle Abrufe danach Lücken und es kam bis zum Neustart keine Warnung mehr."""
+    lauf = Lauf(einst(verzoegerung=2))
+    alle = [b(f"G{i}", True) for i in range(100)]
+    lauf(*alle)
+    rest = alle[:40]
+    schritte = int(wn.DAUERHAFT_S // MIN)
+    for _ in range(schritte):
+        assert lauf(*rest).neu == ()
+    assert lauf.w.luecke, "kürzer als DAUERHAFT_S: noch eine Lücke"
+    assert lauf(*rest).neu == () and not lauf.w.luecke and lauf.w.voll == 40
+    # die herausgenommenen waren online: sie gelten nach der Frist als offline (hier echt verschwunden)
+    erg = lauf(*rest, schritt=2 * MIN)
+    assert len(erg.neu) == 60 and {m.art for m in erg.neu} == {"offline"}
+    # danach wirken Warnungen wieder normal
+    lauf(*rest[1:], b("G0", False))
+    assert arten(lauf(*rest[1:], b("G0", False), schritt=2 * MIN)) == [("offline", "G0")]
+    # eine Lücke (leer oder Box weg) setzt die Zählung zurück
+    lauf2 = Lauf()
+    lauf2(*alle)
+    for i in range(schritte * 2):
+        lauf2(*(rest if i % 10 else []))
+    assert lauf2.w.luecke and lauf2.w.voll == 100
+
+
+def test_gemeldet_dann_aus_der_tabelle_und_zurueck():
+    """(A) Offline gemeldet, die Box nimmt es aus der Liste, später zurück: „wieder online“ mit voller Dauer."""
+    lauf = Lauf(einst(verzoegerung=2))
+    basis = [b(f"G{i}", True) for i in range(9)]
+    lauf(*basis, b("Kamera", True))
+    lauf(*basis, b("Kamera", False))
+    lauf(*basis, b("Kamera", False))
+    assert arten(lauf(*basis, b("Kamera", False))) == [("offline", "Kamera")]
+    for _ in range(10):
+        assert lauf(*basis).neu == ()
+    assert lauf.w.geraete["Kamera"].stand == wn.GEMELDET
+    erg = lauf(*basis, b("Kamera", True))
+    assert arten(erg) == [("online", "Kamera")] and erg.neu[0].dauer_s == 13 * MIN
+    # sehr lange weg: vergessen, die Rückkehr bleibt still
+    lauf(*basis, b("Kamera", False))
+    lauf(*basis, b("Kamera", False), schritt=3 * MIN)
+    lauf(*basis, schritt=wn.VERGESSEN_S)
+    assert "Kamera" not in lauf.w.geraete
+    assert lauf(*basis, b("Kamera", True)).neu == ()
+
+
+def test_weg_und_aus_der_tabelle_vor_der_verzoegerung():
+    """(B) Fällt ein weggehendes Gerät vor Ablauf der Verzögerung aus der Liste, wird es trotzdem gemeldet; ein
+    stilles („aus“) wird wie bisher nach FEHLT_ABRUFE vergessen."""
+    lauf = Lauf(einst(verzoegerung=5), stumm={"Drucker"})
+    basis = [b(f"G{i}", True) for i in range(9)]
+    lauf(*basis, b("Kamera", True), b("Drucker", True))
+    lauf(*basis, b("Kamera", False), b("Drucker", False))
+    meldungen = []
+    for _ in range(30):
+        meldungen += arten(lauf(*basis))
+    assert meldungen == [("offline", "Kamera")]
+    assert "Drucker" not in lauf.w.geraete, "nicht überwacht und fehlend: vergessen"
+    m = arten(lauf(*basis, b("Kamera", True)))
+    assert m == [("online", "Kamera")]
+
+
+def test_ueberwachung_abgeschaltet_waehrend_gemeldet():
+    """Gemeldet, dann die Überwachung aus: still „aus“, kein „wieder online“ – auch wenn es dabei fehlt."""
+    for fehlt in (False, True):
+        lauf = Lauf(einst(verzoegerung=2))
+        basis = [b(f"G{i}", True) for i in range(9)]
+        lauf(*basis, b("NAS", True))
+        lauf(*basis, b("NAS", False))
+        lauf(*basis, b("NAS", False))
+        assert arten(lauf(*basis, b("NAS", False))) == [("offline", "NAS")]
+        lauf.stumm.add("NAS")
+        if (
+            fehlt
+        ):  # fehlt in der Tabelle: es gilt, was zuletzt galt; entschieden wird bei der Rückkehr
+            lauf(*basis)
+            assert lauf.w.geraete["NAS"].stand == wn.GEMELDET
+        else:
+            lauf(*basis, b("NAS", False))
+            assert lauf.w.geraete["NAS"].stand == wn.AUS
+        assert lauf(*basis, b("NAS", True)).neu == ()
+        lauf.stumm.clear()
+        lauf(*basis, b("NAS", False))
+        assert arten(lauf(*basis, b("NAS", False), schritt=2 * MIN)) == [("offline", "NAS")]

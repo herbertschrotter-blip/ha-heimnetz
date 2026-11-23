@@ -160,10 +160,14 @@ class Speedtest:
         self.sensoren: OoklaSensoren | None = None
         self._abmelden: Callable[[], None] | None = None
         self._timer: Callable[[], None] | None = None
+        self._geschlossen = False  # nach dem Entladen: nicht wieder verbinden
+        self._in_arbeit: float | None = None  # übergeben, aber noch nicht fertig eingetragen
 
     @callback
     def verbinden(self) -> None:
         """Ookla suchen (auch später nachinstalliert); eine Messung aus der Zeit davor wird nachgetragen."""
+        if self._geschlossen:
+            return
         if self.sensoren is None:
             self.sensoren = finden(self.hass)
             if self.sensoren is None:
@@ -189,6 +193,19 @@ class Speedtest:
         self.sensoren = None
 
     @callback
+    def schliessen(self) -> None:
+        """Beim Entladen: trennen und danach nicht wieder verbinden (ein noch laufender Abruf ruft `verbinden`)."""
+        self._geschlossen = True
+        self.trennen()
+
+    @callback
+    def erledigt(self, t: float) -> None:
+        """Die übergebene Messung ist fertig verarbeitet (geschrieben oder gescheitert – dann holt `nachholen` sie
+        beim nächsten Abruf nach)."""
+        if self._in_arbeit == t:
+            self._in_arbeit = None
+
+    @callback
     def _geaendert(self, event: Event[EventStateChangedData]) -> None:
         if self._timer is not None:
             self._timer()
@@ -205,8 +222,8 @@ class Speedtest:
         if s is None:
             return
         t = zeitpunkt(self.hass.states.get(s.last_test))
-        if t is None or t <= self._letzte():
-            return
+        if t is None or t <= self._letzte() or t == self._in_arbeit:
+            return  # schon eingetragen oder gerade dabei – nicht doppelt verarbeiten
         get = self.hass.states.get
         messung = ms.eintragen(
             t,
@@ -217,6 +234,7 @@ class Speedtest:
             self._ring(),
         )
         LOGGER.debug("Neue Messung %s", messung)
+        self._in_arbeit = t
         self._eintragen(messung)
 
 

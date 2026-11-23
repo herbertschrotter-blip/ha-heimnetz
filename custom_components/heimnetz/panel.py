@@ -17,18 +17,22 @@ URL_PANEL = "heimnetz"
 URL_STATISCH = "/heimnetz_static"
 WEBCOMPONENT = "heimnetz-panel"
 DATEI = "heimnetz-panel.js"
-ORDNER = Path(__file__).parent / "frontend"
+PFAD_DATEI = Path(__file__).parent / "frontend" / DATEI
+URL_DATEI = f"{URL_STATISCH}/{DATEI}"
 DATA_STATISCH = f"{DOMAIN}_statisch"
 DATA_EIGEN = f"{DOMAIN}_panel"  # die Seite unter URL_PANEL ist die eigene
 LOGGER = logging.getLogger(__package__)
 
 
 async def async_anmelden(hass: HomeAssistant) -> None:
-    """Statischen Pfad nur einmal je HA-Start (geht nicht zweimal), die Seite bei jedem Laden der Einrichtung."""
+    """Statischen Pfad nur einmal je HA-Start (geht nicht zweimal), die Seite bei jedem Laden der Einrichtung.
+
+    Freigegeben wird nur die gebaute Datei, nicht der Ordner frontend/; der Browser darf sie zwischenspeichern, weil die
+    Adresse die Version trägt (?v=)."""
     version = str((await async_get_integration(hass, DOMAIN)).version)
     if not hass.data.get(DATA_STATISCH):
         await hass.http.async_register_static_paths(
-            [StaticPathConfig(URL_STATISCH, str(ORDNER), cache_headers=False)]
+            [StaticPathConfig(URL_DATEI, str(PFAD_DATEI), cache_headers=True)]
         )
         hass.data[DATA_STATISCH] = True
     if URL_PANEL in hass.data.get(frontend.DATA_PANELS, {}):
@@ -44,7 +48,7 @@ async def async_anmelden(hass: HomeAssistant) -> None:
         webcomponent_name=WEBCOMPONENT,
         sidebar_title="Heimnetz",
         sidebar_icon="mdi:router-network",  # anders als das alte Dashboard, solange beide da sind
-        module_url=f"{URL_STATISCH}/{DATEI}?v={version}",
+        module_url=f"{URL_DATEI}?v={version}",
         require_admin=False,
         config={"version": version},
     )

@@ -14,7 +14,9 @@ Seite in der Seitenleiste und als Entitäten für Automationen und Dashboards.
 >
 > Hobbyprojekt, **ohne Gewähr**. Die Integration liest nur: Sie ändert keine Einstellungen der FRITZ!Box und steuert
 > keine Geräte. Ausnahmen: Sie startet Speedtest-Messungen über die Ookla-Integration und meldet sich mit dem
-> hinterlegten Kennwort an der Weboberfläche eines vorgeschalteten Modems an (nur zum Lesen). Und – nur wenn man im Reiter
+> hinterlegten Kennwort an der Weboberfläche eines vorgeschalteten Modems an (nur zum Lesen). Warnungen schickt sie über
+> einen notify-Dienst von Home Assistant – nur an das unter ⚙ → 🔔 Warnungen gewählte Ziel (ab Werk keines), dazu immer
+> das Ereignis `heimnetz_warnung`. Und – nur wenn man im Reiter
 > **Wächter** einen einrichtet – startet sie ein hängendes Gerät neu: FRITZ!Box oder Modem sanft über ihre Schnittstelle,
 > dazu ein eigenes Skript auf gewählten Shelly-Steckdosen, das den Strom kurz aus- und von selbst wieder einschaltet.
 
@@ -207,7 +209,7 @@ Heimnetz arbeitet lokal. Nach außen geht nur:
 | OpenStreetMap (Overpass) | Ausschnitt auf festem Raster (etwa 44 × 30 km) für die Funkmasten; grenzt die Wohnung nur auf einen Block von etwa 22 × 15 km ein | einmal im Monat |
 | Cloudflare (1.1.1.1) und Google (8.8.8.8), Port 443 | nur Verbindungsaufbau, keine Daten (Prüfung „Pi → Internet“) | jede Minute |
 | DNS-Server des eigenen Netzes | Auflösung von `avm.de` (Prüfung „Namensauflösung“) | jede Minute |
-| basemap.at oder OpenStreetMap | Kartenkacheln – lädt der **Browser**, nicht die Integration | beim Ansehen der Karte |
+| basemap.at (Server `mapsneu.wien.gv.at` der Stadt Wien) oder OpenStreetMap (`tile.openstreetmap.org`), je nach gewählter Grundkarte | Kartenkacheln – lädt der **Browser**, nicht die Integration. Dabei sieht der Anbieter die IP-Adresse des Browsers und welchen Ausschnitt man ansieht (die Karte zeigt die Gegend um den Mast und damit grob die eigene) | beim Ansehen der Karte |
 | GitHub | vorausgefülltes Issue – öffnet der **Browser**, abgeschickt mit dem eigenen Konto | nur, wenn man selbst „öffentlich auf GitHub“ meldet |
 | notify-Dienst von Home Assistant (Companion App → Push-Dienst von Google bzw. Apple) | Text der Warnung: Gerätename, IP, Verbindung, Dauer | nur, wenn unter ⚙ → 🔔 Warnungen ein Ziel gewählt ist (ab Werk: keines) |
 | Vorgeschaltetes Gerät im eigenen Heimnetz (nur private Adressen) | Suche: Startseite an wenigen Adressen nacheinander (gespeicherte, Vorschlag der Box, 192.168.0.1, 192.168.1.1, 192.168.8.1, 192.168.18.1, 192.168.100.1) bis ein Gerät erkannt ist; danach nur lesende Abfragen und die Anmeldung mit dem hinterlegten Kennwort (höchstens ein Versuch, abgelehnt: kein weiterer) | nur bei Internet über ein vorgeschaltetes Gerät: alle 10 Minuten, beim Einrichten, bei „↻ Erneut suchen“ und unter ⚙ → Diagnose „Abfragen“ |
@@ -257,7 +259,10 @@ nur bei einem vorgeschalteten Gerät – an dessen wenigen Adressen; der Beleg l
 das Kennwort der Weboberfläche eintragen. **Das Kennwort wird in Home Assistant gespeichert** (in den Optionen der
 Heimnetz-Einrichtung, wie bei anderen Integrationen), nie an die Seite zurückgegeben (sie zeigt nur „hinterlegt“), nie
 protokolliert und in der Diagnose geschwärzt; „Kennwort entfernen“ löscht es. Ebenso das **Kennwort der
-Shelly-Steckdosen** für den Wächter (nur nötig, wenn dort eines gesetzt ist).
+Shelly-Steckdosen** für den Wächter (nur nötig, wenn dort eines gesetzt ist). **Ohne Kennwort auf der Steckdose** kann
+jedes Gerät im Heimnetz ihr Skript und seine Regeln (KVS) lesen und ändern – also auch Wartezeiten verstellen, den
+Wächter abschalten oder den Strom des Pi bzw. Routers schalten lassen. Für Steckdosen mit Wächter deshalb in der Shelly
+(Weboberfläche → Einstellungen → Authentifizierung) ein Kennwort setzen und es hier hinterlegen.
 
 **Nie** gehen hinaus: der Standort von Home Assistant, Kennwörter, Hardware- (MAC) und IP-Adressen und
 Gerätenamen – außer im Text einer Warnung, wenn man dafür ein Ziel gewählt hat (siehe oben). Der
@@ -361,8 +366,9 @@ CHANGELOG. Grundentscheidungen: [docs/entscheidungen.md](docs/entscheidungen.md)
 
 Ohne HACS einspielen (Entwicklung): `python ausliefern.py` kopiert `custom_components/heimnetz` in die
 Home-Assistant-Konfiguration (ohne `--ziel` in den Ordner zwei Ebenen über dem Projekt, wenn dort eine
-`configuration.yaml` liegt) und sichert die vorige Fassung unter `.auslieferung/vorher/`; `python ausliefern.py
---zurueck` stellt sie wieder her. Danach Konfiguration prüfen und neu starten. Tickets lassen sich mit
+`configuration.yaml` liegt) und sichert die vorige Fassung mit Zeitstempel unter `.auslieferung/vorher/` (die letzten
+drei Stände bleiben); `python ausliefern.py --zurueck` stellt den jüngsten wieder her. Passt die gebaute Seite nicht zu
+ihren Quellen, bricht es ab (`--ohne-pruefung` übergeht das). Danach Konfiguration prüfen und neu starten. Tickets lassen sich mit
 `python3 tools/ticket.py --help` auf der Kommandozeile bearbeiten.
 
 ## Lizenz
@@ -386,7 +392,9 @@ the sidebar and as entities for automations and dashboards.
 >
 > Hobby project, **no warranty**. The integration only reads: it never changes FRITZ!Box settings and controls no
 > devices. Exceptions: it starts speed tests through the Ookla integration and logs in to the web interface of an
-> upstream modem with the stored password (read-only). And – only if you set one up in the **Watchdog** tab – it
+> upstream modem with the stored password (read-only). It sends alerts through a notify service of Home Assistant –
+> only to the target chosen under ⚙ → 🔔 Alerts (none by default), and always fires the event `heimnetz_warnung`. And –
+> only if you set one up in the **Watchdog** tab – it
 > restarts a hanging device: FRITZ!Box or modem softly through their interface, plus its own script on chosen Shelly
 > plugs that switches the power off briefly and back on by itself.
 
@@ -579,7 +587,7 @@ Heimnetz works locally. Only this leaves your network:
 | OpenStreetMap (Overpass) | area on a fixed grid (about 44 × 30 km) for radio masts; narrows your home down only to a block of about 22 × 15 km | once a month |
 | Cloudflare (1.1.1.1) and Google (8.8.8.8), port 443 | connection setup only, no data (check “Pi → Internet”) | every minute |
 | DNS server of your network | lookup of `avm.de` (check “Name resolution”) | every minute |
-| basemap.at or OpenStreetMap | map tiles – loaded by the **browser**, not the integration | when viewing the map |
+| basemap.at (server `mapsneu.wien.gv.at` of the City of Vienna) or OpenStreetMap (`tile.openstreetmap.org`), depending on the chosen base map | map tiles – loaded by the **browser**, not the integration. The provider sees the browser's IP address and which area you are looking at (the map shows the area around the mast, and so roughly your own) | when viewing the map |
 | GitHub | prefilled issue – opened by the **browser**, submitted with your own account | only when you report "publicly on GitHub" yourself |
 | notify service of Home Assistant (companion app → push service of Google or Apple) | text of the alert: device name, IP, connection, duration | only if a target is chosen under ⚙ → 🔔 Alerts (default: none) |
 | Upstream device in your own home network (private addresses only) | search: home page at a few addresses (stored one, box suggestion, 192.168.0.1, 192.168.1.1, 192.168.8.1, 192.168.18.1, 192.168.100.1) until a device is recognised; then read-only queries and the login with the stored password (at most one attempt; rejected: no further attempt) | only with internet via an upstream device: every 10 minutes, at setup, on “↻ Search again” and under ⚙ → Diagnostics “Query” |
@@ -629,7 +637,10 @@ G5TC (ubus)”. You can also choose “Fibre via an own modem” (ONT). If you s
 addresses only) and the password of its web interface. **The password is stored in Home Assistant** (in the options of
 the Heimnetz entry, like other integrations), never returned to the page (it only shows "stored"), never logged and
 redacted in the diagnostics; "Remove password" deletes it. The same applies to the **password of the Shelly plugs** for
-the watchdog (only needed if one is set there).
+the watchdog (only needed if one is set there). **Without a password on the plug** any device in your home network can
+read and change its script and rules (KVS) – e.g. change the waiting times, switch the watchdog off or have the power
+of the Pi or router switched. For plugs with a watchdog, set a password on the Shelly (web interface → Settings →
+Authentication) and store it here.
 
 **Never** sent: the Home Assistant location, passwords, hardware (MAC) and IP addresses and device names – except
 in the text of an alert if you chose a target for it (see above). Box credentials

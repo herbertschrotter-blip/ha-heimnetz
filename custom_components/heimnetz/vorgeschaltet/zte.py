@@ -123,7 +123,11 @@ async def _goform_anmelden(lauf: Lauf, kennwort: str) -> str:
             "/goform/goform_get_cmd_process?isTest=false&cmd=LD", referer=referer
         )
         ld = str((lz.json_objekt(text) or {}).get("LD", ""))
-        feld = lm.anmelde_hash(kennwort, ld) if ld else kennwort
+        if not ld:
+            # ohne LD kein Hash – das Kennwort nie im Klartext schicken
+            lauf.eintrag(_N_ANMELDUNG, "fehler", t("keine Antwort", lauf.sprache))
+            return "fehler"
+        feld = lm.anmelde_hash(kennwort, ld)
         _, antwort = await lauf.lesen(
             "/goform/goform_set_cmd_process",
             methode="POST",
@@ -156,14 +160,15 @@ async def _goform_abmelden(lauf: Lauf) -> None:
         pass  # Abmelden ist eine Höflichkeit; die Sitzung läuft am Gerät ohnehin ab
 
 
-async def goform_neustarten(lauf: Lauf, kennwort: str | None) -> bool:
+async def goform_neustarten(lauf: Lauf, kennwort: str | None) -> str:
     """Wächter (Stufe 1): einmal anmelden, REBOOT_DEVICE schicken. Neuere Firmware will dazu ein AD-Feld (aus Version
-    und RD); wird es ohne abgelehnt, ein zweiter Versuch mit AD. Zurück: hat das Gerät angenommen?"""
+    und RD); wird es ohne abgelehnt, ein zweiter Versuch mit AD (ohne neue Anmeldung). Zurück: „ok“ (angenommen),
+    „abgelehnt“ (Kennwort) oder „fehler“."""
     if not kennwort:
-        return False
+        return "fehler"
     await lauf.startseite()
-    if await _goform_anmelden(lauf, kennwort) != "ok":
-        return False
+    if (anmeldung := await _goform_anmelden(lauf, kennwort)) != "ok":
+        return anmeldung
     referer = f"{lauf.basis}/index.html"
     daten = {"isTest": "false", "goformId": _NEUSTART}
     try:
@@ -171,7 +176,7 @@ async def goform_neustarten(lauf: Lauf, kennwort: str | None) -> bool:
             "/goform/goform_set_cmd_process", methode="POST", daten=daten, referer=referer
         )
         if lz.goform_erfolg(lz.json_objekt(antwort)):
-            return True
+            return "ok"
         _, text = await lauf.lesen(
             "/goform/goform_get_cmd_process?isTest=false&multi_data=1&cmd=wa_inner_version,cr_version,RD",
             referer=referer,
@@ -188,9 +193,9 @@ async def goform_neustarten(lauf: Lauf, kennwort: str | None) -> bool:
             daten={**daten, "AD": ad},
             referer=referer,
         )
-        return lz.goform_erfolg(lz.json_objekt(antwort))
+        return "ok" if lz.goform_erfolg(lz.json_objekt(antwort)) else "fehler"
     except aiohttp.ClientError, TimeoutError:
-        return False  # die Verbindung bricht beim Neustart oft gleich ab – Erfolg zeigt erst die Prüfung danach
+        return "fehler"  # die Verbindung bricht beim Neustart oft gleich ab – Erfolg zeigt erst die Prüfung danach
 
 
 async def _goform_volumen(lauf: Lauf) -> None:

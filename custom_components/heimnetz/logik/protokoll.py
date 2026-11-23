@@ -1,11 +1,13 @@
 """Ereignisprotokoll der FRITZ!Box: lesen, einordnen, neue Zeilen erkennen.
 
 Die Box hält nur einige hundert Zeilen und überschreibt alte; die Integration merkt sich, welche Zeilen sie schon
-gesehen hat, und übernimmt nur neue (Abgleich über Datum, Zeit und Text).
+gesehen hat, und übernimmt nur neue (Abgleich über Datum, Zeit und Text). Gemerkt wird je Zeile nur ein kurzer Hash des
+Schlüssels (`kurz`) – das Gedächtnis bleibt klein, auch wenn es oft geschrieben wird.
 """
 
 from __future__ import annotations
 
+import hashlib
 import re
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
@@ -47,6 +49,7 @@ WORTE = (
 )
 GESEHEN_MERKEN = 1500  # so viele Schlüssel merkt sich der Abgleich (die Box hält ~400 Zeilen)
 _ZUSAMMENGEFASST = re.compile(r"\s*\[\d+ Meldungen seit [^\]]+\]")
+_KURZ = re.compile(r"^[0-9a-f]{16}$")
 
 
 @dataclass(frozen=True)
@@ -139,15 +142,28 @@ def schluessel_aus(roh_zeit: str, meldung: str) -> str:
     return f"{roh_zeit} {_ZUSAMMENGEFASST.sub('', meldung)}"
 
 
+def kurz(schluessel_: str) -> str:
+    """Kurzer Hash eines Schlüssels für die Merkliste (16 Hex-Zeichen statt der ganzen Zeile)."""
+    return hashlib.sha256(schluessel_.encode("utf-8")).hexdigest()[:16]
+
+
+def gesehen_laden(gespeichert: list[str]) -> list[str]:
+    """Merkliste aus dem Gedächtnis; ältere Gedächtnisse hielten die ganzen Schlüssel – die werden umgerechnet."""
+    return [k if _KURZ.match(k) else kurz(k) for k in gespeichert if isinstance(k, str)][
+        -GESEHEN_MERKEN:
+    ]
+
+
 def neue_zeilen(zeilen: list[BoxZeile], gesehen: list[str]) -> list[Protokolleintrag]:
-    """Noch nicht gesehene Zeilen → Einträge; `gesehen` wird fortgeschrieben und gekürzt."""
+    """Noch nicht gesehene Zeilen → Einträge; `gesehen` (Hashes, `kurz`) wird fortgeschrieben und gekürzt."""
     bekannt, neu = set(gesehen), []
     for z in zeilen:
         k = schluessel(z)
-        if k in bekannt:
+        h = kurz(k)
+        if h in bekannt:
             continue
-        bekannt.add(k)
-        gesehen.append(k)
+        bekannt.add(h)
+        gesehen.append(h)
         neu.append(
             Protokolleintrag(
                 zeitpunkt(z), f"{z.datum} {z.zeit}", kategorie(z.gruppe, z.text), z.text, k

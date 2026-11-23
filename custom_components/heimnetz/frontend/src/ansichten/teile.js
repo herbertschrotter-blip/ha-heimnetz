@@ -4,17 +4,25 @@ import { farbe } from '../format.js';
 
 /** Umschalter; `liste` = [[wert, text], …]. */
 export function seg(liste, wert, wahl, klein = true) {
-  return html`<div class="seg ${klein ? 'klein' : ''}">
-    ${liste.map(([k, t]) => html`<button class=${k === wert ? 'on' : ''} @click=${() => wahl(k)}>${t}</button>`)}
+  return html`<div class="seg ${klein ? 'klein' : ''}" role="group">
+    ${liste.map(([k, t]) => html`<button class=${k === wert ? 'on' : ''} aria-pressed=${k === wert ? 'true' : 'false'} @click=${() => wahl(k)}>${t}</button>`)}
   </div>`;
 }
 
-/** Kachel der Kopfzeile eines Reiters. */
+/** Kachel der Kopfzeile eines Reiters; ein Knopf nur, wenn sie etwas tut. */
 export function kachel(titel, wert, unter, klick) {
-  return html`<button class="glas-k glas-panel" @click=${klick || (() => {})}>
-    <span class="glas-klein">${titel}</span><span class="glas-wert">${wert}</span><span class="glas-kwk">${unter}</span>
-  </button>`;
+  const inhalt = html`<span class="glas-klein">${titel}</span><span class="glas-wert">${wert}</span><span class="glas-kwk">${unter}</span>`;
+  return klick ? html`<button class="glas-k glas-panel" @click=${klick}>${inhalt}</button>` : html`<div class="glas-k glas-panel">${inhalt}</div>`;
 }
+
+/** Tastatur für Klickflächen, die kein Knopf sind (role="button", tabindex="0"): Enter und Leertaste lösen `los` aus.
+ *  Nur auf der Fläche selbst – ein Knopf darin bedient sich selbst. */
+export const taste = (los) => (e) => {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) {
+    e.preventDefault();
+    los(e);
+  }
+};
 
 /** Streifen online/offline (Felder an/aus/luecke). */
 export function streifen(felder) {

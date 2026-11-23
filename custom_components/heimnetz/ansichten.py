@@ -155,6 +155,8 @@ async def speedtest(
         "letzte": _punkt(a.letzte),
         "letzte_anteil": _anteile(a.letzte, lz),
         "schwelle": grenze,
+        # 1.11 Trend: ▲ besser oder ▼ schlechter (beim Ping ist weniger besser); None ohne Trend oder bei ±0
+        "trend_besser": _trend_besser(a.antworten.trend if a.antworten else None, groesse),
         "volumen_monat_mb": round(sum(aw.volumen_mb(p) for p in punkte if p.t >= monat), 1),
         "messungen": [
             {
@@ -168,6 +170,12 @@ async def speedtest(
         "tarif_down": tarif_down,
         "tarif_up": lz.einstellungen.wert.tarif_up,
     }
+
+
+def _trend_besser(trend: float | None, groesse: str) -> bool | None:
+    if not trend:
+        return None
+    return (trend > 0) == aw.GROESSEN[groesse].mehr_ist_gut
 
 
 async def speedtest_kachel(
@@ -290,9 +298,19 @@ def geraete_daten(
     """Blockierend: Geräte mit Ereignissen der letzten 24 h, Streifen und Einstufung."""
     stand = lz.abruf.data
     ab_ = jetzt - TAG_S
+    w = stand.wlan
+    funk = {f.mac: f for f in w.geraete} if w else {}
+    grenze = lz.einstellungen.wert.wlan_schwach
+
+    def schwach(mac: str) -> bool:
+        f = funk.get(mac)
+        return bool(f and f.signal is not None and f.signal < grenze)
+
+    # „Auffällig“ wie auf der Netzkarte (wackelt, schwacher Empfang, neu) – die Seite filtert nur nach dem Kennzeichen
     liste = [
         {k: v for k, v in x.items() if not k.startswith("_")}
-        for _, x in _geraete_liste(lz, jetzt, ha, sprache_)
+        | {"auffaellig": nk.auffaellig(nk.zustand(x["einstufung"], schwach(mac)))}
+        for mac, x in _geraete_liste(lz, jetzt, ha, sprache_)
     ]
     liste.sort(
         key=lambda x: (x["einstufung"] not in ("neu", "wackelt"), not x["aktiv"], x["name"].lower())
@@ -1457,6 +1475,10 @@ def einstellungen(hass: HomeAssistant, lz: Laufzeit) -> dict[str, Any]:
         "letzte_serie": lz.einstellungen.letzte_serie,
         "verkehr_mbit": stand.rate.down if stand.rate else None,
         "schwelle": aw.schwelle(lz.einstellungen.wert.tarif_down),
+        # Verkehr gerade über der Schwelle „belastet“ (die Seite vergleicht nicht selbst)
+        "verkehr_belastet": bool(
+            stand.rate and stand.rate.down > aw.schwelle(lz.einstellungen.wert.tarif_down)
+        ),
         "volumen": mp.volumen(plan, down, up),
         "ookla": {
             "vorhanden": ookla is not None,

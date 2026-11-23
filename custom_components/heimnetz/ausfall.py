@@ -17,6 +17,7 @@ import asyncio
 import json
 import logging
 import os
+import sqlite3
 import time
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -176,7 +177,14 @@ class Ausfalldienst:
             return
         s = af.Speicherstand(jetzt, gesamt, frei, swap, swap_frei, wer)
         self.letzter = s
-        await self.hass.async_add_executor_job(self.lz.datenbank.speicherstand_schreiben, s)
+        try:
+            await self.hass.async_add_executor_job(self.lz.datenbank.speicherstand_schreiben, s)
+        except (
+            sqlite3.Error,
+            OSError,
+            RuntimeError,
+        ) as err:  # Datenbank klemmt oder ist schon zu (Entladen)
+            LOGGER.debug("Heimnetz: Speicherstand nicht geschrieben: %s", err)
         if af.knapp(s) and jetzt - self._gewarnt >= af.WARN_ABSTAND_S:
             self._gewarnt = jetzt
             sp = sprache_system(self.hass)
@@ -201,7 +209,9 @@ class Ausfalldienst:
             try:
                 pi_start = await self.sv.pi_start()
                 if pi_start is not None and lebt is not None and pi_start > lebt:
-                    boot = af.boot_auswerten(await self.sv.voriger_boot())
+                    # bis 20 000 Zeilen: im Executor auswerten, nicht im Event-Loop
+                    roh = await self.sv.voriger_boot()
+                    boot = await self.hass.async_add_executor_job(af.boot_auswerten, roh)
             except (aiohttp.ClientError, TimeoutError, KeyError, ValueError) as err:
                 LOGGER.debug("Heimnetz: Supervisor für den Ausfallbericht nicht lesbar: %s", err)
         speicher = (

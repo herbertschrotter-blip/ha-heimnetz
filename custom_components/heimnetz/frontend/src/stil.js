@@ -105,8 +105,10 @@ const GLAS = `
 .schleier { position: absolute; inset: 0; background: rgba(0,0,0,.35); opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 20; }
 .schleier.an { opacity: 1; pointer-events: auto; }
 .sheet { position: absolute; left: 8px; right: 8px; bottom: 8px; max-height: 82%; overflow-y: auto; z-index: 21; padding: 8px 18px 18px; background: var(--sheet);
-  transform: translateY(110%); transition: transform .32s cubic-bezier(.2,.8,.2,1); border-radius: 28px; display: flex; flex-direction: column; gap: 10px; }
-.sheet.an { transform: none; } .sheet > * { flex-shrink: 0; }
+  transform: translateY(calc(100% + 24px)); visibility: hidden; transition: transform .32s cubic-bezier(.2,.8,.2,1), visibility 0s .32s;
+  border-radius: 28px; display: flex; flex-direction: column; gap: 10px; }
+.sheet.an { transform: none; visibility: visible; transition: transform .32s cubic-bezier(.2,.8,.2,1), visibility 0s; }
+.sheet:focus { outline: none; } .sheet > * { flex-shrink: 0; }
 .sheet.breit { height: 82%; } /* Einstellungen: feste Höhe, das Reiterband springt beim Wechsel nicht */
 .sheet h3 { margin: 4px 0 0; font-size: 20px; }
 .griff { width: 40px; height: 5px; border-radius: 3px; background: var(--ink2); opacity: .5; margin: 0 auto 4px; }
@@ -125,8 +127,8 @@ const GLAS = `
   .glas-nav button .nt { position: static; width: auto; height: auto; overflow: visible; clip-path: none; }
   .glas-raster { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
   .sheet { left: 50%; right: auto; width: 520px; bottom: auto; top: 50%; transform: translate(-50%, -40%) scale(.96); opacity: 0; pointer-events: none;
-    transition: transform .25s cubic-bezier(.2,.8,.2,1), opacity .2s; }
-  .sheet.an { transform: translate(-50%, -50%); opacity: 1; pointer-events: auto; }
+    transition: transform .25s cubic-bezier(.2,.8,.2,1), opacity .2s, visibility 0s .25s; }
+  .sheet.an { transform: translate(-50%, -50%); opacity: 1; pointer-events: auto; transition: transform .25s cubic-bezier(.2,.8,.2,1), opacity .2s, visibility 0s; }
   .sheet.breit { width: min(760px, calc(100% - 16px)); } /* Einstellungen: alle Reiter in einer Zeile */
   .griff { display: none; }
   .raster2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
@@ -179,13 +181,13 @@ const GLAS = `
 .tv .info { font-size: 13px; min-height: 20px; } .tv .info b { font-weight: 600; }
 /* AN-0005: Popup zur Stundenkachel */
 .wr i.kachel { cursor: pointer; } .wr i.wahl { outline: 2px solid var(--ink); outline-offset: 1px; }
-.kpop { position: absolute; z-index: 15; width: 400px; max-width: calc(100% - 16px); box-sizing: border-box; padding: 10px 12px 8px;
+.kpop { position: absolute; z-index: 15; width: 440px; max-width: calc(100% - 16px); box-sizing: border-box; padding: 10px 12px 8px;
   background: var(--sheet); border-radius: 16px; font-size: 12px; pointer-events: none; left: 8px; top: 8px; }
 .kpop.fest { pointer-events: auto; }
 .kpop .kp-kopf { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; } .kpop .kp-kopf b { font-size: 13px; }
 .kpop .kp-werte { color: var(--ink2); margin: 3px 0 6px; line-height: 1.4; } .kpop .kp-werte b { color: var(--ink); font-weight: 600; }
 .kpop table.t { font-size: 12px; } .kpop .t td { padding: 4px 6px 4px 0; } .kpop .t th { padding: 2px 6px 4px 0; }
-.kpop .kp-liste { max-height: 220px; overflow-y: auto; } .kpop .zu-k { font-size: 14px; padding: 0 2px; color: var(--ink2); }
+.kpop .kp-liste { max-height: 220px; overflow: auto; } .kpop .zu-k { font-size: 14px; padding: 0 2px; color: var(--ink2); }
 .legende i.l-med { background: var(--ink); height: 3px; } .legende i.l-glatt { background: var(--amber); height: 3px; } .legende i.l-band { background: var(--ink); opacity: .3; }
 .legende i.l-luecke { background: none; border-top: 1px dashed var(--ink); height: 0; } .legende i.l-tarif { background: none; border-top: 1px dashed var(--ink2); height: 0; }
 .skala { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink2); }
@@ -516,6 +518,35 @@ select.w-ziel { max-width: 58%; } .ga-warnen .seg { flex: none; }
   .nk-buehne.zwei { padding-top: 188px; }
   .nk-oben { top: 80px; left: 24px; right: 380px; }
   .nk-unten { top: 80px; right: 24px; left: auto; bottom: auto; width: 330px; }
+}
+/* ── Bedienung und Lesbarkeit (0.39.0) ── */
+.amber { color: var(--amber); }
+/* Zahlen-Chips im Kopf: deckender Grund, damit Rot und Amber auch auf einem hellen Farbfleck lesbar bleiben */
+.chip.glas-panel.rot, .chip.glas-panel.amber { background: var(--sheet); }
+/* Fokus mit der Tastatur sichtbar (Klickflächen, die kein Knopf sind, und Punkte der Netzkarte) */
+[role="button"]:focus-visible, .app button:focus-visible, .app select:focus-visible { outline: 2px solid var(--blau); outline-offset: 2px; }
+.nk-g:focus-visible, .nk-klick:focus-visible, .tv rect.h:focus-visible { outline: none; }
+.nk-g:focus-visible .nk-dot, .nk-g:focus-visible .ni-knoten, .nk-g:focus-visible .ni-blip, .nk-klick:focus-visible circle, .nk-klick:focus-visible rect { stroke: var(--blau); stroke-width: 3; }
+.tv rect.h:focus-visible { fill: rgba(127,127,127,.2); }
+/* Trefferfläche ≥ 40 px, ohne dass die Knöpfe größer aussehen */
+.zu::after, .nk-zu::after, .zu-k::after, .mb-bild .x::after, .melden-knopf.im-sheet::after { content: ''; position: absolute; inset: -10px; }
+.nk-zu, .zu-k { position: relative; }
+.mb-bild .x::after { inset: -9px; } .melden-knopf.im-sheet::after { inset: -5px; }
+.seg.klein button { position: relative; } .seg.klein button::after { content: ''; position: absolute; left: 0; right: 0; top: -7px; bottom: -7px; }
+.nk-treffer { fill: transparent; stroke: none; }
+/* Kopf der Übersicht: „2 Störungen · 2 Hinweise“ bleibt eine Zeile; wird es eng, rückt der Stand darunter */
+.lb-kopf { flex-wrap: wrap; row-gap: 2px; } .lb-titel { white-space: nowrap; }
+@container (max-width: 420px) { .lb-titel { font-size: 21px; } }
+.st-farbe { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; box-shadow: 0 0 0 1px rgba(0,0,0,.25); }
+/* Fehler beim Laden: Meldung und „Erneut versuchen“ */
+.fehler-band { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.ml-frage { margin-top: 4px; }
+/* Filter der Netzkarte: am Handy läuft die Leiste rechts weiter – ausblenden statt hart abschneiden */
+@container (max-width: 699px) {
+  .nk-filter { mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); padding-right: 28px; }
+  /* Melden-Knopf: Platz unten frei für Legende der Netzkarte und die letzten Zeilen einer Liste */
+  .nk-unten .nk-legende { padding: 0 48px; }
+  .seite { padding-bottom: 156px; }
 }
 `;
 

@@ -3,6 +3,7 @@ Steckdose, Eingriffe als Text, Stufe 1 (sanft neu starten)."""
 
 from __future__ import annotations
 
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -256,11 +257,76 @@ def test_stufe1_erst_modem_dann_router_je_einmal():
     assert i is None and s.weg_seit is None and s.gemacht == {}
 
 
-def test_stufe1_ueberspringt_geraete_die_nicht_antworten():
+def test_stufe1_nur_das_haengende_geraet():
+    """Herbert, 23.11.2026 („Pause + nur hängendes Gerät“): früher startete Stufe 1 die gesunde Box sanft neu, wenn
+    das Modem nicht antwortete. Das hängende Gerät ist das, das nicht antwortet – sanft geht das nicht, das macht seine
+    Steckdose; die gesunden bleiben in Ruhe."""
     w = wa.pruefen(KETTE)
     s, _ = wa.sanft_entscheiden(w, wa.Sanft(), 0, False, {})
-    s, i = wa.sanft_entscheiden(w, s, 5 * 60, False, {0: False})
-    assert i == 1
+    s2, i = wa.sanft_entscheiden(w, s, 5 * 60, False, {0: False, 1: True})
+    assert i is None and s2.gemacht == {}, "Modem antwortet nicht: nicht die gesunde Box"
+    _, i = wa.sanft_entscheiden(w, s, 5 * 60, False, {0: True, 1: False})
+    assert i is None, "Box antwortet nicht: sanft geht nicht"
+    _, i = wa.sanft_entscheiden(w, s, 5 * 60, False, {0: True, 1: True})
+    assert i == 0, "beide antworten, kein Internet: zuerst das Modem"
+    _, i = wa.sanft_entscheiden(w, s, 5 * 60, False, {0: None, 1: True})
+    assert i == 0, "unbekannt zählt nicht als hängend"
+
+
+def test_stufe1_faellig_nur_wenn_ein_neustart_anstehen_koennte():
+    w = wa.pruefen(KETTE)
+    assert not wa.sanft_faellig(w, wa.Sanft(), 600, False), "Störung noch nicht bemerkt"
+    s = wa.Sanft(weg_seit=0)
+    assert not wa.sanft_faellig(w, s, 4 * 60, False)
+    assert wa.sanft_faellig(w, s, 5 * 60, False)
+    assert not wa.sanft_faellig(w, s, 5 * 60, True)
+    assert not wa.sanft_faellig(w, s, 5 * 60, None)
+    assert not wa.sanft_faellig(w, wa.Sanft(weg_seit=0, gemacht={0: 240}), 6 * 60, False)
+    assert not wa.sanft_faellig(w, wa.Sanft(weg_seit=0, ruhe_bis=3600), 600, False)
+    assert not wa.sanft_faellig(replace(w, an=False), s, 600, False)
+
+
+def test_stufe1_nicht_faellig_ohne_kandidat():
+    w = wa.pruefen(KETTE)
+    # beide sanft startbaren Glieder in dieser Störung schon gemacht
+    s = wa.Sanft(weg_seit=0, gemacht={0: 300, 1: 600}, zuletzt={0: 300, 1: 600})
+    assert not wa.sanft_faellig(w, s, 3600, False), "alle gemacht: keine Probe mehr"
+    # Bremse abstand_min greift für beide (Neustarts aus einer früheren Störung)
+    s = wa.Sanft(weg_seit=3000, zuletzt={0: 2900, 1: 2950})
+    assert not wa.sanft_faellig(w, s, 3000 + 6 * 60, False), "Bremse: nichts fällig"
+    assert wa.sanft_faellig(w, s, 2900 + w.regeln.abstand_min * 60, False), "Bremse vorbei"
+    # kein Glied sanft startbar (nur Geräte ohne Weboberfläche)
+    nur_strom = wa.pruefen(
+        {
+            "art": "internet",
+            "glieder": [
+                {"typ": "geraet", "name": "ONT", "adresse": "192.168.0.9", "dose": "192.168.178.41"}
+            ],
+        }
+    )
+    assert not wa.sanft_faellig(nur_strom, wa.Sanft(weg_seit=0), 3600, False)
+    assert wa.sanft_entscheiden(nur_strom, wa.Sanft(weg_seit=0), 3600, False, {})[1] is None
+
+
+def test_stufe1_unbekanntes_glied_haelt_nicht_auf():
+    w = wa.pruefen(KETTE)
+    _, i = wa.sanft_entscheiden(w, wa.Sanft(weg_seit=0), 5 * 60, False, {0: None, 1: True})
+    assert i == 0
+
+
+def test_halt_ist_kuerzer_als_strom_und_hat_einen_text():
+    assert wa.SANFT_HALT_MIN < wa.VORGABE["internet"]["stufe2_min"]
+    k = wa.glied_karte(
+        wa.pruefen(KETTE).glieder[1],
+        wa.dosenstand({"wv": wa.SKRIPT_VERSION, "zustand": "sanft", "grund": "inet_weg"}),
+        ENG,
+    )
+    assert k["zustand"] == "waiting for the soft restart" and k["punkt"] == "amber"
+
+
+def test_dosenstand_verkraftet_falsche_typen():
+    d = wa.dosenstand({"eingriffe": "viele", "letzte": "kaputt", "zustand": "bereit"})
+    assert d.eingriffe == 0 and d.letzte == () and d.zustand == "bereit"
 
 
 def test_stufe1_nur_internet_und_nicht_bei_unbekannt():

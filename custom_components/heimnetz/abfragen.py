@@ -5,6 +5,7 @@ Entitäten werden über das Register gefunden (Plattform und unique_id), nicht �
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Iterable
 from datetime import datetime
 from typing import Any, Literal
@@ -13,6 +14,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 
 from .const import DOMAIN, FRITZ
+
+LOGGER = logging.getLogger(__package__)
 
 type Reihe = list[tuple[float, float | None]]
 type Periode = Literal["5minute", "hour", "day"]
@@ -50,7 +53,11 @@ async def statistik(
     from homeassistant.components.recorder import get_instance  # noqa: PLC0415 – nur mit Recorder
     from homeassistant.components.recorder.statistics import statistics_during_period  # noqa: PLC0415
 
-    zeilen: dict[str, list[Any]] = await get_instance(hass).async_add_executor_job(
-        statistics_during_period, hass, start, ende, gesucht, periode, None, {art}
-    )
+    try:
+        zeilen: dict[str, list[Any]] = await get_instance(hass).async_add_executor_job(
+            statistics_during_period, hass, start, ende, gesucht, periode, None, {art}
+        )
+    except Exception as err:  # noqa: BLE001 – Recorder nicht bereit, Datenbank klemmt: Seite zeigt „keine Daten“
+        LOGGER.debug("Heimnetz: Statistik nicht lesbar (%s)", err)
+        return {}
     return {sid: [(float(z["start"]), z.get(art)) for z in reihe] for sid, reihe in zeilen.items()}

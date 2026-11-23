@@ -6,6 +6,7 @@
 import { html, nothing } from 'lit';
 import { zahl, zeit, vor, punkt } from '../format.js';
 import { t } from '../sprache.js';
+import { taste } from './teile.js';
 
 const standZeit = (s) => zeit(s).replace(new RegExp(`^${t('Heute {uhr}', { uhr: '' })}`), '');
 
@@ -47,9 +48,10 @@ function punktfeld(p, u) {
   const wackelt = aus ? 0 : g.wackelt || 0;
   const punkte = [];
   for (let i = 0; i < (g.bekannt || 0); i++) punkte.push(i < online - wackelt - neu ? 'an' : i < online - neu ? 'wa' : i < online ? 'neu' : '');
-  return html`<div class="glas-panel lb-punktfeld" @click=${() => gehe(p, 'geraete')}>
+  const liste = () => gehe(p, 'geraete');
+  return html`<div class="glas-panel lb-punktfeld" role="button" tabindex="0" aria-label=${t('Geräteliste öffnen')} @click=${liste} @keydown=${taste(liste)}>
     <div class="lb-pf-kopf"><span class="lb-pf-zahl">${aus ? '–' : online}<small> / ${t('{n} Geräte online', { n: g.bekannt || 0 })}</small></span>
-      <span class="leise">${wackelt ? html`<span class="amber">● ${t('{n} wackelt', { n: wackelt })}</span>` : t('alles ruhig')}${neu ? html` · <span class="blau">● ${t('{n} neu', { n: neu })}</span>` : nothing}</span></div>
+      <span class="leise">${wackelt ? html`<span class="amber">● ${wackelt === 1 ? t('{n} wackelt', { n: wackelt }) : t('{n} wackeln', { n: wackelt })}</span>` : t('alle ruhig')}${neu ? html` · <span class="blau">● ${t('{n} neu', { n: neu })}</span>` : nothing}</span></div>
     <div class="lb-pf-punkte">${punkte.map((c) => html`<i class=${c}></i>`)}</div>
     <div class="lb-pf-fuss"><span class="leise">${t('Tippen: Geräteliste')}</span>
       <button class="chip glas-panel" @click=${(e) => { e.stopPropagation(); p.setze('geraete', { teil: 'karte' }, false); p.geh('geraete'); }}>🗺️ ${t('Netzkarte ›')}</button></div>
@@ -93,7 +95,7 @@ export function uebersicht(p, u) {
 export function befundeBlatt(p) {
   const u = p._daten.uebersicht || {};
   const befunde = u.befunde || [];
-  return html`<div class="griff"></div><button class="zu" @click=${() => p.zu()}>✕</button>
+  return html`<div class="griff"></div><button class="zu" aria-label=${t('Schließen')} @click=${() => p.zu()}>✕</button>
     <h3>${t('Befunde und Ereignisse')}</h3><div class="leise">${t('{n} offen', { n: befunde.length })} · ${t('aus den Prüfungen jede Minute')}</div>
     <div class="gruppe">${t('Befunde')}</div>
     ${befunde.length

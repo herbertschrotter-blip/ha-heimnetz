@@ -547,7 +547,7 @@ test('Messplan: ohne Admin nur Anzeige', async () => {
 test('Messplan: Warnung, wenn Ookla selbst misst; Verschieben wird angezeigt', async () => {
   const hass = machHass();
   const e = DATEN.einstellungen;
-  const daten = { ...e, ookla: { ...e.ookla, misst_selbst: true }, verkehr_mbit: 38.4,
+  const daten = { ...e, ookla: { ...e.ookla, misst_selbst: true }, verkehr_mbit: 38.4, verkehr_belastet: true, // „belastet“ sagt die Integration
     plan: { ...e.plan, wartet: true, neuer_versuch: Date.now() / 1000 + 300 } };
   const alt = hass.callWS;
   hass.callWS = async (msg) => (msg.type === 'heimnetz/einstellungen' ? daten : alt(msg));
@@ -1835,4 +1835,310 @@ test('Reiterleiste: am Handy Symbole, ab 700 px Text – Name bleibt als Tooltip
   const stil = readFileSync(`${QUELLE}/stil.js`, 'utf8');
   assert.match(stil, /\.glas-nav button::before \{ content: attr\(data-symbol\)/);
   assert.match(stil, /@container \(min-width: 700px\)[\s\S]*\.glas-nav button::before \{ content: none; \}/);
+});
+
+// ── 0.39.0: Befunde der Oberflächen-Analyse ──
+
+const taste = (el, key = 'Enter') => el.dispatchEvent(new window.KeyboardEvent('keydown', { key, bubbles: true, composed: true }));
+
+test('Kopf: ein Wortlaut aus der Integration – Übersicht und andere Reiter zählen Störungen und Hinweise gleich', async () => {
+  const hass = machHass();
+  const el = await seite(hass);
+  const k = DATEN.uebersicht.kopf;
+  assert.equal(el.shadowRoot.querySelector('.lb-titel').textContent.trim(), k.titel);
+  assert.match(k.titel, /Störung.*Hinweis/, 'Vorlage mit beidem');
+  await reiter(el, 'Speedtest');
+  const kopf = el.shadowRoot.querySelector('.glas-kopf');
+  assert.equal(kopf.querySelector('.glas-kw').textContent.trim(), k.wort);
+  const chips = [...kopf.querySelectorAll('.chip.rot, .chip.amber')].map((c) => c.textContent.replace(/^[●⚠]\s*/, '').trim());
+  assert.deepEqual(chips, k.chips.map((c) => c.text));
+  assert.equal(k.titel, k.chips.map((c) => c.text).join(' · '), 'Übersicht sagt dasselbe wie die Chips');
+});
+
+test('Neu zeichnen nur, wenn sich in hass etwas Gezeigtes ändert (Design, Sonne, Nutzer, Sprache)', async () => {
+  const hass = machHass();
+  const el = await seite(hass);
+  let n = 0;
+  const render = el.render.bind(el);
+  el.render = () => { n++; return render(); };
+  el.hass = { ...hass, states: { ...hass.states, 'sensor.irgendwas': { state: '1' } } };
+  await el.updateComplete;
+  el.hass = { ...el.hass, states: { ...el.hass.states, 'sensor.irgendwas': { state: '2' } } };
+  await el.updateComplete;
+  assert.equal(n, 0, 'fremde Zustände zeichnen nicht neu');
+  el.hass = { ...el.hass, themes: { darkMode: false } };
+  await el.updateComplete;
+  assert.equal(n, 1, 'hell/dunkel zeichnet neu');
+  assert.ok(el.shadowRoot.querySelector('.wurzel.hell'));
+  el.hass = { ...el.hass, states: { ...el.hass.states, 'sun.sun': { state: 'below_horizon', attributes: { elevation: -12, rising: false } } } };
+  await el.updateComplete;
+  assert.equal(n, 2, 'Sonne zeichnet neu');
+  el.hass = { ...el.hass, user: { is_admin: false } };
+  await el.updateComplete;
+  assert.equal(n, 3, 'Nutzer zeichnet neu');
+});
+
+test('Fehler beim ersten Laden: kein endloses „lädt …“, „Erneut versuchen“ lädt neu', async () => {
+  const hass = machHass();
+  const echt = hass.callWS.bind(hass);
+  let kaputt = true;
+  hass.callWS = async (msg) => { if (kaputt) throw new Error('Die Integration Heimnetz ist nicht geladen.'); return echt(msg); };
+  const el = await seite(hass);
+  const t1 = text(el);
+  assert.match(t1, /Daten nicht abrufbar: Die Integration Heimnetz ist nicht geladen/);
+  assert.ok(!t1.includes('lädt …'), t1);
+  const knopf = knoepfe(el.shadowRoot.querySelector('.fehler-band')).find((b) => b.textContent.includes('Erneut versuchen'));
+  assert.ok(knopf, 'Knopf „Erneut versuchen“');
+  kaputt = false;
+  knopf.click();
+  await warten(10);
+  await el.updateComplete;
+  assert.ok(!el.shadowRoot.querySelector('.fehler-band'), 'Fehler weg');
+  assert.ok(el.shadowRoot.querySelector('.lb-kopf'), 'Übersicht da');
+});
+
+test('Fenster als Dialog: Rolle, Titel, Esc schließt, Fokus zurück; zu ist es nicht erreichbar', async () => {
+  const hass = machHass();
+  const el = await seite(hass);
+  const sheet = el.shadowRoot.querySelector('.sheet');
+  assert.equal(sheet.getAttribute('role'), 'dialog');
+  assert.equal(sheet.getAttribute('aria-modal'), 'true');
+  assert.ok(sheet.hasAttribute('inert'), 'geschlossen: inert');
+  const zeile = el.shadowRoot.querySelector('.lb-meldezeile');
+  zeile.focus();
+  zeile.click();
+  await el.updateComplete;
+  assert.ok(!sheet.hasAttribute('inert'));
+  const titel = sheet.querySelector('#blatt-titel');
+  assert.ok(titel && titel.textContent.includes('Befunde und Ereignisse'), 'aria-labelledby zeigt auf den Titel');
+  assert.equal(sheet.getAttribute('aria-labelledby'), 'blatt-titel');
+  assert.equal(el.shadowRoot.activeElement, sheet, 'Fokus im Fenster');
+  assert.equal(sheet.querySelector('.zu').getAttribute('aria-label'), 'Schließen');
+  window.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape' }));
+  await el.updateComplete;
+  assert.equal(el._blatt, null, 'Esc schließt');
+  assert.equal(el.shadowRoot.activeElement, zeile, 'Fokus zurück auf die Meldezeile');
+});
+
+test('Tastatur: Gerätezeile, Punktfeld, Rasterfeld, Stunde und Punkt der Netzkarte mit Enter/Leertaste', async () => {
+  const hass = machHass();
+  const el = await seite(hass);
+  const w = el.shadowRoot;
+  const feld = w.querySelector('.lb-punktfeld');
+  assert.equal(feld.getAttribute('role'), 'button');
+  assert.equal(feld.getAttribute('tabindex'), '0');
+  taste(feld);
+  await warten(10);
+  await el.updateComplete;
+  assert.equal(el._reiter, 'geraete');
+  const zeile = w.querySelector('.geraet');
+  assert.equal(zeile.getAttribute('role'), 'button');
+  taste(zeile, ' ');
+  await warten(10);
+  assert.ok(hass.aufrufe.some((a) => a.type === 'heimnetz/geraet'), 'Leertaste öffnet das Gerät');
+  el.zu();
+  await reiter(el, 'Speedtest');
+  const kachel = w.querySelector('.wr i.kachel');
+  assert.equal(kachel.getAttribute('tabindex'), '0');
+  taste(kachel);
+  await warten(10);
+  await el.updateComplete;
+  assert.ok(el._kachel && el._kachel.fest, 'Enter hält das Popup fest');
+  window.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape' }));
+  assert.equal(el._kachel, null, 'Esc schließt das Popup');
+  el.setze('speedtest', { tag: 0 });
+  await warten(10);
+  await el.updateComplete;
+  const stunde = w.querySelector('.tv rect.h');
+  assert.ok(stunde && stunde.getAttribute('role') === 'button', 'Stunde bedienbar');
+  assert.equal(w.querySelector('.tv svg').getAttribute('role'), 'group', 'Inhalte nicht stumm (kein role=img)');
+  taste(stunde);
+  await el.updateComplete;
+  assert.equal(el._opt.speedtest.stunde, 0);
+  el.setze('geraete', { teil: 'karte' });
+  el.geh('geraete');
+  await warten(10);
+  await el.updateComplete;
+  assert.equal(w.querySelector('.nk-svg').getAttribute('role'), 'group');
+  const punkt = w.querySelector('.nk-g');
+  assert.equal(punkt.getAttribute('tabindex'), '0');
+  assert.ok(punkt.querySelector('.nk-treffer'), 'größere unsichtbare Trefferfläche');
+  taste(punkt);
+  await el.updateComplete;
+  assert.ok(w.querySelector('.nk-info'), 'Enter zeigt die Infokarte');
+});
+
+test('ARIA: Reiter aria-current, Umschalter aria-pressed, Auswahlfelder beschriftet', async () => {
+  const hass = machHass();
+  const el = await seite(hass);
+  await reiter(el, 'Speedtest');
+  const aktiv = [...el.shadowRoot.querySelectorAll('nav button')].filter((b) => b.getAttribute('aria-current') === 'page');
+  assert.deepEqual(aktiv.map((b) => b.textContent.trim()), ['Speedtest']);
+  const seg = el.shadowRoot.querySelector('.seg button.on');
+  assert.equal(seg.getAttribute('aria-pressed'), 'true');
+  const labels = [...el.shadowRoot.querySelectorAll('select')].map((s) => s.getAttribute('aria-label'));
+  assert.ok(labels.includes('Server') && labels.includes('Datum'), labels.join());
+  assert.ok(!el.shadowRoot.querySelector('.glas-raster button.glas-k'), 'Kacheln ohne Aktion sind keine Knöpfe');
+});
+
+test('Mehrzahl: 1 wackelt / 2 wackeln, alle ruhig, 1 Eingriff', async () => {
+  const hass = machHass();
+  const u = DATEN.uebersicht;
+  const mit = (wackelt) => async (msg) => (msg.type === 'heimnetz/uebersicht' ? { ...u, geraete: { ...u.geraete, wackelt, online: 5 } } : DATEN[msg.type.replace('heimnetz/', '')]);
+  hass.callWS = mit(0);
+  let el = await seite(hass);
+  assert.match(el.shadowRoot.querySelector('.lb-punktfeld').textContent, /alle ruhig/);
+  el.remove();
+  hass.callWS = mit(1);
+  el = await seite(hass);
+  assert.match(el.shadowRoot.querySelector('.lb-punktfeld').textContent, /1 wackelt/);
+  el.remove();
+  hass.callWS = mit(2);
+  el = await seite(hass);
+  assert.match(el.shadowRoot.querySelector('.lb-punktfeld').textContent, /2 wackeln/);
+  el.remove();
+  el = await seite(machHass());
+  await reiter(el, 'Wächter');
+  assert.match(text(el), /1 Eingriff\b/);
+  assert.ok(!/1 Eingriffe/.test(text(el)));
+});
+
+test('Auffällig: Filter der Geräteliste nach dem Kennzeichen der Integration', async () => {
+  const hass = machHass();
+  const el = await seite(hass);
+  await reiter(el, 'Geräte');
+  [...el.shadowRoot.querySelectorAll('.seg button')].find((b) => b.textContent === 'Auffällig').click();
+  await el.updateComplete;
+  const namen = [...el.shadowRoot.querySelectorAll('.geraet .n')].map((n) => n.textContent.split(/\d/)[0].trim());
+  assert.deepEqual(namen, DATEN.geraete.geraete.filter((g) => g.auffaellig).map((g) => g.name));
+  assert.ok(namen.length, 'Vorlage hat ein auffälliges Gerät');
+});
+
+test('Melden: leerer Entwurf wird nicht gemerkt, Schleier und Esc schließen ohne zu verwerfen, ✕ verwirft', async () => {
+  sessionStorage.clear();
+  const el = await seite(machHass());
+  el.meldenAuf();
+  await el.updateComplete;
+  assert.equal(sessionStorage.getItem('heimnetz-melden-entwurf'), null, 'leer: nichts gemerkt');
+  el.shadowRoot.querySelector('.schleier').click();
+  await el.updateComplete;
+  assert.equal(el._blatt, null, 'leerer Entwurf: Schleier schließt');
+  el.meldenAuf();
+  await el.updateComplete;
+  const ta = el.shadowRoot.querySelector('textarea[name=ml-text]');
+  ta.value = 'Karte grau';
+  ta.dispatchEvent(new Event('input'));
+  el._blatt.form.bilder.push({ url: 'data:image/jpeg;base64,AAAA', name: 'a.jpg' });
+  el.entwurfMerken();
+  assert.ok(sessionStorage.getItem('heimnetz-melden-entwurf'));
+  el.shadowRoot.querySelector('.schleier').click();
+  await el.updateComplete;
+  assert.equal(el._blatt, null, 'Schleier schließt');
+  assert.match(sessionStorage.getItem('heimnetz-melden-entwurf'), /Karte grau/, 'Schleier verwirft den Entwurf nicht');
+  el.meldenAuf();
+  await el.updateComplete;
+  assert.equal(el._blatt.form.text, 'Karte grau', 'wieder geöffnet: Entwurf geht weiter');
+  assert.equal(el._blatt.form.bilder.length, 1, 'samt Bild');
+  // GitHub-Vorschau: Esc führt zurück zum Formular, nochmal Esc schließt – der Entwurf bleibt
+  el.githubAuf();
+  await el.updateComplete;
+  assert.equal(el._blatt.art, 'github');
+  window.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape' }));
+  await el.updateComplete;
+  assert.equal(el._blatt.art, 'melden', 'Esc in der Vorschau: zurück zum Formular');
+  window.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape' }));
+  await el.updateComplete;
+  assert.equal(el._blatt, null);
+  assert.match(sessionStorage.getItem('heimnetz-melden-entwurf'), /Karte grau/, 'Esc verwirft den Entwurf nicht');
+  el.remove();
+  const neu = await seite(machHass());
+  assert.equal(neu._blatt.art, 'melden', 'nach dem Neuladen ist der Entwurf wieder offen');
+  // nur ✕ verwirft
+  blatt(neu).querySelector('.zu').click();
+  await neu.updateComplete;
+  assert.equal(neu._blatt, null);
+  assert.equal(sessionStorage.getItem('heimnetz-melden-entwurf'), null, '✕ verwirft den Entwurf');
+  neu.meldenAuf();
+  await neu.updateComplete;
+  assert.equal(neu._blatt.form.text, '', 'nach ✕ beginnt ein neuer Entwurf');
+  neu.remove();
+  sessionStorage.clear();
+  const leer = await seite(machHass());
+  assert.equal(leer._blatt, null, 'ohne Entwurf kein Melde-Fenster');
+  leer.remove();
+});
+
+test('Ticket löschen nur nach Rückfrage', async () => {
+  const hass = machHass();
+  const el = await seite(hass);
+  el.meldungenOeffnen();
+  await warten(10);
+  await el.updateComplete;
+  knoepfe(blatt(el)).find((b) => b.textContent === 'Löschen').click();
+  await el.updateComplete;
+  assert.ok(!hass.aufrufe.some((a) => a.type === 'heimnetz/meldung/loeschen'), 'noch nicht gelöscht');
+  assert.match(blatt(el).querySelector('.ml-frage').textContent, /FE-0002 löschen\?/);
+  knoepfe(blatt(el).querySelector('.ml-frage')).find((b) => b.textContent === 'Abbrechen').click();
+  await el.updateComplete;
+  assert.ok(!blatt(el).querySelector('.ml-frage'));
+  knoepfe(blatt(el)).find((b) => b.textContent === 'Löschen').click();
+  await el.updateComplete;
+  knoepfe(blatt(el).querySelector('.ml-frage')).find((b) => b.textContent === 'Löschen').click();
+  await warten(10);
+  assert.deepEqual(hass.aufrufe.find((a) => a.type === 'heimnetz/meldung/loeschen'), { type: 'heimnetz/meldung/loeschen', meldung_id: 'a1', sprache: 'de' });
+});
+
+test('„belastete Messungen“ bleibt in diesem Browser gemerkt', async () => {
+  localStorage.removeItem('heimnetz.grundlast');
+  const el = await seite(machHass());
+  assert.equal(el._opt.speedtest.grundlast, 'aus');
+  el.setze('speedtest', { grundlast: 'halb' }, false);
+  assert.equal(localStorage.getItem('heimnetz.grundlast'), 'halb');
+  el.remove();
+  const neu = await seite(machHass());
+  assert.equal(neu._opt.speedtest.grundlast, 'halb');
+  neu.remove();
+  localStorage.removeItem('heimnetz.grundlast');
+});
+
+test('versteckter Tab: kein Abfragen; zurück: sofort laden', async () => {
+  const hass = machHass();
+  const el = await seite(hass);
+  Object.defineProperty(document, 'hidden', { value: true, configurable: true });
+  document.dispatchEvent(new Event('visibilitychange'));
+  assert.equal(el._takt, null, 'Takt angehalten');
+  const vorher = hass.aufrufe.length;
+  Object.defineProperty(document, 'hidden', { value: false, configurable: true });
+  document.dispatchEvent(new Event('visibilitychange'));
+  await warten(10);
+  assert.ok(el._takt, 'Takt läuft wieder');
+  assert.ok(hass.aufrufe.length > vorher, 'gleich geladen');
+  delete document.hidden;
+});
+
+test('weniger Bewegung: Netzkarte ohne SMIL-Animation', async () => {
+  globalThis.matchMedia = (q) => ({ matches: q.includes('reduce') });
+  try {
+    const el = await seite(machHass());
+    el.setze('geraete', { teil: 'karte' });
+    el.geh('geraete');
+    await warten(10);
+    await el.updateComplete;
+    assert.ok(el.shadowRoot.querySelector('.nk-svg'));
+    assert.equal(el.shadowRoot.querySelectorAll('animate').length, 0);
+    el.remove();
+  } finally {
+    delete globalThis.matchMedia;
+  }
+});
+
+test('festgehaltenes Popup bleibt beim Scrollen offen', async () => {
+  const el = await seite(machHass());
+  await reiter(el, 'Speedtest');
+  el.shadowRoot.querySelector('.wr i.kachel').click();
+  await warten(10);
+  await el.updateComplete;
+  assert.ok(el._kachel && el._kachel.fest);
+  el.shadowRoot.querySelector('.scroll').dispatchEvent(new Event('scroll'));
+  assert.ok(el._kachel && el._kachel.fest, 'bleibt offen');
 });

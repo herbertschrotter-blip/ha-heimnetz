@@ -28,6 +28,13 @@ from .logik.protokoll import Protokolleintrag
 
 SCHEMA_VERSION = 1
 AUFBEWAHREN_S = 400 * 86_400  # Journal und Protokoll; Messungen bleiben
+# Sicherung ohne Ende (backup/end kam nie, z. B. abgebrochen): nach dieser Zeit schreibt die Datenbank von selbst weiter.
+# 6 h: eine große Recorder-Datenbank auf dem Pi braucht für die Sicherung leicht über 2 h; die Warteschlange
+# (WARTESCHLANGE_HOECHSTENS) fasst so lange genug.
+ANHALTEN_HOECHSTENS_S = 6 * 3600
+WARTESCHLANGE_HOECHSTENS = (
+    1000  # Schreibvorgänge (etwa einer je Minute und Abruf) – älteste fallen zuerst weg
+)
 
 SCHRITTE: dict[int, tuple[str, ...]] = {
     1: (
@@ -141,6 +148,7 @@ class Datenbank:
         self._db: sqlite3.Connection | None = None
         self._sperre = threading.Lock()
         self._angehalten = False
+        self._angehalten_seit = 0.0  # monotonic
         self._warteschlange: list[list[Schritt]] = []
 
     # ── Lebenszyklus ──
@@ -181,16 +189,27 @@ class Datenbank:
         """Vor einer Sicherung: alles in die Hauptdatei; was danach anfällt, wartet bis `fortsetzen`."""
         with self._sperre:
             self._angehalten = True
+            self._angehalten_seit = time.monotonic()
             if self._db is not None:
                 self._db.execute("PRAGMA wal_checkpoint(TRUNCATE)")
 
     def fortsetzen(self) -> None:
         with self._sperre:
-            self._angehalten = False
-            wartend, self._warteschlange = self._warteschlange, []
-            if self._db is not None:
-                for schritte in wartend:
-                    self._ausfuehren(schritte)
+            self._fortsetzen()
+
+    def _fortsetzen(self) -> None:
+        """Unter der Sperre: Warteschlange abarbeiten und wieder direkt schreiben."""
+        self._angehalten = False
+        wartend, self._warteschlange = self._warteschlange, []
+        if self._db is not None:
+            for schritte in wartend:
+                self._ausfuehren(schritte)
+
+    def _noch_angehalten(self) -> bool:
+        """Unter der Sperre: angehalten – oder schon zu lange (Sicherung ohne Ende), dann selbst fortsetzen."""
+        if self._angehalten and time.monotonic() - self._angehalten_seit >= ANHALTEN_HOECHSTENS_S:
+            self._fortsetzen()
+        return self._angehalten
 
     @property
     def _verbindung(self) -> sqlite3.Connection:
@@ -204,8 +223,9 @@ class Datenbank:
         if not liste:
             return 0
         with self._sperre:
-            if self._angehalten:
+            if self._noch_angehalten():
                 self._warteschlange.append(liste)
+                del self._warteschlange[:-WARTESCHLANGE_HOECHSTENS]
                 return 0
             return self._ausfuehren(liste)
 
@@ -261,7 +281,7 @@ class Datenbank:
         Journal – in einer Transaktion. Zeitpunkt der gelöschten Messung, None = keine Messung mit dieser Kennung.
         Während einer Sicherung `Angehalten` (sonst hieße es „gelöscht“, die Messung stünde aber noch da)."""
         with self._sperre:
-            if self._angehalten:
+            if self._noch_angehalten():
                 raise Angehalten
             db = self._verbindung
             treffer = [
@@ -289,7 +309,7 @@ class Datenbank:
         None = während einer Sicherung ausgelassen."""
         grenze = jetzt - AUFBEWAHREN_S
         with self._sperre:
-            if self._angehalten:
+            if self._noch_angehalten():
                 return None
             db = self._verbindung
             with db:
@@ -319,7 +339,7 @@ class Datenbank:
 
     def diagnoselog_loeschen(self) -> None:
         with self._sperre:
-            if self._angehalten:
+            if self._noch_angehalten():
                 raise Angehalten
             db = self._verbindung
             with db:

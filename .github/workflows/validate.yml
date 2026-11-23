@@ -1,9 +1,12 @@
-# Prüft, ob Home Assistant (hassfest) und HACS die Integration annehmen – bei Push, Pull Request und einmal am Tag.
+# Prüft, ob Home Assistant (hassfest) und HACS die Integration annehmen – bei Push auf einen Branch, Pull Request und
+# einmal am Tag. Für Tags ruft release.yml diesen Ablauf selbst auf (workflow_call) und veröffentlicht nur, wenn er grün ist.
 name: Validate
 
 on:
   push:
+    branches: ["**"]
   pull_request:
+  workflow_call:
   schedule:
     - cron: "17 3 * * *"
   workflow_dispatch:

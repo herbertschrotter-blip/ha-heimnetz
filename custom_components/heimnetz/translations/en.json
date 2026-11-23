@@ -305,6 +305,12 @@
     },
     "alt_aktiv": {
       "message": "The old integration “Netzwerk” is still active – Heimnetz does not start, so the FRITZ!Box is never polled twice."
+    },
+    "schema_zu_neu": {
+      "message": "The Heimnetz database comes from a newer version ({grund}). This version leaves it untouched – please install the newer version again."
+    },
+    "datenbank_kaputt": {
+      "message": "The Heimnetz database {datei} is damaged. Repairs explains what to do."
     }
   },
   "issues": {
@@ -331,6 +337,10 @@
     "modem_fehlt": {
       "title": "Heimnetz: upstream modem does not answer",
       "description": "Nothing has answered at the address of the modem in front of the FRITZ!Box for at least two polls. Is the modem on and the address correct? Check the address under Heimnetz → ⚙ → 🌐 Access or use “↻ Search again”. Once it answers again, this notice disappears by itself."
+    },
+    "datenbank_kaputt": {
+      "title": "Heimnetz: database damaged",
+      "description": "Heimnetz cannot read its database `{datei}` in the configuration folder (damaged). Either restore the file from a Home Assistant backup or move it aside (rename it, e.g. to `{datei}.broken`) – Heimnetz then creates a new, empty one; journal, log and speed tests start over. Then reload Heimnetz."
     }
   },
   "options": {

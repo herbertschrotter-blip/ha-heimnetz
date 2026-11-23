@@ -19,6 +19,12 @@ erst, nachdem es einmal wieder online war – Einschalten einer Art löst keine 
   Gedächtnis und Journal gefüllt) – höchstens eine Meldung je Gerät, auch nach dem Aufräumen des Journals.
 - Leere oder stark geschrumpfte Gerätetabelle bei erreichbarer Box: wie „Box nicht erreichbar“. Danach eine Frist von
   einer Verzögerung, bevor ein Gerät als offline gilt (nach einem Neustart der Box melden sich Geräte nach und nach).
+  Bleibt sie mindestens `DAUERHAFT_S` lang kleiner (die Liste der Box wurde aufgeräumt), gilt die neue Größe.
+- Fehlt ein Gerät in einer vollen Tabelle (die Box nimmt inaktive Geräte heraus), gilt es als offline: ein gemeldetes
+  bleibt gemeldet, bis es zurückkommt („wieder online“) oder `VERGESSEN_S` vorbei ist; ein weggehendes wird nach der
+  Verzögerung gemeldet. Nur stille Geräte („aus“) werden nach `FEHLT_ABRUFE` Abrufen vergessen. Ob ein fehlendes
+  Gerät überwacht wird, gilt wie zuletzt gesehen; schaltet man die Überwachung ab, geht ein gemeldetes Gerät still auf
+  „aus“ (kein „wieder online“).
 - Unstete Geräte: Geht ein Gerät binnen 24 h zum dritten Mal offline, sagt die Meldung das und bleibt die letzte; danach
   meldet es weder „offline“ noch „wieder online“, bis es in 24 h seltener als dreimal weg war (`OFT_AB`, `OFT_S`).
 """
@@ -274,10 +280,14 @@ def beispiel(jetzt: float, name: str, verbindung: str, verzoegerung: int) -> Mel
 
 
 # ── Zustand ──
-FEHLT_ABRUFE = (
-    3  # so viele volle Abrufe muss ein Gerät in der Tabelle fehlen, bis sein Zustand vergessen wird
-)
+FEHLT_ABRUFE = 3  # so viele volle Abrufe muss ein stilles Gerät („aus“) fehlen, bis sein Zustand vergessen wird
+VERGESSEN_S = (
+    30 * 86_400
+)  # ein gemeldetes Gerät, das so lange fehlt, wird vergessen (kein „wieder online“ mehr)
 GESCHRUMPFT = 0.5  # Tabelle kleiner als die Hälfte des letzten vollen Abrufs: gilt als Lücke, nicht als Wahrheit
+# so lange in Folge kleiner: die Tabelle wurde aufgeräumt, die neue Größe gilt. Lang genug, dass eine Box, die sich nach
+# einem Neustart erst nach und nach füllt, keine Meldungen „offline“ auslöst.
+DAUERHAFT_S = 30 * 60
 BEKANNT_HOECHSTENS = 5000  # gemerkte Geräte (älteste fallen zuerst weg)
 
 
@@ -304,6 +314,9 @@ class Zustand:
     verbindung: str
     fehlt: int = 0  # volle Abrufe in Folge ohne dieses Gerät
     still: bool = False  # gemeldet ohne Meldung (unstet): auch „wieder online“ entfällt
+    ueberwacht: bool = (
+        True  # zuletzt gesehen überwacht – gilt, solange das Gerät in der Tabelle fehlt
+    )
 
 
 @dataclass(frozen=True)
@@ -343,6 +356,9 @@ class Waechter:
     bekannt: dict[str, None] = field(default_factory=dict)  # geordnet: älteste zuerst
     bekannt_geaendert: bool = False
     voll: int = 0  # Geräte im letzten vollen Abruf
+    kleiner_seit: float | None = (
+        None  # Tabelle seit dann in Folge stark geschrumpft (nicht leer, Box erreichbar)
+    )
     luecke: bool = False  # Gerätetabelle fehlte oder war unbrauchbar
     ruhe_ab: float | None = (
         None  # Tabelle nach einer Lücke wieder da: Frist für „weg“ zählt ab hier
@@ -381,11 +397,22 @@ class Waechter:
             self.ausfall_seit, self.ausfall_box = None, False
 
         liste = list(geraete)
-        brauchbar = (
+        geschrumpft = (
             box_erreichbar
             and bool(liste)
-            and not (self.voll and len(liste) < self.voll * GESCHRUMPFT)
+            and bool(self.voll)
+            and len(liste) < self.voll * GESCHRUMPFT
         )
+        if not geschrumpft:
+            self.kleiner_seit = None
+        elif self.kleiner_seit is None:
+            self.kleiner_seit = jetzt
+        elif jetzt - self.kleiner_seit >= DAUERHAFT_S:
+            geschrumpft, self.kleiner_seit = (
+                False,
+                None,
+            )  # dauerhaft kleiner: aufgeräumt, die neue Größe gilt
+        brauchbar = box_erreichbar and bool(liste) and not geschrumpft
         if brauchbar:
             if self.luecke and self.grundzustand:
                 self.ruhe_ab = jetzt  # nach einem Neustart der Box melden sich Geräte erst nach und nach zurück
@@ -433,19 +460,20 @@ class Waechter:
         if not self.grundzustand:
             # erster Abruf mit Gerätetabelle: Grundzustand übernehmen, nichts melden (kein Schwall nach dem Neustart)
             for b in liste:
-                self.geraete[b.schluessel] = self._neu(b, jetzt)
+                self.geraete[b.schluessel] = self._neu(b, jetzt, ueberwacht(b.schluessel))
             self.grundzustand = True
             return out
         ruhe = self.ruhe_ab or 0.0
         for b in liste:
             z = self.geraete.get(b.schluessel)
             if z is None:
-                self.geraete[b.schluessel] = self._neu(b, jetzt)
+                self.geraete[b.schluessel] = self._neu(b, jetzt, ueberwacht(b.schluessel))
                 continue
             z.fehlt = 0
             z.name, z.ip = b.name, b.ip or z.ip
+            z.ueberwacht = ueberwacht(b.schluessel)
             if b.aktiv:
-                if z.stand == GEMELDET and einst.wieder and not z.still:
+                if z.stand == GEMELDET and einst.wieder and not z.still and z.ueberwacht:
                     out.append(
                         Meldung(
                             "online",
@@ -460,36 +488,49 @@ class Waechter:
                 z.stand, z.zuletzt, z.verbindung = ONLINE, jetzt, b.verbindung or z.verbindung
                 z.still = False
                 continue
-            if z.stand == ONLINE:
-                z.stand, z.seit = (WEG if ueberwacht(b.schluessel) else AUS), jetzt
-            elif z.stand == WEG:
-                if not ueberwacht(b.schluessel):
-                    z.stand = AUS
-                elif jetzt - max(z.seit, ruhe) >= verz:
-                    oft = self._oft(b.schluessel, jetzt)
-                    if oft <= OFT_AB:
-                        out.append(
-                            Meldung(
-                                "offline",
-                                jetzt,
-                                b.schluessel,
-                                z.name,
-                                z.ip,
-                                z.verbindung,
-                                jetzt - z.seit,
-                                z.zuletzt,
-                                oft=oft if oft >= OFT_AB else 0,
-                            )
-                        )
-                    z.stand, z.still = GEMELDET, oft >= OFT_AB
+            out += self._inaktiv(b.schluessel, z, jetzt, ruhe, verz)
         da = {b.schluessel for b in liste}
-        for k in [
-            k for k in self.geraete if k not in da
-        ]:  # aus der Gerätetabelle der Box entfernt?
-            self.geraete[k].fehlt += 1
-            if self.geraete[k].fehlt >= FEHLT_ABRUFE:
+        for k in [k for k in self.geraete if k not in da]:
+            # aus der Gerätetabelle der Box entfernt: zählt als offline (die Box nimmt inaktive Geräte heraus)
+            z = self.geraete[k]
+            z.fehlt += 1
+            out += self._inaktiv(k, z, jetzt, ruhe, verz)
+            if (z.stand == AUS and z.fehlt >= FEHLT_ABRUFE) or (
+                z.stand == GEMELDET and jetzt - z.seit >= VERGESSEN_S
+            ):
                 del self.geraete[k]
         return out
+
+    def _inaktiv(
+        self, schluessel: str, z: Zustand, jetzt: float, ruhe: float, verz: float
+    ) -> list[Meldung]:
+        """Gerät gerade nicht aktiv (inaktiv in der Tabelle oder nicht mehr darin): weg → nach der Verzögerung genau
+        einmal „offline“; nicht (mehr) überwacht → still „aus“."""
+        if z.stand == ONLINE:
+            z.stand, z.seit = (WEG if z.ueberwacht else AUS), jetzt
+            return []
+        if z.stand in (WEG, GEMELDET) and not z.ueberwacht:
+            z.stand = AUS  # Überwachung abgeschaltet: auch kein späteres „wieder online“
+            return []
+        if z.stand != WEG or jetzt - max(z.seit, ruhe) < verz:
+            return []
+        oft = self._oft(schluessel, jetzt)
+        z.stand, z.still = GEMELDET, oft >= OFT_AB
+        if oft > OFT_AB:
+            return []
+        return [
+            Meldung(
+                "offline",
+                jetzt,
+                schluessel,
+                z.name,
+                z.ip,
+                z.verbindung,
+                jetzt - z.seit,
+                z.zuletzt,
+                oft=oft if oft >= OFT_AB else 0,
+            )
+        ]
 
     def _oft(self, schluessel: str, jetzt: float) -> int:
         """Zählt dieses „offline“ mit; wie oft das Gerät binnen OFT_S offline ging, dieses eingeschlossen."""
@@ -500,7 +541,7 @@ class Waechter:
         return len(zeiten)
 
     @staticmethod
-    def _neu(b: Beobachtung, jetzt: float) -> Zustand:
+    def _neu(b: Beobachtung, jetzt: float, ueberwacht: bool) -> Zustand:
         return Zustand(
             ONLINE if b.aktiv else AUS,
             jetzt,
@@ -508,6 +549,7 @@ class Waechter:
             b.name,
             b.ip,
             b.verbindung if b.aktiv else "",
+            ueberwacht=ueberwacht,
         )
 
     def zaehlen(self) -> dict[str, int]:

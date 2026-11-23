@@ -870,3 +870,75 @@ def test_karte_ohne_fund_zeigt_die_masten_der_umgebung():
     fund = ka.Fund(ka.NICHT_GEFUNDEN)
     k = ansichten._karte(wohnung, m, {m.haupt: fund}, [mast], [None], None, "de")
     assert k["stand"] == ka.NICHT_GEFUNDEN and k["rahmen"], "der Stand der Suche bleibt sichtbar"
+
+
+async def test_kennwort_nur_an_die_adresse_fuer_die_es_gilt(hass: HomeAssistant):
+    """Die Suche fragt mehrere Adressen; das Kennwort geht nur an die gespeicherte bzw. die, an der es zuerst
+    angenommen wurde – an anderen liest Heimnetz nur ohne Anmeldung."""
+    from custom_components.heimnetz.vorgeschaltet import Dienst
+    from custom_components.heimnetz.vorgeschaltet.zte import Lesung
+
+    dienst = Dienst(hass)
+    erkennung = ve.Erkennung("zte_goform", "")
+    geschickt = []
+
+    async def lesen(lauf, erk, kennwort):
+        geschickt.append((lauf.adresse, kennwort))
+        return (
+            Lesung(befund=None if kennwort else "ohne_kennwort", angemeldet=bool(kennwort)),
+            ("geraet"),
+            erk,
+        )
+
+    with patch.object(dienst, "_mit_startseite", lesen):
+        st = await dienst._lesen(ADRESSE, erkennung, KENNWORT, "de", 0.0)  # noqa: SLF001
+        assert st.angemeldet and dienst.kennwort_bei == ADRESSE, "beim ersten Erfolg gebunden"
+        st = await dienst._lesen("192.168.8.1", erkennung, KENNWORT, "de", 0.0)  # noqa: SLF001
+        assert st.befund == "kennwort_andere_adresse" and not st.angemeldet
+        await dienst._lesen("192.168.8.1", erkennung, KENNWORT, "de", 0.0, "192.168.8.1")  # noqa: SLF001
+        await dienst._lesen(ADRESSE, erkennung, KENNWORT, "de", 0.0, "192.168.8.1")  # noqa: SLF001
+    assert geschickt == [
+        (ADRESSE, KENNWORT),
+        ("192.168.8.1", None),
+        ("192.168.8.1", KENNWORT),  # gespeicherte Adresse gilt
+        (ADRESSE, None),
+    ]
+    assert dienst.kennwort_fuer("192.168.8.1", KENNWORT, None) is None
+    assert dienst.kennwort_fuer(ADRESSE, KENNWORT, None) == KENNWORT
+    dienst.anmeldung_gesehen(ADRESSE, KENNWORT, "abgelehnt")
+    assert dienst.kennwort_fuer(ADRESSE, KENNWORT, None) is None, "abgelehnt: kein weiterer Versuch"
+
+
+async def test_neues_kennwort_loest_die_bindung(hass: HomeAssistant):
+    """Ändert sich das hinterlegte Kennwort, gilt die Bindung an die alte Adresse nicht mehr; gemerkt wird nur ein
+    Hash im Speicher, nie das Kennwort."""
+    from custom_components.heimnetz.vorgeschaltet import Dienst
+
+    dienst = Dienst(hass)
+    dienst.kennwort_bei = ADRESSE  # aus dem Gedächtnis nach dem Start: gilt weiter
+    assert dienst.kennwort_fuer("192.168.8.1", KENNWORT, None) is None
+    assert dienst.kennwort_fuer(ADRESSE, KENNWORT, None) == KENNWORT
+    assert dienst.kennwort_bei == ADRESSE
+    assert KENNWORT not in repr(vars(dienst))
+    neu = KENNWORT + "-neu"
+    assert dienst.kennwort_fuer("192.168.8.1", neu, None) == neu, "neues Kennwort: wieder frei"
+    assert dienst.kennwort_bei is None
+    # gelöscht und wieder eingetragen zählt auch als neu
+    dienst.kennwort_bei = ADRESSE
+    dienst.kennwort_fuer(ADRESSE, None, None)
+    assert dienst.kennwort_bei is None
+    dienst.kennwort_bei = ADRESSE
+    dienst.bindung_loesen()
+    assert dienst.kennwort_bei is None
+
+
+async def test_goform_ohne_ld_schickt_kein_kennwort_im_klartext(hass: HomeAssistant, modem_netz):
+    from custom_components.heimnetz.vorgeschaltet import zte
+
+    _leeren(modem_netz)
+    modem_netz.get(re.compile(r"cmd=LD(&|$)"), json={"LD": ""})
+    modem_netz.post(re.compile(r"goform_set_cmd_process"), json={"result": "0"})
+    async with netz.neue_session(aiohttp.ClientTimeout(total=10)) as session:
+        lauf = netz.Lauf(session, ADRESSE, roh=False)
+        assert await zte._goform_anmelden(lauf, KENNWORT) == "fehler"  # noqa: SLF001
+    assert not [c for c in modem_netz.mock_calls if c[0] == "POST"], "nichts geschickt"

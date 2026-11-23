@@ -1,4 +1,5 @@
 # Tag vX.Y.Z → GitHub-Release mit dem Abschnitt „## [X.Y.Z]“ aus CHANGELOG.md als Text.
+# Veröffentlicht nur, wenn Tests (tests.yml) und Prüfung (validate.yml: hassfest, HACS) für den Tag grün sind.
 # Der Tag muss zur Version in manifest.json passen, sonst bricht der Lauf ab.
 name: Release
 
@@ -8,11 +9,20 @@ on:
       - "v*"
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
+  tests:
+    uses: ./.github/workflows/tests.yml
+
+  validate:
+    uses: ./.github/workflows/validate.yml
+
   release:
+    needs: [tests, validate]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Version und Text aus CHANGELOG.md

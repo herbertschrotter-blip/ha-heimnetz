@@ -302,6 +302,10 @@ async def test_gebaute_seite_wird_ausgeliefert(
     client = await hass_client()
     antwort = await client.get("/heimnetz_static/heimnetz-panel.js")
     assert antwort.status == 200
+    assert "max-age" in antwort.headers.get("Cache-Control", "")  # Adresse trägt die Version
+    # nur die gebaute Datei ist freigegeben, nicht der Ordner mit Quellen und Werkzeugen
+    for pfad in ("bauen.mjs", "package.json", "src/heimnetz-panel.js"):
+        assert (await client.get(f"/heimnetz_static/{pfad}")).status == 404
     assert 'customElements.define("heimnetz-panel"' in (
         await antwort.text()
     ) or "heimnetz-panel" in (await antwort.text())

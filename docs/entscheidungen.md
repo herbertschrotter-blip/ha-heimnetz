@@ -6,7 +6,7 @@ nachgetragen.
 
 ## Zweck und Grenzen
 
-- Zweck: eigene Seite „Netzwerk“ in der Seitenleiste im Glas-Design wie die Baustelle (`ha-baustelle`). Sie zeigt, wie
+- Zweck: eigene Seite „Heimnetz“ (bis 0.22.0 „Netzwerk“) in der Seitenleiste im Glas-Design wie die Baustelle (`ha-baustelle`). Sie zeigt, wie
   es dem Heimnetz und dem Internetzugang (FRITZ!Box 6860 5G, Mobilfunk bei Drei) geht: Gesamtstand und Befunde,
   Journal, Protokoll der FRITZ!Box, Geräte mit Verlauf, Datenverbrauch, Mobilfunk-Empfang, Speedtest.
 - Erste Fassung: derselbe Umfang wie der Altbestand in `/config` (`packages/netzwerk.yaml`,
@@ -43,12 +43,12 @@ nachgetragen.
 
 - Art: eigene Integration mit Abruf (`quelle: abruf`). Sie fragt die FRITZ!Box selbst über TR-064 ab (wie bisher
   `fritz_diag.py`: Ereignisprotokoll, Hosts, LAN/DHCP, Mobilfunk, WAN-Zähler) über einen gemeinsamen Abruf
-  (Coordinator), dazu der DHCP-Test und die Erreichbarkeit vom Pi aus. Die Verbindung in
-  `custom_components/netzwerk/api.py` ist noch ein Beispiel ohne Netz.
+  (Coordinator), dazu der DHCP-Test und die Erreichbarkeit vom Pi aus. Die Verbindung zur Box liegt in
+  `custom_components/heimnetz/box.py` (anfangs ein Beispiel ohne Netz in `netzwerk/api.py`).
 - Zugang zur Box: aus dem Eintrag der vorhandenen Integration FRITZ!Box Tools, nicht noch einmal eingeben; kein
   Kennwort im Repo, in Dateien oder Ausgaben.
 - Ist die Box nicht erreichbar, werden die Entitäten „nicht verfügbar“; Home Assistant versucht es selbst wieder.
-- Fachlogik ohne Home Assistant in `custom_components/netzwerk/logik/` (Befunde, Journal-Abgleich, Grundlast,
+- Fachlogik ohne Home Assistant in `custom_components/heimnetz/logik/` (bis 0.22.0 `netzwerk/logik/`; Befunde, Journal-Abgleich, Grundlast,
   Auswertung Speedtest), mit eigenen Tests.
 - Daten: Messwerte mit Verlauf (Mobilfunk-Empfang, Speedtest, Zustände) als Sensoren über die Aufzeichnung von Home
   Assistant. Lange Listen (Journal, Protokoll der Box, Verlauf je Gerät, Speedtest-Protokoll mit Grundlast) gehören
@@ -59,8 +59,16 @@ nachgetragen.
 - Entwicklung bis 0.22.0 im privaten Repo `herbertschrotter-blip/ha-netzwerk` (jetzt Archiv); ab 0.23.0 öffentlich in
   `herbertschrotter-blip/ha-heimnetz` mit frischer Historie und automatischer Prüfung (siehe Veröffentlichung,
   WU-0006). Mockups und persönliche Arbeitsdateien bleiben lokal (`.gitignore`). Push nur durch den Entwickler.
-- Auslieferung: `python ausliefern.py` kopiert nach `custom_components/` der HA-Konfiguration und sichert die vorige
-  Fassung (Rückweg: `--zurueck`); ausführen nur Herbert oder Claude nach Bestätigung, Neustart durch Herbert.
+- Auslieferung: `python ausliefern.py` prüft, ob die gebaute Seite zu den Quellen passt (`bauen.mjs --pruefen`, sonst
+  Abbruch; `--ohne-pruefung` übergeht das), kopiert nach `custom_components/` der HA-Konfiguration und sichert die
+  vorige Fassung mit Zeitstempel (die letzten drei Stände bleiben; Rückweg: `--zurueck`, Stand für Stand). Claude führt `ausliefern.py` selbst aus und startet danach Home Assistant mit dem Skill neustart
+  neu (Konfiguration prüfen, still nachsehen, ob in einer anderen Claude-Sitzung etwas läuft) – Herbert, 29.10.2026;
+  vorher galt: ausführen nur Herbert oder Claude nach Bestätigung, Neustart durch Herbert.
+- Kein Update-Listener (bewusste Abweichung von G-16, „eine Optionsänderung lädt den Eintrag neu“): Die Optionen
+  (OpenCellID-Schlüssel, Kennwort des vorgeschalteten Geräts, Kennwort der Shelly-Steckdosen) liest die Integration
+  bei jeder Verwendung frisch aus dem Eintrag; ein Neuladen würde den laufenden Abruf, die Suche nach dem Gerät und
+  den Wächter unnötig unterbrechen. Wer eine neue Option einführt, liest sie ebenso live oder trägt hier nach, warum
+  doch neu geladen wird.
 
 ## Seite (Mockup abgenommen von Herbert, 12.10.2026)
 
@@ -80,7 +88,7 @@ nachgetragen.
 
 ## Datenbank (12.10.2026)
 
-- Datei `netzwerk/netzwerk.db` in der HA-Konfiguration (wie `baustelle/baustelle.db`), damit sie in der HA-Sicherung
+- Datei `heimnetz/heimnetz.db` (bis 0.22.0 `netzwerk/netzwerk.db`, siehe Veröffentlichung) in der HA-Konfiguration (wie `baustelle/baustelle.db`), damit sie in der HA-Sicherung
   ist; nicht unter `/local`, weil sie Gerätenamen und Hardware-Adressen enthält. Schema-Version in
   `PRAGMA user_version`; während einer Sicherung ruht das Schreiben.
 - Inhalt: Journal, Protokoll der Box, Speedtest-Messungen mit Grundlast, Momentaufnahme je Messung (eigene Tabelle,
@@ -189,6 +197,11 @@ nachgetragen.
 - Speicher ist der Integrations-Speicher; die Integration legt eine lesbare Kopie unter `<config>/netzwerk/` ab, weil
   `.storage/` für Claude gesperrt ist. Geändert wird nur über die Seite und die Aktion `netzwerk.ticket`.
 - Melden darf jeder angemeldete Benutzer; schließen, wieder öffnen, löschen und die Aktion nur Admins.
+- Grenzen (23.11.2026): höchstens 20 offene Meldungen je Benutzer und 10 neue je Stunde – sonst könnte ein Konto
+  Speicher, Speicherkarte (je Meldung bis 3 × 1,5 MB Bilder) und die Liste für Claude fluten. Bilder hängt nur der
+  Absender an; Bilder, Status und Löschen gehen über die interne id, nicht über die erratbare Nummer. In
+  `meldungen.md` und `tools/ticket.py zeige` stehen Metazeilen und Bildpfade (nur aus `bilder`) vor dem Text, Felder
+  einzeilig und entschärft, der Text als Zitat – ein Benutzertext kann keine `bild:`- oder Metazeile vortäuschen.
 
 ## Geräte nach Art (Herbert, 13.10.2026, AN-0001)
 
@@ -279,10 +292,11 @@ nachgetragen.
   die HACS-Prüfung nehmen es aus der Integration, ein Eintrag im Repo `home-assistant/brands` ist nicht nötig.
   GitHub Actions: `tests.yml` (dieselben Checks wie vor dem Commit), `validate.yml` (hassfest und HACS-Prüfung, auch
   täglich), `release.yml` (Tag `vX.Y.Z` → Release mit dem Abschnitt `## [X.Y.Z]` aus `CHANGELOG.md`; der Tag muss zur
-  Version in `manifest.json` passen). Actions auf feste Commits gepinnt, die Version steht im Kommentar. Issue-Vorlagen
+  Version in `manifest.json` passen; veröffentlicht erst, wenn `tests.yml` und `validate.yml` – per `workflow_call`
+  für den Tag aufgerufen – grün sind). Actions auf feste Commits gepinnt, die Version steht im Kommentar. Issue-Vorlagen
   Fehler/Wunsch/Anregung zweisprachig mit Datenschutz-Hinweis; leere Issues bleiben erlaubt, weil der Melden-Link ohne
   Vorlage öffnet. Testdaten nur erfunden (Zellen `aaaaa-xx`, TAC `1A2B`, Koordinaten in Wien).
-  `manifest.json` nennt unter `after_dependencies` nur Integrationen von Home Assistant (`fritz`, `recorder`):
+  `manifest.json` nennt unter `after_dependencies` nur Integrationen von Home Assistant (`fritz`, `network`, `recorder`):
   hassfest kennt keine aus HACS. Ookla wird ohnehin bei jedem Abruf neu gesucht (`speedtest.verbinden`), eine später
   geladene Ookla-Einrichtung ist also beim nächsten Abruf da.
 - Checkliste beim Anlegen von `ha-heimnetz` (die HACS-Prüfung in `validate.yml` liest Einstellungen des Repos, die
@@ -500,8 +514,12 @@ nachgetragen.
   „wieder online“ weg). Zurückgehaltene Nachrichten liegen nur im Speicher – startet Home Assistant während des
   Ausfalls neu, gehen sie verloren (Ereignis und Journal sind schon da).
 - Lücken der Gerätetabelle: Ist sie bei erreichbarer Box leer oder kleiner als die Hälfte des letzten vollen Abrufs,
-  gilt sie für die Warnungen wie „Box nicht erreichbar“. Ein Gerät, das fehlt, wird erst nach drei vollen Abrufen
-  vergessen. Nach einer Lücke oder einem Ausfall der Box zählt die Verzögerung für „weg“ frühestens ab der Rückkehr
+  gilt sie für die Warnungen wie „Box nicht erreichbar“; bleibt sie 30 Minuten in Folge so klein (Liste der Box
+  aufgeräumt), gilt die neue Größe (0.39.0). Fehlt ein Gerät in einer vollen Tabelle (die Box nimmt inaktive heraus),
+  gilt es als offline: ein weggehendes wird nach der Verzögerung gemeldet, ein gemeldetes bleibt bis zur Rückkehr
+  („wieder online“) oder 30 Tage gemerkt; nur stille („aus“) werden nach drei vollen Abrufen vergessen. Ob ein
+  fehlendes Gerät überwacht wird, gilt wie zuletzt gesehen; Überwachung abgeschaltet → still „aus“, kein „wieder
+  online“. Nach einer Lücke oder einem Ausfall der Box zählt die Verzögerung für „weg“ frühestens ab der Rückkehr
   (Schonfrist – nach einem Neustart der Box melden sich Geräte nach und nach).
 - Neues unbekanntes Gerät = nicht unter den je gesehenen Geräten. Diese Menge (Hardware-Adressen) liegt im Gedächtnis
   des Abrufs (Schlüssel `bekannt`, ohne neue Version, höchstens 5000, nie aufgeräumt) und wird beim Start mit den
@@ -576,6 +594,26 @@ nachgetragen.
   (`art: waechter`). Kennwort der Steckdosen nur in den Optionen des Eintrags. Gespeichert im Einstellungsspeicher
   (Schlüssel `waechter`, ohne neue Version). Beim Entfernen der Integration bleiben Skripte auf den Steckdosen – deshalb
   im README: erst die Wächter löschen.
+- **Pause + nur hängendes Gerät** (Herbert, 23.11.2026; in einer Nachbildung beider Stufen schaltete die
+  Box-Steckdose mitten in den sanften Neustart der Box, und ein Nachbar im Neustart galt als „wieder in Ordnung“):
+  Stufe 1 meldet jeden sanften Neustart vorher an alle Steckdosen der Kette (KVS-Befehl `sanft`, Skript WV 3). Die
+  Steckdose hält dann `SANFT_HALT_MIN` = 5 min an (Neustart einer FRITZ!Box etwa 3–4 min, eines Modems 2–3 min;
+  kürzer als Stufe 2): Startzeit der Störung bleibt, kein Schalten, Zustand „wartet auf den sanften Neustart“; nicht
+  angenommen → Halt mit 0 min gleich beendet. Ein Nachbar, der nicht antwortet, ist kein „ok“ (Steckdose wartet nur);
+  wechselt in der Kette der Grund, gilt die längere Wartezeit weiter (beim Wächter Home Assistant kürzt „Pi weg“ nach
+  „Pi lebt“ bewusst). Stufe 1 startet nur das Gerät neu, das hängt: antwortet eines der Kette nicht (vorher frisch
+  gefragt, nur die Startseite), startet sie keines sanft – nicht die gesunde Box, wenn nur das Modem nicht antwortet.
+  Frisch gefragt werden nur Geräte, die selbst sanft neu starten; ein Glied ohne Weboberfläche (ONT, Switch) bleibt
+  unbekannt und hält Stufe 1 nicht auf. Kommt kein Gerät mehr infrage (alle in dieser Störung schon neu gestartet,
+  Bremse), fragt Stufe 1 auch nicht mehr.
+- Kennwörter dabei: das Kennwort des Modems nur an die in ⚙ › Zugang gespeicherte Adresse, sonst an die, an der es
+  zuerst angenommen wurde (im Gedächtnis gemerkt, nur die Adresse); anderswo liest Heimnetz ohne Anmeldung. Ein neues
+  Kennwort oder eine unter ⚙ › Zugang gespeicherte Adresse löst diese Bindung; von selbst (etwa nach langer Stille an
+  der gebundenen Adresse) löst sie sich bewusst nicht – sonst ginge das Kennwort an ein beliebiges anderes Gerät, das
+  sich an einer anderen Adresse meldet. Abgelehnt
+  (Modem wie Steckdose, je Adresse) → kein weiterer Versuch, bis ein anderes Kennwort eingetragen ist. Neben einer
+  eingerichteten HA-Integration (z. B. huawei_lte) kein sanfter Neustart. Die Suche nach Steckdosen fragt nur ohne
+  Anmeldung; IPv6 gilt nur als Heimnetz, wenn Unique Local (fc00::/7).
 
 ## Ausfälle des Pi verstehen (Herbert, 18.11.2026)
 
@@ -617,7 +655,10 @@ nachgetragen.
   es schnell, bekomme ich meinen Tarif, wird es besser oder schlechter, wie ist es jetzt und gleich. Dafür eine
   Antwortleiste darüber (1.11 A, aus neun Vorschlägen in drei Runden). „Tarif erreicht“ zählt Stunden mit Median ≥ 80 %
   vom Tarif; „gleich“ schaut 12 Stunden im Raster voraus (Wechsel über die grüne Schwelle der Farbskala). Rechnung in
-  `logik/auswertung.py` (`antworten`).
+  `logik/auswertung.py` (`antworten`). Schnellste/langsamste Stunde nach Median (beim Ping umgekehrt), ohne
+  Unterschied keine; ohne Messung in den nächsten 12 Stunden „keine Messungen“ statt „bleibt so“ (0.39.0). Trend erst ab
+  zwei Wochen: beim Zeitraum 7 Tage keiner – halbe Wochen verglichen Werktage mit dem Wochenende, ältere Wochen passten
+  nicht zum gewählten Zeitraum.
 
 ## Offene Entscheidungen
 

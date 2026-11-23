@@ -119,20 +119,26 @@ def lesen(lauf: Lauf, kennwort: str | None) -> Lesung:
     return lesung
 
 
-def neustarten(lauf: Lauf, kennwort: str | None) -> bool:
-    """Wächter (Stufe 1), blockierend: Familie erkennen, einmal anmelden, reboot(). Nie eine Einstellung."""
+def neustarten(lauf: Lauf, kennwort: str | None) -> str:
+    """Wächter (Stufe 1), blockierend: Familie erkennen, einmal anmelden, reboot(). Nie eine Einstellung. „ok“,
+    „abgelehnt“ (Kennwort – kein weiterer Versuch) oder „fehler“."""
     if not kennwort:
-        return False
+        return "fehler"
     session = requests_session(lauf.adresse)
     try:
         gefunden = familie(lauf.adresse, session)
         if gefunden is None:
-            return False
+            return "fehler"
         router = _client(gefunden[1], lauf.adresse, kennwort, session)
-        router.authorize()
+        try:
+            router.authorize()  # genau ein Versuch
+        except RequestException:
+            return "fehler"
+        except Exception as err:  # Ablehnung und Netzfehler meldet die Bibliothek gleichermaßen
+            return "abgelehnt" if abgelehnt(err) else "fehler"
         router.reboot()
-        return True
-    except Exception:  # abgelehnt, Netz, Gerät startet schon neu
-        return False
+        return "ok"
+    except Exception:  # Netz, Gerät startet schon neu
+        return "fehler"
     finally:
         session.close()

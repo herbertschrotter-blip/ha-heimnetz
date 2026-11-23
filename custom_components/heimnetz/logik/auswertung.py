@@ -177,7 +177,10 @@ class Antworten:
     """1.11 Antwortleiste über dem Raster (abgenommen 22.11.2026): jetzt (typisch für diese Stunde an diesem
     Wochentag), gleich (nächste Stunde, ab der es wieder schnell bzw. langsamer wird), Tarif erreicht (Anteil der
     Stunden mit Messung, deren Median mindestens TARIF_QUOTE vom Tarif ist), Trend (Median je Woche, älteste zuerst);
-    dazu die schnellste und langsamste Stunde im Raster."""
+    dazu die schnellste und langsamste Stunde im Raster (nach Median, beim Ping umgekehrt; ohne Unterschied keine).
+    `vorschau_leer`: in den nächsten VORSCHAU_H Stunden keine Messung – dann heißt kein Wechsel nicht „bleibt so“.
+    Trend gibt es erst ab zwei Wochen (Zeitraum 7 Tage: keiner) – halbe Wochen würden Werktage gegen das Wochenende
+    vergleichen, Wochen vor dem Zeitraum passten nicht zu den übrigen Antworten."""
 
     tag: int
     stunde: int
@@ -187,6 +190,7 @@ class Antworten:
     gleich: float | None
     gleich_lage: float | None
     gleich_besser: bool | None
+    vorschau_leer: bool
     tarif_quote: float | None
     wochen: tuple[float | None, ...]
     trend: float | None  # neueste minus älteste Woche (beim Ping: weniger ist besser)
@@ -205,15 +209,23 @@ def antworten(
     wd, h = jetzt.weekday(), jetzt.hour
     z = raster[wd][h]
     gleich: tuple[int, Zelle] | None = None
+    vorschau = [
+        ((h + i) % 24, raster[(wd + (h + i) // 24) % 7][(h + i) % 24])
+        for i in range(1, VORSCHAU_H + 1)
+    ]
     if z.lage is not None:
         gut = z.lage >= GUT
-        for i in range(1, VORSCHAU_H + 1):
-            k = raster[(wd + (h + i) // 24) % 7][(h + i) % 24]
-            if k.lage is not None and (k.lage >= GUT) != gut:
-                gleich = ((h + i) % 24, k)
-                break
+        gleich = next(
+            ((s_, k) for s_, k in vorschau if k.lage is not None and (k.lage >= GUT) != gut), None
+        )
     zellen = [(c, (t_, s_)) for t_, reihe in enumerate(raster) for s_, c in enumerate(reihe)]
     mit = [(c, o) for c, o in zellen if c.lage is not None]
+    # schnellste/langsamste nach Median (die Lage ist auf 0…1 gekappt: über dem Tarif wären alle gleich)
+    guete = sorted(
+        ((c.median if g.mehr_ist_gut else -c.median, o) for c, o in zellen if c.median is not None),
+        key=lambda m: -m[0],
+    )
+    unterschied = len({m for m, _ in guete}) >= 2
     quote = (
         round(
             sum(1 for c, _ in mit if c.median is not None and c.median >= tarif * TARIF_QUOTE)
@@ -233,11 +245,12 @@ def antworten(
         gleich=gleich[1].median if gleich else None,
         gleich_lage=gleich[1].lage if gleich else None,
         gleich_besser=(gleich[1].lage or 0) >= GUT if gleich else None,
+        vorschau_leer=all(k.lage is None for _, k in vorschau),
         tarif_quote=quote,
         wochen=tuple(wochen),
         trend=round(da[-1] - da[0], 1) if len(da) >= 2 else None,
-        beste=max(mit, key=lambda x: x[0].lage or 0)[1] if mit else None,
-        schwaechste=min(mit, key=lambda x: x[0].lage or 0)[1] if mit else None,
+        beste=guete[0][1] if unterschied else None,
+        schwaechste=guete[-1][1] if unterschied else None,
     )
 
 
@@ -515,8 +528,10 @@ def auswerten(
         if z.date() == datum:
             am_datum[z.hour].append((v, w))
         alle.append((v, w))
-        woche = int((jetzt - p.t) // WOCHE_S)
-        if 0 <= woche < n_wochen:
+        woche = max(
+            0, int((jetzt - p.t) // WOCHE_S)
+        )  # bis 60 s nach „jetzt“ (wie `auswahl`): diese Woche
+        if woche < n_wochen:
             je_woche[woche].append((v, w))
     median = g_quantil(alle, 0.5)
     raster = tuple(

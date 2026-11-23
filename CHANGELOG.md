@@ -1,5 +1,82 @@
 # CHANGELOG
 
+## [0.39.0]
+
+Befunde einer ausführlichen Prüfung (Sicherheit, Fachlogik, Robustheit, Bedienung, Architektur) behoben.
+
+**Wächter und Kennwörter**
+- **Stufe 1 und Steckdose abgestimmt:** Heimnetz meldet jeden sanften Neustart an die Steckdosen der Kette, die dann
+  5 Minuten anhalten – keine Steckdose schaltet mehr mitten in einen sanften Neustart, und ein Nachbar im Neustart gilt
+  nicht mehr als „wieder in Ordnung“ (Skript Version 3, wird von selbst eingespielt). Ändert sich der Grund der
+  Störung, gilt die längere Wartezeit weiter.
+- **Nur das hängende Gerät:** Stufe 1 startet nicht mehr die gesunde FRITZ!Box neu, wenn nur das Modem nicht
+  antwortet; ob es antwortet, wird vorher frisch geprüft. Ein Gerät ohne Weboberfläche in der Kette (ONT, Switch)
+  hält Stufe 1 nicht auf, und ist kein Gerät mehr sanft neu zu starten, fragt Stufe 1 nicht mehr jede Minute nach.
+- **Abgelehntes Modem-Kennwort** wird auch beim sanften Neustart nicht wieder versucht; neben einer eingerichteten
+  Integration (z. B. huawei_lte) gibt es keinen sanften Neustart.
+- **Kennwort an die Adresse gebunden:** Das hinterlegte Modem-Kennwort geht nur an die gespeicherte bzw. die zuerst
+  angenommene Adresse, andere Adressen werden ohne Anmeldung gelesen (auch in der 🔬 Diagnose); ZTE bekommt es nie im
+  Klartext. Ein neues Kennwort oder eine unter ⚙ › Zugang gespeicherte Adresse löst die Bindung; der Hinweis sagt,
+  was bei einem umgezogenen Gerät zu tun ist.
+- **Shelly:** Die Suche fragt Steckdosen nur ohne Kennwort, ein abgelehntes Kennwort wird je Steckdose gemerkt,
+  unerwartete Antworten führen nicht mehr zum Abbruch.
+- Nur private IPv6-Adressen (fc00::/7) gelten als Heimnetz, Teredo und andere Sonderbereiche nicht.
+
+**Warnungen und Speedtest**
+- Hat man die Geräteliste der FRITZ!Box aufgeräumt, kamen bis zum Neustart von Home Assistant keine Warnungen mehr;
+  jetzt gilt die kleinere Liste nach 30 Minuten.
+- Nimmt die FRITZ!Box ein ausgefallenes Gerät aus ihrer Liste, wird es trotzdem offline gemeldet und später als
+  „wieder online“; nach dem Abschalten der Überwachung kommt kein „wieder online“ mehr.
+- Antwortleiste: ▲/▼ markieren auch über dem Tarif oder ohne Tarif die wirklich schnellste und langsamste Stunde (bei
+  nur einer Stunde keine); „keine Messungen“ statt „bleibt so“, wenn die nächsten 12 Stunden ungemessen sind.
+- Netzkarte: Mit 6 GHz im Netz wird ein Gerät ohne Bandangabe nicht mehr als 2,4 GHz eingezeichnet. Die Diagnose zählt
+  VPN-Geräte ohne Tunnel-Adresse.
+
+**Robustheit**
+- Journalzeilen, die während des Schreibens entstehen (Wächter, Ausfall, Zustellfehler), gehen nicht mehr verloren.
+- Entladen während eines Abrufs: Hintergrundaufgaben enden vor dem Schließen der Datenbank, der Speedtest wird nicht
+  wieder angemeldet (das war auch die Ursache des gelegentlich scheiternden Tests der Seitenleiste).
+- Ist die FRITZ!Box weg, prüft Heimnetz nur die Verbindung – kein ERROR von fritzconnection mehr jede Minute; kommt
+  sie zurück (etwa nach einem Neustart), ist sie beim nächsten Abruf wieder da. Pausen von 1, 2 und 5 Minuten nur,
+  wenn sie antwortet, der Aufbau aber scheitert.
+- Das Gedächtnis merkt Protokollzeilen nur noch als kurze Hashes und wird seltener geschrieben (schont die
+  Speicherkarte); alte Gedächtnisse werden umgerechnet.
+- Der OpenCellID-Abzug wird über eine temporäre Datei geladen statt im Speicher (höchstens 64 MB); liegengebliebene
+  Teildateien werden vor dem nächsten Abzug gelöscht.
+- Beschädigte Datenbank: Reparatur-Hinweis statt stillem Setup-Fehler, auch wenn sie sich öffnen, aber nicht lesen
+  lässt; Fehlermeldungen beim Start sind übersetzt.
+- Scheitert das Setup, meldet der nächste Start keinen falschen Ausfall; eine HA-Sicherung ohne Abschluss hält das
+  Schreiben höchstens 6 Stunden an (große Recorder-Datenbank auf dem Pi); scheitert die Statistik-Abfrage im Recorder, zeigt die Seite „keine Daten“ statt
+  eines Fehlers; dieselbe Speedtest-Messung wird nicht doppelt verarbeitet; der Ausfallbericht wertet das
+  Systemprotokoll im Hintergrund aus.
+
+**Tickets**
+- Höchstens 20 offene und 10 neue Meldungen je Stunde je Benutzer; Bilder anhängen nur der Absender und nur über die
+  interne Kennung. Benutzertext in `meldungen.md` und im Werkzeug kann keine Bild- oder Metazeilen vortäuschen.
+
+**Seite**
+- Übersicht und alle Reiter zählen Störungen und Hinweise gleich (ein Wortlaut aus der Integration); „FRITZ!Box nicht
+  erreichbar“ überall gleich; auf Englisch „problem“ statt „outage“, wo keine Internet-Störung gemeint ist.
+- Die Seite zeichnet nicht mehr bei jeder Zustandsänderung in Home Assistant neu und fragt bei verstecktem Tab nicht ab.
+- Fehler beim ersten Laden mit „Erneut versuchen“ statt dauerhaft „lädt …“.
+- Bedienung mit Tastatur und Screenreader: Fenster als Dialog (Esc schließt, Fokus kehrt zurück), alle Klickflächen
+  per Tastatur, Reiter und Umschalter mit Zustand, größere Trefferflächen der ✕-Knöpfe und Netzkarten-Punkte; bei
+  „Bewegung reduzieren“ kein Puls auf der Netzkarte.
+- Lesbarere Status-Chips; die Karte fängt das Scrollen nicht mehr ab; der Melden-Knopf verdeckt nichts mehr;
+  „1 wackelt / 2 wackeln“, „1 Eingriff“; Ticket löschen nur nach Rückfrage; ein leerer Melde-Entwurf öffnet sich nicht
+  wieder, Esc und Tipp neben das Fenster schließen nur (der Entwurf samt Bildern bleibt, nur ✕ verwirft); das festgehaltene Popup der Stundenkachel bleibt beim Scrollen und zeigt die ganze Tabelle.
+- Die Zahl „Auffällig“ der Netzkarte zählt dasselbe wie der Filter (auch neue und VPN-Geräte).
+- „Auffällig“, „belastet“ und die Richtung des Trends kommen aus der Integration (die Seite rechnet nichts Fachliches);
+  die Wahl der belasteten Messungen bleibt im Browser gemerkt.
+
+**Entwicklung**
+- CI wieder grün: das Bundle enthält keine lokalen Pfade mehr (`preserveSymlinks`), `network` steht als
+  after_dependency im Manifest (hassfest). Ein Release erscheint erst, wenn Tests und hassfest für den Tag grün sind.
+- `ausliefern.py` hebt die letzten drei Stände auf (`--zurueck` Stand für Stand) und liefert nicht aus, wenn die
+  gebaute Seite veraltet ist. Die Seite gibt nur noch die gebaute Datei frei (mit Zwischenspeicher).
+- `module.yaml`, Steckbrief, Entscheidungen und README (DE/EN) auf den aktuellen Stand gebracht; Testdaten ohne echte
+  Provider-Adresse.
+
 ## [0.38.0]
 
 - **Speedtest: Antwortleiste über dem Raster** (1.11) – vier Antworten auf einen Blick: **Jetzt typisch** (Median

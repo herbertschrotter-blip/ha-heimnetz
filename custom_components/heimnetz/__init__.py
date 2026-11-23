@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
+import sqlite3
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -48,6 +50,7 @@ from .websocket import registrieren
 
 LOGGER = logging.getLogger(__package__)
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+ISSUE_DATENBANK_KAPUTT = "datenbank_kaputt"  # eigene Datenbank beschädigt (sqlite3.DatabaseError)
 PLATTFORMEN = [Platform.BINARY_SENSOR, Platform.SENSOR]
 
 
@@ -148,14 +151,29 @@ async def async_setup_entry(hass: HomeAssistant, entry: EintragMitLaufzeit) -> b
     try:
         await hass.async_add_executor_job(datenbank.oeffnen)
     except SchemaZuNeu as err:
-        raise ConfigEntryError(str(err)) from err
+        raise ConfigEntryError(
+            translation_domain=DOMAIN,
+            translation_key="schema_zu_neu",
+            translation_placeholders={"grund": str(err)},
+        ) from err
+    except sqlite3.DatabaseError as err:
+        raise _datenbank_kaputt(hass, err) from err
+    ausfall_gestartet: Ausfalldienst | None = None
     try:
-        gedaechtnis, letzte, salz = await hass.async_add_executor_job(_vorbereiten, datenbank)
+        try:
+            # erstes Lesen: auch eine Datei, die sich öffnen lässt, kann innen beschädigt sein
+            gedaechtnis, letzte, salz = await hass.async_add_executor_job(_vorbereiten, datenbank)
+            letzte_messung = (
+                await hass.async_add_executor_job(datenbank.letzte_lesen) if letzte else None
+            )
+        except sqlite3.DatabaseError as err:
+            raise _datenbank_kaputt(hass, err) from err
+        ir.async_delete_issue(hass, DOMAIN, ISSUE_DATENBANK_KAPUTT)
         abruf = Abruf(
             hass, entry, Box(zugang), entry.data[CONF_FRITZ_EINTRAG], datenbank, gedaechtnis, letzte
         )
         if letzte:
-            abruf.letzte = await hass.async_add_executor_job(datenbank.letzte_lesen)
+            abruf.letzte = letzte_messung
         # WU-0006: Vorgabe-Messplan nur für eine neue Installation, nicht beim Umstieg von der alten Integration
         einstellungen = Einstellungsdienst(
             hass, entry.entry_id, neu=not entry.data.get(CONF_ALT_EINTRAG)
@@ -192,12 +210,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: EintragMitLaufzeit) -> b
 
         abruf.waechter = nach_abruf
         await ausfall.start()
+        ausfall_gestartet = ausfall
         await lz.warnungen.async_bekannt_laden()
         entry.async_on_unload(abruf.speedtest.trennen)
         await abruf.async_config_entry_first_refresh()
         await async_anmelden(hass)
         entry.async_on_unload(lambda: abmelden(hass))
     except BaseException:
+        await _hintergrund_beenden(entry)  # vor dem Schließen der Datenbank (wie beim Entladen)
+        if ausfall_gestartet is not None:
+            # das Setup scheitert nach dem Start des Herzschlags: sauberes Ende vermerken, sonst meldet der nächste
+            # Start einen Ausfall, den es nicht gab
+            await hass.async_add_executor_job(ausfall_gestartet.beenden)
         await hass.async_add_executor_job(datenbank.schliessen)
         raise
     await hass.config_entries.async_forward_entry_setups(entry, PLATTFORMEN)
@@ -254,6 +278,26 @@ async def _nachtragen(hass: HomeAssistant, lz: Laufzeit) -> None:
                 abruf.async_update_listeners()
 
 
+def _datenbank_kaputt(hass: HomeAssistant, err: sqlite3.DatabaseError) -> ConfigEntryError:
+    """„file is not a database“, „database disk image is malformed“: nicht bei jedem Start still scheitern, sondern
+    unter Reparaturen sagen, was zu tun ist (beim Öffnen wie beim ersten Lesen)."""
+    LOGGER.error("Heimnetz: Datenbank %s unlesbar (%s)", DATENBANK, err)
+    ir.async_create_issue(
+        hass,
+        DOMAIN,
+        ISSUE_DATENBANK_KAPUTT,
+        is_fixable=False,
+        severity=ir.IssueSeverity.ERROR,
+        translation_key=ISSUE_DATENBANK_KAPUTT,
+        translation_placeholders={"datei": DATENBANK},
+    )
+    return ConfigEntryError(
+        translation_domain=DOMAIN,
+        translation_key=ISSUE_DATENBANK_KAPUTT,
+        translation_placeholders={"datei": DATENBANK},
+    )
+
+
 def _vorbereiten(datenbank: Datenbank) -> tuple[sm.Gedaechtnis, float, str]:
     """Blockierend: Gedächtnis, letzte Messung und Salz laden."""
     gedaechtnis = sm.Gedaechtnis()
@@ -276,9 +320,25 @@ async def async_unload_entry(hass: HomeAssistant, entry: EintragMitLaufzeit) -> 
         if laufzeit.ausfall is not None:  # sauberes Ende – vor dem Schließen der Datenbank
             await hass.async_add_executor_job(laufzeit.ausfall.beenden)
         await laufzeit.abruf.async_schliessen()
+        await _hintergrund_beenden(entry)
         await hass.async_add_executor_job(laufzeit.abruf.box.schliessen)
         await hass.async_add_executor_job(laufzeit.datenbank.schliessen)
     return ok
+
+
+async def _hintergrund_beenden(entry: ConfigEntry) -> None:
+    """Hintergrund-Aufgaben des Eintrags (Nachtragen, vorgeschaltetes Gerät, Speicher, Ausfallbericht …) abbrechen und
+    abwarten, BEVOR die Datenbank zugeht. Home Assistant bricht sie sonst erst nach async_unload_entry ab – dazwischen
+    schrieben sie in die geschlossene Datenbank („Datenbank nicht geöffnet“)."""
+    aufgaben = [
+        a
+        for a in getattr(entry, "_background_tasks", ())
+        if a is not asyncio.current_task() and not a.done()
+    ]
+    for a in aufgaben:
+        a.cancel()
+    if aufgaben:
+        await asyncio.gather(*aufgaben, return_exceptions=True)
 
 
 async def async_remove_entry(hass: HomeAssistant, entry: EintragMitLaufzeit) -> None:

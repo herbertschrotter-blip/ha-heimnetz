@@ -168,7 +168,11 @@ export class HeimnetzKarte extends LitElement {
   _anlegen() {
     const ziel = this.renderRoot.querySelector('#karte');
     if (!ziel) return false;
-    this._karte = L.map(ziel, { zoomControl: false, attributionControl: true });
+    // Die Seite scrollt mit dem Mausrad weiter (Zoom über ＋/−); am Handy verschiebt ein Finger erst nach einem Tipp auf
+    // die Karte oder im Vollbild – sonst bliebe das Wischen über die Seite in der Karte hängen. Zwei Finger zoomen immer.
+    const touch = !!(L.Browser && L.Browser.mobile);
+    this._karte = L.map(ziel, { zoomControl: false, attributionControl: true, scrollWheelZoom: false, dragging: !touch });
+    if (touch) this._karte.on('click', () => this._karte?.dragging.enable());
     this._karte.attributionControl.setPrefix('<a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>');
     L.control.scale({ imperial: false, position: 'bottomleft' }).addTo(this._karte);
     // eigene Ebene unter Zellen, Mast und Wohnung (die liegen als Kreise in der overlayPane, zIndex 400)
@@ -218,6 +222,7 @@ export class HeimnetzKarte extends LitElement {
     } catch { /* nicht erlaubt: bleibt beim festen Rahmen */ }
     await this.updateComplete;
     this._karte?.invalidateSize();
+    if (this._karte && L.Browser && L.Browser.mobile) this._karte.dragging[an ? 'enable' : 'disable']();
   }
 
   _osmUmschalten() {

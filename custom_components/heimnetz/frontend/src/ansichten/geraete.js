@@ -6,7 +6,7 @@ import { html, nothing } from 'lit';
 import { live } from 'lit/directives/live.js';
 import { zahl, zeit, tag, punkt } from '../format.js';
 import { merke, t, tl } from '../sprache.js';
-import { seg, streifen } from './teile.js';
+import { seg, streifen, taste } from './teile.js';
 import { wlan } from './wlan.js';
 import { artFormular } from './warnungen.js';
 
@@ -16,10 +16,10 @@ export const TEILE = [['geraete', merke('Geräte')], ['wlan', merke('WLAN')], ['
 export function geraeteReiter(p, d) {
   const teil = p._opt.geraete.teil;
   return html`<div class="leiste">${seg(tl(TEILE), teil, (v) => p.setze('geraete', { teil: v }), false)}</div>
-    ${!d ? html`<div class="glas-panel block"><div class="leer">${t('lädt …')}</div></div>` : teil === 'wlan' ? wlan(p, d) : geraete(p, d)}`;
+    ${!d ? (p._fehler ? '' : html`<div class="glas-panel block"><div class="leer">${t('lädt …')}</div></div>`) : teil === 'wlan' ? wlan(p, d) : geraete(p, d)}`;
 }
 
-const FILTER = [['alle', merke('Alle')], ['online', 'Online'], ['offline', 'Offline'], ['auff', merke('Auffällig')]];
+const FILTER = [['alle', merke('Alle')], ['online', 'Online'], ['offline', 'Offline'], ['auff', merke('Auffällig')]]; // „Auffällig“: Kennzeichen der Integration
 // AN-0001 (Mockup netzwerk.html · Geräte kompakt, Variante D): eine Zeile je Gerät, Punkt statt Abzeichen
 const PUNKT = { an: ['', 'online'], aus: ['grau', 'offline'], neu: ['blau', merke('neu')], wackelt: ['amber', merke('wackelt')] };
 const ZU = 'WLAN, nicht verbunden'; // anfangs zugeklappt: feste Kennung der Gruppe (name); angezeigt wird ihr text
@@ -31,7 +31,7 @@ const NEU = 'neu'; // Wert „＋ eigene Art …“ in der Auswahl (keine Art)
 function passt(g, filter, suche) {
   if (filter === 'online' && !g.aktiv) return false;
   if (filter === 'offline' && g.aktiv) return false;
-  if (filter === 'auff' && !['neu', 'wackelt'].includes(g.einstufung)) return false;
+  if (filter === 'auff' && !g.auffaellig) return false;
   return !suche || `${g.name} ${g.ip}`.toLowerCase().includes(suche.toLowerCase());
 }
 
@@ -69,14 +69,15 @@ function zeile(p, g, nachArt) {
   const wort = t(schluessel);
   // volle IP; nach Art zusätzlich die Verbindung, nach Verbindung nur das Band
   const zusatz = nachArt ? g.band || g.art : g.band;
-  return html`<div class="geraet gk" @click=${() => p.geraetOeffnen(g.id)}>
+  const auf = () => p.geraetOeffnen(g.id);
+  return html`<div class="geraet gk" role="button" tabindex="0" aria-label=${`${g.name} · ${wort} – ${t('Verlauf öffnen')}`} @click=${auf} @keydown=${taste(auf)}>
     <span>${SYMBOL[g.art.split(' ')[0]] ?? '•'}</span>
     <span class="n">${g.name}<small>${g.ip || '–'}${zusatz ? ` · ${zusatz}` : ''}</small></span>
     ${streifen(g.streifen)}<span class="punkt ${farbe}" title=${wort} aria-label=${wort}></span></div>`;
 }
 
 export function geraetBlatt(p, b) {
-  const kopf = html`<div class="griff"></div><button class="zu" @click=${() => p.zu()}>✕</button>`;
+  const kopf = html`<div class="griff"></div><button class="zu" aria-label=${t('Schließen')} @click=${() => p.zu()}>✕</button>`;
   if (b.laedt) return html`${kopf}<div class="leer">${t('lädt …')}</div>`;
   if (b.fehler) return html`${kopf}<p class="fein">${b.fehler}</p>`;
   const g = b.daten;

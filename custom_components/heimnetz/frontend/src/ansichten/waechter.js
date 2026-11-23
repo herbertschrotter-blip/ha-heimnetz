@@ -45,7 +45,7 @@ function karte(p, w) {
     ${w.glieder.map((g, i) => html`${i ? html`<div class="leise wa-pfeil">↓</div>` : nothing}${glied(g)}`)}
     ${w.weg_seit ? html`<div class="vs-kopf" style="margin-top:8px"><b>${t('Kein Internet seit {zeit}', { zeit: zeit(w.weg_seit) })}</b></div>` : nothing}
     ${admin ? html`<div class="leiste" style="margin-top:8px">
-      <span class="leise">${t('{n} Eingriffe', { n: w.eingriffe })}</span><span style="flex:1"></span>
+      <span class="leise">${w.eingriffe === 1 ? t('{n} Eingriff', { n: 1 }) : t('{n} Eingriffe', { n: w.eingriffe })}</span><span style="flex:1"></span>
       ${seg([['an', t('an')], ['aus', t('aus')]], w.an ? 'an' : 'aus', (v) => p.waechterAendern(w.id, v))}
       ${w.weg_seit || w.punkt === 'amber' ? html`<button class="knopf amber" @click=${() => p.waechterAendern(w.id, 'ruhe')}>${t('Eingriff abbrechen')}</button>` : nothing}
       ${pause ? html`<button class="knopf" @click=${() => p.waechterAendern(w.id, 'weiter')}>${t('Pause beenden')}</button>` : nothing}
@@ -155,7 +155,7 @@ export function waechterBlatt(p) {
   const weiterOk = b.schritt === 1
     ? b.form.glieder.length > 0 && b.form.glieder.every((g) => g.adresse)
     : b.schritt === 2 ? b.form.glieder.some((g) => g.dose) || (b.form.art === 'internet' && b.form.glieder.some((g) => g.sanft)) : true;
-  return html`<button class="zu" @click=${() => p.zu()}>✕</button>
+  return html`<button class="zu" aria-label=${t('Schließen')} @click=${() => p.zu()}>✕</button>
     <h3>${neu ? t('Wächter einrichten') : t('Wächter bearbeiten')}</h3>
     <div class="leise">${b.schritt === 1 ? t('Was soll überwacht und bei Ausfall neu gestartet werden?') : b.form.glieder.map((g) => g.name || g.adresse).join(' → ')}</div>
     ${schritte(p, b)}

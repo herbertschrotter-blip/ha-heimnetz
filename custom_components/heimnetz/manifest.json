@@ -3,6 +3,7 @@
   "name": "Heimnetz",
   "after_dependencies": [
     "fritz",
+    "network",
     "recorder"
   ],
   "codeowners": [
@@ -29,5 +30,5 @@
     "tplinkrouterc6u>=5.37.0"
   ],
   "single_config_entry": true,
-  "version": "0.38.0"
+  "version": "0.39.0"
 }

@@ -16,7 +16,6 @@ Zertifikatsprüfung nur zu genau dieser Adresse (auch, wenn die Startseite per h
 from __future__ import annotations
 
 import ipaddress
-import json
 import re
 import time
 from typing import Any
@@ -53,13 +52,6 @@ def gleiche_adresse(url: str, adresse: str) -> bool:
 def neue_session(zeitlimit: aiohttp.ClientTimeout) -> aiohttp.ClientSession:
     """Eigene kurzlebige Session mit Cookie-Jar für die Anmeldung (Cookies auch für IP-Adressen: `unsafe=True`)."""
     return aiohttp.ClientSession(cookie_jar=aiohttp.CookieJar(unsafe=True), timeout=zeitlimit)
-
-
-def json_wert(text: str) -> Any:
-    try:
-        return json.loads(text)
-    except ValueError:
-        return None
 
 
 def gekuerzt(text: str, grenze: int = 2000) -> str:

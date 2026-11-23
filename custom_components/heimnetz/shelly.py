@@ -10,9 +10,12 @@ protokolliert; abgelehnt kein zweiter Versuch.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import secrets
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from importlib import resources
 from typing import Any
@@ -50,6 +53,19 @@ class Info:
         return self.gen >= 2
 
 
+@contextmanager
+def _lesbar() -> Iterator[None]:
+    """Antwort in unerwarteter Form (falscher Typ, fehlendes Feld) → ShellyFehler statt eines Absturzes."""
+    try:
+        yield
+    except (ValueError, TypeError, AttributeError, KeyError) as err:
+        raise ShellyFehler(merke("falsche Antwort")) from err
+
+
+def _marke(adresse: str, kennwort: str) -> str:
+    return hashlib.sha256(f"{adresse}\0{kennwort}".encode()).hexdigest()
+
+
 # beim Import gelesen (das läuft nicht in der Ereignisschleife), nicht bei jedem Einspielen
 _CODE = resources.files(__package__).joinpath("shelly/waechter.js").read_text(encoding="utf-8")
 
@@ -59,12 +75,21 @@ def skript_code() -> str:
 
 
 class Steckdose:
-    """Eine Anfrage-Folge an eine Steckdose (eine aiohttp-Session des Aufrufers)."""
+    """Eine Anfrage-Folge an eine Steckdose (eine aiohttp-Session des Aufrufers). `abgelehnt`: gemeinsamer Merker des
+    Aufrufers (Adresse → Hash von Adresse und Kennwort) – ein abgelehntes Kennwort wird an dieser Adresse nicht wieder
+    versucht, auch nicht von der nächsten Anfrage-Folge, bis ein anderes eingetragen ist."""
 
-    def __init__(self, session: aiohttp.ClientSession, adresse: str, kennwort: str | None) -> None:
+    def __init__(
+        self,
+        session: aiohttp.ClientSession,
+        adresse: str,
+        kennwort: str | None,
+        abgelehnt: dict[str, str] | None = None,
+    ) -> None:
         if not adresse_erlaubt(adresse):
             raise ShellyFehler(merke("Adresse nicht im Heimnetz"))
         self.session, self.adresse, self.kennwort = session, adresse, kennwort or None
+        self._abgelehnt = abgelehnt if abgelehnt is not None else {}
         self._nr = 0
 
     async def _http(
@@ -93,60 +118,75 @@ class Steckdose:
         status, d = await self._http("GET", "/shelly")
         if status != 200 or not isinstance(d, dict):
             raise ShellyFehler(merke("keine Shelly"))
-        return Info(
-            adresse=self.adresse,
-            kennung=str(d.get("id") or d.get("mac") or ""),
-            modell=str(d.get("model") or d.get("type") or ""),
-            app=str(d.get("app") or d.get("type") or ""),
-            gen=int(d.get("gen") or 1),
-            kennwort=bool(d.get("auth_en") or d.get("auth")),
-        )
+        with _lesbar():
+            return Info(
+                adresse=self.adresse,
+                kennung=str(d.get("id") or d.get("mac") or ""),
+                modell=str(d.get("model") or d.get("type") or ""),
+                app=str(d.get("app") or d.get("type") or ""),
+                gen=int(d.get("gen") or 1),
+                kennwort=bool(d.get("auth_en") or d.get("auth")),
+            )
 
     async def rpc(self, methode: str, params: dict[str, Any] | None = None) -> Any:
         self._nr += 1
         anfrage: dict[str, Any] = {"id": self._nr, "method": methode, "params": params or {}}
         status, d = await self._http("POST", "/rpc", anfrage)
         if status == 401:
+            if self.kennwort and self._abgelehnt.get(self.adresse) == _marke(
+                self.adresse, self.kennwort
+            ):
+                self.kennwort = None  # schon einmal abgelehnt: nicht wieder versuchen
             if not self.kennwort:
                 raise ShellyFehler(merke("Steckdose verlangt ein Kennwort"), abgelehnt=True)
-            frage = (d or {}).get("error", {}).get("message") if isinstance(d, dict) else None
-            try:
-                werte = json.loads(frage) if isinstance(frage, str) else {}
-            except ValueError:
-                werte = {}
-            if not werte.get("nonce"):
-                raise ShellyFehler(merke("Anmeldung nicht verstanden"))
-            anfrage["auth"] = wa.anmeldung(
-                self.kennwort,
-                str(werte.get("realm", "")),
-                werte["nonce"],
-                secrets.token_hex(8),
-                int(werte.get("nc", 1)),
-            )
+            with _lesbar():
+                fehler = d.get("error") if isinstance(d, dict) else None
+                frage = fehler.get("message") if isinstance(fehler, dict) else None
+                try:
+                    werte = json.loads(frage) if isinstance(frage, str) else {}
+                except ValueError:
+                    werte = {}
+                if not isinstance(werte, dict) or not werte.get("nonce"):
+                    raise ShellyFehler(merke("Anmeldung nicht verstanden"))
+                anfrage["auth"] = wa.anmeldung(
+                    self.kennwort,
+                    str(werte.get("realm", "")),
+                    werte["nonce"],
+                    secrets.token_hex(8),
+                    int(werte.get("nc", 1)),
+                )
             status, d = await self._http("POST", "/rpc", anfrage)
             if status == 401:
-                self.kennwort = None  # kein zweiter Versuch mit demselben Kennwort
+                # kein zweiter Versuch mit demselben Kennwort – auch nicht aus der nächsten Anfrage-Folge
+                self._abgelehnt[self.adresse] = _marke(self.adresse, self.kennwort)
+                self.kennwort = None
                 raise ShellyFehler(merke("Kennwort der Steckdose abgelehnt"), abgelehnt=True)
+            self._abgelehnt.pop(self.adresse, None)
         if not isinstance(d, dict):
             raise ShellyFehler(merke("falsche Antwort"))
         if "error" in d:
-            raise ShellyFehler(str(d["error"].get("message", "Fehler")))
+            fehler = d["error"]
+            text = fehler.get("message") if isinstance(fehler, dict) else None
+            raise ShellyFehler(str(text or "Fehler"))
         return d.get("result")
 
     # ── Skript ──
 
     async def skript_id(self) -> int | None:
         liste = await self.rpc("Script.List")
-        for s in (liste or {}).get("scripts", []):
-            if s.get("name") == wa.SKRIPT_NAME:
-                return int(s["id"])
+        with _lesbar():
+            for s in (liste or {}).get("scripts") or []:
+                if s.get("name") == wa.SKRIPT_NAME:
+                    return int(s["id"])
         return None
 
     async def einspielen(self, regeln: dict[str, Any]) -> int:
         """Skript anlegen oder überschreiben, Regeln schreiben, Autostart an, starten. Zurück: id."""
         sid = await self.skript_id()
         if sid is None:
-            sid = int((await self.rpc("Script.Create", {"name": wa.SKRIPT_NAME}))["id"])
+            neu = await self.rpc("Script.Create", {"name": wa.SKRIPT_NAME})
+            with _lesbar():
+                sid = int(neu["id"])
         else:
             await self.rpc("Script.Stop", {"id": sid})
         await self.rpc("KVS.Set", {"key": wa.KVS_REGELN, "value": wa.kvs_text(regeln)})
@@ -184,7 +224,7 @@ class Steckdose:
     async def stand(self) -> wa.Dosenstand:
         """Zustand des Skripts und Leistung; nicht erreichbar → Dosenstand(erreichbar=False)."""
         try:
-            leistung = (await self.rpc("Switch.GetStatus", {"id": 0}) or {}).get("apower")
+            leistung = await self.leistung()
             sid = await self.skript_id()
             if sid is None:
                 return wa.dosenstand(None, leistung)
@@ -192,14 +232,17 @@ class Steckdose:
             antwort = await self.rpc("Script.Eval", {"id": sid, "code": "status()"})
             try:
                 d = json.loads((antwort or {}).get("result") or "null")
-            except ValueError:
+            except ValueError, TypeError, AttributeError:
                 d = None
             return wa.dosenstand(d, leistung)
         except ShellyFehler:
             return wa.Dosenstand(erreichbar=False)
 
     async def leistung(self) -> float | None:
-        return (await self.rpc("Switch.GetStatus", {"id": 0}) or {}).get("apower")
+        antwort = await self.rpc("Switch.GetStatus", {"id": 0})
+        with _lesbar():
+            w = (antwort or {}).get("apower")
+            return float(w) if w is not None else None
 
     async def blinken(self) -> None:
         await self.rpc("Shelly.Identify")

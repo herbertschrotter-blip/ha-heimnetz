@@ -9,11 +9,14 @@ from unittest.mock import patch
 import pytest
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMockResponse
 
 from custom_components.heimnetz import shelly as sh
+from custom_components.heimnetz import vorgeschaltet as vg
 from custom_components.heimnetz import waechter as wd
-from custom_components.heimnetz.const import CONF_SHELLY_KENNWORT
+from custom_components.heimnetz.const import CONF_MODEM_KENNWORT, CONF_SHELLY_KENNWORT
+from custom_components.heimnetz.logik import vorgeschaltet as ve
 from custom_components.heimnetz.logik import waechter as wa
 
 DOSE = "192.168.170.41"
@@ -30,7 +33,7 @@ class Nachbau:
 
     alle: dict[str, Nachbau] = {}
 
-    def __init__(self, _session, adresse, kennwort):
+    def __init__(self, _session, adresse, kennwort, abgelehnt=None):
         self.adresse, self.kennwort = adresse, kennwort
         d = Nachbau.alle.setdefault(adresse, self)
         self.__dict__.update(
@@ -204,6 +207,156 @@ async def test_stufe1_startet_die_box_sanft_neu(hass, geladen, nachbau, hass_ws_
         await lz.waechter.abruf(stand)
         await lz.waechter.abruf(stand)
     assert neu.call_count == 1, "je Störung nur einmal"
+    # vorher an die Steckdose: so lange anhalten (Herbert, 23.11.2026)
+    assert nachbau[DOSE].befehle == [("sanft", {"min": wa.SANFT_HALT_MIN, "grund": "fritzbox"})]
+
+
+async def test_stufe1_nicht_angenommen_beendet_den_halt(hass, geladen, nachbau, hass_ws_client):
+    client = await hass_ws_client(hass)
+    assert (await _frage(client, type="heimnetz/waechter/speichern", waechter=KETTE))["success"]
+    lz = geladen.runtime_data
+    lz.waechter._gelesen = time.time()
+    stand = replace(lz.abruf.data, pi=replace(lz.abruf.data.pi, internet=False))
+    lz.waechter.sanft["w1"] = wa.Sanft(weg_seit=time.time() - 6 * 60)
+    with patch.object(lz.abruf.box, "neustarten", return_value=False):
+        await lz.waechter.abruf(stand)
+    assert [w["min"] for _, w in nachbau[DOSE].befehle] == [wa.SANFT_HALT_MIN, 0]
+
+
+MODEM = "192.168.0.1"
+
+
+def _kette_mit_modem(lz):
+    router = lz.waechter.router()
+    return wa.pruefen(
+        {
+            "art": "internet",
+            "glieder": [
+                {"typ": "zte_goform", "name": "ZTE", "adresse": MODEM, "dose": "192.168.170.42"},
+                {"typ": "fritzbox", "name": "Box", "adresse": router, "dose": DOSE},
+            ],
+        }
+    )
+
+
+async def test_stufe1_startet_nicht_die_gesunde_box_wenn_das_modem_haengt(hass, geladen, nachbau):
+    lz = geladen.runtime_data
+    w = _kette_mit_modem(lz)
+    stand = replace(lz.abruf.data, pi=replace(lz.abruf.data.pi, internet=False))
+    assert stand.box_erreichbar
+    gefragt = []
+
+    async def antwortet(adresse):
+        gefragt.append(adresse)
+        return False
+
+    lz.waechter.sanft[w.id] = wa.Sanft(weg_seit=time.time() - 6 * 60)
+    with (
+        patch.object(lz.waechter, "_antwortet", antwortet),
+        patch.object(lz.abruf.box, "neustarten", return_value=True) as box,
+    ):
+        await lz.waechter._sanft(w, stand, time.time())
+    assert gefragt == [MODEM], "vor Stufe 1 frisch gefragt (der Stand des Modems kann alt sein)"
+    assert box.call_count == 0 and nachbau == {}, "nichts neu gestartet, nichts gemeldet"
+
+    # antwortet das Modem doch: zuerst das Modem (sanft), nicht die Box
+    neu = []
+
+    async def sanft(g):
+        neu.append(g.typ)
+        return True
+
+    with (
+        patch.object(lz.waechter, "_antwortet", return_value=True),
+        patch.object(lz.waechter, "_sanft_neustarten", sanft),
+    ):
+        await lz.waechter._sanft(w, stand, time.time())
+    assert neu == ["zte_goform"]
+    assert {a: [x for x, _ in d.befehle] for a, d in nachbau.items()} == {
+        "192.168.170.42": ["sanft"],
+        DOSE: ["sanft"],
+    }, "beide Steckdosen der Kette halten an"
+
+
+async def test_stufe1_ont_ohne_weboberflaeche_haelt_nicht_auf(hass, geladen, nachbau):
+    """Ein Glied ohne Weboberfläche (ONT, Switch) wird nicht per HTTP gefragt und blockiert Stufe 1 nicht."""
+    lz = geladen.runtime_data
+    router = lz.waechter.router()
+    w = wa.pruefen(
+        {
+            "art": "internet",
+            "glieder": [
+                {
+                    "typ": "geraet",
+                    "name": "ONT",
+                    "adresse": "192.168.170.9",
+                    "dose": "192.168.170.42",
+                },
+                {"typ": "fritzbox", "name": "Box", "adresse": router, "dose": DOSE},
+            ],
+        }
+    )
+    stand = replace(lz.abruf.data, pi=replace(lz.abruf.data.pi, internet=False))
+    gefragt = []
+
+    async def antwortet(adresse):
+        gefragt.append(adresse)
+        return False
+
+    neu = []
+
+    async def sanft(g):
+        neu.append(g.typ)
+        return True
+
+    lz.waechter.sanft[w.id] = wa.Sanft(weg_seit=time.time() - 6 * 60)
+    with (
+        patch.object(lz.waechter, "_antwortet", antwortet),
+        patch.object(lz.waechter, "_sanft_neustarten", sanft),
+    ):
+        await lz.waechter._sanft(w, stand, time.time())
+        assert gefragt == [], "ONT ohne Weboberfläche nicht gefragt"
+        assert neu == ["fritzbox"], "die Box startet sanft neu"
+        # Box gemacht, ONT nicht sanft startbar: nichts mehr fällig, keine Probe mehr
+        await lz.waechter._sanft(w, stand, time.time() + 600)
+    assert neu == ["fritzbox"] and gefragt == []
+
+
+async def test_stufe1_modem_kennwort_abgelehnt_kein_zweiter_versuch(hass, geladen):
+    lz = geladen.runtime_data
+    hass.config_entries.async_update_entry(
+        geladen, options={**geladen.options, CONF_MODEM_KENNWORT: "Modem-Geheim"}
+    )
+    await hass.async_block_till_done()
+    lz = geladen.runtime_data
+    modem = lz.abruf.modem
+    modem.adresse, modem.gemerkt = MODEM, ve.Erkennung("zte_goform", "")
+    g = wa.Glied("zte_goform", "ZTE", MODEM)
+    with patch.object(wd, "baustein_neustarten", return_value="abgelehnt") as neu:
+        assert not await lz.waechter._sanft_neustarten(g)
+        assert not await lz.waechter._sanft_neustarten(g)
+    assert neu.call_count == 1, "abgelehnt: kein weiterer Anmeldeversuch"
+    assert modem.kennwort_abgelehnt(MODEM, "Modem-Geheim")
+    # an einer anderen Adresse als der, für die das Kennwort gilt, kein Neustart mit Kennwort
+    modem._abgelehnt, modem.kennwort_bei = None, "192.168.8.1"  # noqa: SLF001
+    with patch.object(wd, "baustein_neustarten", return_value="ok") as neu:
+        assert not await lz.waechter._sanft_neustarten(g)
+    assert neu.call_count == 0
+    modem.kennwort_bei = MODEM
+    with patch.object(wd, "baustein_neustarten", return_value="ok") as neu:
+        assert await lz.waechter._sanft_neustarten(g)
+    assert neu.call_args.args[3] == "Modem-Geheim"
+    # fremdes Gerät unter der Adresse oder anderer Baustein: nie
+    assert not await lz.waechter._sanft_neustarten(wa.Glied("tplink", "X", MODEM))
+
+
+async def test_kein_sanfter_neustart_neben_einer_ha_integration(hass):
+    with patch.object(vg.integrationen, "eingerichtet", return_value=True):
+        ergebnis = await vg.baustein_neustarten(
+            hass, None, ve.Erkennung("huawei_hilink", ""), "Kennwort"
+        )
+    assert ergebnis == "integration", "sonst stört die zweite Anmeldung die Sitzung von huawei_lte"
+    assert await vg.baustein_neustarten(hass, None, ve.Erkennung("zte_ubus", ""), "x") == "fehler"
 
 
 # ── Die Steckdose selbst (RPC über HTTP) gegen eine nachgebaute Shelly ──
@@ -378,3 +531,118 @@ async def test_veraltetes_skript_wird_selbst_erneuert(hass, geladen, nachbau, ha
         lz.datenbank.journal_texte, "waechter", 0, time.time() + 60
     )
     assert any("auf neuen Stand gebracht (Version" in x for _, x in texte)
+
+
+# ── Steckdose: abgelehnt merken, unerwartete Antworten, Suche ohne Kennwort ──
+
+
+def _rpc_ablehnend(gesehen):
+    async def rpc(method, url, data):
+        anfrage = json.loads(data) if isinstance(data, (str, bytes)) else data
+        gesehen.append(json.loads(json.dumps(anfrage)))  # Abzug: die Anfrage wird danach ergänzt
+        frage = json.dumps({"nonce": 1, "realm": "r", "nc": 1})
+        return AiohttpClientMockResponse(
+            method, url, status=401, json={"id": anfrage["id"], "error": {"message": frage}}
+        )
+
+    return rpc
+
+
+async def test_abgelehnt_gilt_je_adresse_auch_fuer_die_naechste_anfrage(hass, aioclient_mock):
+    gesehen = []
+    aioclient_mock.post(f"http://{DOSE}/rpc", side_effect=_rpc_ablehnend(gesehen))
+    merker: dict[str, str] = {}
+    for _ in range(3):
+        dose = sh.Steckdose(async_get_clientsession(hass), DOSE, "falsch", abgelehnt=merker)
+        with pytest.raises(sh.ShellyFehler) as fehler:
+            await dose.skript_id()
+        assert fehler.value.abgelehnt
+    assert sum("auth" in a for a in gesehen) == 1, "nur ein Anmeldeversuch"
+    # ein anderes Kennwort wird wieder versucht
+    dose = sh.Steckdose(async_get_clientsession(hass), DOSE, "anders", abgelehnt=merker)
+    with pytest.raises(sh.ShellyFehler):
+        await dose.skript_id()
+    assert sum("auth" in a for a in gesehen) == 2
+
+
+@pytest.mark.parametrize(
+    ("antwort", "status"),
+    [
+        ({"id": 1, "error": "kaputt"}, 200),
+        ({"id": 1, "result": {"scripts": [{"name": wa.SKRIPT_NAME, "id": "abc"}]}}, 200),
+        ({"id": 1, "result": {"scripts": "keine"}}, 200),
+        ({"id": 1, "result": ["liste"]}, 200),
+        ({"id": 1, "error": {"message": "[1, 2]"}}, 401),
+        ({"id": 1, "error": {"message": '{"nonce": 1, "nc": "x"}'}}, 401),
+        (["keine", "antwort"], 200),
+    ],
+)
+async def test_unerwartete_antworten_sind_shellyfehler(hass, aioclient_mock, antwort, status):
+    aioclient_mock.post(f"http://{DOSE}/rpc", status=status, json=antwort)
+    dose = sh.Steckdose(async_get_clientsession(hass), DOSE, "geheim")
+    with pytest.raises(sh.ShellyFehler):
+        await dose.skript_id()
+    assert (await dose.stand()).erreichbar is False
+
+
+async def test_info_und_leistung_unerwartet(hass, aioclient_mock):
+    aioclient_mock.get(f"http://{DOSE}/shelly", json={"gen": "zwei"})
+    aioclient_mock.post(f"http://{DOSE}/rpc", json={"id": 1, "result": {"apower": "viel"}})
+    dose = sh.Steckdose(async_get_clientsession(hass), DOSE, None)
+    with pytest.raises(sh.ShellyFehler):
+        await dose.info()
+    with pytest.raises(sh.ShellyFehler):
+        await dose.leistung()
+
+
+async def test_suche_fragt_geschuetzte_steckdosen_nicht_mit_kennwort(hass, geladen, aioclient_mock):
+    hass.config_entries.async_update_entry(
+        geladen, options={**geladen.options, CONF_SHELLY_KENNWORT: "geheim"}
+    )
+    await hass.async_block_till_done()
+    MockConfigEntry(domain="shelly", title="Plug", data={"host": DOSE}).add_to_hass(hass)
+    MockConfigEntry(domain="shelly", title="Offen", data={"host": "192.168.170.44"}).add_to_hass(
+        hass
+    )
+    aioclient_mock.get(
+        f"http://{DOSE}/shelly", json={"id": "shellyplusplugs-a1", "gen": 2, "auth_en": True}
+    )
+    aioclient_mock.get(
+        "http://192.168.170.44/shelly",
+        json={"id": "shellyplusplugs-b2", "gen": 2, "auth_en": False},
+    )
+    aioclient_mock.post(f"http://{DOSE}/rpc", status=401, json={})
+    aioclient_mock.post("http://192.168.170.44/rpc", json={"id": 1, "result": {"apower": 4.5}})
+    dosen = await geladen.runtime_data.waechter.kandidaten()
+    assert {d["adresse"]: d["leistung"] for d in dosen} == {DOSE: None, "192.168.170.44": 4.5}
+    rpc = [str(u) for m, u, *_ in aioclient_mock.mock_calls if m == "POST"]
+    assert all(DOSE not in u for u in rpc), "an die geschützte Steckdose keine Anfrage mit Kennwort"
+
+
+async def test_frisch_fragen_ob_das_modem_antwortet(hass, geladen, aioclient_mock, monkeypatch):
+    import asyncio
+
+    import aiohttp
+
+    monkeypatch.setattr(
+        wd, "neue_session", lambda _z: aioclient_mock.create_session(asyncio.get_running_loop())
+    )
+    aioclient_mock.get(f"http://{MODEM}/", text="<html></html>")
+    aioclient_mock.get("http://192.168.8.1/", exc=aiohttp.ClientError())
+    aioclient_mock.get("https://192.168.8.1/", exc=aiohttp.ClientError())
+    w = geladen.runtime_data.waechter
+    assert await w._antwortet(MODEM)
+    assert not await w._antwortet("192.168.8.1")
+    assert not await w._antwortet("8.8.8.8"), "nur im Heimnetz"
+
+
+async def test_halt_steckdose_weg_haelt_nicht_auf(hass, geladen, nachbau):
+    lz = geladen.runtime_data
+    w = _kette_mit_modem(lz)
+
+    async def weg(*_a, **_k):
+        raise sh.ShellyFehler("nicht erreichbar")
+
+    Nachbau("s", "192.168.170.42", None).befehl = weg
+    await lz.waechter._halt(w, 5, "fritzbox")
+    assert nachbau[DOSE].befehle == [("sanft", {"min": 5, "grund": "fritzbox"})]

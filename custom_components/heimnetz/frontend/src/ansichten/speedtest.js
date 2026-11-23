@@ -6,7 +6,7 @@
 import { html, svg, nothing } from 'lit';
 import { datum, uhr, wochentage, zahl, zeit, farbe } from '../format.js';
 import { merke, t, tl } from '../sprache.js';
-import { kachel, seg } from './teile.js';
+import { kachel, seg, taste } from './teile.js';
 
 const GROESSEN = [['down', '↓ Download'], ['up', '↑ Upload'], ['ping', 'Ping']];
 const ZEITRAEUME = [[7, merke('7 Tage')], [28, merke('4 Wochen')], [84, merke('12 Wochen')]];
@@ -21,13 +21,14 @@ function antwortleiste(d) {
   const e = d.einheit;
   const TAGE = wochentage(true);
   const da = a.wochen.filter((w) => w != null);
-  const besser = a.trend == null || a.trend === 0 ? null : d.groesse === 'ping' ? a.trend < 0 : a.trend > 0;
-  const wert = (v, lage) => html`<b style=${lage != null ? `color:${farbe(lage)}` : ''}>${v != null ? zahl(v) : '–'}<small> ${e}</small></b>`;
+  const besser = d.trend_besser ?? null; // ▲/▼ sagt die Integration (beim Ping ist weniger besser)
+  // Farbe der Skala nur am Punkt: als Schriftfarbe auf dem Glas schlecht lesbar (Olivgrün auf Blau)
+  const wert = (v, lage) => html`<b>${lage != null ? html`<i class="st-farbe" style="background:${farbe(lage)}"></i>` : nothing}${v != null ? zahl(v) : '–'}<small> ${e}</small></b>`;
   return html`<div class="st-antw">
     <div><small>${t('Jetzt typisch')}</small>${wert(a.jetzt, a.jetzt_lage)}<span>${TAGE[a.tag]} ${t('{h} Uhr', { h: a.stunde })}</span></div>
     <div><small>${a.gleich_stunde != null ? t('Ab {h} Uhr', { h: a.gleich_stunde }) : t('Die nächsten 12 Stunden')}</small>
-      ${a.gleich_stunde != null ? wert(a.gleich, a.gleich_lage) : html`<b>${a.jetzt != null ? '=' : '–'}</b>`}
-      <span>${a.gleich_stunde != null ? (a.gleich_besser ? t('wieder schnell') : t('langsamer')) : a.jetzt != null ? t('bleibt so') : t('keine Messung um diese Zeit')}</span></div>
+      ${a.gleich_stunde != null ? wert(a.gleich, a.gleich_lage) : html`<b>${a.jetzt != null && !a.vorschau_leer ? '=' : '–'}</b>`}
+      <span>${a.gleich_stunde != null ? (a.gleich_besser ? t('wieder schnell') : t('langsamer')) : a.jetzt == null ? t('keine Messung um diese Zeit') : a.vorschau_leer ? t('keine Messungen') : t('bleibt so')}</span></div>
     <div><small>${t('Tarif erreicht')}</small><b>${a.tarif_quote != null ? zahl(a.tarif_quote * 100) : '–'}<small> %</small></b>
       <span>${a.tarif_quote != null ? t('der Stunden mit mindestens 80 %') : d.groesse === 'ping' ? t('beim Ping ohne Tarif') : t('Tarif in ⚙ eintragen')}</span></div>
     <div><small>${t('Trend')}</small><b style=${besser == null ? '' : `color:var(${besser ? '--s3' : '--rot'})`}>${a.trend != null ? `${besser == null ? '±' : besser ? '▲' : '▼'} ${zahl(Math.abs(a.trend))}` : '–'}<small> ${e}</small></b>
@@ -50,8 +51,8 @@ export function speedtest(p, d) {
     @click=${() => p.setze('speedtest', { tag: wd, datum: null, stunde: null })}>${TAGE[wd]}</button>${reihe.map((z, h) => z.anzahl
     ? html`<i class="kachel ${p._kachel && p._kachel.fest && p._kachel.tag === wd && p._kachel.stunde === h ? 'wahl' : ''} ${a.tag === wd && a.stunde === h ? 'jetzt' : ''} ${ist(a.beste, wd, h) ? 'best' : ''} ${ist(a.schwaechste, wd, h) ? 'schlecht' : ''}" data-k="${wd}-${h}"
       style="background:${farbe(z.lage)}" aria-label=${`${TAGE[wd]} ${stunden(h)}: ${t('Median {wert} ({n} Messungen)', { wert: `${zahl(z.median, 1)} ${d.einheit}`, n: z.anzahl })}`}
-      @mouseenter=${() => p.kachelZeigen(wd, h, false)} @mouseleave=${() => p.kachelWeg(false)}
-      @click=${() => p.kachelZeigen(wd, h, true)}></i>`
+      role="button" tabindex="0" @mouseenter=${() => p.kachelZeigen(wd, h, false)} @mouseleave=${() => p.kachelWeg(false)}
+      @click=${() => p.kachelZeigen(wd, h, true)} @keydown=${taste(() => p.kachelZeigen(wd, h, true))}></i>`
     : html`<i class="ohne" title=${`${TAGE[wd]} ${stunden(h)}: ${t('keine Messung')}`}></i>`)}`);
   return html`
     <div class="glas-raster">
@@ -67,7 +68,7 @@ export function speedtest(p, d) {
       <div class="leiste">
         ${seg(tl(ZEITRAEUME), o.tage, (v) => p.setze('speedtest', { tage: v, datum: null, stunde: null }))}
         ${seg(GROESSEN, o.groesse, (v) => p.setze('speedtest', { groesse: v, stunde: null }))}
-        <select style="font-size:12px;padding:5px 8px" @change=${(e) => p.setze('speedtest', { server: e.target.value, stunde: null })}>
+        <select style="font-size:12px;padding:5px 8px" aria-label=${t('Server')} @change=${(e) => p.setze('speedtest', { server: e.target.value, stunde: null })}>
           <option value="" ?selected=${!o.server}>${t('alle Server')}</option>
           ${d.server.map((s) => html`<option value=${s.name} ?selected=${o.server === s.name}>${s.name} (${s.anzahl})</option>`)}
           ${o.server && !d.server.some((s) => s.name === o.server)
@@ -172,7 +173,7 @@ export function messungBlatt(p) {
   const z = (titel, wert) => html`<div class="zeile"><span class="leise">${titel}</span><span style="text-align:right">${wert ?? html`<span class="leise">–</span>`}</span></div>`;
   const mit = (...w) => (w.some((x) => x == null) ? null : w.join(' · '));
   const dbm = (v, e = 'dBm') => (v == null ? null : `${zahl(v)} ${e}`);
-  return html`<div class="griff"></div><button class="zu" @click=${() => p.zu()}>✕</button>
+  return html`<div class="griff"></div><button class="zu" aria-label=${t('Schließen')} @click=${() => p.zu()}>✕</button>
     <h3>${t('Messung {zeit}', { zeit: zeit(m.t) })}</h3>
     <div class="leise">${leer ? t('ohne Momentaufnahme (älter als der Verlauf von Home Assistant)') : nach ? t('nachgetragen aus Verlauf und Journal – Box, Heimnetz und Teile des Mobilfunks nicht bekannt') : t('Momentaufnahme im Moment der Messung')}</div>
     <div class="gruppe"><span class="gr-ic">📈</span>${t('Messung')}</div>
@@ -230,7 +231,7 @@ const BELASTET_KURZ = { aus: merke('zählt nicht'), halb: merke('zählt ¼'), mi
 export function kachelPopup(p) {
   const k = p._kachel, o = p._opt.speedtest, d = k.daten, TAGE = wochentage(true);
   const kopf = html`<div class="kp-kopf"><b>${TAGE[k.tag]} ${stunden(k.stunde)} · ${GROESSE_NAME[o.groesse]}</b>
-    ${k.fest ? html`<button class="zu-k" title=${t('Schließen')} @click=${() => p.kachelWeg(true)}>✕</button>` : html`<span class="leise">${zeitraum(o.tage)}</span>`}</div>`;
+    ${k.fest ? html`<button class="zu-k" title=${t('Schließen')} aria-label=${t('Schließen')} @click=${() => p.kachelWeg(true)}>✕</button>` : html`<span class="leise">${zeitraum(o.tage)}</span>`}</div>`;
   const inhalt = k.fehler ? html`<div class="kp-werte">${t('Nicht abrufbar: {fehler}', { fehler: k.fehler })}</div>`
     : !d ? html`<div class="kp-werte">${t('lädt …')}</div>`
     : html`<div class="kp-werte">Median <b>${zahl(d.median, 1)} ${d.einheit}</b> · ${t('niedrigste {min} · höchste {max}', { min: zahl(d.min, 1), max: zahl(d.max, 1) })} · ${t('{n} gezählt', { n: d.anzahl })}${d.belastet ? ` · ${t('{n} belastet', { n: d.belastet })} (${t(BELASTET_KURZ[o.grundlast])})` : ''}</div>
@@ -259,7 +260,7 @@ function tagesverlauf(p, d) {
   const offen = o.datum || o.tag != null;
   const wahl = html`<div class="leiste">
     ${seg(wochentage(true).map((x, i) => [i, x]), o.datum ? null : o.tag, (i) => p.setze('speedtest', { tag: i, datum: null, stunde: null }))}
-    <select style="font-size:12px;padding:5px 8px" @change=${(e) => p.setze('speedtest', { datum: e.target.value || null, tag: null, stunde: null })}>
+    <select style="font-size:12px;padding:5px 8px" aria-label=${t('Datum')} @change=${(e) => p.setze('speedtest', { datum: e.target.value || null, tag: null, stunde: null })}>
       <option value="" ?selected=${!o.datum}>${t('oder Datum …')}</option>
       ${d.tage_liste.map((x) => html`<option value=${x.datum} ?selected=${o.datum === x.datum}>${datumText(x.datum, x.vor_tagen)} · ${t(x.anzahl === 1 ? '{n} Messung' : '{n} Messungen', { n: x.anzahl })}</option>`)}
       ${o.datum && !d.tage_liste.some((x) => x.datum === o.datum) ? html`<option value=${o.datum} selected>${datumText(o.datum)} · ${t('keine Messung')}</option>` : nothing}
@@ -311,7 +312,7 @@ function tagesverlauf(p, d) {
       : html`<b>${stunden(st)}:</b> ${t('keine Messung')}`
     : html`<span class="leise">${v.beste != null ? `${t('Beste Stunde {stunde} ({wert})', { stunde: stunden(v.beste), wert: `${zahl(s[v.beste].median)} ${ein}` })} · ${t('schwächste {stunde} ({wert})', { stunde: stunden(v.schwaechste), wert: `${zahl(s[v.schwaechste].median)} ${ein}` })} · ` : ''}${t('Tipp auf eine Stunde zeigt die Werte')}</span>`;
   return html`<div class="tv">${kopf}${wahl}
-    <svg viewBox="0 0 ${W} ${H}" role="img" aria-label=${`${t('Tagesverlauf')} ${GROESSE_NAME[d.groesse]}`}>
+    <svg viewBox="0 0 ${W} ${H}" role="group" aria-label=${`${t('Tagesverlauf')} ${GROESSE_NAME[d.groesse]}`}>
       ${[0, 0.25, 0.5, 0.75, 1].map((f) => svg`<line class="gitter" x1=${L} x2=${W - R} y1=${y(ymax * f)} y2=${y(ymax * f)}></line><text x=${L - 6} y=${y(ymax * f) + 4} text-anchor="end">${zahl(ymax * f)}</text>`)}
       ${tarif ? svg`<line class="tarif" x1=${L} x2=${W - R} y1=${y(tarif)} y2=${y(tarif)}></line><text x=${W - R - 4} y=${y(tarif) - 5} text-anchor="end">${t('Tarif {wert}', { wert: zahl(tarif) })}</text>` : nothing}
       ${st != null ? svg`<rect class="wahl" x=${L + st * sw} y=${O} width=${sw} height=${HH} rx="3"></rect>` : nothing}
@@ -322,7 +323,8 @@ function tagesverlauf(p, d) {
       ${mit.map(([h, w]) => svg`<circle class="pkt" cx=${x(h)} cy=${y(w.median)} r=${st === h ? 5 : 3}></circle>`)}
       ${[0, 3, 6, 9, 12, 15, 18, 21].map((h) => svg`<text x=${L + h * sw} y=${H - 8} text-anchor="middle">${h}</text>`)}
       ${svg`<text x=${W - R} y=${H - 8} text-anchor="end">${t('{n} Uhr', { n: 24 })}</text>`}
-      ${s.map((w, h) => svg`<rect class="h" x=${L + h * sw} y=${O} width=${sw} height=${HH} @click=${() => p.setze('speedtest', { stunde: st === h ? null : h }, false)}><title>${stunden(h)}: ${w.anzahl ? `Median ${zahl(w.median)} ${ein} · ${zahl(w.min)}–${zahl(w.max)} · ${anzahl(w.anzahl)}` : t('keine Messung')}</title></rect>`)}
+      ${s.map((w, h) => svg`<rect class="h" x=${L + h * sw} y=${O} width=${sw} height=${HH} role="button" tabindex="0" aria-label=${`${stunden(h)}: ${w.anzahl ? `Median ${zahl(w.median)} ${ein}` : t('keine Messung')}`}
+        aria-pressed=${st === h ? 'true' : 'false'} @click=${() => p.setze('speedtest', { stunde: st === h ? null : h }, false)} @keydown=${taste(() => p.setze('speedtest', { stunde: st === h ? null : h }, false))}><title>${stunden(h)}: ${w.anzahl ? `Median ${zahl(w.median)} ${ein} · ${zahl(w.min)}–${zahl(w.max)} · ${anzahl(w.anzahl)}` : t('keine Messung')}</title></rect>`)}
     </svg>
     <div class="info">${info}</div>
     <div class="legende"><span><i class="l-med"></i>${t('Median je Stunde')}</span><span><i class="l-glatt"></i>${t('Mittelwert geglättet (3 h)')}</span><span><i class="l-band"></i>${t('niedrigste bis höchste Messung')}</span><span><i class="l-luecke"></i>${t('Stunden ohne Messung überbrückt')}</span>${tarif ? html`<span><i class="l-tarif"></i>${t('Tarif')}</span>` : nothing}<span>${ein}</span></div>

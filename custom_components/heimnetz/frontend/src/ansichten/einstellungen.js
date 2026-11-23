@@ -43,7 +43,7 @@ const ZEICHEN = { ok: '✓', fehlt: '!', muss: '✕', aus: '–' };
 export function einstellungenBlatt(p) {
   const e = p._daten.einstellungen;
   const teil = p._blatt.teil || 'speed';
-  const kopf = html`<div class="griff"></div><button class="zu" @click=${() => p.zu()}>✕</button>
+  const kopf = html`<div class="griff"></div><button class="zu" aria-label=${t('Schließen')} @click=${() => p.zu()}>✕</button>
     <h3>${t('Einstellungen')}</h3><div class="leise">${p.istAdmin ? t('gelten für die ganze Seite') : t('nur Admins ändern')}</div>
     <div class="seg e-reiter">${TEILE.map(([k, name]) => html`<button class=${k === teil ? 'on' : ''} @click=${() => { p._blatt = { ...p._blatt, teil: k }; p.teilLaden(k); }}>${t(name)}${k === 'einr' ? punkt(p) : nothing}</button>`)}</div>`;
   if (teil === 'einr') return html`${kopf}<div class="ek"><div class="ek-inhalt">${einrichtung(p)}</div></div>`;
@@ -78,14 +78,14 @@ function auswertung(p, e) {
     ${admin ? html`<div class="leiste" style="justify-content:flex-end;padding:4px 0"><button class="knopf haupt" @click=${speichern}>${t('Speichern')}</button></div>` : nothing}
     ${p._hinweis ? html`<p class="fein">${p._hinweis}</p>` : nothing}
     <div class="ez"><span>${t('Belastete Messungen')}<small>${t('über {n} Mbit/s Verkehr vor der Messung', { n: zahl(e.schwelle) })}</small></span>${seg(tl(MODI), p._opt.speedtest.grundlast, (v) => p.setze('speedtest', { grundlast: v }, p._reiter === 'speedtest'))}</div>
-    <p class="hinweis">${t('Die Auswahl „belastete Messungen“ gilt für das Wochenraster auf diesem Gerät.')}</p>`;
+    <p class="hinweis">${t('Die Auswahl „belastete Messungen“ gilt für das Wochenraster in diesem Browser und bleibt hier gemerkt.')}</p>`;
 }
 
 function messplan(p, e) {
   if (!e.messplan) return nothing;
   const m = e.messplan, z = e.plan, o = e.ookla, admin = p.istAdmin;
   const setzen = (werte) => p.messplanSetzen(werte);
-  const belastet = e.verkehr_mbit != null && e.verkehr_mbit > e.schwelle;
+  const belastet = !!e.verkehr_belastet; // über der Schwelle – das sagt die Integration
   const naechste = !m.an ? `– (${t('aus')})`
     : z.misst ? t('misst gerade …')
     : z.wartet ? t('verschoben – neuer Versuch {uhr}', { uhr: uhr(z.neuer_versuch) })

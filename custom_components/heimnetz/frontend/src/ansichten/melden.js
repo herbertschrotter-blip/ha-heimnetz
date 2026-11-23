@@ -7,7 +7,7 @@ import { live } from 'lit/directives/live.js';
 import { unsafeSVG } from 'lit/directives/unsafe-svg.js';
 import { zeit as zeitS } from '../format.js';
 import { merke, t, tl } from '../sprache.js';
-import { seg } from './teile.js';
+import { seg, taste } from './teile.js';
 
 export const MB_MAX = 3, MB_PX = 1600;
 export const ICON_MELDEN = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M4 5h16v11H9l-5 4z"/><path stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M12 8v3.5M12 13.6v.2"/></svg>';
@@ -45,7 +45,7 @@ function bilderBox(p, f) {
 export function meldenBlatt(p) {
   const f = p._blatt.form;
   const setze = (k, v) => { f[k] = v; p.requestUpdate(); p.entwurfMerken(); };
-  return html`<div class="griff"></div><button class="zu" @click=${() => p.meldenZu()}>✕</button>
+  return html`<div class="griff"></div><button class="zu" aria-label=${t('Schließen')} @click=${() => p.meldenZu()}>✕</button>
     <h3>${t('Melden')}</h3><div class="leise">${t('Fehler, Wunsch oder Anregung – wird ein lokales Ticket; öffentlich über GitHub erreicht es den Entwickler.')}</div>
     ${seg(tl(ARTEN), f.art, (v) => setze('art', v), false)}
     <label class="feld">${t(FRAGE[f.art])}<textarea rows="4" name="ml-text" placeholder=${t('kurz beschreiben')} .value=${live(f.text)} @input=${(e) => { f.text = e.target.value; p.entwurfMerken(); }}></textarea></label>
@@ -65,7 +65,7 @@ export function meldenBlatt(p) {
  *  gespeichert wird lokal wie bisher, GitHub öffnet sich vorausgefüllt in einem neuen Fenster. */
 export function githubBlatt(p) {
   const b = p._blatt, f = b.vorher.form, v = b.vorschau, n = f.bilder.length;
-  return html`<div class="griff"></div><button class="zu" @click=${() => p.meldenZu()}>✕</button>
+  return html`<div class="griff"></div><button class="zu" aria-label=${t('Schließen')} @click=${() => p.meldenZu()}>✕</button>
     <h3>${t('Öffentlich auf GitHub melden')}</h3><div class="leise">${t('Das Issue ist für alle sichtbar. Du siehst hier genau, was mitgeht; auf GitHub kannst du es vor dem Absenden noch ändern.')}</div>
     ${v ? html`<div class="gh-vorschau"><b>${v.titel}</b>
 
@@ -86,9 +86,13 @@ function ticket(p, m) {
   return html`<div class="ml ${auf ? '' : 'erledigt'}"><div class="ml-kopf"><span><b>${m.ticket}</b> <span class="badge ${ART_FARBE[m.art] || ''}">${m.art_text}</span> <span class="badge ${STATUS_FARBE[m.status] || ''}">${m.status_text}</span></span>
       <span class="leise">${zeit(m.zeit)} · ${m.geraet || '–'} · v${m.version || '–'}</span></div>
     <div class="ml-text">${m.text}</div>${m.kontext ? html`<div class="leise">${m.kontext}</div>` : nothing}
-    ${(m.bilder || []).length ? html`<div class="ml-bilder">${m.bilder.map((_, i) => { const u = p.meldungBild(m, i); return u ? html`<img src=${u} alt=${t('Bild {n}', { n: i + 1 })} @click=${() => p.bildGross(m, i)}>` : html`<i></i>`; })}</div>` : nothing}
+    ${(m.bilder || []).length ? html`<div class="ml-bilder">${m.bilder.map((_, i) => { const u = p.meldungBild(m, i); const gross = () => p.bildGross(m, i); return u ? html`<img src=${u} alt=${t('Bild {n}', { n: i + 1 })} role="button" tabindex="0" @click=${gross} @keydown=${taste(gross)}>` : html`<i></i>`; })}</div>` : nothing}
     ${letzte ? html`<div class="ml-notiz">${[letzte.von, letzte.version && `v${letzte.version}`, letzte.commit && `Commit ${letzte.commit}`, letzte.notiz].filter(Boolean).join(' · ')}</div>` : nothing}
-    ${p.istAdmin ? html`<div class="ml-k"><button class="chip glas-panel" @click=${() => p.meldungStatus(m, auf ? 'geschlossen' : 'neu')}>${auf ? `✓ ${t('Schließen')}` : `↺ ${t('wieder öffnen')}`}</button><button class="chip glas-panel" @click=${() => p.meldungLoeschen(m)}>${t('Löschen')}</button></div>` : nothing}</div>`;
+    ${!p.istAdmin ? nothing : p._blatt.frage === m.id
+      ? html`<div class="mg-frage ml-frage"><b>${t('{ticket} löschen?', { ticket: m.ticket })}</b><br>${t('Das Ticket verschwindet samt Bildern aus der Liste und aus heimnetz/meldungen.md. Das lässt sich nicht rückgängig machen.')}
+        <div class="dg-knoepfe" style="margin-top:10px"><button class="rot" @click=${() => p.meldungLoeschen(m)}>${t('Löschen')}</button>
+          <button @click=${() => p.meldungFrage(null)}>${t('Abbrechen')}</button></div></div>`
+      : html`<div class="ml-k"><button class="chip glas-panel" @click=${() => p.meldungStatus(m, auf ? 'geschlossen' : 'neu')}>${auf ? `✓ ${t('Schließen')}` : `↺ ${t('wieder öffnen')}`}</button><button class="chip glas-panel" @click=${() => p.meldungFrage(m)}>${t('Löschen')}</button></div>`}</div>`;
 }
 
 /** Liste der Tickets (⚙ › Meldungen); p._blatt = { art: 'meldungen', filter } */
@@ -96,7 +100,7 @@ export function meldungenBlatt(p) {
   const alle = p._daten.meldungen, f = p._blatt.filter || 'offen';
   const anzahl = (k) => !alle ? '' : k === 'alle' ? alle.length : alle.filter((m) => (k === 'offen') === offen(m)).length;
   const liste = (alle || []).filter((m) => f === 'alle' || (f === 'offen') === offen(m));
-  return html`<div class="griff"></div><button class="zu" @click=${() => p.zu()}>✕</button>
+  return html`<div class="griff"></div><button class="zu" aria-label=${t('Schließen')} @click=${() => p.zu()}>✕</button>
     <h3>${t('Meldungen')}</h3><div class="leise">${t('Jede Meldung ist ein Ticket: FE Fehler, WU Wunsch, AN Anregung')}</div>
     ${seg([['offen', `${t('offen')} ${anzahl('offen')}`], ['erledigt', `${t('erledigt')} ${anzahl('erledigt')}`], ['alle', `${t('alle')} ${anzahl('alle')}`]], f, (v) => { p._blatt = { ...p._blatt, filter: v }; })}
     ${!alle ? html`<div class="leer">${t('lädt …')}</div>` : liste.length ? liste.map((m) => ticket(p, m)) : html`<div class="leer">${t('Keine Meldungen')}</div>`}
@@ -106,7 +110,7 @@ export function meldungenBlatt(p) {
 
 export function bildBlatt(p) {
   const { m, i } = p._blatt, u = p.meldungBild(m, i);
-  return html`<div class="griff"></div><button class="zu" @click=${() => p.meldungenOeffnen()}>✕</button>
+  return html`<div class="griff"></div><button class="zu" aria-label=${t('Schließen')} @click=${() => p.meldungenOeffnen()}>✕</button>
     <h3>${m.ticket} · ${t('Bild {n}', { n: i + 1 })}</h3>${u ? html`<img class="mb-gross" src=${u} alt=${t('Bild {n}', { n: i + 1 })}>` : html`<div class="leer">${t('lädt …')}</div>`}`;
 }
 

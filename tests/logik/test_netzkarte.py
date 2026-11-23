@@ -4,6 +4,7 @@ import json
 import math
 
 from logik import netzkarte as nk
+from logik import wlan
 
 # Aufbau wie die Mesh-Liste der FRITZ!Box: Knoten mit Schnittstellen, Verbindungen zwischen Schnittstellen (kbit/s)
 BOX = {
@@ -124,6 +125,23 @@ def test_band_aus_kanal_wenn_name_nichts_sagt():
         nk._band("WLAN", 36) == "5" and nk._band("", 11) == "2,4" and nk._band(None, None) is None
     )
     assert nk._band("AP:6G:0", 37) == "6"
+    # ohne Band im Namen nach dem Kanal wie wlan.band_von: gleicher Kanal wie ein bekanntes Funknetz, mit 6 GHz im
+    # Netz keine Annahme (Kanal 5 gibt es auf 2,4 und 6 GHz)
+    sechs = [wlan.Band("2,4", True, 6, None, ""), wlan.Band("6", True, 5, None, "")]
+    assert nk._band("WLAN", 5, sechs) == "6" and nk._band("WLAN", 6, sechs) == "2,4"
+    assert nk._band("WLAN", 11, sechs) is None and nk._band("WLAN", 11) == "2,4"
+    netz = json.loads(MESH)
+    box = next(k for k in netz["nodes"] if k["uid"] == "n-box")["node_interfaces"]
+    box.append(
+        {"uid": "i-6g", "name": "AP:6G:0", "type": "WLAN", "op_mode": "AP", "current_channel": 5}
+    )
+    for i in box:
+        if i["uid"] == "i-5g":
+            i["name"], i["current_channel"] = "WLAN", 5  # Name ohne Band, Kanal des 6-GHz-Netzes
+    vorher = nk.mesh_lesen(MESH).geraete
+    nachher = nk.mesh_lesen(json.dumps(netz)).geraete
+    assert {a.band for m, a in vorher.items() if a.art == "wlan" and a.band == "5"}
+    assert all(nachher[m].band == "6" for m, a in vorher.items() if a.band == "5" and a.an == "box")
 
 
 KAT = [
@@ -201,7 +219,7 @@ def test_karte_ringe_nach_band_und_empfang():
     assert g["Gast"]["gast"] is True and g["Gast"]["zustand"] == "neu"
     (uhr,) = k["aus"]
     assert uhr["name"] == "Uhr" and round(r(uhr)) == nk.R_AUS
-    assert k["zahlen"] == {"online": 7, "offline": 1, "auffaellig": 1, "neu": 1, "vpn": 0}
+    assert k["zahlen"] == {"online": 7, "offline": 1, "auffaellig": 2, "neu": 1, "vpn": 0}
 
 
 def test_karte_repeater_mit_seinen_geraeten():
@@ -321,3 +339,45 @@ def test_sektor_beschriftung_bleibt_im_bild():
     assert (
         nk._im_bild(20.0, "X" * 80) == nk.BREITE / 2
     )  # breiter als die Karte: mittig statt links hinaus
+
+
+def test_auffaellig_eine_regel_fuer_liste_und_karte():
+    """„Auffällig“: wackelt, schwacher Empfang oder neu – dieselbe Regel für Geräteliste und Netzkarte."""
+    assert [nk.auffaellig(z) for z in ("an", "aus", "wackelt", "schwach", "neu")] == [
+        False,
+        False,
+        True,
+        True,
+        True,
+    ]
+    assert nk.zustand("an", True) == "schwach" and nk.zustand("wackelt", True) == "wackelt"
+    g = {x["name"]: x for x in nk.zeichnen(punkte(), nk.mesh_lesen(MESH), KAT)["geraete"]}
+    assert g["Tab"]["auffaellig"] and g["Gast"]["auffaellig"] and not g["Fernseher"]["auffaellig"]
+
+
+def test_zahl_auffaellig_gleich_treffer_des_filters():
+    """Die Zahl „Auffällig“ der Karte zählt genau, was der Filter zeigt (auch neue und VPN-Geräte)."""
+    k = nk.zeichnen(punkte(), nk.mesh_lesen(MESH), KAT)
+    treffer = [
+        g for g in [*k["geraete"], *((k["vpn"] or {}).get("geraete") or [])] if g["auffaellig"]
+    ]
+    assert k["zahlen"]["auffaellig"] == len(treffer) == 2
+    assert {g["zustand"] for g in treffer} == {"schwach", "neu"}
+
+
+def test_sektor_beschriftung_nicht_auf_einem_geraet():
+    """Am Handy lag „HANDY & TABLET“ auf dem Namen eines Geräts: die Beschriftung rückt nach außen, bis sie frei ist."""
+    name = "Handy & Tablet"
+    x, y = nk._frei(380.0, 337.0, name, [(369.0, 343.0, 10.0, 6.0)])
+    assert x == 380.0 and y > 337.0  # unten → weiter nach unten
+    halb = len(name) * nk.ZEICHEN_SEKTOR / 2 + 4
+    assert abs(y - 343.0) >= 6.0 + 6.0 or abs(x - 369.0) >= halb + 10.0
+    assert nk._frei(60.0, 100.0, name, [(60.0, 100.0, 10.0, 6.0)])[1] < 100.0  # oben → nach oben
+    assert nk._frei(60.0, 100.0, name, []) == (60.0, 100.0)  # frei: bleibt
+    k = nk.zeichnen(punkte(), nk.mesh_lesen(MESH), KAT)
+    for s in k["sektoren"]:
+        halb = len(s["name"]) * nk.ZEICHEN_SEKTOR / 2 + 4
+        for g in k["geraete"]:
+            assert (
+                abs(s["x"] - g["x"]) >= halb + k["dot"] or abs(s["y"] - g["y"]) >= 6 + k["dot"]
+            ), (s, g)

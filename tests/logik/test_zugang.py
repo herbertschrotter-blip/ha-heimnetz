@@ -70,7 +70,7 @@ def test_wan_netz(adresse, erwartet):
 
 
 def test_wan_netz_oeffentlich():
-    assert zg.wan_netz("84.115.20.7") == ("oeffentlich", "")
+    assert zg.wan_netz("203.0.113.7") == ("oeffentlich", "")
 
 
 @pytest.mark.parametrize(

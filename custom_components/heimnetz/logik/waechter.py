@@ -29,8 +29,8 @@ KVS_REGELN = "heimnetz-waechter"
 KVS_BEFEHL = "heimnetz-waechter-befehl"
 # WV im Skript (shelly/waechter.js). Bei jeder Änderung des Skripts beide hochzählen und die Prüfsumme neu eintragen –
 # der Test vergleicht sie; Heimnetz bringt Steckdosen mit älterer Version selbst auf den neuen Stand.
-SKRIPT_VERSION = 2
-SKRIPT_PRUEFSUMME = "13f8816714fbebe3"  # sha256 des Skripts, erste 16 Zeichen
+SKRIPT_VERSION = 3
+SKRIPT_PRUEFSUMME = "212995ec4c18b8b6"  # sha256 des Skripts, erste 16 Zeichen
 STUECK_BYTES = 1024  # Script.PutCode: Stücke an Zeilengrenzen, höchstens so viele Bytes
 
 ARTEN = ("internet", "ha", "geraet")
@@ -74,6 +74,10 @@ VORGABE = {
     "geraet": {"pruef_s": 60, "stufe1_min": 5, "stufe2_min": 10, "aus_s": 15, "abstand_min": 60},
 }
 HOECHSTENS = 10  # Wächter
+# Stufe 1 meldet jeden sanften Neustart an alle Steckdosen der Kette (Herbert, 23.11.2026: „Pause + nur hängendes
+# Gerät“). So lange schaltet keine Steckdose und ein Gerät, das gerade neu startet, gilt nicht als Störung oder als
+# „wieder in Ordnung“: eine FRITZ!Box braucht für den Neustart etwa 3–4 min, Modems (ZTE, Huawei, TP-Link) 2–3 min.
+SANFT_HALT_MIN = 5
 HA_PORT = 8123
 BEOBACHTER_PORT = 4357  # Observer des Supervisors – läuft getrennt von Home Assistant
 
@@ -328,6 +332,7 @@ ZUSTAND = {
     "stoerung": ("amber", merke("Störung erkannt")),
     "schaltet": ("amber", merke("Strom aus – schaltet gleich wieder ein")),
     "aus": ("amber", merke("Steckdose aus")),
+    "sanft": ("amber", merke("wartet auf den sanften Neustart")),
     "pause": ("rot", merke("Pause nach Eingriffen ohne Erfolg")),
     "aus_regel": ("grau", merke("ausgeschaltet")),
     "fehler": ("rot", merke("Skript ohne gültige Regeln")),
@@ -366,10 +371,18 @@ class Dosenstand:
         return self.erreichbar and not self.fehlt and self.version != SKRIPT_VERSION
 
 
+def _liste(wert: Any) -> list[Any]:
+    return wert if isinstance(wert, list) else []
+
+
 def dosenstand(status: dict[str, Any] | None, leistung: float | None = None) -> Dosenstand:
     if not isinstance(status, dict):
         return Dosenstand(erreichbar=True, fehlt=True, leistung=leistung)
-    letzte = tuple(e for e in status.get("letzte") or [] if isinstance(e, dict))
+    letzte = tuple(e for e in _liste(status.get("letzte")) if isinstance(e, dict))
+    try:
+        eingriffe = int(status.get("eingriffe") or 0)
+    except TypeError, ValueError:
+        eingriffe = 0
     return Dosenstand(
         erreichbar=True,
         zustand=str(status.get("zustand") or ""),
@@ -377,7 +390,7 @@ def dosenstand(status: dict[str, Any] | None, leistung: float | None = None) -> 
         version=status.get("wv"),
         stoer_s=status.get("stoer_s"),
         pause_s=status.get("pause_s"),
-        eingriffe=int(status.get("eingriffe") or 0),
+        eingriffe=eingriffe,
         letzte=letzte,
         leistung=leistung,
     )
@@ -444,6 +457,39 @@ class Sanft:
     ruhe_bis: float | None = None  # „Eingriff abbrechen“: so lange nichts tun
 
 
+def _sanft_frei(w: Waechter, s: Sanft, jetzt: float, internet: bool | None) -> bool:
+    return (
+        w.art == "internet"
+        and w.an
+        and internet is False
+        and not (s.ruhe_bis is not None and jetzt < s.ruhe_bis)
+    )
+
+
+def _sanft_kandidat(w: Waechter, s: Sanft, jetzt: float) -> int | None:
+    """Erstes Glied, das in dieser Störung noch sanft neu starten darf: sanft startbar, noch nicht gemacht, Bremse
+    `abstand_min` (auch über Störungen hinweg) vorbei."""
+    for i, g in enumerate(w.glieder):
+        if i in s.gemacht or not g.sanft:
+            continue
+        if jetzt - s.zuletzt.get(i, -1e12) < w.regeln.abstand_min * 60:
+            continue  # Bremse wie bei der Steckdose: höchstens einmal je Abstand
+        return i
+    return None
+
+
+def sanft_faellig(w: Waechter, s: Sanft, jetzt: float, internet: bool | None) -> bool:
+    """Könnte `sanft_entscheiden` jetzt ein Gerät neu starten? Dann lohnt es, vorher frisch zu fragen, welche Geräte
+    der Kette antworten (der Stand des Modems ist bis zu 10 min alt). Kommt kein Glied mehr infrage (alle gemacht,
+    keines sanft startbar, Bremse), ist nichts fällig – sonst liefe bei langem Ausfall jede Minute eine Probe."""
+    if not _sanft_frei(w, s, jetzt, internet) or s.weg_seit is None:
+        return False
+    letzter = max(s.gemacht.values(), default=s.weg_seit)
+    if jetzt - letzter < w.regeln.stufe1_min * 60:
+        return False
+    return _sanft_kandidat(w, s, jetzt) is not None
+
+
 def sanft_entscheiden(
     w: Waechter,
     s: Sanft,
@@ -453,10 +499,13 @@ def sanft_entscheiden(
 ) -> tuple[Sanft, int | None]:
     """Welches Glied jetzt sanft neu starten (Index) oder keines. Nur für den Wächter „internet“.
 
-    Reihenfolge wie die Steckdosen: vorne zuerst (Modem), danach das nächste, jeweils `stufe1_min` nach dem Ausfall
-    bzw. nach dem vorigen Neustart; ein Gerät, das nicht antwortet, kann man nicht sanft neu starten – dann bleibt nur
-    die Steckdose. Bremse je Glied `abstand_min` auch über Störungen hinweg; „Eingriff abbrechen“ (`ruhe_bis`) hält
-    an. `internet` None = unbekannt (nichts tun)."""
+    Nur das Gerät, das hängt (Herbert, 23.11.2026): antwortet ein Gerät der Kette nicht, ist es das hängende – sanft
+    lässt es sich dann nicht neu starten, das macht seine Steckdose; die übrigen sind gesund und bleiben in Ruhe (nie
+    die Box, wenn nur das Modem nicht antwortet). Antworten alle und das Internet fehlt trotzdem: vorne zuerst (Modem),
+    danach das nächste, jeweils `stufe1_min` nach dem Ausfall bzw. nach dem vorigen Neustart. Bremse je Glied
+    `abstand_min` auch über Störungen hinweg; „Eingriff abbrechen“ (`ruhe_bis`) hält an. `internet` None = unbekannt
+    (nichts tun); `erreichbar` je Glied, None = unbekannt (z. B. ein Glied ohne Weboberfläche – es hält Stufe 1 nicht
+    auf)."""
     if w.art != "internet" or not w.an or internet is None:
         return s, None
     if s.ruhe_bis is not None and jetzt < s.ruhe_bis:
@@ -465,17 +514,14 @@ def sanft_entscheiden(
         return Sanft(zuletzt=s.zuletzt), None
     if s.weg_seit is None:
         return replace(s, weg_seit=jetzt, gemacht={}, ruhe_bis=None), None
-    warte = w.regeln.stufe1_min * 60
-    letzter = max(s.gemacht.values(), default=s.weg_seit)
-    if jetzt - letzter < warte:
+    if not sanft_faellig(w, s, jetzt, internet):
         return s, None
-    for i, g in enumerate(w.glieder):
-        if i in s.gemacht or not g.sanft or erreichbar.get(i) is False:
-            continue
-        if jetzt - s.zuletzt.get(i, -1e12) < w.regeln.abstand_min * 60:
-            continue  # Bremse wie bei der Steckdose: höchstens einmal je Abstand
-        return replace(s, gemacht={**s.gemacht, i: jetzt}, zuletzt={**s.zuletzt, i: jetzt}), i
-    return s, None
+    if any(erreichbar.get(i) is False for i in range(len(w.glieder))):
+        return s, None  # ein Gerät hängt ganz: das ist Sache seiner Steckdose
+    i = _sanft_kandidat(w, s, jetzt)
+    if i is None:
+        return s, None
+    return replace(s, gemacht={**s.gemacht, i: jetzt}, zuletzt={**s.zuletzt, i: jetzt}), i
 
 
 # ── Für die Seite ──

@@ -2,7 +2,9 @@
 
 import json
 import logging
+from unittest.mock import AsyncMock, patch
 
+import pytest
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 
@@ -26,6 +28,16 @@ DSL_BOX = {
         t=0.0, status="Up", sync_down=108_396, sync_up=38_189, marge_down=52, marge_up=79
     ),
 }
+
+
+@pytest.fixture
+def ohne_modemsuche():
+    """Die Suche/das Lesen des vorgeschalteten Geräts im Hintergrund (nach „Zugang festlegen“) nicht wirklich laufen
+    lassen – sonst fragt sie 192.168.8.1 über die Mock-Session („No mock registered“)."""
+    with patch(
+        "custom_components.heimnetz.vorgeschaltet.Dienst.arbeiten", new=AsyncMock(return_value=None)
+    ) as arbeiten:
+        yield arbeiten
 
 
 def _zustand(hass, eintrag, schluessel):
@@ -93,7 +105,7 @@ async def test_zugang_nur_fuer_admins(
 
 
 async def test_zugang_festlegen_kennwort_nie_zurueck(
-    hass: HomeAssistant, eintrag, box, pi, hass_ws_client, caplog
+    hass: HomeAssistant, eintrag, box, pi, hass_ws_client, caplog, ohne_modemsuche
 ):
     caplog.set_level(logging.DEBUG)
     await _laden(hass, eintrag)
@@ -152,6 +164,19 @@ async def test_zugang_festlegen_kennwort_nie_zurueck(
         and eintrag.options[CONF_OPENCELLID] == "pk.x"
     )
 
+    # Bindung des Kennworts an die zuerst angenommene Adresse: neue Adresse oder neues Kennwort lösen sie
+    modem = eintrag.runtime_data.abruf.modem
+    modem.kennwort_bei = "192.168.0.1"
+    assert (await _frage(client, type="heimnetz/zugang/setzen", adresse="192.168.8.1"))["success"]
+    assert modem.kennwort_bei is None, "Adresse gespeichert: alte Bindung weg"
+    modem.kennwort_bei = "192.168.0.1"
+    assert (await _frage(client, type="heimnetz/zugang/setzen", kennwort=KENNWORT + "2"))["success"]
+    assert modem.kennwort_bei is None, "neues Kennwort: alte Bindung weg"
+    modem.kennwort_bei = "192.168.0.1"
+    assert (await _frage(client, type="heimnetz/zugang/setzen", wahl="extern"))["success"]
+    assert modem.kennwort_bei == "192.168.0.1", "nur die Wahl geändert: Bindung bleibt"
+    modem.kennwort_bei = None
+
     falsch = await _frage(client, type="heimnetz/zugang/setzen", adresse="8.8.8.8")
     assert falsch["error"]["code"] == "ungueltig"
     assert eintrag.runtime_data.einstellungen.wert.zugang_adresse == "192.168.8.1"
@@ -180,11 +205,9 @@ async def test_erneut_suchen_liest_im_gemeinsamen_abruf(
 
 
 async def test_diagnose_nimmt_das_hinterlegte_kennwort(
-    hass: HomeAssistant, eintrag, box, pi, hass_ws_client
+    hass: HomeAssistant, eintrag, box, pi, hass_ws_client, ohne_modemsuche
 ):
     """🔬 Diagnose ohne eingetipptes Kennwort: das unter 🌐 Zugang hinterlegte, nur für genau diese Adresse."""
-    from unittest.mock import patch
-
     await _laden(hass, eintrag)
     client = await hass_ws_client(hass)
     await _frage(
@@ -202,3 +225,22 @@ async def test_diagnose_nimmt_das_hinterlegte_kennwort(
         assert abfragen.call_args.args[2] is None, "andere Adresse: nichts mitschicken"
         await _frage(client, type="heimnetz/modem", adresse="192.168.8.1", kennwort="anders")
         assert abfragen.call_args.args[2] == "anders"
+
+
+def test_hinterlegt_fuer_folgt_der_kennwortbindung():
+    """Ohne gespeicherte Adresse gilt das Kennwort für die Adresse, an der es zuerst angenommen wurde – nicht für ein
+    später an anderer Adresse gefundenes Gerät (wie im laufenden Abruf)."""
+    from types import SimpleNamespace
+
+    from custom_components.heimnetz.websocket import _hinterlegt_fuer
+
+    def lz(gespeichert, bei, gefunden):
+        return SimpleNamespace(
+            einstellungen=SimpleNamespace(wert=SimpleNamespace(zugang_adresse=gespeichert)),
+            abruf=SimpleNamespace(modem=SimpleNamespace(kennwort_bei=bei, adresse=gefunden)),
+        )
+
+    assert _hinterlegt_fuer(lz("192.168.8.1", "192.168.0.1", "192.168.1.1")) == "192.168.8.1"
+    assert _hinterlegt_fuer(lz(None, "192.168.0.1", "192.168.1.1")) == "192.168.0.1"
+    assert _hinterlegt_fuer(lz(None, None, "192.168.1.1")) == "192.168.1.1"
+    assert _hinterlegt_fuer(lz(None, None, None)) == ""

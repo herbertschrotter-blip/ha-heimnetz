@@ -42,13 +42,15 @@ VPN_SCHLUESSEL = (
 
 
 def hostliste_zahlen(roh: str | bytes) -> dict[str, Any]:
-    """Diagnose ohne Namen und Adressen: wie viele Einträge, mit/ohne MAC, mit VPN-Kennung, je Anschlussart."""
+    """Diagnose ohne Namen und Adressen: wie viele Einträge, mit/ohne MAC, mit VPN-Kennung, je Anschlussart.
+    `vpn_ohne_ip`: VPN-Geräte ohne Tunnel-Adresse – ihr Schlüssel kommt dann aus dem Namen (siehe `aus_hostliste`)."""
     z: dict[str, Any] = {
         "eintraege": 0,
         "ohne_mac": 0,
         "vpn": 0,
         "vpn_aktiv": 0,
         "vpn_ohne_mac": 0,
+        "vpn_ohne_ip": 0,
         "arten": {},
     }
     for item in ET.fromstring(roh):
@@ -60,6 +62,7 @@ def hostliste_zahlen(roh: str | bytes) -> dict[str, Any]:
         z["vpn"] += vpn
         z["vpn_aktiv"] += vpn and d.get("Active") == "1"
         z["vpn_ohne_mac"] += vpn and ohne
+        z["vpn_ohne_ip"] += vpn and ohne and not d.get("IPAddress")
         art = d.get("InterfaceType") or "-"
         z["arten"][art] = z["arten"].get(art, 0) + 1
     return z
@@ -73,9 +76,10 @@ def aus_hostliste(roh: str | bytes) -> dict[str, Geraet]:
         d = {c.tag: text(c.text) for c in item}
         mac = d.get("MACAddress", "").upper()
         vpn = d.get("X_AVM-DE_VPN") == "1"
-        if (
-            not mac and vpn
-        ):  # WireGuard hat keine MAC: Schlüssel aus der festen Tunnel-Adresse (sonst dem Namen)
+        if not mac and vpn:
+            # WireGuard hat keine MAC und die Hostliste sonst keine feste Kennung (Index wechselt, MAC-Liste leer):
+            # Schlüssel aus der Tunnel-Adresse – sie steht fest in der WireGuard-Verbindung der Box –, ohne sie aus dem
+            # Namen. Ob die Box die Adresse auch offline nennt, zählt die Diagnose (`vpn_ohne_ip`).
             mac = VPN_SCHLUESSEL + (
                 d.get("IPAddress") or d.get("X_AVM-DE_FriendlyName") or d.get("HostName") or ""
             )

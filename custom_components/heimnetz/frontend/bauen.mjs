@@ -24,6 +24,8 @@ const ergebnis = await build({
   charset: 'utf8',
   write: false,
   absWorkingDir: hier,
+  // node_modules darf ein Symlink sein (lokal): Pfade im Bundle bleiben relativ zum Projekt, gleich wie in der CI
+  preserveSymlinks: true,
   define: { __HEIMNETZ_VERSION__: JSON.stringify(version) },
   banner: { js: '// Seite „Heimnetz“ – gebaut mit esbuild aus custom_components/heimnetz/frontend/src (nicht von Hand ändern)' },
   logLevel: 'warning',

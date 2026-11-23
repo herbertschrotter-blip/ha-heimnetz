@@ -2,13 +2,15 @@
 // Installed by the Heimnetz integration; the rules live in KVS "heimnetz-waechter" (JSON), the code is the same on every
 // plug. Checks run on the plug itself, so it also works when Home Assistant hangs or the WLAN is gone with the router.
 // It only switches its own relay, always with toggle_after (comes back on by itself). Commands from Heimnetz arrive in
-// KVS "heimnetz-waechter-befehl" (protected like the plug). State: status() via Script.Eval (protected like the plug),
+// KVS "heimnetz-waechter-befehl" (protected like the plug): "ruhe" (pause), "weiter" (end the pause) and "sanft" (Heimnetz
+// restarts a device of the chain softly: hold for "min" minutes - keep the start of the fault, do not switch, a device
+// that is restarting is no reason for "ok"; min 0 ends the hold). State: status() via Script.Eval (protected like the plug),
 // also GET http://<plug>/script/<id>/status (codes, no text).
 // Roles: "kette" = device in the internet chain (pos 0 = front, e.g. modem; last = router), "ha" = Home Assistant,
 // "geraet" = any other device.
 // Keep this file ASCII only and mJS-safe: no const, no arrow functions, no template strings, no let inside blocks.
 
-let WV = 2;
+let WV = 3;
 let KEY = 'heimnetz-waechter';
 let KEY_BEFEHL = 'heimnetz-waechter-befehl';
 // check pages on the internet (fixed here: a KVS value holds at most 255 characters)
@@ -33,6 +35,8 @@ let st = {
   letzter: null,
   fehl: 0,
   pause_bis: null,
+  halt_bis: null,
+  faktor: 1,
   eingriffe: 0,
   befehl_n: null,
   nach_eingriff: false,
@@ -107,10 +111,18 @@ function befehl(b) {
     merke('ruhe', '' + min);
   }
   if (b.x === 'weiter') { st.pause_bis = null; st.fehl = 0; merke('weiter', ''); }
-  if (b.x === 'sanft') { merke('sanft', b.grund || ''); }
+  if (b.x === 'sanft') {
+    min = 5;
+    if (b.min !== undefined && b.min !== null) min = b.min;
+    if (min > 30) min = 30;
+    st.halt_bis = null;
+    if (min > 0) st.halt_bis = uptime() + min * 60;
+    merke('sanft', b.grund || '');
+  }
 }
 
-// fault per role; null = all good, else { grund, faktor } (faktor 2 = give the device in front its turn first)
+// fault per role; null = all good, else { grund, faktor } (faktor 2 = give the device in front its turn first);
+// { warten: true } = a neighbour does not answer, so this plug cannot judge (that is the neighbour's plug's job)
 function fehlerbild(p) {
   let letzte = false;
   let faktor = 1;
@@ -119,18 +131,18 @@ function fehlerbild(p) {
     if (letzte) {
       if (p.eigen === false) return { grund: 'router_weg', faktor: 1 };
       if (p.inet === false) {
-        if (cfg.anzahl > 1 && p.vor === false) return null;
+        if (cfg.anzahl > 1 && p.vor === false) return { warten: true };
         if (cfg.anzahl > 1) faktor = 2;
         return { grund: 'inet_weg', faktor: faktor };
       }
       return null;
     }
-    if (p.nach === false) return null;
+    if (p.nach === false) return { warten: true };
     if (p.eigen === false) return { grund: 'modem_weg', faktor: 1 };
     if (p.inet === false) return { grund: 'inet_weg', faktor: 1 };
     return null;
   }
-  if (p.netz === false) return null;
+  if (p.netz === false) return { warten: true };
   if (p.eigen === false) {
     // Home Assistant: the supervisor's observer (port 4357) tells whether the Pi itself still lives. If it does, the
     // supervisor restarts Home Assistant itself, so cut the power only much later.
@@ -175,6 +187,8 @@ function schalten(grund) {
     st.zustand = 'schaltet';
     st.nach_eingriff = true;
     st.stoer_seit = null;
+    st.faktor = 1;
+    st.halt_bis = null;
     merke('strom', grund, befund());
     if (cfg.pause_nach) pn = cfg.pause_nach;
     if (cfg.pause_h) ph = cfg.pause_h;
@@ -206,21 +220,33 @@ function urteile(p) {
   if (st.pause_bis !== null && jetzt < st.pause_bis) { st.zustand = 'pause'; return; }
   if (st.pause_bis !== null) { st.pause_bis = null; st.fehl = 0; merke('pause_vorbei', ''); }
   f = fehlerbild(p);
+  if (st.halt_bis !== null && jetzt >= st.halt_bis) st.halt_bis = null;
+  // a neighbour that does not answer is no 'ok' (it may be restarting) and no fault of this device - only wait
+  if (f && f.warten) {
+    if (st.halt_bis !== null) { st.zustand = 'sanft'; } else if (st.stoer_seit !== null) { st.zustand = 'stoerung'; } else if (!st.nach_eingriff) { st.zustand = 'bereit'; st.grund = ''; }
+    return;
+  }
   if (!f) {
     if (st.stoer_seit !== null || st.nach_eingriff) merke('ok', '');
     st.nach_eingriff = false;
     st.stoer_seit = null;
+    st.faktor = 1;
     st.fehl = 0;
     st.zustand = 'bereit';
     st.grund = '';
     return;
   }
-  if (st.stoer_seit === null) st.stoer_seit = jetzt;
   st.zustand = 'stoerung';
+  if (st.halt_bis !== null) st.zustand = 'sanft';
+  if (st.stoer_seit === null) { st.stoer_seit = jetzt; st.faktor = f.faktor; }
+  // in the chain the reason may change while the fault runs (e.g. the router restarts softly): keep the longer wait.
+  // Home Assistant: 'Pi gone' after 'Pi lives' shortens the wait on purpose.
+  if (cfg.rolle !== 'kette' || f.faktor > st.faktor) st.faktor = f.faktor;
   st.grund = f.grund;
+  if (st.halt_bis !== null) return;
   warte = 12;
   if (cfg.stufe2_min) warte = cfg.stufe2_min;
-  warte = warte * 60 * f.faktor;
+  warte = warte * 60 * st.faktor;
   if (cfg.abstand_min) abstand = cfg.abstand_min;
   if (jetzt - st.stoer_seit < warte) return;
   if (st.letzter !== null && jetzt - st.letzter < abstand * 60) return;

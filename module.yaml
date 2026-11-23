@@ -1,5 +1,6 @@
 # Vertrag und Eigentumsregister (HA-Grundsatz G-19, Schema v1). Lesbare Fassung: docs/steckbrief.md.
-# Stand 0.6.0: Integration mit Datenbank, WebSocket, eigener Seite und Messplan (löst Ookla-Messungen aus).
+# Stand 0.38.0: Integration mit Datenbank, WebSocket, eigener Seite (Panel), Messplan (löst Ookla-Messungen aus),
+# vorgeschaltetem Gerät (WU-0009), Warnungen über notify (WU-0010), Diagnose-Log, Wächter und Ausfallbericht.
 schema: 1
 
 module:
@@ -12,12 +13,17 @@ components:
   - panel
 
 depends_on:
+  # Im Manifest nur after_dependencies; fachlich muss: ohne FRITZ!Box Tools bricht die Einrichtung ab (Reparatur-
+  # Hinweis fritz_fehlt), ohne Recorder gibt es keinen Verlauf (Reparatur-Hinweis recorder_fehlt).
   integrations:
     - fritz
+    - recorder
 
 sources:
-  # Zugang zur Box aus dem Eintrag von FRITZ!Box Tools; abgefragt wird die Box selbst (TR-064, nur lesend).
-  # interface config_entry ist eine Abweichung vom Schema (dort nur entities/entity), Begründung im Steckbrief.
+  # Zugang zur Box aus dem Eintrag von FRITZ!Box Tools; abgefragt wird die Box selbst (TR-064, nur lesend; Ausnahme
+  # Wächter Stufe 1: Reboot). interface config_entry ist eine Abweichung vom Schema (dort nur entities/entity),
+  # Begründung im Steckbrief. Fällt die Box aus, zeigt der Gesamtstand „FRITZ!Box nicht erreichbar“ (bekannter
+  # Ausfallzustand); gesamtstand, befunde, letzte_messung und die Prüfungen vom Pi bleiben verfügbar.
   - key: fritzbox
     owner: fritz
     interface: config_entry
@@ -29,13 +35,40 @@ sources:
         - entities:rsrq_anker
         - entities:rsrp_5g
         - entities:rsrq_5g
+        - entities:mobil_zelle
+        - entities:mobil_entfernung
+        - entities:mobil_nachbarzellen
+        - entities:pci_5g
+        - entities:sinr_anker
+        - entities:sinr_5g
+        - entities:mobil_band
+        - entities:zugang
+        - entities:dsl_sync_down
+        - entities:dsl_sync_up
+        - entities:dsl_snr_down
+        - entities:dsl_snr_up
+        - entities:dsl_daempfung_down
+        - entities:dsl_daempfung_up
+        - entities:dsl_crc_stunde
+        - entities:glasfaser_rx
+        - entities:glasfaser_tx
       on_unavailable: block
       recovery: re_evaluate
 
-  # Messungen der Ookla-Integration: Sensoren lesen, Messung über deren Aktion run_speedtest starten.
-  # Ohne sie gibt es kein Speedtest-Protokoll und der Messplan kann nicht messen.
-  # WU-0009 Stufe 2: vorgeschaltetes Gerät im eigenen Heimnetz (nur lesend, nur private Adressen) oder dessen
-  # HA-Integration (huawei_lte, netgear_lte, teltonika). Fällt es aus, sind nur die Funkwerte nicht verfügbar.
+  # Zähler von FRITZ!Box Tools (unique_id `*-gb_received`/`*-gb_sent`) über die Statistik des Recorders – nur der
+  # Reiter Verbrauch; fehlen sie, bleibt er leer.
+  - key: fritz_zaehler
+    owner: fritz
+    interface: entities
+    outage:
+      critical_for: []
+      on_unavailable: ignore
+      recovery: re_evaluate
+
+  # WU-0009 Stufe 2: vorgeschaltetes Gerät im eigenen Heimnetz (nur lesend, nur private Adressen, Anmeldung mit dem
+  # hinterlegten Kennwort, höchstens ein Versuch) oder dessen HA-Integration (huawei_lte, netgear_lte, teltonika).
+  # Fällt es aus, sind nur die Funkwerte, die allein von dort kommen, nicht verfügbar; Reparatur-Hinweise
+  # modem_anmeldung, modem_fehlt.
   - key: vorgeschaltet
     owner: geraet_im_heimnetz
     interface: http
@@ -47,6 +80,9 @@ sources:
       on_unavailable: block
       recovery: re_evaluate
 
+  # Messungen der Ookla-Integration: Sensoren lesen (über das Entitätsregister), Messung über deren Aktion
+  # run_speedtest starten. Ohne sie gibt es kein Speedtest-Protokoll und der Messplan kann nicht messen;
+  # letzte_messung beschreibt Vergangenheit und behält ihren Wert.
   - key: speedtest
     owner: ookla_speedtest
     interface: entities
@@ -55,47 +91,161 @@ sources:
       on_unavailable: ignore
       recovery: re_evaluate
 
+  # Momentaufnahme je Messung: Wetter-Entität (bevorzugt met) und Feiertags-Kalender (holiday). Fehlen sie, fehlen
+  # nur diese Felder der Momentaufnahme.
+  - key: wetter
+    owner: met
+    interface: entities
+    domain: weather
+    outage:
+      critical_for: []
+      on_unavailable: ignore
+      recovery: re_evaluate
+  - key: feiertage
+    owner: holiday
+    interface: entities
+    domain: calendar
+    outage:
+      critical_for: []
+      on_unavailable: ignore
+      recovery: re_evaluate
+
+  # Wächter (18.11.2026): Shelly-Steckdosen Gen 2+ im eigenen Heimnetz, gefunden über die Einträge der Shelly-
+  # Integration und die Geräteliste der Box; Heimnetz legt nur sein eigenes Skript „heimnetz-waechter“ samt KVS an,
+  # liest Zustand und Leistung (alle 2 min) und lässt auf Knopfdruck blinken. Speichern spielt das Skript auf – ohne
+  # erreichbare Steckdose kein Speichern; die Regeln laufen auf der Steckdose auch ohne Heimnetz weiter.
+  - key: shelly
+    owner: shelly
+    interface: http
+    outage:
+      critical_for:
+        - settings:waechter
+      on_unavailable: block
+      recovery: re_evaluate
+
+  # Ausfälle des Pi verstehen: Speicher von Home Assistant, Supervisor und Add-ons (alle 5 min), Systemprotokoll des
+  # vorigen Starts (nur nach einem Ausfall) – lesend über die Supervisor-API; ohne HA OS fehlen diese Werte.
+  - key: supervisor
+    owner: hassio
+    interface: http
+    outage:
+      critical_for: []
+      on_unavailable: ignore
+      recovery: re_evaluate
+
+  # Karte zum Mast (nur Seite, keine Entität): Ort der Zelle von BeaconDB (Zellkennung) bzw. OpenCellID (nur mit
+  # Schlüssel; dazu einmal im Monat der Datenabzug für Österreich), Funkmasten aus OpenStreetMap (Overpass, einmal im
+  # Monat, Ausschnitt auf festem Raster). Gemerkte Orte bleiben im Speicher; fehlt der Dienst, fehlt nur der neue Ort.
+  - key: beacondb
+    owner: beacondb
+    interface: http
+    outage:
+      critical_for: []
+      on_unavailable: ignore
+      recovery: re_evaluate
+  - key: opencellid
+    owner: opencellid
+    interface: http
+    outage:
+      critical_for: []
+      on_unavailable: ignore
+      recovery: re_evaluate
+  - key: overpass
+    owner: openstreetmap
+    interface: http
+    outage:
+      critical_for: []
+      on_unavailable: ignore
+      recovery: re_evaluate
+
+  # Kartenkacheln lädt der Browser, nicht die Integration: basemap.at (mapsneu.wien.gv.at) oder OpenStreetMap.
+  # interface browser ist eine Abweichung vom Schema (Quelle der Seite, nicht der Integration).
+  - key: kartenkacheln
+    owner: basemap_at_oder_openstreetmap
+    interface: browser
+    outage:
+      critical_for: []
+      on_unavailable: ignore
+      recovery: re_evaluate
+
+# Ausgänge (kein Feld im Schema): Warnungen über den gewählten notify-Dienst (WU-0010, ab Werk keiner) und immer das
+# Ereignis heimnetz_warnung; Wächter-Neustarts von FRITZ!Box (TR-064) und vorgeschaltetem Gerät (Weboberfläche);
+# Ookla-Messungen über ookla_speedtest.run_speedtest.
+
 owns:
   data:
     - key: journal
       storage: sqlite
     - key: protokoll
       storage: sqlite
-    - key: messungen
+    - key: messungen  # Tabellen messung, messung_kontext (Momentaufnahme), messung_geloescht (Merkliste)
       storage: sqlite
-    - key: gedaechtnis
+    - key: gedaechtnis  # Tabelle meta: Gedächtnis des Abrufs, Herzschlag und Marke „sauber“ (Ausfallbericht)
       storage: sqlite
-    - key: tickets
+    - key: diagnoselog  # 7 Tage
+      storage: sqlite
+    - key: speicherstand  # Speicher je Programm, 8 Tage
+      storage: sqlite
+    - key: tickets  # heimnetz.meldungen; lesbare Kopie und Bilder unter <config>/heimnetz/meldungen*
+      storage: store
+    - key: letzte_serie  # Ergebnis der letzten Speedtest-Serie (WU-0001), im Einstellungsspeicher
+      storage: store
+    - key: mast  # heimnetz.<Eintrag>.mast: gemerkte Orte der Zellen (BeaconDB, OpenCellID)
+      storage: store
+    - key: osm  # heimnetz.<Eintrag>.osm: Funkmasten aus OpenStreetMap im Ausschnitt
+      storage: store
+    - key: ocid  # heimnetz.<Eintrag>.ocid: Zellen aus dem OpenCellID-Datenabzug im Ausschnitt
       storage: store
   settings:
+    # Wahl der FRITZ!Box: data des Config Entry (Schema kennt nur store/options), Einrichtungsdialog
     - key: fritz_eintrag
       storage: config_entry
-    - key: tarif_und_auswertung
-      storage: store
-      exposure: websocket
-    - key: messplan
+    # Einstellungsspeicher heimnetz.<Eintrag>, nur Admins über WebSocket
+    - key: tarif_und_auswertung  # Tarif Download/Upload, „Auswerten ab“
       storage: store
       exposure: websocket
     - key: wlan_schwach
       storage: store
       exposure: websocket
-    - key: geraete_arten
+    - key: messplan  # ein/aus, Takt, Zeitfenster, Verhalten bei Verkehr, Anzahl der Serie
       storage: store
       exposure: websocket
+    - key: geraete_arten  # selbst gewählte Art je Gerät (AN-0001)
+      storage: store
+      exposure: websocket
+    - key: eigene_arten  # WU-0010
+      storage: store
+      exposure: websocket
+    - key: warnungen  # WU-0010: Ziel, Arten, Ausnahmen je Gerät, Zeiten
+      storage: store
+      exposure: websocket
+    - key: zugang  # WU-0009: Wahl des Zugangs, Adresse eines vorgeschalteten Geräts, Ersatzzugang
+      storage: store
+      exposure: websocket
+    - key: diagnoselog_schalter
+      storage: store
+      exposure: websocket
+    - key: waechter  # Wächter mit Regeln (18.11.2026)
+      storage: store
+      exposure: websocket
+    # Zugangsdaten nur in den Optionen des Eintrags, nie an die Seite, in der Diagnose geschwärzt. Kein Update-Listener:
+    # die Optionen werden bei jeder Verwendung frisch gelesen (Abweichung von G-16, docs/entscheidungen.md › Technik).
     - key: opencellid_schluessel
-      storage: config_entry_options
-    # WU-0009: Wahl des Zugangs, Adresse eines vorgeschalteten Geräts; Kennwort nur in den Optionen, nie an die Seite
-    - key: zugang
-      storage: store
-      exposure: websocket
+      storage: options  # Optionsdialog „Konfigurieren“
     - key: modem_kennwort
-      storage: config_entry_options
+      storage: options
+      exposure: websocket  # nur setzen/entfernen über heimnetz/zugang/setzen
+    - key: shelly_kennwort
+      storage: options
+      exposure: websocket  # nur setzen über heimnetz/waechter/speichern
   entities:
     - key: gesamtstand
       domain: sensor
     - key: befunde
       domain: sensor
     - key: geraete_online
+      domain: sensor
+    - key: letzte_messung
       domain: sensor
     - key: mobil_technik
       domain: sensor
@@ -106,6 +256,20 @@ owns:
     - key: rsrp_5g
       domain: sensor
     - key: rsrq_5g
+      domain: sensor
+    - key: mobil_zelle
+      domain: sensor
+    - key: mobil_entfernung
+      domain: sensor
+    - key: mobil_nachbarzellen
+      domain: sensor
+    - key: pci_5g
+      domain: sensor
+    - key: sinr_anker
+      domain: sensor
+    - key: sinr_5g
+      domain: sensor
+    - key: mobil_band
       domain: sensor
     - key: zugang
       domain: sensor
@@ -127,12 +291,6 @@ owns:
       domain: sensor
     - key: glasfaser_tx
       domain: sensor
-    - key: sinr_anker
-      domain: sensor
-    - key: sinr_5g
-      domain: sensor
-    - key: mobil_band
-      domain: sensor
     - key: pi_fritzbox
       domain: binary_sensor
     - key: pi_internet
@@ -143,23 +301,66 @@ owns:
     - ticket
 
 interfaces:
+  # Befehle heimnetz/<name> (aus websocket.py und tickets.py)
   websocket:
     - uebersicht
     - speedtest
+    - speedtest/kachel
+    - messung/loeschen
     - geraete
     - geraet
+    - geraet/art
+    - netzkarte
     - mobilfunk
     - internet
+    - modem
     - zugang
+    - zugang/setzen
+    - zugang/suchen
     - wlan
     - verbrauch
     - protokoll
     - einstellungen
-    - messplan
+    - einstellungen/setzen
+    - messplan/setzen
     - messen
     - serie
+    - einrichtung
+    - diagnoselog
+    - diagnoselog/setzen
+    - diagnoselog/loeschen
+    - diagnoselog/datei
+    - arten
+    - art/neu
+    - art/aendern
+    - art/loeschen
+    - warnungen
+    - warnungen/setzen
+    - warnungen/geraet
+    - warnungen/test
+    - waechter
+    - waechter/vorschlag
+    - waechter/speichern
+    - waechter/aendern
+    - waechter/blinken
     - meldungen
-    - meldung
+    - meldung/neu
+    - meldung/bild
+    - meldung/bild_zeigen
+    - meldung/github
+    - meldung/status
+    - meldung/loeschen
+
+# G-24: kein eigenes Archiv (Herbert, 24.10.2026; docs/entscheidungen.md › Momentaufnahme je Messung und
+# Langzeitarchiv).
+archive:
+  version: 1
+  anwendbar: false
+  grund: >-
+    Langzeitarchiv über Entitäten statt eigenem Archiv: Heimnetz gibt seine Werte als Entitäten frei (Sensor „Letzte
+    Messung“ mit Messwerten und Momentaufnahme als Attribute, Mobilfunk- und Leitungswerte); dauerhaft
+    mitgeschrieben werden sie von Scribe (TimescaleDB) oder InfluxDB. Messungen bleiben zusätzlich unbegrenzt in der
+    eigenen Datenbank heimnetz.db, Journal und Protokoll 400 Tage.
 
 database:
   schema_versioned: true
@@ -168,8 +369,18 @@ database:
 quality:
   unload_reload: true
   diagnostics: true
-  repairs: true
+  repairs: true  # fritz_fehlt, anmeldung, alt_aktiv, recorder_fehlt, modem_anmeldung, modem_fehlt
 
 ui:
   types:
     - custom_panel
+
+failure_policy:
+  # Messplan: ist eine Messung fällig und Ookla fehlt, bleibt sie fällig und wird beim nächsten Abruf (60 s) neu
+  # entschieden.
+  scheduled:
+    strategy: retry
+    on_recovery: re_evaluate
+  # „Jetzt messen“, Serie u. a.: Fehler mit verständlicher Meldung (z. B. ookla_fehlt).
+  manual:
+    strategy: fail

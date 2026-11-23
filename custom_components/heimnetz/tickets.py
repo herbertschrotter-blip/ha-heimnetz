@@ -107,9 +107,14 @@ class Meldungen:
                 _ablegen, self.ordner, copy.deepcopy(self.liste), stand
             )
 
-    async def async_neu(self, roh: dict[str, Any]) -> dict[str, Any]:
+    async def async_neu(self, roh: dict[str, Any], benutzer: str | None = None) -> dict[str, Any]:
+        """Neue Meldung; `benutzer` (Kennung in HA) zählt für die Grenzen je Benutzer und darf Bilder anhängen."""
         await self.async_laden()
         m = tk.meldung_pruefen(roh)
+        if grund := tk.grenze(self.liste, benutzer, dt_util.now().timestamp(), _sprache(self.hass)):
+            raise tk.Ungueltig(grund)  # schon in der Sprache von HA
+        if benutzer:
+            m["benutzer"] = benutzer
         m.update(
             id=uuid.uuid4().hex[:12],
             ticket=tk.neue_nummer(self.nummern, m["art"]),
@@ -259,7 +264,8 @@ def _ticket(
     msg: dict[str, Any],
     liste: list[dict[str, Any]],
 ) -> dict[str, Any] | None:
-    m = tk.finden(liste, msg["meldung_id"])
+    # nur über die interne id – die Nummer (FE-0001) ist erratbar
+    m = tk.finden_id(liste, msg["meldung_id"])
     if m is None:
         connection.send_error(
             msg["id"], websocket_api.ERR_NOT_FOUND, sp.t("Meldung nicht gefunden", _sprache(hass))
@@ -286,7 +292,7 @@ async def _neu(
 ) -> None:
     """Neue Meldung (jeder angemeldete Benutzer); Bilder kommen danach einzeln mit meldung/bild."""
     try:
-        m = await meldungen(hass).async_neu(msg["meldung"])
+        m = await meldungen(hass).async_neu(msg["meldung"], connection.user.id)
     except tk.Ungueltig as err:
         connection.send_error(msg["id"], "ungueltig", err.text(_sprache(hass)))
         return
@@ -329,9 +335,17 @@ async def _github(
 async def _bild(
     hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
 ) -> None:
-    """Ein Bild zur gerade gesendeten Meldung; die Antwort nennt, wie viele Bilder angekommen sind."""
+    """Ein Bild zur gerade gesendeten Meldung (nur vom Absender); die Antwort nennt, wie viele Bilder angekommen
+    sind."""
     ml = meldungen(hass)
     if (m := _ticket(hass, connection, msg, await ml.async_laden())) is None:
+        return
+    if m.get("benutzer") != connection.user.id:
+        connection.send_error(
+            msg["id"],
+            websocket_api.ERR_UNAUTHORIZED,
+            sp.t("Bilder nur vom Absender der Meldung", _sprache(hass)),
+        )
         return
     try:
         await ml.async_bild(m, msg["bild"])

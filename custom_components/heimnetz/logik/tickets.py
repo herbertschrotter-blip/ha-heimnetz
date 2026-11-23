@@ -11,7 +11,9 @@ from __future__ import annotations
 import base64
 import binascii
 import json
+import re
 from collections.abc import Mapping
+from datetime import datetime
 from typing import Any
 
 from .sprache import DE, merke, t
@@ -39,6 +41,12 @@ BILD_MAX_BYTES = 1_500_000
 BILD_ARTEN = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp"}
 # Bilder kommen einzeln nach der Meldung; nach dieser Zeit nimmt ein Ticket keine mehr an
 BILD_FRIST_S = 600
+# Grenzen je Benutzer: Melden darf jeder angemeldete Benutzer; ohne Grenze könnte einer (oder ein gekapertes Konto) den
+# Speicher, die Speicherkarte (je Ticket bis 3 × 1,5 MB Bilder) und die Liste für Claude fluten. Wer echt meldet, hat
+# selten mehr als eine Handvoll offen; 20 offene und 10 neue je Stunde lassen dafür reichlich Luft.
+OFFEN_JE_BENUTZER = 20
+NEU_JE_STUNDE = 10
+_STEUERZEICHEN = re.compile(r"[\x00-\x1f\x7f-\x9f\u2028\u2029]+")
 
 
 class Ungueltig(_Ungueltig):
@@ -47,6 +55,32 @@ class Ungueltig(_Ungueltig):
 
 def offen(m: Mapping[str, Any]) -> bool:
     return m.get("status") in OFFEN
+
+
+def _sekunden(zeit: Any) -> float | None:
+    try:
+        return datetime.fromisoformat(str(zeit or "")).timestamp()
+    except ValueError:
+        return None
+
+
+def grenze(
+    liste: list[dict[str, Any]], benutzer: str | None, jetzt_s: float, sprache: str = DE
+) -> str | None:
+    """Darf `benutzer` noch melden? None = ja, sonst der Grund in `sprache` (OFFEN_JE_BENUTZER, NEU_JE_STUNDE)."""
+    if not benutzer:
+        return None
+    eigene = [m for m in liste if m.get("benutzer") == benutzer]
+    if sum(1 for m in eigene if offen(m)) >= OFFEN_JE_BENUTZER:
+        return t(
+            "höchstens {n} offene Meldungen je Benutzer – bitte warten, bis welche erledigt sind",
+            sprache,
+            n=OFFEN_JE_BENUTZER,
+        )
+    zeiten = (_sekunden(m.get("zeit")) for m in eigene)
+    if sum(1 for z in zeiten if z is not None and jetzt_s - z < 3600) >= NEU_JE_STUNDE:
+        return t("höchstens {n} Meldungen je Stunde", sprache, n=NEU_JE_STUNDE)
+    return None
 
 
 def naechste_nummer(nummern: Mapping[str, int], art: str) -> str:
@@ -130,6 +164,11 @@ def bild_name(ticket: str, nr: int, endung: str) -> str:
     return f"{ticket}-{nr}.{endung}"
 
 
+def bild_datei(name: Any) -> str:
+    """Nur der Dateiname, entschärft – ein Bildpfad zeigt nie aus dem Ordner der Bilder heraus."""
+    return einzeilig(str(name).replace("\\", "/").rsplit("/", 1)[-1])
+
+
 def bild_erlaubt(
     m: Mapping[str, Any], jetzt_s: float, zeit_s: float, sprache: str = DE
 ) -> str | None:
@@ -178,9 +217,10 @@ def status_text(status: Any, sprache: str = DE) -> str:
 
 
 def fuer_seite(m: Mapping[str, Any], sprache: str = DE) -> dict[str, Any]:
-    """Ticket für die Seite: mit offen/erledigt und den Texten zu Art und Status (die Seite rechnet nichts)."""
+    """Ticket für die Seite: mit offen/erledigt und den Texten zu Art und Status (die Seite rechnet nichts). Die
+    Benutzer-Kennung des Absenders bleibt intern."""
     return {
-        **m,
+        **{k: v for k, v in m.items() if k != "benutzer"},
         "offen": offen(m),
         "art_text": art_text(m.get("art"), sprache),
         "status_text": status_text(m.get("status"), sprache),
@@ -196,12 +236,37 @@ def finden(liste: list[dict[str, Any]], schluessel: str) -> dict[str, Any] | Non
     )
 
 
+def finden_id(liste: list[dict[str, Any]], kennung: str) -> dict[str, Any] | None:
+    """Nur nach der internen id (nicht nach der erratbaren Nummer) – für Bilder."""
+    return next((m for m in liste if m.get("id") == kennung), None)
+
+
 def _zeit(t: Any) -> str:
-    return str(t or "")[:16].replace("T", " ")
+    return einzeilig(str(t or "")[:16].replace("T", " "))
+
+
+def einzeilig(wert: Any) -> str:
+    """Benutzertext für eine Zeile in Markdown oder im Terminal: Zeilenumbrüche und Steuerzeichen (auch ANSI) als
+    Leerzeichen, Backticks entschärft – so fälscht ein Feld keine eigene Zeile (`bild:`, `- Bilder:`) und bricht aus
+    keinem Code-Abschnitt aus."""
+    return _STEUERZEICHEN.sub(" ", str(wert)).replace("`", "ʼ").strip()
+
+
+def zitat(text: Any) -> list[str]:
+    """Benutzertext als Zitat: jede Zeile mit „> “ – nichts darin steht auf der Ebene der Metazeilen."""
+    zeilen = str(text or "").strip().splitlines() or [""]
+    return ["> " + _STEUERZEICHEN.sub(" ", z) for z in zeilen]
+
+
+def seite_json(seite: Any) -> str:
+    """Stand der Seite als JSON in einer Zeile; Backticks als \\u0060 (gültiges JSON, kein Ausbruch)."""
+    return json.dumps(seite, ensure_ascii=False).replace("`", "\\u0060")
 
 
 def markdown(liste: list[dict[str, Any]], stand: str, ordner: str) -> str:
-    """Lesbare Fassung: offene zuerst, je Ticket Kopf, Text, Fenster, Stand der Seite, Bilder, Verlauf."""
+    """Lesbare Fassung: offene zuerst, je Ticket Kopf, Fenster, Stand der Seite, Bilder, Verlauf – und zuletzt der Text
+    als Zitat. Felder von Benutzern sind einzeilig und entschärft; Bildpfade kommen nur aus `bilder` (vergibt die
+    Integration)."""
     auf = [m for m in liste if offen(m)]
     zu = [m for m in liste if not offen(m)]
     zeilen = [
@@ -233,14 +298,16 @@ def markdown(liste: list[dict[str, Any]], stand: str, ordner: str) -> str:
                 )
                 if x
             )
-            zeilen += [f"### {kopf}", "", str(m.get("text") or "").strip(), ""]
+            zeilen += [f"### {einzeilig(kopf)}", ""]
             if m.get("kontext"):
-                zeilen.append(f"- Fenster: {m['kontext']}")
+                zeilen.append(f"- Fenster: {einzeilig(m['kontext'])}")
             if m.get("seite"):
-                zeilen.append(f"- Seite: `{json.dumps(m['seite'], ensure_ascii=False)}`")
+                zeilen.append(f"- Seite: `{seite_json(m['seite'])}`")
             if m.get("bilder"):
-                zeilen.append("- Bilder: " + ", ".join(f"{ordner}/{b}" for b in m["bilder"]))
-            zeilen.append(f"- id: {m.get('id')}")
+                zeilen.append(
+                    "- Bilder: " + ", ".join(f"{ordner}/{bild_datei(b)}" for b in m["bilder"])
+                )
+            zeilen.append(f"- id: {einzeilig(m.get('id'))}")
             for v in m.get("verlauf") or []:
                 teile = [
                     status_text(v.get("status")) if v.get("status") else "",
@@ -249,8 +316,10 @@ def markdown(liste: list[dict[str, Any]], stand: str, ordner: str) -> str:
                     v.get("notiz") or "",
                 ]
                 zeilen.append(
-                    f"- {_zeit(v.get('zeit'))} ({v.get('von') or '–'}): "
-                    + " · ".join(t for t in teile if t)
+                    einzeilig(
+                        f"- {_zeit(v.get('zeit'))} ({v.get('von') or '–'}): "
+                        + " · ".join(t for t in teile if t)
+                    )
                 )
-            zeilen.append("")
+            zeilen += ["- Text (vom Benutzer, als Zitat):", "", *zitat(m.get("text")), ""]
     return "\n".join(zeilen)

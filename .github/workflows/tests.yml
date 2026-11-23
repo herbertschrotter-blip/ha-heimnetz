@@ -1,10 +1,13 @@
-# Tests bei jedem Push und Pull Request: dieselben Checks wie vor dem Commit (Skill-Profil in CLAUDE.md).
+# Tests bei jedem Push auf einen Branch und Pull Request: dieselben Checks wie vor dem Commit (Skill-Profil in CLAUDE.md).
+# Für Tags ruft release.yml diesen Ablauf selbst auf (workflow_call) und veröffentlicht nur, wenn er grün ist.
 name: Tests
 
 on:
   push:
+    branches: ["**"]
   pull_request:
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read

@@ -10,6 +10,8 @@ node_modules/
 *.db-shm
 *.db-wal
 release.md
+.coverage
+.coverage.*
 
 # Nur lokal beim Entwickler, nicht öffentlich
 CLAUDE.md

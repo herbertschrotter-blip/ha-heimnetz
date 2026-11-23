@@ -15,6 +15,7 @@ from logik import modem as lm
         "172.16.5.4",
         "172.31.255.1",
         "fd00::1",
+        "fc00::5",
         " 192.168.0.1 ",
     ],
 )
@@ -33,6 +34,12 @@ def test_private_adressen_erlaubt(adresse):
         "169.254.1.1",  # Link-Local
         "0.0.0.0",  # unspezifiziert
         "224.0.0.1",  # Multicast
+        "2001::1",  # Teredo – für Python „private“, führt aber ins Internet
+        "2001:db8::1",  # Dokumentation
+        "fe80::1",  # IPv6 Link-Local
+        "::ffff:192.168.0.1",  # IPv4 in IPv6
+        "64:ff9b:1::1",  # NAT64 lokal
+        "2a00:1450::1",  # öffentlich
         "fritz.box",  # Hostname
         "modem.local",
         "",

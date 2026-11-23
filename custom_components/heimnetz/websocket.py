@@ -285,6 +285,9 @@ async def _zugang_setzen(
             connection.send_error(msg["id"], "ungueltig", err.text(ansichten.sprache(hass)))
             return
         entry = lz.abruf.config_entry
+        if "kennwort" in msg or msg["kennwort_loeschen"] or "zugang_adresse" in daten:
+            # neues Kennwort oder Adresse: die Bindung des Kennworts an die zuerst angenommene Adresse gilt nicht mehr
+            lz.abruf.modem.bindung_loesen()
         if "kennwort" in msg or msg["kennwort_loeschen"]:
             optionen = {k: v for k, v in entry.options.items() if k != CONF_MODEM_KENNWORT}
             if "kennwort" in msg and not msg["kennwort_loeschen"]:
@@ -746,8 +749,10 @@ async def _warnungen_test(
 
 
 def _hinterlegt_fuer(lz: Any) -> str:
-    """Adresse, für die das hinterlegte Kennwort gilt: die gespeicherte, sonst die des gefundenen Geräts."""
-    return lz.einstellungen.wert.zugang_adresse or lz.abruf.modem.adresse or ""
+    """Adresse, für die das hinterlegte Kennwort gilt: die gespeicherte, sonst die, an der es zuerst angenommen wurde,
+    sonst die des gefundenen Geräts (wie `ve.kennwort_erlaubt` im laufenden Abruf)."""
+    modem = lz.abruf.modem
+    return lz.einstellungen.wert.zugang_adresse or modem.kennwort_bei or modem.adresse or ""
 
 
 # ── Wächter (18.11.2026) ──

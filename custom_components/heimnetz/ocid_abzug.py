@@ -1,7 +1,8 @@
 """OpenCellID-Datenabzug für Österreich holen – im Hintergrund, einmal im Monat, nur mit eigenem Schlüssel (WU-0002).
 
-Geladen wird die Datei des ganzen Landes (MCC 232) in Stücken; entpackt und ausgewertet wird Zeile für Zeile, behalten
-werden nur die Zellen im Ausschnitt der OSM-Masten (logik/osm.rahmen). Hinaus geht nur der Schlüssel, kein Standort.
+Geladen wird die Datei des ganzen Landes (MCC 232) in Stücken in eine temporäre Datei im Ordner der Integration (nicht in
+den Speicher); entpackt und ausgewertet wird Zeile für Zeile, behalten werden nur die Zellen im Ausschnitt der OSM-Masten
+(logik/osm.rahmen). Hinaus geht nur der Schlüssel, kein Standort.
 """
 
 from __future__ import annotations
@@ -10,12 +11,15 @@ import gzip
 import hashlib
 import io
 import itertools
-from typing import Any
+import os
+import tempfile
+from pathlib import Path
+from typing import IO, Any
 
 import aiohttp
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .const import CONF_OPENCELLID
+from .const import CONF_OPENCELLID, DOMAIN
 from .gemerkt import GemerkterAbruf
 from .logik import karte as ka
 from .logik import ocid as lc
@@ -24,7 +28,9 @@ from .logik import osm as lo
 URL = "https://opencellid.org/ocid/downloads"
 LAND = "232"  # Österreich
 ZEIT_S = 300
-GROESSTE = 300 * 1024 * 1024  # mehr (gepackt) lädt die Integration nicht
+# Österreich gepackt: einige MB (2026); mehr lädt die Integration nicht – reichlich Luft, schützt aber die Speicherkarte
+GROESSTE = 64 * 1024 * 1024
+SCHUB = 1 << 22  # so viel sammelt der Download, bevor er (im Executor) in die Datei schreibt
 
 
 class OcidAbzug(GemerkterAbruf):
@@ -67,7 +73,17 @@ class OcidAbzug(GemerkterAbruf):
 
     async def _abrufen(self, *args: Any) -> list[Any]:
         schluessel, r = args
-        puffer = bytearray()
+        datei = await self.hass.async_add_executor_job(_temp_oeffnen, self.hass.config.path(DOMAIN))
+        try:
+            await self._laden(schluessel, datei)
+            zellen = await self.hass.async_add_executor_job(_auswerten, Path(datei.name), r)
+        finally:
+            await self.hass.async_add_executor_job(_temp_weg, datei)
+        return [[z.technik, z.mnc, z.ort.lat, z.ort.lon] for z in zellen]
+
+    async def _laden(self, schluessel: str, datei: IO[bytes]) -> None:
+        """Download in Schüben in die Datei – im Speicher liegen höchstens SCHUB Bytes."""
+        puffer, gesamt = bytearray(), 0
         async with async_get_clientsession(self.hass).get(
             URL,
             params={"token": schluessel, "type": "mcc", "file": f"{LAND}.csv.gz"},
@@ -76,16 +92,54 @@ class OcidAbzug(GemerkterAbruf):
             antwort.raise_for_status()
             async for stueck in antwort.content.iter_chunked(1 << 16):
                 puffer += stueck
-                if len(puffer) > GROESSTE:
+                gesamt += len(stueck)
+                if gesamt > GROESSTE:
                     raise ValueError("Abzug größer als erwartet")
-        zellen = await self.hass.async_add_executor_job(_auswerten, bytes(puffer), r)
-        return [[z.technik, z.mnc, z.ort.lat, z.ort.lon] for z in zellen]
+                if len(puffer) >= SCHUB:
+                    await self.hass.async_add_executor_job(datei.write, bytes(puffer))
+                    puffer.clear()
+        if puffer:
+            await self.hass.async_add_executor_job(datei.write, bytes(puffer))
+        await self.hass.async_add_executor_job(datei.flush)
 
 
-def _auswerten(daten: bytes, r: tuple[float, float, float, float]) -> list[lc.OcidZelle]:
+def _temp_oeffnen(ordner: str) -> IO[bytes]:
+    """Blockierend: temporäre Datei im Ordner der Integration (auf der Platte, nicht im RAM wie oft /tmp). Was ein
+    früherer Abzug liegen ließ (Absturz, Stromausfall), kommt vorher weg – nur `.ocid-*.tmp` in diesem Ordner."""
+    os.makedirs(ordner, exist_ok=True)
+    _reste_weg(ordner)
+    return tempfile.NamedTemporaryFile(dir=ordner, prefix=".ocid-", suffix=".tmp", delete=False)  # noqa: SIM115
+
+
+def _reste_weg(ordner: str) -> None:
+    for alt in Path(ordner).glob(".ocid-*.tmp"):
+        if alt.is_file() or alt.is_symlink():
+            try:
+                alt.unlink()
+            except OSError:
+                pass
+
+
+def _temp_weg(datei: IO[bytes]) -> None:
+    datei.close()
+    try:
+        os.remove(datei.name)
+    except FileNotFoundError:
+        pass
+
+
+def _auswerten(daten: bytes | Path, r: tuple[float, float, float, float]) -> list[lc.OcidZelle]:
     """Blockierend: Zeile für Zeile entpacken und filtern (wenig Speicher, auch bei großer Datei)."""
-    roh: io.BufferedIOBase = io.BytesIO(daten)
-    strom = gzip.GzipFile(fileobj=roh) if daten[:2] == b"\x1f\x8b" else roh
+    if isinstance(daten, Path):
+        with daten.open("rb") as f:
+            return _auswerten_strom(f, r)
+    return _auswerten_strom(io.BytesIO(daten), r)
+
+
+def _auswerten_strom(roh: IO[bytes], r: tuple[float, float, float, float]) -> list[lc.OcidZelle]:
+    kopf_bytes = roh.read(2)
+    roh.seek(0)
+    strom: IO[bytes] = gzip.GzipFile(fileobj=roh) if kopf_bytes == b"\x1f\x8b" else roh
     text = io.TextIOWrapper(strom, encoding="utf-8", errors="replace", newline="")
     kopf = text.readline()
     if not lc.ist_csv(kopf.encode()):

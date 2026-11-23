@@ -90,6 +90,93 @@ def test_nur_die_gebaute_seite_wird_ausgeliefert(ha):
     ):
         (frontend / pfad).parent.mkdir(parents=True, exist_ok=True)
         (frontend / pfad).write_text("//", encoding="utf-8")
-    assert lauf(ha).returncode == 0
+    assert lauf(ha, "--ohne-pruefung").returncode == 0
     ziel = ha / "custom_components" / DOMAIN / "frontend"
     assert sorted(p.name for p in ziel.iterdir()) == ["heimnetz-panel.js"]
+
+
+def ausliefern_version(ha, version):
+    manifest = ha / "projekte" / "projekt" / "custom_components" / DOMAIN / "manifest.json"
+    manifest.write_text(f'{{"version": "{version}"}}', encoding="utf-8")
+    r = lauf(ha)
+    assert r.returncode == 0, r.stderr
+
+
+def staende(ha):
+    return sorted(
+        p.name for p in (ha / "projekte" / "projekt" / ".auslieferung" / "vorher").iterdir()
+    )
+
+
+def test_mehrere_staende_und_schrittweise_zurueck(ha):
+    """Zweimal ausliefern überschreibt die letzte gute Fassung nicht; --zurueck geht Stand für Stand zurück."""
+    for version in ("1", "2", "3"):
+        ausliefern_version(ha, version)
+    assert ausgeliefert(ha) == '{"version": "3"}'
+    assert lauf(ha, "--zurueck").returncode == 0
+    assert ausgeliefert(ha) == '{"version": "2"}'
+    assert lauf(ha, "--zurueck").returncode == 0
+    assert ausgeliefert(ha) == '{"version": "1"}'
+    r = lauf(ha, "--zurueck")
+    assert r.returncode == 0, r.stderr
+    assert not (ha / "custom_components" / DOMAIN).exists()
+
+
+def test_nur_die_letzten_drei_staende_bleiben(ha):
+    for version in ("1", "2", "3", "4", "5"):
+        ausliefern_version(ha, version)
+    namen = staende(ha)
+    assert len(namen) == 3
+    assert all(n.startswith(f"{DOMAIN}-") and not n.endswith(".keine") for n in namen)
+    for erwartet in ("4", "3", "2"):
+        assert lauf(ha, "--zurueck").returncode == 0
+        assert ausgeliefert(ha) == f'{{"version": "{erwartet}"}}'
+    assert lauf(ha, "--zurueck").returncode == 1
+
+
+def test_alter_stand_ohne_zeitstempel_gilt_als_aeltester(ha):
+    """Sicherung der früheren Fassung des Skripts (…/vorher/heimnetz) wird übernommen, fremde Ordner bleiben."""
+    vorher = ha / "projekte" / "projekt" / ".auslieferung" / "vorher"
+    (vorher / DOMAIN).mkdir(parents=True)
+    (vorher / DOMAIN / "manifest.json").write_text('{"version": "0"}', encoding="utf-8")
+    (vorher / "netzwerk").mkdir()
+    ausliefern_version(ha, "1")
+    ausliefern_version(ha, "2")
+    assert lauf(ha, "--zurueck").returncode == 0
+    assert ausgeliefert(ha) == '{"version": "1"}'
+    assert lauf(ha, "--zurueck").returncode == 0
+    assert not (ha / "custom_components" / DOMAIN).exists()
+    assert lauf(ha, "--zurueck").returncode == 0
+    assert ausgeliefert(ha) == '{"version": "0"}'
+    assert (vorher / "netzwerk").is_dir()
+
+
+def bauen_mit_ergebnis(ha, code):
+    bauen = ha / "projekte" / "projekt" / "custom_components" / DOMAIN / "frontend" / "bauen.mjs"
+    bauen.parent.mkdir(parents=True, exist_ok=True)
+    bauen.write_text(
+        f"if (!process.argv.includes('--pruefen')) process.exit(9);\n"
+        f"console.error('passt nicht');\nprocess.exit({code});\n",
+        encoding="utf-8",
+    )
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node fehlt")
+def test_veraltete_seite_bricht_ab(ha):
+    bauen_mit_ergebnis(ha, 1)
+    r = lauf(ha)
+    assert r.returncode == 1
+    assert "passt nicht" in r.stderr
+    assert "--ohne-pruefung" in r.stderr
+    assert not (ha / "custom_components" / DOMAIN).exists()
+    r = lauf(ha, "--ohne-pruefung")
+    assert r.returncode == 0, r.stderr
+    assert ausgeliefert(ha) == '{"version": "2"}'
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node fehlt")
+def test_aktuelle_seite_wird_ausgeliefert(ha):
+    bauen_mit_ergebnis(ha, 0)
+    r = lauf(ha)
+    assert r.returncode == 0, r.stderr
+    assert ausgeliefert(ha) == '{"version": "2"}'

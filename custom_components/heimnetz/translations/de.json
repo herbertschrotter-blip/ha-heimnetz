@@ -305,6 +305,12 @@
     },
     "alt_aktiv": {
       "message": "Die alte Integration „Netzwerk“ ist noch aktiv – Heimnetz startet nicht, damit nie beide die FRITZ!Box abfragen."
+    },
+    "schema_zu_neu": {
+      "message": "Die Datenbank von Heimnetz stammt von einer neueren Fassung ({grund}). Diese Fassung fasst sie nicht an – bitte die neuere Fassung wieder einspielen."
+    },
+    "datenbank_kaputt": {
+      "message": "Die Datenbank {datei} von Heimnetz ist beschädigt. Unter Reparaturen steht, was zu tun ist."
     }
   },
   "issues": {
@@ -331,6 +337,10 @@
     "modem_fehlt": {
       "title": "Heimnetz: Vorgeschaltetes Modem antwortet nicht",
       "description": "Unter der Adresse des Modems vor der FRITZ!Box antwortet seit mindestens zwei Abrufen nichts. Ist das Modem an und die Adresse richtig? Unter Heimnetz → ⚙ → 🌐 Zugang die Adresse prüfen oder „↻ Erneut suchen“. Antwortet es wieder, verschwindet dieser Hinweis von selbst."
+    },
+    "datenbank_kaputt": {
+      "title": "Heimnetz: Datenbank beschädigt",
+      "description": "Heimnetz kann seine Datenbank `{datei}` im Konfigurationsordner nicht lesen (beschädigt). Entweder die Datei aus einer Sicherung von Home Assistant zurückholen oder sie beiseitelegen (umbenennen, z. B. in `{datei}.kaputt`) – dann legt Heimnetz eine neue, leere an; Journal, Protokoll und Messungen fangen neu an. Danach Heimnetz neu laden."
     }
   },
   "options": {

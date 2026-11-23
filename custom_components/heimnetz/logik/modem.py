@@ -58,12 +58,19 @@ _IPV4 = re.compile(r"(?<![\d.])(?:\d{1,3}\.){3}\d{1,3}(?![\d.])")
 _IPV6 = re.compile(r"(?<![\w:])(?:[0-9A-Fa-f]{1,4}:){2,7}[0-9A-Fa-f]{1,4}(?![\w:])")
 
 
+_IPV6_ULA = ipaddress.IPv6Network("fc00::/7")
+
+
 def adresse_erlaubt(adresse: str) -> bool:
-    """Nur private IPv4/IPv6-Adressen im eigenen Heimnetz; keine Hostnamen, kein Loopback/Link-Local/unspezifiziert."""
+    """Nur private IPv4/IPv6-Adressen im eigenen Heimnetz; keine Hostnamen, kein Loopback/Link-Local/unspezifiziert.
+    IPv6 nur Unique Local (fc00::/7): `is_private` zählt auch Teredo (2001::/32), Dokumentation und andere
+    Sonderbereiche dazu, die im Internet liegen bzw. dorthin führen."""
     try:
         ip = ipaddress.ip_address(adresse.strip())
     except ValueError:
         return False
+    if isinstance(ip, ipaddress.IPv6Address):
+        return ip in _IPV6_ULA and not ip.is_multicast
     return ip.is_private and not (
         ip.is_loopback or ip.is_link_local or ip.is_unspecified or ip.is_reserved or ip.is_multicast
     )

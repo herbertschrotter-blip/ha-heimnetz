@@ -147,23 +147,30 @@ def probe(lauf: Lauf) -> str | None:
         session.close()
 
 
-def neustarten(lauf: Lauf, kennwort: str | None) -> bool:
-    """Wächter (Stufe 1), blockierend: einmal anmelden, Neustart über device/control. Nie eine Einstellung."""
+def neustarten(lauf: Lauf, kennwort: str | None) -> str:
+    """Wächter (Stufe 1), blockierend: einmal anmelden, Neustart über device/control. Nie eine Einstellung. Nur, wenn
+    die Integration huawei_lte nicht eingerichtet ist (prüft der Aufrufer). „ok“, „abgelehnt“ (Kennwort oder
+    gesperrt – kein weiterer Versuch) oder „fehler“."""
     from huawei_lte_api.Client import Client  # noqa: PLC0415
     from huawei_lte_api.Connection import Connection  # noqa: PLC0415
+    from huawei_lte_api.exceptions import (  # noqa: PLC0415
+        LoginErrorInvalidCredentialsException,
+        LoginErrorUsernamePasswordOverrunException,
+    )
 
     if not kennwort:
-        return False
+        return "fehler"
     session = requests_session(lauf.adresse)
     try:
         client = Client(
             Connection(basis_url(lauf.adresse), timeout=ZEIT_S, requests_session=session)
         )
-        client.user.login("admin", kennwort, force_new_login=True)
-        return str(client.device.reboot()).upper() == "OK"
-    except (
-        Exception
-    ):  # abgelehnt, Netz, Gerät startet schon neu – Erfolg zeigt erst die Prüfung danach
-        return False
+        try:
+            client.user.login("admin", kennwort, force_new_login=True)
+        except LoginErrorInvalidCredentialsException, LoginErrorUsernamePasswordOverrunException:
+            return "abgelehnt"
+        return "ok" if str(client.device.reboot()).upper() == "OK" else "fehler"
+    except Exception:  # Netz, Gerät startet schon neu – Erfolg zeigt erst die Prüfung danach
+        return "fehler"
     finally:
         session.close()

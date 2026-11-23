@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import logging
 import re
+import socket
 import threading
 import time
 import xml.etree.ElementTree as ET
@@ -42,6 +43,15 @@ DSL = "WANDSLInterfaceConfig1"
 FASER = "X_AVM-DE_WANFiber1"
 FEHLER = (FritzConnectionException, RequestException, OSError, KeyError, ValueError, ET.ParseError)
 VERBINDUNG_WEG = (RequestsConnectionError, Timeout)
+TCP_PRUEFEN_S = 3.0  # erst verbinden, wenn die Box auf ihrem TR-064-Anschluss antwortet
+# Pausen nach gescheitertem Aufbau von fritzconnection (1., 2., ab 3. Mal), obwohl die TCP-Prüfung gelang:
+# fritzconnection protokolliert jeden gescheiterten Aufbau als ERROR – nicht jede Minute. Die billige TCP-Prüfung läuft
+# immer; scheitert sie, ist die Box weg und die Pause beginnt nach ihrer Rückkehr von vorn (die Box ist nach einem
+# Neustart spätestens beim nächsten Abruf wieder da). Etwas kürzer als der Takt, damit der passende Abruf wieder darf.
+PAUSEN_S = (55.0, 115.0, 295.0)
+VERBINDUNG_HALTEN_S = (
+    300.0  # eine jüngere Verbindung wird nach einem Teilausfall nicht gleich neu aufgebaut
+)
 
 
 class AnmeldungAbgelehnt(Exception):
@@ -113,6 +123,10 @@ class Box:
         self.zugang = zugang
         self._fc: FritzConnection | None = None
         self._geschlossen = False
+        self._fehlversuche = 0  # gescheiterte Verbindungsaufbauten hintereinander
+        self._naechster_versuch = 0.0  # monotonic: vorher kein neuer Aufbau
+        self._verbunden_um = 0.0  # monotonic: Aufbau der aktuellen Verbindung
+        self._letzter_grund = ""
         # nie zwei Abrufe gleichzeitig an der Box (z. B. „Erneut suchen“ während des Takts, WU-0009)
         self._sperre = threading.Lock()
 
@@ -122,7 +136,16 @@ class Box:
         if self._fc is None:
             z = self.zugang
             try:
-                self._fc = FritzConnection(
+                _tcp_pruefen(z.host, z.port)  # billig (höchstens TCP_PRUEFEN_S), immer erlaubt
+            except OSError as err:
+                # Box weg: fritzconnection gar nicht fragen; nach der Rückkehr sofort verbinden, ohne alte Pause
+                self._fehlversuche, self._naechster_versuch = 0, 0.0
+                self._letzter_grund = grund(err)
+                raise NichtErreichbar(self._letzter_grund) from err
+            if time.monotonic() < self._naechster_versuch:
+                raise NichtErreichbar(self._letzter_grund)  # Pause: Grund des letzten Aufbaus
+            try:
+                fc = FritzConnection(
                     address=z.host,
                     port=z.port,
                     user=z.benutzer,
@@ -134,7 +157,13 @@ class Box:
             except FritzAuthorizationError as err:
                 raise AnmeldungAbgelehnt from err
             except FEHLER as err:
-                raise NichtErreichbar(grund(err)) from err
+                self._fehlversuche += 1
+                pause = PAUSEN_S[min(self._fehlversuche, len(PAUSEN_S)) - 1]
+                self._naechster_versuch = time.monotonic() + pause
+                self._letzter_grund = grund(err)
+                raise NichtErreichbar(self._letzter_grund) from err
+            self._fc, self._fehlversuche, self._naechster_versuch = fc, 0, 0.0
+            self._verbunden_um = time.monotonic()
         return self._fc
 
     def pruefen(self) -> None:
@@ -147,10 +176,18 @@ class Box:
             self.trennen()
 
     def neuer_zugang(self, zugang: Zugang) -> None:
-        """Zugang in FRITZ!Box Tools geändert: beim nächsten Abruf neu verbinden."""
+        """Zugang in FRITZ!Box Tools geändert: beim nächsten Abruf neu verbinden (ohne Pause)."""
         if zugang != self.zugang:
             self.trennen()
             self.zugang = zugang
+            self._fehlversuche, self._naechster_versuch = 0, 0.0
+
+    def trennen_nach_fehler(self) -> None:
+        """Teil des Abrufs ausgefallen (z. B. Neustart der Box): beim nächsten Mal neu verbinden – außer die Verbindung
+        ist jünger als VERBINDUNG_HALTEN_S; dann war sie eben erst frisch, und ein neuer Aufbau lädt nur die
+        Beschreibung der Box noch einmal."""
+        if self._fc is not None and time.monotonic() - self._verbunden_um >= VERBINDUNG_HALTEN_S:
+            self.trennen()
 
     def trennen(self) -> None:
         if self._fc is not None:
@@ -243,6 +280,9 @@ class Box:
                 fn()
             except AnmeldungAbgelehnt:
                 raise
+            except NichtErreichbar as err:  # z. B. beim Entladen geschlossen
+                d.fehler.append(f"{name}: {err}")
+                raise _Abbruch from err
             except VERBINDUNG_WEG as err:
                 d.fehler.append(f"{name}: {grund(err)}")
                 raise _Abbruch from err
@@ -482,6 +522,13 @@ class Box:
         except _Abbruch:
             pass
         return d
+
+
+def _tcp_pruefen(host: str, port: int) -> None:
+    """Antwortet die Box überhaupt? Ohne diese Prüfung protokolliert fritzconnection jeden gescheiterten Aufbau als
+    ERROR (jede Minute, solange die Box weg ist). OSError zählt wie ein Ausfall (FEHLER)."""
+    with socket.create_connection((host, port), timeout=TCP_PRUEFEN_S):
+        pass
 
 
 _SID = re.compile(r"sid=[0-9a-fA-F]+")

@@ -171,6 +171,15 @@ def kandidaten(
     return tuple(out)
 
 
+def kennwort_erlaubt(adresse: str, gespeichert: str | None, gebunden: str | None) -> bool:
+    """Darf das hinterlegte Kennwort an diese Adresse? Die Suche fragt mehrere Adressen – das Kennwort gilt nur für
+    eine: die in ⚙ › Zugang gespeicherte, sonst die, an der es zuerst angenommen wurde (`gebunden`); solange es noch
+    keine gibt, die des erkannten Geräts. An allen anderen liest Heimnetz nur ohne Anmeldung."""
+    if gespeichert:
+        return adresse == gespeichert
+    return gebunden is None or adresse == gebunden
+
+
 @dataclass(frozen=True)
 class Treffer:
     """Ergebnis der Suche an einer Adresse: antwortet sie, und was ist es."""
@@ -304,6 +313,13 @@ BEFUNDE = {
         merke("Kennwort fehlt"),
         merke(
             "Ohne Anmeldung gibt das Gerät seine Signalwerte nicht heraus. Kennwort der Weboberfläche unter ⚙ › 🌐 Zugang hinterlegen."
+        ),
+    ),
+    "kennwort_andere_adresse": (
+        "amber",
+        merke("Kennwort gilt für eine andere Adresse"),
+        merke(
+            "Das hinterlegte Kennwort wurde an einer anderen Adresse angenommen; hier liest Heimnetz nur ohne Anmeldung. Ist das Gerät umgezogen oder neu: seine Adresse unter ⚙ › 🌐 Zugang eintragen (oder das Kennwort dort neu speichern) – dann gilt das Kennwort dort."
         ),
     ),
     "anmeldung_abgelehnt": (

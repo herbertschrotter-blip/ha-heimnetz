@@ -115,6 +115,7 @@ def test_hostliste_zahlen_ohne_namen():
         "vpn": 2,
         "vpn_aktiv": 1,
         "vpn_ohne_mac": 2,
+        "vpn_ohne_ip": 1,
         "arten": {"-": 3, "Ethernet": 1},
     }
     assert "handy" not in str(z) and "192.168" not in str(z)

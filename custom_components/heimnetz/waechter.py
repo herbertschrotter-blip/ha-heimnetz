@@ -52,6 +52,8 @@ class Waechterdienst:
         self._aufgabe: asyncio.Task[None] | None = None
         self._sperre = asyncio.Lock()
         self._befehl_n = int(time.time())
+        # Steckdose → Hash von Adresse und abgelehntem Kennwort: abgelehnt kein weiterer Versuch (nur im Speicher)
+        self._abgelehnt: dict[str, str] = {}
         self._erneuert: dict[
             str, float
         ] = {}  # Steckdose → letzter Versuch, ein älteres Skript zu erneuern
@@ -63,8 +65,13 @@ class Waechterdienst:
     def _kennwort(self) -> str | None:
         return self.lz.abruf.config_entry.options.get(CONF_SHELLY_KENNWORT) or None
 
-    def _dose(self, adresse: str) -> Steckdose:
-        return Steckdose(async_get_clientsession(self.hass), adresse, self._kennwort())
+    def _dose(self, adresse: str, kennwort: str | None = None) -> Steckdose:
+        return Steckdose(
+            async_get_clientsession(self.hass),
+            adresse,
+            kennwort or self._kennwort(),
+            abgelehnt=self._abgelehnt,
+        )
 
     def journal(self, ereignisse: list[Ereignis]) -> None:
         self.lz.abruf.journal_merken(ereignisse)
@@ -104,8 +111,8 @@ class Waechterdienst:
 
     async def kandidaten(self) -> list[dict[str, Any]]:
         """Shelly-Steckdosen im Heimnetz: aus der Shelly-Integration von HA und aus der Geräteliste der Box (Name
-        beginnt mit „shelly“). Jede wird einmal ohne Anmeldung gefragt (GET /shelly), passende auch nach der
-        Leistung."""
+        beginnt mit „shelly“). Jede wird nur ohne Anmeldung gefragt (GET /shelly), passende ohne Kennwortschutz auch
+        nach der Leistung – das Kennwort geht nie an ein Gerät, nur weil sein Name mit „shelly“ beginnt."""
         adressen: dict[str, str] = {}
         for e in self.hass.config_entries.async_entries("shelly"):
             if (h := str(e.data.get("host") or "")) and adresse_erlaubt(h):
@@ -116,13 +123,13 @@ class Waechterdienst:
         belegt = {d: w.id for w in self.liste for _, d in w.dosen}
 
         async def fragen(adresse: str, name: str) -> dict[str, Any] | None:
-            dose = self._dose(adresse)
+            dose = Steckdose(async_get_clientsession(self.hass), adresse, None)
             try:
                 info: Info = await dose.info()
             except ShellyFehler:
                 return None
             leistung = None
-            if info.passt:
+            if info.passt and not info.kennwort:
                 try:
                     leistung = await dose.leistung()
                 except ShellyFehler:
@@ -148,8 +155,7 @@ class Waechterdienst:
     async def _einspielen(self, w: wa.Waechter, kennwort: str | None) -> None:
         router = self.router()
         for i, adresse in w.dosen:
-            dose = Steckdose(async_get_clientsession(self.hass), adresse, kennwort)
-            await dose.einspielen(wa.kvs(w, i, router, BEOBACHTER))
+            await self._dose(adresse, kennwort).einspielen(wa.kvs(w, i, router, BEOBACHTER))
 
     def _kette_pruefen(self, w: wa.Waechter) -> None:
         """Typ und Adresse der Geräte kommen von der Seite: ein sanfter Neustart (mit dem Kennwort des Modems) nur an
@@ -265,21 +271,30 @@ class Waechterdienst:
     async def _sanft(self, w: wa.Waechter, stand: sm.Stand, jetzt: float) -> None:
         if w.art != "internet":
             return
-        erreichbar: dict[int, bool | None] = {}
-        for i, g in enumerate(w.glieder):
-            if g.typ == "fritzbox":
-                erreichbar[i] = stand.box_erreichbar
-            elif stand.modem is not None and stand.modem.adresse == g.adresse:
-                erreichbar[i] = stand.modem.befund != "nicht_erreichbar"
         internet = stand.pi.internet if stand.pi is not None else None
-        s, i = wa.sanft_entscheiden(
-            w, self.sanft.get(w.id, wa.Sanft()), jetzt, internet, erreichbar
-        )
+        alt = self.sanft.get(w.id, wa.Sanft())
+        erreichbar: dict[int, bool | None] = {}
+        if wa.sanft_faellig(w, alt, jetzt, internet):
+            for i, g in enumerate(w.glieder):
+                if g.typ == "fritzbox":
+                    erreichbar[i] = stand.box_erreichbar
+                elif g.sanft:
+                    # der Stand des Modems ist bis zu 10 min alt: vor einem Neustart frisch fragen (nur die
+                    # Startseite). Nur Geräte, die selbst sanft neu starten; ein Glied ohne Weboberfläche (ONT,
+                    # Switch) bleibt unbekannt und hält Stufe 1 nicht auf.
+                    erreichbar[i] = await self._antwortet(g.adresse)
+        s, i = wa.sanft_entscheiden(w, alt, jetzt, internet, erreichbar)
         self.sanft[w.id] = s
         if i is None:
             return
         g = w.glieder[i]
+        # vorher allen Steckdosen der Kette melden: so lange anhalten, nicht schalten, kein falsches „ok“
+        await self._halt(w, wa.SANFT_HALT_MIN, g.typ)
         ok = await self._sanft_neustarten(g)
+        if not ok:
+            await self._halt(
+                w, 0, g.typ
+            )  # nicht angenommen: die Steckdosen dürfen gleich weiter urteilen
         sp = sprache_system(self.hass)
         text = (
             t("{geraet}: kein Internet – sanft neu gestartet", sp, geraet=g.name)
@@ -289,9 +304,32 @@ class Waechterdienst:
         # nur ins Journal: ohne Internet käme eine Push-Nachricht ohnehin nicht an
         self.journal([Ereignis(ART, WARNUNG, text)])
 
+    async def _antwortet(self, adresse: str) -> bool:
+        """Antwortet das Gerät überhaupt (Startseite, ohne Anmeldung)?"""
+        if not adresse_erlaubt(adresse):
+            return False
+        try:
+            async with neue_session(aiohttp.ClientTimeout(total=15)) as session:
+                return await Lauf(session, adresse, roh=False).startseite() is not None
+        except aiohttp.ClientError, TimeoutError:
+            return False
+
+    async def _halt(self, w: wa.Waechter, minuten: int, grund: str) -> None:
+        """Befehl „sanft“ an alle Steckdosen des Wächters (0 min = Halt beenden). Eine Steckdose, die nicht antwortet,
+        hält den sanften Neustart nicht auf."""
+        self._befehl_n += 1
+        for _, d in w.dosen:
+            try:
+                await self._dose(d).befehl("sanft", self._befehl_n, min=minuten, grund=grund)
+            except ShellyFehler as err:
+                LOGGER.debug(
+                    "Heimnetz: Steckdose %s hat den sanften Neustart nicht erfahren: %s", d, err
+                )
+
     async def _sanft_neustarten(self, g: wa.Glied) -> bool:
         """Nur an Geräten, die Heimnetz selbst kennt: die Box unter der Adresse des Routers, das vorgeschaltete Gerät
-        unter seiner erkannten Adresse und mit seinem erkannten Baustein."""
+        unter seiner erkannten Adresse und mit seinem erkannten Baustein. Das Kennwort des Modems nur an der Adresse,
+        für die es gilt, und nie eines, das das Gerät schon abgelehnt hat (abgelehnt → kein weiterer Versuch)."""
         modem = self.lz.abruf.modem
         if g.typ == "fritzbox":
             if g.adresse != self.router():
@@ -299,10 +337,19 @@ class Waechterdienst:
             return await self.hass.async_add_executor_job(self.lz.abruf.box.neustarten)
         if g.adresse != modem.adresse or modem.gemerkt is None or modem.gemerkt.baustein != g.typ:
             return False
-        kennwort = self.lz.abruf.config_entry.options.get(CONF_MODEM_KENNWORT) or None
+        gespeichert = self.lz.einstellungen.wert.zugang_adresse if self.lz.einstellungen else None
+        kennwort = modem.kennwort_fuer(
+            g.adresse,
+            self.lz.abruf.config_entry.options.get(CONF_MODEM_KENNWORT) or None,
+            gespeichert,
+        )
+        if kennwort is None:
+            return False
         async with neue_session(aiohttp.ClientTimeout(total=30)) as session:
             lauf = Lauf(session, g.adresse, roh=False)
-            return await baustein_neustarten(self.hass, lauf, g.typ, kennwort)
+            ergebnis = await baustein_neustarten(self.hass, lauf, modem.gemerkt, kennwort)
+        modem.anmeldung_gesehen(g.adresse, kennwort, ergebnis)
+        return ergebnis == "ok"
 
     async def lesen(self) -> None:
         """Zustand aller Steckdosen; neue Eingriffe ins Journal und als Warnung."""

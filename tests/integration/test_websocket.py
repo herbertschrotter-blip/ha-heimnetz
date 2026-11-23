@@ -790,3 +790,23 @@ async def test_uebersicht_lagebild(hass, geladen, hass_ws_client):
     )
     assert d["meldung"]["n"] == len(d["befunde"]) and d["meldung"]["art"] == "rot"
     assert d["waechter"]["wort"] == "keiner"
+
+
+def test_ocid_abzug_raeumt_liegengebliebene_temp_dateien_weg(tmp_path):
+    from pathlib import Path
+
+    from custom_components.heimnetz.ocid_abzug import _temp_oeffnen, _temp_weg
+
+    (tmp_path / ".ocid-alt1.tmp").write_bytes(b"x" * 10)
+    (tmp_path / ".ocid-alt2.tmp").write_bytes(b"y")
+    (tmp_path / "meldungen.json").write_text("{}")  # fremde Dateien bleiben
+    (tmp_path / ".ocid-ordner.tmp").mkdir()  # nur Dateien
+    datei = _temp_oeffnen(str(tmp_path))
+    try:
+        namen = sorted(p.name for p in tmp_path.iterdir())
+        assert ".ocid-alt1.tmp" not in namen and ".ocid-alt2.tmp" not in namen
+        assert "meldungen.json" in namen and ".ocid-ordner.tmp" in namen
+        assert Path(datei.name).exists()
+    finally:
+        _temp_weg(datei)
+    assert not Path(datei.name).exists()

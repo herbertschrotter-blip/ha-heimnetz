@@ -436,7 +436,7 @@ def gedaechtnis_aus_dict(d: dict[str, Any]) -> Gedaechtnis:
     if d.get("geraete") is not None:
         g.geraete = {x["mac"]: gr.Geraet(**x) for x in d["geraete"]}
     g.quellen = dict(d.get("quellen") or {})
-    g.gesehen = list(d.get("gesehen") or [])
+    g.gesehen = pr.gesehen_laden(list(d.get("gesehen") or []))  # ältere: ganze Schlüssel → Hashes
     g.lan = bf.Heimnetz(**(d.get("lan") or {}))
     g.befunde = dict(d.get("befunde") or {})
     g.ring = [vk.Zaehlerstand(**z) for z in d.get("ring") or []]
@@ -461,7 +461,9 @@ def gedaechtnis_aus_dict(d: dict[str, Any]) -> Gedaechtnis:
     g.faser = ln.Faser(**d["faser"]) if d.get("faser") else None
     v = d.get("vorgeschaltet")
     if isinstance(v, dict) and v.get("baustein") in ve.BAUSTEINE and v.get("adresse"):
-        g.vorgeschaltet = {k: str(v.get(k) or "") for k in ("adresse", "baustein", "modell")}
+        g.vorgeschaltet = {
+            k: str(v.get(k) or "") for k in ("adresse", "baustein", "modell", "kennwort_bei")
+        }
     g.modem_mobil = bool(d.get("modem_mobil"))
     g.modem_werte = [str(k) for k in d.get("modem_werte") or [] if k in ve.ZUSATZWERTE]
     g.bekannt = [str(k) for k in d.get("bekannt") or [] if isinstance(k, str)]

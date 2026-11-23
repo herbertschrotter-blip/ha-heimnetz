@@ -5,7 +5,18 @@
   "box_erreichbar": true,
   "kopf": {
    "punkt": "rot",
-   "titel": "4 Hinweise"
+   "titel": "2 Störungen · 2 Hinweise",
+   "wort": "Störung",
+   "chips": [
+    {
+     "art": "rot",
+     "text": "2 Störungen"
+    },
+    {
+     "art": "amber",
+     "text": "2 Hinweise"
+    }
+   ]
   },
   "leitung": {
    "knoten": [
@@ -1081,6 +1092,7 @@
    "up": 1.0
   },
   "schwelle": 15.0,
+  "trend_besser": true,
   "volumen_monat_mb": 2601.0,
   "messungen": [
    {
@@ -1481,6 +1493,7 @@
    "gleich": null,
    "gleich_lage": null,
    "gleich_besser": null,
+   "vorschau_leer": false,
    "tarif_quote": 0.083,
    "wochen": [
     null,
@@ -1521,6 +1534,7 @@
     "art": "WLAN",
     "aktiv": true,
     "einstufung": "an",
+    "auffaellig": false,
     "abbrueche": 0,
     "streifen": [
      "an",
@@ -1584,6 +1598,7 @@
     "art": "WLAN",
     "aktiv": true,
     "einstufung": "an",
+    "auffaellig": false,
     "abbrueche": 0,
     "streifen": [
      "an",
@@ -1647,6 +1662,7 @@
     "art": "LAN",
     "aktiv": true,
     "einstufung": "an",
+    "auffaellig": false,
     "abbrueche": 0,
     "streifen": [
      "an",
@@ -1710,6 +1726,7 @@
     "art": "–",
     "aktiv": true,
     "einstufung": "an",
+    "auffaellig": false,
     "abbrueche": 0,
     "streifen": [
      "an",
@@ -1773,6 +1790,7 @@
     "art": "WLAN",
     "aktiv": true,
     "einstufung": "an",
+    "auffaellig": true,
     "abbrueche": 0,
     "streifen": [
      "an",
@@ -2306,6 +2324,7 @@
   "letzte_serie": null,
   "verkehr_mbit": null,
   "schwelle": 15.0,
+  "verkehr_belastet": false,
   "volumen": {
    "tests_tag": 6,
    "je_test_mb": 270,
@@ -3793,7 +3812,7 @@
    {
     "name": "Handy & Tablet",
     "x": 383.0,
-    "y": 367.9
+    "y": 381.9
    },
    {
     "name": "Unbekannt",
@@ -3822,6 +3841,7 @@
     "kabel": true,
     "ueber": "box",
     "zustand": "an",
+    "auffaellig": false,
     "anbindung": "LAN 1 · 1 Gbit/s",
     "signal": null,
     "mbit": 1000,
@@ -3844,6 +3864,7 @@
     "kabel": false,
     "ueber": "box",
     "zustand": "an",
+    "auffaellig": false,
     "anbindung": "WLAN 5 GHz · 92 % · 866 Mbit/s",
     "signal": 92,
     "mbit": 866,
@@ -3863,6 +3884,7 @@
     "kabel": false,
     "ueber": "box",
     "zustand": "schwach",
+    "auffaellig": true,
     "anbindung": "WLAN 2,4 GHz · 18 % · 6 Mbit/s",
     "signal": 18,
     "mbit": 6,
@@ -3882,6 +3904,7 @@
     "kabel": false,
     "ueber": "box",
     "zustand": "an",
+    "auffaellig": false,
     "anbindung": "WLAN 2,4 GHz · 55 % · 144 Mbit/s",
     "signal": 55,
     "mbit": 144,
@@ -3901,6 +3924,7 @@
     "kabel": false,
     "ueber": "box",
     "zustand": "an",
+    "auffaellig": false,
     "anbindung": "WLAN",
     "signal": null,
     "mbit": null,
@@ -3926,6 +3950,7 @@
      "kabel": false,
      "ueber": "vpn",
      "zustand": "an",
+     "auffaellig": false,
      "anbindung": "VPN (WireGuard) · über das Internet",
      "signal": null,
      "mbit": null,

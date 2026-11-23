@@ -19,7 +19,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_PORT, CONF_SSL, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import issue_registry as ir
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 
 from . import pi
@@ -57,6 +57,13 @@ SCHREIBFEHLER = (sqlite3.Error, OSError, RuntimeError)
 LOGGER = logging.getLogger(__package__)
 ZUGANG_SUCHEN_S = 30  # „Erneut suchen“ höchstens so oft (WU-0009)
 SERIE_TAKT_S = 5  # so oft schaut die Serie nach dem Ergebnis eines Durchlaufs
+GESEHEN_SPEICHERN_S = (
+    900  # die Merkliste des Protokolls allein schreibt höchstens so oft das Gedächtnis
+)
+
+
+class _Entladen(Exception):
+    """Die Integration wurde während des Abrufs entladen."""
 
 
 def zugang_aus_fritz(hass: HomeAssistant, entry_id: str) -> Zugang | None:
@@ -106,6 +113,15 @@ class Abruf(DataUpdateCoordinator[sm.Stand]):
         self._ausstehend_protokoll: list[Protokolleintrag] = []
         self._schreibvorgaenge: set[asyncio.Task[None]] = set()
         self._aufgeraeumt = 0.0
+        self._gesehen_merk: list[str] | None = (
+            None  # Merkliste des Protokolls beim letzten Schreiben
+        )
+        self._gesehen_gespeichert = (
+            0.0  # zuletzt mit geänderter Merkliste des Protokolls geschrieben
+        )
+        self._geschlossen = (
+            False  # beim Entladen gesetzt: ein laufender Abruf hört nach dem nächsten await auf
+        )
         self.letzte_messung = letzte_messung
         self.gestartet = (
             time.time()
@@ -140,21 +156,39 @@ class Abruf(DataUpdateCoordinator[sm.Stand]):
         if (v := gedaechtnis.vorgeschaltet) is not None:
             self.modem.gemerkt = ve.Erkennung(v["baustein"], v.get("modell", ""))
             self.modem.adresse = v["adresse"]
+            self.modem.kennwort_bei = v.get("kennwort_bei") or None
 
     async def _async_update_data(self) -> sm.Stand:
+        try:
+            return await self._abrufen()
+        except _Entladen:
+            # die Integration wird gerade entladen: nichts mehr schreiben, niemanden mehr benachrichtigen
+            if self.data is not None:
+                return self.data
+            raise UpdateFailed("Heimnetz wird entladen") from None
+
+    def _offen(self) -> None:
+        """Nach jedem await im Abruf: wurde inzwischen entladen, hört der Abruf hier auf (Datenbank ist zu)."""
+        if self._geschlossen:
+            raise _Entladen
+
+    async def _abrufen(self) -> sm.Stand:
         g, jetzt = self.gedaechtnis, time.time()
         sprache = sprache_von(self.hass)  # WU-0006: Texte für Seite und Journal, Sprache von HA
         langsam = g.langsam_faellig(jetzt)
         router = g.lan.router or self.box.zugang.host
         daten = await self._box_lesen(langsam, router, sprache)
+        self._offen()
         if daten.info is not None:
             self.box_info = daten.info
         verbindung = await pi.verbindung(router)
+        self._offen()
         dhcp = (
             await self.hass.async_add_executor_job(pi.dhcp_test, pi.DHCP_WARTEN_S, sprache)
             if langsam
             else None
         )
+        self._offen()
 
         modem = self._modem(daten.zugang, router, jetzt, sprache)
         roh = sm.Rohdaten(
@@ -184,14 +218,19 @@ class Abruf(DataUpdateCoordinator[sm.Stand]):
             sprache=sprache,
         )
         stand = sm.auswerten(g, roh)
-        await self._speichern(stand, await self._warnen(stand))
+        zusatz = await self._warnen(stand)
+        self._offen()
+        await self._speichern(stand, zusatz)
+        self._offen()
         if self.mitschreiben is not None:
             await self.mitschreiben(stand)
+            self._offen()
         if self.waechter is not None:
             try:
                 await self.waechter(stand)
             except Exception:  # der Wächter darf den Abruf nie ungültig machen
                 LOGGER.exception("Heimnetz: Wächter")
+            self._offen()
         self.speedtest.verbinden()
         await self._messplan(stand)
         if stand.fehler:
@@ -296,7 +335,13 @@ class Abruf(DataUpdateCoordinator[sm.Stand]):
             )
         g = self.modem.gemerkt
         self.gedaechtnis.vorgeschaltet = (
-            {"adresse": self.modem.adresse, "baustein": g.baustein, "modell": g.modell}
+            {
+                "adresse": self.modem.adresse,
+                "baustein": g.baustein,
+                "modell": g.modell,
+                # Adresse, für die das Kennwort gilt (nie das Kennwort selbst)
+                "kennwort_bei": self.modem.kennwort_bei or "",
+            }
             if g
             else None
         )
@@ -431,44 +476,67 @@ class Abruf(DataUpdateCoordinator[sm.Stand]):
             Journalzeile(stand.zeit, e) for e in (*stand.ereignisse, *(zusatz or ()))
         ]
         self._ausstehend_protokoll += stand.protokoll
-        del self._ausstehend_journal[:-AUSSTEHEND_HOECHSTENS]
-        del self._ausstehend_protokoll[:-AUSSTEHEND_HOECHSTENS]
+        # vor dem Schreiben übernehmen: was währenddessen dazukommt (Wächter, Ausfall, Zustellfehler), landet in den
+        # neuen Listen und geht beim nächsten Mal mit, statt mit dem Leeren nach dem Schreiben verloren zu gehen
+        journal = self._ausstehend_journal[-AUSSTEHEND_HOECHSTENS:]
+        protokoll = self._ausstehend_protokoll[-AUSSTEHEND_HOECHSTENS:]
+        self._ausstehend_journal, self._ausstehend_protokoll = [], []
         aufraeumen = stand.zeit - self._aufgeraeumt >= AUFRAEUMEN_S
+        gesehen_faellig = stand.zeit - self._gesehen_gespeichert >= GESEHEN_SPEICHERN_S
         try:
-            vergleich, aufgeraeumt = await self.hass.async_add_executor_job(
-                self._schreiben, stand.zeit, aufraeumen
+            vergleich, aufgeraeumt, mit_gesehen = await self.hass.async_add_executor_job(
+                self._schreiben, journal, protokoll, stand.zeit, aufraeumen, gesehen_faellig
             )
         except SCHREIBFEHLER as err:
             LOGGER.warning(
                 "Heimnetz: Schreiben in die Datenbank fehlgeschlagen (%s), nächster Versuch in einer Minute",
                 err,
             )
+            # wieder voranstellen – älteste zuerst, wie sie entstanden sind
+            self._ausstehend_journal = (journal + self._ausstehend_journal)[-AUSSTEHEND_HOECHSTENS:]
+            self._ausstehend_protokoll = (protokoll + self._ausstehend_protokoll)[
+                -AUSSTEHEND_HOECHSTENS:
+            ]
             return
-        self._ausstehend_journal.clear()
-        self._ausstehend_protokoll.clear()
         self._gespeichert = vergleich
+        if mit_gesehen:
+            self._gesehen_gespeichert = stand.zeit
         if aufgeraeumt:
             self._aufgeraeumt = stand.zeit
 
-    def _schreiben(self, jetzt: float, aufraeumen: bool) -> tuple[str, bool]:
-        """Blockierend. Das Gedächtnis wird nur geschrieben, wenn sich mehr als der Zähler-Ring geändert hat –
-        der ändert sich jede Minute, ist aber nach einem Neustart ohnehin schnell wieder voll."""
+    def _schreiben(
+        self,
+        journal: list[Journalzeile],
+        protokoll: list[Protokolleintrag],
+        jetzt: float,
+        aufraeumen: bool,
+        gesehen_faellig: bool,
+    ) -> tuple[str, bool, bool]:
+        """Blockierend. Das Gedächtnis wird nur geschrieben, wenn sich mehr als der Zähler-Ring und die Merkliste des
+        Protokolls (`gesehen`) geändert hat – der Ring ändert sich jede Minute, ist aber nach einem Neustart ohnehin
+        schnell wieder voll; die Merkliste ändert sich mit jeder neuen Zeile der Box, eine nach einem Neustart doppelt
+        erkannte Zeile verhindert aber die Tabelle protokoll (UNIQUE schluessel). Sie geht darum höchstens alle
+        GESEHEN_SPEICHERN_S mit."""
         daten = sm.gedaechtnis_als_dict(self.gedaechtnis)
-        vergleich = json.dumps({**daten, "ring": None}, ensure_ascii=False, sort_keys=True)
-        gedaechtnis = (
-            json.dumps(daten, ensure_ascii=False) if vergleich != self._gespeichert else None
+        vergleich = json.dumps(
+            {**daten, "ring": None, "gesehen": None}, ensure_ascii=False, sort_keys=True
         )
-        self.datenbank.abruf_schreiben(
-            self._ausstehend_journal, self._ausstehend_protokoll, gedaechtnis, jetzt
-        )
+        gesehen_neu = daten.get("gesehen") != self._gesehen_merk
+        schreiben = vergleich != self._gespeichert or (gesehen_neu and gesehen_faellig)
+        gedaechtnis = json.dumps(daten, ensure_ascii=False) if schreiben else None
+        self.datenbank.abruf_schreiben(journal, protokoll, gedaechtnis, jetzt)
+        if schreiben:
+            self._gesehen_merk = list(daten.get("gesehen") or [])
         aufgeraeumt = aufraeumen and self.datenbank.aufraeumen(jetzt) is not None
-        return vergleich, aufgeraeumt
+        return vergleich, aufgeraeumt, schreiben
 
     def _messung(self, messung: Messung) -> None:
         """Neue Ookla-Messung (im Event-Loop gemeldet): im Executor schreiben; als eingetragen gilt sie erst danach."""
         aufgabe = self.hass.async_create_task(self._messung_schreiben(messung))
         self._schreibvorgaenge.add(aufgabe)
         aufgabe.add_done_callback(self._schreibvorgaenge.discard)
+        # erst danach darf der Speedtest dieselbe Messung wieder melden (falls Schreiben scheiterte: nachholen)
+        aufgabe.add_done_callback(lambda _a: self.speedtest.erledigt(messung.t))
 
     async def _messung_schreiben(self, messung: Messung) -> None:
         try:
@@ -532,8 +600,10 @@ class Abruf(DataUpdateCoordinator[sm.Stand]):
         return t
 
     async def async_schliessen(self) -> None:
-        """Beim Entladen: Speedtest lösen, laufende Schreibvorgänge abwarten – danach darf die Datenbank zu."""
-        self.speedtest.trennen()
+        """Beim Entladen: Speedtest lösen, laufende Schreibvorgänge abwarten – danach darf die Datenbank zu. Ein
+        gerade laufender Abruf hört nach seinem nächsten await auf (`_offen`)."""
+        self._geschlossen = True
+        self.speedtest.schliessen()
         if self.modem.aufgabe is not None and not self.modem.aufgabe.done():
             self.modem.aufgabe.cancel()
         if self._serie_aufgabe is not None and not self._serie_aufgabe.done():
@@ -567,9 +637,9 @@ class Abruf(DataUpdateCoordinator[sm.Stand]):
             return BoxDaten(fehler=[sp.t("FRITZ!Box: Anmeldung abgelehnt", sprache)])
         self._hinweis(ISSUE_ANMELDUNG, False)
         if daten.geraete is None:
-            await self.hass.async_add_executor_job(
-                self.box.trennen
-            )  # nächstes Mal neu verbinden (Neustart der Box)
+            # nächstes Mal neu verbinden (Neustart der Box) – aber eine eben erst aufgebaute Verbindung nicht gleich
+            # wieder verwerfen: das Laden der Beschreibung ist teuer (box.VERBINDUNG_HALTEN_S)
+            await self.hass.async_add_executor_job(self.box.trennen_nach_fehler)
         return daten
 
     def _hinweis(self, schluessel: str, an: bool) -> None:

@@ -38,7 +38,24 @@ def test_kategorie():
 def test_gesehen_wird_gekuerzt():
     gesehen = [f"alt{i}" for i in range(pr.GESEHEN_MERKEN)]
     pr.neue_zeilen([pr.BoxZeile("19.09.26", "10:00:00", "", "", "neu")], gesehen)
-    assert len(gesehen) == pr.GESEHEN_MERKEN and gesehen[-1].endswith("neu")
+    neu = pr.kurz(pr.schluessel_aus("19.09.26 10:00:00", "neu"))
+    assert len(gesehen) == pr.GESEHEN_MERKEN and gesehen[-1] == neu
+
+
+def test_gesehen_merkt_nur_kurze_hashes_und_rechnet_alte_um():
+    """Die Merkliste hält je Zeile 16 Hex-Zeichen statt der ganzen Zeile; ein älteres Gedächtnis mit ganzen Schlüsseln
+    wird beim Laden umgerechnet – dieselbe Zeile gilt danach weiter als gesehen."""
+    zeilen = pr.aus_xml(GERAETELOG)
+    gesehen: list[str] = []
+    pr.neue_zeilen(zeilen, gesehen)
+    assert all(len(k) == 16 for k in gesehen)
+    alt = [pr.schluessel(z) for z in zeilen]  # so stand es bis 0.38.0 im Gedächtnis
+    geladen = pr.gesehen_laden(alt)
+    assert geladen == gesehen and pr.gesehen_laden(geladen) == geladen
+    assert pr.neue_zeilen(zeilen, geladen) == []
+    assert (
+        len(pr.gesehen_laden([f"x{i}" for i in range(pr.GESEHEN_MERKEN + 5)])) == pr.GESEHEN_MERKEN
+    )
 
 
 def test_unbekanntes_datum_bleibt_als_rohzeit():

@@ -19,6 +19,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from .sprache import DE, t
+from .wlan import Band, Funkgeraet, band_von
 
 BOX = "box"
 BREITE, HOEHE = 440, 462
@@ -75,12 +76,21 @@ def _art(typ: object) -> str:
     return "wlan" if "WLAN" in s or "WIFI" in s else "plc" if "PLC" in s else "lan"
 
 
-def _band(name: object, kanal: object) -> str | None:
+def _band_im_namen(name: object) -> str | None:
     if m := _BAND.search(str(name or "")):
         b = m.group(1).upper().replace(".", ",")
         return {"2G": "2,4", "5G": "5", "6G": "6"}.get(b, b)
-    if isinstance(kanal, int) and kanal > 0:
-        return "2,4" if kanal <= 14 else "5"
+    return None
+
+
+def _band(name: object, kanal: object, baender: Iterable[Band] = ()) -> str | None:
+    """Band aus dem Namen der Schnittstelle („AP:5G:0“), sonst wie `wlan.band_von` nach dem Kanal: das Band einer
+    Schnittstelle der Box/Repeater mit Band im Namen auf demselben Kanal, bei 6 GHz im Netz keine Annahme (die
+    Kanalnummern überschneiden sich), sonst bis 14 = 2,4 GHz."""
+    if b := _band_im_namen(name):
+        return b
+    if isinstance(kanal, int) and not isinstance(kanal, bool) and kanal > 0:
+        return band_von(Funkgeraet("", kanal, None, None, False), baender)
     return None
 
 
@@ -130,6 +140,18 @@ def mesh_lesen(roh: str | bytes) -> Netz:
             if isinstance(i, dict):
                 schnitt[str(i.get("uid"))] = (str(k.get("uid")), i)
 
+    # Funknetze der Box und der Repeater mit Band im Namen: für Schnittstellen, deren Name kein Band nennt
+    baender = [
+        Band(b, True, i.get("current_channel"), None, "")
+        for k in knoten
+        if str(k.get("uid")) in rollen
+        for i in k.get("node_interfaces") or []
+        if isinstance(i, dict)
+        and _art(i.get("type")) == "wlan"
+        and (b := _band_im_namen(i.get("name")))
+        and isinstance(i.get("current_channel"), int)
+    ]
+
     def anschluss(k: dict[str, Any]) -> Anschluss | None:
         """Beste bestehende Verbindung von Knoten k zu einem Mesh-Knoten (Box zuerst, dann höchste Rate)."""
         uid = str(k.get("uid"))
@@ -156,7 +178,7 @@ def mesh_lesen(roh: str | bytes) -> Netz:
                     an=rollen[gegen],
                     art=art,
                     port=port,
-                    band=_band(gs.get("name"), gs.get("current_channel"))
+                    band=_band(gs.get("name"), gs.get("current_channel"), baender)
                     if art == "wlan"
                     else None,
                     mbit=_mbit(link),
@@ -269,12 +291,64 @@ ZEICHEN_SEKTOR = (
 )
 
 
+AUFFAELLIG = ("wackelt", "schwach", "neu")
+
+
+def auffaellig(zustand: str) -> bool:
+    """Filter „Auffällig“ in Geräteliste und Netzkarte: wackelt, schwacher Empfang oder neu – eine Regel für beide."""
+    return zustand in AUFFAELLIG
+
+
+def zustand(einstufung: str, schwach: bool) -> str:
+    """Zustand eines Geräts: die Einstufung, bei schwachem WLAN-Empfang eines sonst ruhigen Geräts „schwach“."""
+    return "schwach" if schwach and einstufung == "an" else einstufung
+
+
+def _frei(
+    x: float, y: float, name: str, hindernisse: Iterable[tuple[float, float, float, float]]
+) -> tuple[float, float]:
+    """Sektor-Beschriftung, die auf einem Gerät oder seinem Namen läge, nach außen schieben (oben nach oben, unten
+    nach unten), bis sie frei ist; `hindernisse` = Rechtecke (Mitte x, Mitte y, halbe Breite, halbe Höhe)."""
+    halb, hoch = len(name) * ZEICHEN_SEKTOR / 2 + 4, 6.0
+    liste = list(hindernisse)
+
+    def frei(y_: float) -> bool:
+        return all(
+            abs(x - hx) >= halb + hb or abs(y_ - hy) >= hoch + hh for hx, hy, hb, hh in liste
+        )
+
+    richtung = -1 if y < MITTE[1] else 1
+    for k in range(0, 9):
+        y_ = round(y + richtung * k * 7, 1)
+        if not 8 <= y_ <= HOEHE - 8:
+            break
+        if frei(y_):
+            return x, y_
+    return x, y
+
+
 def _im_bild(x: float, name: str) -> float:
     """Mitte einer Sektor-Beschriftung so schieben, dass der Text ganz in der Karte bleibt (am Handy nichts abgeschnitten)."""
     halb = len(name) * ZEICHEN_SEKTOR / 2 + 4
     if 2 * halb >= BREITE:  # breiter als die Karte: mittig
         return BREITE / 2
     return round(min(max(x, halb), BREITE - halb), 1)
+
+
+def _sektor_frei(
+    s: dict[str, Any], geraete: list[dict[str, Any]], aus: list[dict[str, Any]], dot: int
+) -> dict[str, Any]:
+    """Sektor-Beschriftung ohne Überlappung mit Punkten und Namen der Geräte (am Handy lag „HANDY & TABLET“ auf dem
+    Namen eines Geräts)."""
+    hindernisse: list[tuple[float, float, float, float]] = [
+        (g["x"], g["y"], dot + 2.0, dot + 2.0) for g in geraete
+    ]
+    hindernisse += [
+        (g["x"], g["y"] + dot + 8, len(g["name"]) * 2.6 + 2, 6.0) for g in geraete
+    ]  # Name unter dem Punkt (nk-name, 7,5 px)
+    hindernisse += [(a["x"], a["y"], 6.0, 6.0) for a in aus]
+    x, y = _frei(s["x"], s["y"], s["name"], hindernisse)
+    return {"name": s["name"], "x": x, "y": y}
 
 
 def zeichnen(
@@ -356,7 +430,8 @@ def zeichnen(
             "vy": von[1],
             "kabel": kabel(p),
             "ueber": ueber,
-            "zustand": "schwach" if p.schwach and p.zustand == "an" else p.zustand,
+            "zustand": zustand(p.zustand, p.schwach),
+            "auffaellig": auffaellig(zustand(p.zustand, p.schwach)),
             "anbindung": text_,
             "signal": p.signal,
             "band": None if kabel(p) else band(p),
@@ -517,6 +592,7 @@ def zeichnen(
                 "kabel": False,
                 "ueber": "vpn",
                 "zustand": p.zustand,
+                "auffaellig": auffaellig(p.zustand),
                 "anbindung": t("VPN (WireGuard) · über das Internet", sprache),
                 "signal": None,
                 "mbit": None,
@@ -528,14 +604,15 @@ def zeichnen(
     ringe = [{"r": R_KABEL, "name": t("Kabel", sprache)}]
     ringe += [{"r": round(r_band[b], 1), "name": f"{_band_text(b, sprache)} GHz"} for b in baender]
     ringe.append({"r": R_AUS, "name": t("offline", sprache)})
-    auff = sum(1 for g in geraete if g["zustand"] in ("wackelt", "schwach"))
+    # dieselbe Regel wie der Filter „Auffällig“ (wackelt, schwach, neu; auch VPN): die Zahl = Treffer des Filters
+    auff = sum(1 for g in [*geraete, *vpn_geraete] if g["auffaellig"])
     return {
         "breite": BREITE,
         "hoehe": HOEHE,
         "mitte": {"x": MITTE[0], "y": MITTE[1]},
         "dot": dot,
         "ringe": ringe,
-        "sektoren": [{k: s[k] for k in ("name", "x", "y")} for s in sektoren],
+        "sektoren": [_sektor_frei(s, geraete, aus, dot) for s in sektoren],
         "switche": switche,
         "repeater": repeater,
         "geraete": geraete,

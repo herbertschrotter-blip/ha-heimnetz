@@ -64,3 +64,15 @@ async def test_ohne_recorder_leer(hass: HomeAssistant) -> None:
         await ab.statistik(hass, ["sensor.x"], dt_util.utcnow(), dt_util.utcnow(), "hour", "mean")
         == {}
     )
+
+
+async def test_fehler_im_recorder_leer_statt_ausnahme(recorder_mock, hass: HomeAssistant) -> None:
+    """Scheitert die Abfrage (Datenbank klemmt), kommt leer zurück – wie im Docstring versprochen."""
+    from unittest.mock import patch
+
+    with patch(
+        "homeassistant.components.recorder.statistics.statistics_during_period",
+        side_effect=RuntimeError("klemmt"),
+    ):
+        jetzt = dt_util.utcnow()
+        assert await ab.statistik(hass, ["sensor.x"], jetzt, jetzt, "hour", "mean") == {}

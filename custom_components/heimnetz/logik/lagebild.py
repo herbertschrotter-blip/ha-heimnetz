@@ -20,20 +20,46 @@ ZUGANG_SYMBOL = {"mobilfunk": "📡", "dsl": "☎️", "glasfaser": "💡", "kab
 
 def kopf(
     box: bool, internet: bool | None, befunde: Sequence[str], sprache: str = DE
-) -> dict[str, str]:
-    """Punkt und Satz der Kopfzeile. `befunde`: Stufen der offenen Befunde."""
+) -> dict[str, Any]:
+    """Gesamtstand für den Kopf aller Reiter – ein Wortlaut aus einer Quelle. `befunde`: Stufen der offenen Befunde.
+
+    `titel` = Satz der Übersicht („2 Störungen · 1 Hinweis“), `wort` = großes Wort im Kopf der anderen Reiter
+    („Störung“), `chips` = Zahlen als Knöpfe daneben (kritisch rot, Warnung amber), `punkt` = Farbe.
+    """
+    stoerungen = sum(1 for b in befunde if b == "kritisch")
+    hinweise = sum(1 for b in befunde if b == "warnung")
+    chips = []
+    if stoerungen:
+        chips.append(
+            {
+                "art": "rot",
+                "text": t(
+                    "1 Störung" if stoerungen == 1 else "{n} Störungen", sprache, n=stoerungen
+                ),
+            }
+        )
+    if hinweise:
+        chips.append(
+            {
+                "art": "amber",
+                "text": t("1 Hinweis" if hinweise == 1 else "{n} Hinweise", sprache, n=hinweise),
+            }
+        )
     if not box:
-        return {"punkt": "grau", "titel": t("FRITZ!Box antwortet nicht", sprache)}
+        satz = t("FRITZ!Box nicht erreichbar", sprache)
+        return {"punkt": "grau", "titel": satz, "wort": satz, "chips": chips}
     if internet is False:
-        return {"punkt": "rot", "titel": t("Kein Internet", sprache)}
-    zaehlen = [
-        b for b in befunde if b in ("kritisch", "warnung")
-    ]  # wie der Kopf der anderen Reiter
-    n = len(zaehlen)
-    if not n:
-        return {"punkt": "", "titel": t("Alles in Ordnung", sprache)}
-    punkt = "rot" if "kritisch" in zaehlen else "amber"
-    return {"punkt": punkt, "titel": t("1 Hinweis" if n == 1 else "{n} Hinweise", sprache, n=n)}
+        satz = t("Kein Internet", sprache)
+        return {"punkt": "rot", "titel": satz, "wort": satz, "chips": chips}
+    if not chips:
+        satz = t("Alles in Ordnung", sprache)
+        return {"punkt": "", "titel": satz, "wort": satz, "chips": []}
+    return {
+        "punkt": "rot" if stoerungen else "amber",
+        "titel": " · ".join(c["text"] for c in chips),
+        "wort": t("Störung", sprache) if stoerungen else t("Hinweise", sprache),
+        "chips": chips,
+    }
 
 
 def balken(lage: float | None) -> int:

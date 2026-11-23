@@ -61,6 +61,20 @@ def test_zte_schnittstelle_aus_den_proben():
     assert ve.zte_schnittstelle(None, False) is None
 
 
+def test_kennwort_nur_an_die_adresse_fuer_die_es_gilt():
+    # gespeicherte Adresse: nur dort
+    assert ve.kennwort_erlaubt("192.168.8.1", "192.168.8.1", None)
+    assert not ve.kennwort_erlaubt("192.168.0.1", "192.168.8.1", "192.168.0.1")
+    # sonst die, an der es zuerst angenommen wurde
+    assert ve.kennwort_erlaubt("192.168.0.1", None, "192.168.0.1")
+    assert not ve.kennwort_erlaubt("192.168.1.1", None, "192.168.0.1")
+    # noch keine: das erkannte Gerät (dort wird es gebunden)
+    assert ve.kennwort_erlaubt("192.168.1.1", None, None)
+    assert ve.befund_daten("kennwort_andere_adresse", "en")["titel"] == (
+        "Password belongs to another address"
+    )
+
+
 def test_kandidaten_nur_wenige_private_adressen_ohne_box():
     k = ve.kandidaten("192.168.8.1", "192.168.0.1", box="192.168.1.1")
     assert k == ("192.168.8.1", "192.168.0.1", "192.168.18.1", "192.168.100.1")

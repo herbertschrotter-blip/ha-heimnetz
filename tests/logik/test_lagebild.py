@@ -6,18 +6,41 @@ MOBIL = lb.Zugang("mobilfunk", "5G-NSA", True, 0.8, "−88 dBm")
 
 
 def test_kopf():
-    assert lb.kopf(True, True, []) == {"punkt": "", "titel": "Alles in Ordnung"}
-    assert (
-        lb.kopf(True, True, ["info"])["titel"] == "Alles in Ordnung"
-    )  # wie der Kopf der anderen Reiter
-    assert lb.kopf(True, True, ["warnung", "info"])["titel"] == "1 Hinweis"
-    assert lb.kopf(True, True, ["warnung", "kritisch"]) == {"punkt": "rot", "titel": "2 Hinweise"}
-    assert lb.kopf(True, False, [])["titel"] == "Kein Internet"
-    assert lb.kopf(False, None, ["kritisch"]) == {
-        "punkt": "grau",
-        "titel": "FRITZ!Box antwortet nicht",
+    assert lb.kopf(True, True, []) == {
+        "punkt": "",
+        "titel": "Alles in Ordnung",
+        "wort": "Alles in Ordnung",
+        "chips": [],
     }
+    assert lb.kopf(True, True, ["info"])["titel"] == "Alles in Ordnung"  # info zählt nicht
+    assert lb.kopf(True, True, ["warnung", "info"])["titel"] == "1 Hinweis"
+    assert lb.kopf(True, False, [])["titel"] == "Kein Internet"
     assert lb.kopf(True, True, [], "en")["titel"] == "All good"
+
+
+def test_kopf_stoerungen_und_hinweise_getrennt():
+    """Übersicht und Kopf der anderen Reiter sagen dasselbe: Störungen und Hinweise getrennt gezählt."""
+    k = lb.kopf(True, True, ["warnung", "kritisch", "kritisch", "warnung"])
+    assert k == {
+        "punkt": "rot",
+        "titel": "2 Störungen · 2 Hinweise",
+        "wort": "Störung",
+        "chips": [{"art": "rot", "text": "2 Störungen"}, {"art": "amber", "text": "2 Hinweise"}],
+    }
+    assert lb.kopf(True, True, ["kritisch"])["titel"] == "1 Störung"
+    assert lb.kopf(True, True, ["warnung", "warnung"])["wort"] == "Hinweise"
+    en = lb.kopf(True, True, ["kritisch", "warnung"], "en")
+    assert (en["titel"], en["wort"]) == ("1 problem · 1 notice", "Problem")
+
+
+def test_kopf_box_weg_gleicher_wortlaut():
+    k = lb.kopf(False, None, ["kritisch"])
+    assert (k["punkt"], k["titel"], k["wort"]) == (
+        "grau",
+        "FRITZ!Box nicht erreichbar",
+        "FRITZ!Box nicht erreichbar",
+    )
+    assert k["chips"] == [{"art": "rot", "text": "1 Störung"}]
 
 
 def test_leitung_alles_gut():
