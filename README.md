@@ -149,7 +149,7 @@ die langen Wartezeiten; wer an einem Gerät gerade arbeitet, schaltet seinen Wä
 
 ## Installation
 
-1. HACS → ⋮ → **Benutzerdefinierte Repositories** → `https://github.com/herbertschrotter-blip/ha-heimnetz`,
+1. HACS → ⋮ → **Benutzerdefinierte Repositories** → `https://github.com/herbertschrotter-blip/privat-ha-heimnetz`,
    Kategorie **Integration** → Hinzufügen.
 2. „Heimnetz“ in HACS öffnen → **Herunterladen**.
 3. Home Assistant neu starten.
@@ -167,7 +167,7 @@ FRITZ!Box Tools). Danach erscheint „Heimnetz“ in der Seitenleiste. Eine Einr
 
 ## Aktualisieren
 
-Neue Fassungen erscheinen als [Release](https://github.com/herbertschrotter-blip/ha-heimnetz/releases) mit den
+Neue Fassungen erscheinen als [Release](https://github.com/herbertschrotter-blip/privat-ha-heimnetz/releases) mit den
 Änderungen aus dem [CHANGELOG](CHANGELOG.md). HACS zeigt sie als Update an: Update installieren, Home Assistant neu
 starten. Danach im Browser die Seite neu laden, falls noch die alte Seite angezeigt wird.
 
@@ -285,7 +285,7 @@ Galerie, am PC auch mit Strg+V).
   sowie Zellkennungen (auch TAC/PCI) werden auch im Text geschwärzt; das ist musterbasiert, also die Vorschau lesen. Bilder gehen über den Link nicht
   mit – auf GitHub selbst einfügen. Abgeschickt wird mit dem eigenen GitHub-Konto; Heimnetz hat keinen Token.
 
-Alternativ direkt: [Issues](https://github.com/herbertschrotter-blip/ha-heimnetz/issues).
+Alternativ direkt: [Issues](https://github.com/herbertschrotter-blip/privat-ha-heimnetz/issues).
 
 ## Sprache
 
@@ -527,7 +527,7 @@ long waiting times; switch a watchdog off while you work on its device.
 
 ### Installation
 
-1. HACS → ⋮ → **Custom repositories** → `https://github.com/herbertschrotter-blip/ha-heimnetz`, category
+1. HACS → ⋮ → **Custom repositories** → `https://github.com/herbertschrotter-blip/privat-ha-heimnetz`, category
    **Integration** → Add.
 2. Open "Heimnetz" in HACS → **Download**.
 3. Restart Home Assistant.
@@ -545,7 +545,7 @@ Settings → Devices & services → **Add integration** → "Heimnetz" → pick 
 
 ### Updating
 
-New versions are published as [releases](https://github.com/herbertschrotter-blip/ha-heimnetz/releases) with the
+New versions are published as [releases](https://github.com/herbertschrotter-blip/privat-ha-heimnetz/releases) with the
 changes from the [CHANGELOG](CHANGELOG.md) (written in German). HACS offers them as an update: install, restart Home
 Assistant, reload the page in the browser if it still shows the old one.
 
@@ -663,7 +663,7 @@ Ctrl+V on the PC).
   pattern based, so read the preview. Images cannot travel through the link – add them on GitHub. You submit with your
   own GitHub account; Heimnetz holds no token.
 
-Or directly: [issues](https://github.com/herbertschrotter-blip/ha-heimnetz/issues).
+Or directly: [issues](https://github.com/herbertschrotter-blip/privat-ha-heimnetz/issues).
 
 ### Language
 

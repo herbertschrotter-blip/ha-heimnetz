@@ -34,7 +34,7 @@ CONF_ALT_EINTRAG = "alt_eintrag"  # Einrichtung der alten Integration, deren Dat
 CONF_UEBERNOMMEN = "uebernommen"  # Übernahme ist gelaufen (nur einmal je Einrichtung)
 ISSUE_ALT_AKTIV = "alt_aktiv"
 # WU-0006: öffentlich melden – vorausgefülltes Issue, abgeschickt mit dem eigenen GitHub-Konto (kein Token hier)
-GITHUB_REPO = "herbertschrotter-blip/ha-heimnetz"
+GITHUB_REPO = "herbertschrotter-blip/privat-ha-heimnetz"
 GITHUB_ISSUE_NEU = f"https://github.com/{GITHUB_REPO}/issues/new"
 
 

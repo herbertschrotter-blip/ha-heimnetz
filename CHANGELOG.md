@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [0.39.1]
+
+- Repo umbenannt in `herbertschrotter-blip/privat-ha-heimnetz`: Melden-Knopf („öffentlich auf GitHub“), Manifest
+  (Doku, Issues) und README zeigen auf die neue Adresse. HACS: alte Adresse leitet GitHub weiter, neu hinzufügen mit
+  der neuen Adresse.
+
 ## [0.39.0]
 
 Befunde einer ausführlichen Prüfung (Sicherheit, Fachlogik, Robustheit, Bedienung, Architektur) behoben.

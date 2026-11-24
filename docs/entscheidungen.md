@@ -57,7 +57,7 @@ nachgetragen.
 - Oberfläche: eigene Seite (Panel) im Glas-Design wie `ha-baustelle`, gebaut aus Quellcode. Die Seite rechnet nichts
   Fachliches, sie bekommt fertige Daten von der Integration. Vor dem Bau ein Mockup zur Abnahme.
 - Entwicklung bis 0.22.0 im privaten Repo `herbertschrotter-blip/ha-netzwerk` (jetzt Archiv); ab 0.23.0 öffentlich in
-  `herbertschrotter-blip/ha-heimnetz` mit frischer Historie und automatischer Prüfung (siehe Veröffentlichung,
+  `herbertschrotter-blip/privat-ha-heimnetz` mit frischer Historie und automatischer Prüfung (siehe Veröffentlichung,
   WU-0006). Mockups und persönliche Arbeitsdateien bleiben lokal (`.gitignore`). Push nur durch den Entwickler.
 - Auslieferung: `python ausliefern.py` prüft, ob die gebaute Seite zu den Quellen passt (`bauen.mjs --pruefen`, sonst
   Abbruch; `--ohne-pruefung` übergeht das), kopiert nach `custom_components/` der HA-Konfiguration und sichert die
@@ -241,7 +241,7 @@ nachgetragen.
   HACS und für andere Nutzer). Entitäten heißen künftig `sensor.heimnetz_*` / `binary_sensor.heimnetz_*`; die Seite liegt
   unter `/heimnetz`, die WebSocket-Befehle unter `heimnetz/*`, die Aktion ist `heimnetz.ticket`, die Daten liegen unter
   `<config>/heimnetz/` (Datenbank `heimnetz.db`, Tickets) und in den Speichern `heimnetz.*`.
-- Öffentliches Repo später `herbertschrotter-blip/ha-heimnetz` mit frischer Historie (legt Claude erst nach Rückfrage
+- Öffentliches Repo später `herbertschrotter-blip/privat-ha-heimnetz` mit frischer Historie (legt Claude erst nach Rückfrage
   an), Lizenz Apache-2.0. `manifest.json` nennt es als Dokumentation und Issue-Tracker, Codeowner
   `@herbertschrotter-blip`.
 - Umstieg bei Herbert ohne Datenverlust: Heimnetz übernimmt beim ersten Laden Messungen, Journal, Protokoll und

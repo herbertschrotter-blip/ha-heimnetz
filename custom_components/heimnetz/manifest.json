@@ -16,10 +16,10 @@
     "panel_custom",
     "websocket_api"
   ],
-  "documentation": "https://github.com/herbertschrotter-blip/ha-heimnetz",
+  "documentation": "https://github.com/herbertschrotter-blip/privat-ha-heimnetz",
   "integration_type": "service",
   "iot_class": "local_polling",
-  "issue_tracker": "https://github.com/herbertschrotter-blip/ha-heimnetz/issues",
+  "issue_tracker": "https://github.com/herbertschrotter-blip/privat-ha-heimnetz/issues",
   "loggers": [
     "huawei_lte_api",
     "tplinkrouterc6u"
@@ -30,5 +30,5 @@
     "tplinkrouterc6u>=5.37.0"
   ],
   "single_config_entry": true,
-  "version": "0.39.0"
+  "version": "0.39.1"
 }
